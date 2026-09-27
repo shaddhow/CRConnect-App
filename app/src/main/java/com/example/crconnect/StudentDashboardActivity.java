@@ -65,7 +65,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
             return WindowInsetsCompat.CONSUMED;
         });
 
-        dbRef = FirebaseDatabase.getInstance().getReference("crconnect_db");
+        dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
 
         // Bind UI
         imgUserProfile = findViewById(R.id.imgUserProfile);
@@ -105,7 +105,9 @@ public class StudentDashboardActivity extends AppCompatActivity {
                 refreshList();
             }
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(StudentDashboardActivity.this, "DB Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         });
 
         dbRef.child("candidates").addValueEventListener(new ValueEventListener() {
@@ -115,7 +117,9 @@ public class StudentDashboardActivity extends AppCompatActivity {
                 refreshList();
             }
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(StudentDashboardActivity.this, "DB Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         });
     }
 

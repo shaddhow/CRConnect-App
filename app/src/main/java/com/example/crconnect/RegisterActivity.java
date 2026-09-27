@@ -125,8 +125,11 @@ public class RegisterActivity extends AppCompatActivity {
         // --- DEVELOPMENT MOCK REGISTRATION ---
         Toast.makeText(this, "Dev Mode: Registration Successful!", Toast.LENGTH_SHORT).show();
         sessionManager.createLoginSession(name, email, id, role, section, intake, dept);
-        navigateBasedOnRole(role);
-        finish();
+
+        FirebaseAuth.getInstance().signInAnonymously().addOnCompleteListener(task -> {
+            navigateBasedOnRole(role);
+            finish();
+        });
     }
 
     private void navigateBasedOnRole(String role) {

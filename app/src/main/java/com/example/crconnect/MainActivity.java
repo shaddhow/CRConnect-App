@@ -126,9 +126,12 @@ public class MainActivity extends AppCompatActivity {
             "55", 
             "CSE"
         );
-        
-        navigateBasedOnRole(role);
-        finish();
+
+        // Authenticate with Firebase anonymously so database rules pass
+        FirebaseAuth.getInstance().signInAnonymously().addOnCompleteListener(task -> {
+            navigateBasedOnRole(role);
+            finish();
+        });
     }
 
     private void fetchUserDataAndSaveSession(String uid) {
