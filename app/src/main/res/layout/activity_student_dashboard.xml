@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_gradient"
+    android:paddingHorizontal="20dp"
+    tools:context=".StudentDashboardActivity">
+
+    <include layout="@layout/include_header" />
+
+    <!-- Enhanced Profile Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="12dp"
+        app:cardBackgroundColor="#FFFFFF"
+        android:layout_marginBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
+                android:id="@+id/tvStudentName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Developer Student"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#1E293B"/>
+
+            <View
+                android:layout_width="40dp"
+                android:layout_height="3dp"
+                android:background="#2563EB"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"/>
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2"
+                android:rowCount="2">
+
+                <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_columnWeight="1">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="STUDENT ID" android:textSize="10sp" android:textColor="#64748B" android:textStyle="bold"/>
+                    <TextView android:id="@+id/tvStudentDetailsID" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2023-DEV-001" android:textColor="#334155" android:textStyle="bold"/>
+                </LinearLayout>
+
+                <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_columnWeight="1">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DEPARTMENT" android:textSize="10sp" android:textColor="#64748B" android:textStyle="bold"/>
+                    <TextView android:id="@+id/tvStudentDept" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="CSE" android:textColor="#2563EB" android:textStyle="bold"/>
+                </LinearLayout>
+
+                <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_marginTop="12dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="INTAKE" android:textSize="10sp" android:textColor="#64748B" android:textStyle="bold"/>
+                    <TextView android:id="@+id/tvStudentIntake" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55" android:textColor="#334155" android:textStyle="bold"/>
+                </LinearLayout>
+
+                <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_marginTop="12dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SECTION" android:textSize="10sp" android:textColor="#64748B" android:textStyle="bold"/>
+                    <TextView android:id="@+id/tvStudentSection" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55/8" android:textColor="#334155" android:textStyle="bold"/>
+                </LinearLayout>
+            </GridLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Status Badge -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="100dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="#F1F5F9"
+        android:layout_gravity="center"
+        android:layout_marginBottom="24dp">
+
+        <TextView
+            android:id="@+id/tvVotingStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Syncing Live Data..."
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="8dp"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#64748B"/>
+    </com.google.android.material.card.MaterialCardView>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="20dp"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:id="@+id/containerCandidates"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+    </ScrollView>
+</LinearLayout>

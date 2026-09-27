@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@drawable/bg_gradient"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="24dp">
+
+        <!-- Branding Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginBottom="32dp">
+
+            <ImageView
+                android:id="@+id/ivBubtLogo"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@drawable/bubt_logo"
+                android:scaleType="fitCenter"
+                android:contentDescription="BUBT Logo"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CRConnect"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="BUBT Department Network"
+                android:textSize="14sp"
+                android:textColor="#E2E8F0"
+                android:letterSpacing="0.05"/>
+        </LinearLayout>
+
+        <!-- Login Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="28dp"
+            app:cardElevation="16dp"
+            app:cardBackgroundColor="#FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="28dp">
+
+                <!-- Role Selector -->
+                <RadioGroup
+                    android:id="@+id/radioGroupRole"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginBottom="24dp">
+
+                    <RadioButton
+                        android:id="@+id/rbStudent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Student"
+                        android:checked="true"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="#1E293B"
+                        android:layout_marginEnd="32dp"/>
+
+                    <RadioButton
+                        android:id="@+id/rbTeacher"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Teacher"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="#1E293B"/>
+                </RadioGroup>
+
+                <!-- Input Fields -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    app:boxCornerRadiusTopStart="16dp" app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp" app:boxCornerRadiusBottomEnd="16dp"
+                    android:textColorHint="#64748B"
+                    app:hintTextColor="#2563EB">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Student ID or BUBT Email"
+                        android:inputType="textEmailAddress"
+                        android:textColor="#0F172A"
+                        android:textSize="16sp"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    app:boxCornerRadiusTopStart="16dp" app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp" app:boxCornerRadiusBottomEnd="16dp"
+                    android:textColorHint="#64748B"
+                    app:hintTextColor="#2563EB"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="#64748B">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Password"
+                        android:inputType="textPassword"
+                        android:textColor="#0F172A"
+                        android:textSize="16sp"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Login Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLogin"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="SIGN IN"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="16dp"
+                    android:backgroundTint="#2563EB"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Register Link -->
+                <TextView
+                    android:id="@+id/tvRegisterLink"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Don't have an account? Register"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#2563EB"
+                    android:gravity="center"
+                    android:padding="8dp"/>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+</ScrollView>

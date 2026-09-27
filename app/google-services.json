@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "665787114569",
+    "project_id": "crconnect-58521",
+    "storage_bucket": "crconnect-58521.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665787114569:android:7ddec0c0b6d7ec13a9cb98",
+        "android_client_info": {
+          "package_name": "com.example.crconnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAA9eEQhuFYwq_OzX7qh0epnWyynrJVAk0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
