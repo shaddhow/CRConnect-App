@@ -2,13 +2,18 @@ package com.example.crconnect;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -63,6 +68,24 @@ public class MainActivity extends AppCompatActivity {
             return WindowInsetsCompat.CONSUMED;
         });
 
+        // Double press back to exit from login page
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            private long backPressedTime;
+            private Toast backToast;
+
+            @Override
+            public void handleOnBackPressed() {
+                if (backPressedTime + 2000 > System.currentTimeMillis()) {
+                    if (backToast != null) backToast.cancel();
+                    finishAffinity();
+                } else {
+                    backToast = Toast.makeText(MainActivity.this, "Press back again to exit", Toast.LENGTH_SHORT);
+                    backToast.show();
+                }
+                backPressedTime = System.currentTimeMillis();
+            }
+        });
+
         // Binding UI elements
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
@@ -71,6 +94,50 @@ public class MainActivity extends AppCompatActivity {
         rbTeacher = findViewById(R.id.rbTeacher);
         btnLogin = findViewById(R.id.btnLogin);
         tvRegisterLink = findViewById(R.id.tvRegisterLink);
+
+        // Professional keyboard-aware scaling & auto-scroll
+        ScrollView scrollViewMain = findViewById(R.id.scrollViewMain);
+        View layoutBranding = findViewById(R.id.layoutBranding);
+        View rootView = findViewById(android.R.id.content);
+
+        if (layoutBranding != null) {
+            layoutBranding.post(() -> {
+                layoutBranding.setPivotX(layoutBranding.getWidth() / 2f);
+                layoutBranding.setPivotY(0f); // Scale from top downwards, centered horizontally
+            });
+        }
+
+        if (rootView != null && layoutBranding != null) {
+            rootView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+                Rect r = new Rect();
+                rootView.getWindowVisibleDisplayFrame(r);
+                int screenHeight = rootView.getRootView().getHeight();
+                int keypadHeight = screenHeight - r.bottom;
+
+                boolean isKeyboardOpen = keypadHeight > screenHeight * 0.15;
+
+                if (isKeyboardOpen) {
+                    layoutBranding.animate()
+                        .scaleX(0.8f)
+                        .scaleY(0.8f)
+                        .setDuration(200)
+                        .start();
+                } else {
+                    layoutBranding.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(200)
+                        .start();
+                }
+            });
+        }
+
+        // Auto-scroll up smoothly when password field gets focus
+        etPassword.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus && scrollViewMain != null) {
+                scrollViewMain.postDelayed(() -> scrollViewMain.smoothScrollTo(0, btnLogin.getBottom()), 200);
+            }
+        });
 
         // Role change dynamic hint logic
         radioGroupRole.setOnCheckedChangeListener((group, checkedId) -> {
