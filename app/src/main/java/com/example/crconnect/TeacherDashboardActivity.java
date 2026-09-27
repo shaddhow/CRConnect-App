@@ -1,9 +1,11 @@
 package com.example.crconnect;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.ImageView;
@@ -71,7 +73,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             return WindowInsetsCompat.CONSUMED;
         });
 
-        dbRef = FirebaseDatabase.getInstance().getReference("crconnect_db");
+        dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
 
         // UI Bindings
         switchMasterVoting = findViewById(R.id.switchMasterVoting);
@@ -115,19 +117,31 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         });
 
         btnAddCandidate.setOnClickListener(v -> {
-            String name = etCandidateName.getText().toString().trim();
-            if (name.isEmpty()) { etCandidateName.setError("Required"); return; }
+            String name = etCandidateName.getText() != null ? etCandidateName.getText().toString().trim() : "";
+            if (name.isEmpty()) { 
+                etCandidateName.setError("Required"); 
+                etCandidateName.requestFocus();
+                return; 
+            }
 
             String cid = dbRef.child("candidates").push().getKey();
             if (cid != null) {
                 Map<String, Object> map = new HashMap<>();
                 map.put("name", name);
                 map.put("votes", 0);
-                dbRef.child("candidates").child(cid).setValue(map).addOnSuccessListener(aVoid -> {
-                    etCandidateName.setText("");
-                    etCandidateName.requestFocus();
-                    Toast.makeText(this, "Candidate Published!", Toast.LENGTH_SHORT).show();
-                });
+
+                // Clear input immediately so user can type a new name
+                etCandidateName.setText("");
+                etCandidateName.clearFocus();
+
+                dbRef.child("candidates").child(cid).setValue(map)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Successfully added to student portal!", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("TeacherDashboard", "Failed to write candidate", e);
+                        Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
             }
         });
 
@@ -137,7 +151,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 tvTotalCandidates.setText("Total: " + snapshot.getChildrenCount());
                 containerAdminCandidates.removeAllViews();
                 for (DataSnapshot ds : snapshot.getChildren()) {
-                    addAdminRow(ds.child("name").getValue(String.class), ds.child("votes").getValue(Integer.class));
+                    addAdminRow(ds.getKey(), ds.child("name").getValue(String.class), ds.child("votes").getValue(Integer.class));
                 }
             }
             @Override
@@ -153,7 +167,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         });
     }
 
-    private void addAdminRow(String name, Integer vts) {
+    private void addAdminRow(String candidateId, String name, Integer vts) {
         MaterialCardView card = new MaterialCardView(this);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(0, 0, 0, 12);
@@ -165,19 +179,47 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         row.setPadding(20, 16, 20, 16);
         row.setGravity(Gravity.CENTER_VERTICAL);
 
+        LinearLayout textCol = new LinearLayout(this);
+        textCol.setOrientation(LinearLayout.VERTICAL);
+        textCol.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f));
+
         TextView tvName = new TextView(this);
         tvName.setText(name);
-        tvName.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f));
+        tvName.setTextSize(16f);
         tvName.setTextColor(Color.parseColor("#1E293B"));
         tvName.setTypeface(null, Typeface.BOLD);
 
         TextView tvVotes = new TextView(this);
         tvVotes.setText((vts != null ? vts : 0) + " Votes");
+        tvVotes.setTextSize(13f);
         tvVotes.setTextColor(Color.parseColor("#2563EB"));
-        tvVotes.setTypeface(null, Typeface.BOLD);
 
-        row.addView(tvName);
-        row.addView(tvVotes);
+        textCol.addView(tvName);
+        textCol.addView(tvVotes);
+
+        MaterialButton btnDelete = new MaterialButton(this);
+        btnDelete.setText("Delete");
+        btnDelete.setTextSize(12f);
+        btnDelete.setCornerRadius(12);
+        btnDelete.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#EF4444")));
+        btnDelete.setLayoutParams(new LinearLayout.LayoutParams(-2, -2));
+
+        btnDelete.setOnClickListener(v -> {
+            new AlertDialog.Builder(this)
+                .setTitle("Delete Candidate")
+                .setMessage("Remove " + name + "?")
+                .setPositiveButton("Delete", (d, w) -> {
+                    if (candidateId != null) {
+                        dbRef.child("candidates").child(candidateId).removeValue()
+                            .addOnSuccessListener(aVoid -> Toast.makeText(this, "Candidate removed", Toast.LENGTH_SHORT).show());
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+        });
+
+        row.addView(textCol);
+        row.addView(btnDelete);
         card.addView(row);
         containerAdminCandidates.addView(card);
     }
