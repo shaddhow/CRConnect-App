@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -83,6 +84,14 @@ public class RegisterActivity extends AppCompatActivity {
 
         btnRegister.setOnClickListener(v -> performRegistration());
         tvLoginLink.setOnClickListener(v -> finish());
+
+        // Auto-scroll up smoothly when password field gets focus in register screen
+        ScrollView scrollViewRegister = findViewById(R.id.scrollViewRegister);
+        etRegPassword.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus && scrollViewRegister != null) {
+                scrollViewRegister.postDelayed(() -> scrollViewRegister.smoothScrollTo(0, btnRegister.getBottom()), 200);
+            }
+        });
     }
 
     private void performRegistration() {
