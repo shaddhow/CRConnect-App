@@ -25,24 +25,28 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Create Account"
-            android:textSize="26sp"
+            android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"/>
+            android:textColor="#F8FAFC"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Join CRConnect Network"
-            android:textSize="13sp"
-            android:textColor="#E0E0E0"
-            android:layout_marginBottom="20dp"/>
+            android:textSize="14sp"
+            android:textColor="#94A3B8"
+            android:layout_marginBottom="20dp"
+            android:layout_marginTop="4dp"/>
 
-        <androidx.cardview.widget.CardView
+        <!-- Register Card (Figma Dark Glassmorphism) -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="12dp"
-            app:cardBackgroundColor="#FFFFFF">
+            app:cardCornerRadius="32dp"
+            app:cardElevation="24dp"
+            app:cardBackgroundColor="#E61E293B"
+            app:strokeWidth="1.5dp"
+            app:strokeColor="#334155">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -56,7 +60,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="20dp">
 
                     <RadioButton
                         android:id="@+id/rbStudent"
@@ -66,7 +70,8 @@
                         android:checked="true"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#111111"
+                        android:textColor="#F8FAFC"
+                        android:buttonTint="#6366F1"
                         android:layout_marginEnd="32dp"/>
 
                     <RadioButton
@@ -76,7 +81,8 @@
                         android:text="Teacher / Admin"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#111111"/>
+                        android:textColor="#F8FAFC"
+                        android:buttonTint="#6366F1"/>
                 </RadioGroup>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -84,17 +90,18 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp"
-                    app:hintTextColor="#0D47A1"
-                    android:textColorHint="#444444">
+                    app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxStrokeColor="#6366F1"
+                    app:hintTextColor="#6366F1"
+                    android:textColorHint="#94A3B8">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etFullName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="Full Name"
-                        android:textColor="#111111"
+                        android:textColor="#FFFFFF"
                         android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -103,10 +110,11 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp"
-                    app:hintTextColor="#0D47A1"
-                    android:textColorHint="#444444">
+                    app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxStrokeColor="#6366F1"
+                    app:hintTextColor="#6366F1"
+                    android:textColorHint="#94A3B8">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etRegEmail"
@@ -114,7 +122,7 @@
                         android:layout_height="wrap_content"
                         android:hint="BUBT Email (e.g., @cse.bubt.edu.bd)"
                         android:inputType="textEmailAddress"
-                        android:textColor="#111111"
+                        android:textColor="#FFFFFF"
                         android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -123,17 +131,18 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp"
-                    app:hintTextColor="#0D47A1"
-                    android:textColorHint="#444444">
+                    app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxStrokeColor="#6366F1"
+                    app:hintTextColor="#6366F1"
+                    android:textColorHint="#94A3B8">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etIdCode"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="Student ID / Teacher Code"
-                        android:textColor="#111111"
+                        android:textColor="#FFFFFF"
                         android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -149,17 +158,18 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp"
-                        app:hintTextColor="#0D47A1"
-                        android:textColorHint="#444444">
+                        app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
+                        app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                        app:boxStrokeColor="#6366F1"
+                        app:hintTextColor="#6366F1"
+                        android:textColorHint="#94A3B8">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etSection"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="Section (e.g., 55/8)"
-                            android:textColor="#111111"
+                            android:textColor="#FFFFFF"
                             android:textSize="15sp"/>
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -168,17 +178,18 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp"
-                        app:hintTextColor="#0D47A1"
-                        android:textColorHint="#444444">
+                        app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
+                        app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                        app:boxStrokeColor="#6366F1"
+                        app:hintTextColor="#6366F1"
+                        android:textColorHint="#94A3B8">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etIntake"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="Intake (e.g., 55)"
-                            android:textColor="#111111"
+                            android:textColor="#FFFFFF"
                             android:textSize="15sp"/>
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -187,17 +198,18 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp"
-                        app:hintTextColor="#0D47A1"
-                        android:textColorHint="#444444">
+                        app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
+                        app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                        app:boxStrokeColor="#6366F1"
+                        app:hintTextColor="#6366F1"
+                        android:textColorHint="#94A3B8">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etDept"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="Department (e.g., CSE)"
-                            android:textColor="#111111"
+                            android:textColor="#FFFFFF"
                             android:textSize="15sp"/>
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -208,11 +220,12 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="18dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="12dp" app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp" app:boxCornerRadiusBottomEnd="12dp"
-                    app:hintTextColor="#0D47A1"
-                    android:textColorHint="#444444"
-                    app:endIconMode="password_toggle" app:endIconTint="#0D47A1">
+                    app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxStrokeColor="#6366F1"
+                    app:hintTextColor="#6366F1"
+                    android:textColorHint="#94A3B8"
+                    app:endIconMode="password_toggle" app:endIconTint="#94A3B8">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etRegPassword"
@@ -220,19 +233,19 @@
                         android:layout_height="wrap_content"
                         android:hint="Create Password"
                         android:inputType="textPassword"
-                        android:textColor="#111111"
+                        android:textColor="#FFFFFF"
                         android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnRegister"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
+                    android:layout_height="54dp"
                     android:text="REGISTER"
-                    android:textSize="15sp"
+                    android:textSize="16sp"
                     android:textStyle="bold"
-                    android:backgroundTint="#0D47A1"
-                    app:cornerRadius="12dp"
+                    app:backgroundTint="#6366F1"
+                    app:cornerRadius="16dp"
                     android:layout_marginBottom="14dp"/>
 
                 <TextView
@@ -242,12 +255,12 @@
                     android:text="Already have an account? Sign In"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#0D47A1"
+                    android:textColor="#06B6D4"
                     android:gravity="center"
                     android:padding="8dp"/>
 
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
         <View
             android:layout_width="match_parent"

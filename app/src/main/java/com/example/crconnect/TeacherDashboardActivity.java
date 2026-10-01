@@ -183,13 +183,16 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private void addAdminRow(String candidateId, String name, Integer vts) {
         MaterialCardView card = new MaterialCardView(this);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.setMargins(0, 0, 0, 12);
+        lp.setMargins(0, 0, 0, 16);
         card.setLayoutParams(lp);
-        card.setRadius(16);
-        card.setCardBackgroundColor(Color.WHITE);
+        card.setRadius(24);
+        card.setCardElevation(8);
+        card.setCardBackgroundColor(Color.parseColor("#171A29"));
+        card.setStrokeWidth(2);
+        card.setStrokeColor(Color.parseColor("#334155"));
 
         LinearLayout row = new LinearLayout(this);
-        row.setPadding(20, 16, 20, 16);
+        row.setPadding(24, 20, 24, 20);
         row.setGravity(Gravity.CENTER_VERTICAL);
 
         LinearLayout textCol = new LinearLayout(this);
@@ -198,14 +201,15 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         TextView tvName = new TextView(this);
         tvName.setText(name);
-        tvName.setTextSize(16f);
-        tvName.setTextColor(Color.parseColor("#1E293B"));
+        tvName.setTextSize(17f);
+        tvName.setTextColor(Color.parseColor("#F8FAFC"));
         tvName.setTypeface(null, Typeface.BOLD);
 
         TextView tvVotes = new TextView(this);
         tvVotes.setText((vts != null ? vts : 0) + " Votes");
-        tvVotes.setTextSize(13f);
-        tvVotes.setTextColor(Color.parseColor("#2563EB"));
+        tvVotes.setTextSize(14f);
+        tvVotes.setTextColor(Color.parseColor("#38BDF8"));
+        tvVotes.setPadding(0, 4, 0, 0);
 
         textCol.addView(tvName);
         textCol.addView(tvVotes);
@@ -213,8 +217,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         MaterialButton btnDelete = new MaterialButton(this);
         btnDelete.setText("Delete");
         btnDelete.setTextSize(12f);
-        btnDelete.setCornerRadius(12);
-        btnDelete.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#EF4444")));
+        btnDelete.setCornerRadius(14);
+        btnDelete.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#F87171")));
         btnDelete.setLayoutParams(new LinearLayout.LayoutParams(-2, -2));
 
         btnDelete.setOnClickListener(v -> {

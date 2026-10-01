@@ -19,7 +19,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
@@ -29,6 +28,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class StudentDashboardActivity extends AppCompatActivity {
 
@@ -41,7 +43,9 @@ public class StudentDashboardActivity extends AppCompatActivity {
     private SessionManager sessionManager;
     
     private boolean isVotingEnabled = false;
+    private boolean hasAlreadyVoted = false;
     private DataSnapshot allCandidatesSnapshot;
+    private String sanitizedStudentId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +53,9 @@ public class StudentDashboardActivity extends AppCompatActivity {
         
         sessionManager = new SessionManager(this);
         
+        String rawId = sessionManager.getUserID();
+        sanitizedStudentId = rawId != null ? rawId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "guest_user";
+
         // --- TRUE FULL SCREEN (GOOGLE STYLE) ---
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
@@ -108,7 +115,19 @@ public class StudentDashboardActivity extends AppCompatActivity {
             finish();
         });
 
-        // Live Sync
+        // Check if student has already voted (Anti-Dual-Voting Security)
+        dbRef.child("voters").child(sanitizedStudentId).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                hasAlreadyVoted = snapshot.exists();
+                updateStatusText();
+                refreshList();
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
+
+        // Live Sync Voting Enabled status
         dbRef.child("master_voting_enabled").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -146,7 +165,10 @@ public class StudentDashboardActivity extends AppCompatActivity {
     }
 
     private void updateStatusText() {
-        if (!isVotingEnabled) {
+        if (hasAlreadyVoted) {
+            tvVotingStatus.setText("✓ Vote Secured & Recorded");
+            tvVotingStatus.setTextColor(Color.parseColor("#10B981"));
+        } else if (!isVotingEnabled) {
             tvVotingStatus.setText("Voting is LOCKED by Teacher");
             tvVotingStatus.setTextColor(Color.parseColor("#EF4444"));
         } else {
@@ -171,8 +193,10 @@ public class StudentDashboardActivity extends AppCompatActivity {
         params.setMargins(0, 0, 0, 16);
         card.setLayoutParams(params);
         card.setRadius(24);
-        card.setCardElevation(4);
-        card.setCardBackgroundColor(Color.WHITE);
+        card.setCardElevation(8);
+        card.setCardBackgroundColor(Color.parseColor("#171A29"));
+        card.setStrokeWidth(2);
+        card.setStrokeColor(Color.parseColor("#334155"));
 
         LinearLayout row = new LinearLayout(this);
         row.setPadding(24, 20, 24, 20);
@@ -186,26 +210,61 @@ public class StudentDashboardActivity extends AppCompatActivity {
         tvName.setText(name);
         tvName.setTextSize(17f);
         tvName.setTypeface(null, Typeface.BOLD);
-        tvName.setTextColor(Color.parseColor("#1E293B"));
+        tvName.setTextColor(Color.parseColor("#F8FAFC"));
 
         TextView tvVotes = new TextView(this);
         tvVotes.setText("Current Votes: " + votes);
         tvVotes.setTextSize(14f);
-        tvVotes.setTextColor(Color.parseColor("#64748B"));
+        tvVotes.setTextColor(Color.parseColor("#94A3B8"));
+        tvVotes.setPadding(0, 4, 0, 0);
 
         textCol.addView(tvName);
         textCol.addView(tvVotes);
 
         MaterialButton btnVote = new MaterialButton(this);
-        btnVote.setText("Vote");
+        if (hasAlreadyVoted) {
+            btnVote.setText("Voted");
+            btnVote.setEnabled(false);
+            btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#10B981")));
+        } else {
+            btnVote.setText("Vote");
+            btnVote.setEnabled(isVotingEnabled);
+            btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#6366F1")));
+        }
         btnVote.setCornerRadius(16);
-        btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#2563EB")));
-        btnVote.setEnabled(isVotingEnabled);
 
         btnVote.setOnClickListener(v -> {
+            if (hasAlreadyVoted) {
+                Toast.makeText(this, "Security Alert: Dual voting is strictly blocked!", Toast.LENGTH_LONG).show();
+                return;
+            }
+
             if (id != null) {
-                dbRef.child("candidates").child(id).child("votes").setValue(votes + 1);
-                Toast.makeText(this, "Vote Recorded!", Toast.LENGTH_SHORT).show();
+                // Strict Full-Stack Dual Voting Check & Transaction
+                dbRef.child("voters").child(sanitizedStudentId).addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (snapshot.exists()) {
+                            hasAlreadyVoted = true;
+                            Toast.makeText(StudentDashboardActivity.this, "Security Alert: You have already cast your vote!", Toast.LENGTH_LONG).show();
+                            refreshList();
+                        } else {
+                            Map<String, Object> updates = new HashMap<>();
+                            updates.put("voters/" + sanitizedStudentId, id);
+                            updates.put("candidates/" + id + "/votes", votes + 1);
+
+                            dbRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
+                                hasAlreadyVoted = true;
+                                Toast.makeText(StudentDashboardActivity.this, "Vote successfully recorded & secured!", Toast.LENGTH_SHORT).show();
+                                refreshList();
+                            }).addOnFailureListener(e -> {
+                                Toast.makeText(StudentDashboardActivity.this, "Transaction failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    }
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
             }
         });
 
