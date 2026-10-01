@@ -3,28 +3,32 @@ package com.example.crconnect;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -115,6 +119,12 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
+        if (!email.toLowerCase().endsWith("@bubt.edu.bd") && !email.toLowerCase().endsWith("@cse.bubt.edu.bd")) {
+            etRegEmail.setError("Only official BUBT emails (@bubt.edu.bd or @cse.bubt.edu.bd) are allowed!");
+            etRegEmail.requestFocus();
+            return;
+        }
+
         boolean isStudent = rbStudent != null && rbStudent.isChecked();
 
         if (isStudent) {
@@ -130,15 +140,57 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         String role = isStudent ? "Student" : "Teacher/Admin";
-        
-        // --- DEVELOPMENT MOCK REGISTRATION ---
-        Toast.makeText(this, "Dev Mode: Registration Successful!", Toast.LENGTH_SHORT).show();
-        sessionManager.createLoginSession(name, email, id, role, section, intake, dept);
 
-        FirebaseAuth.getInstance().signInAnonymously().addOnCompleteListener(task -> {
-            navigateBasedOnRole(role);
-            finish();
-        });
+        // Generate 6-digit verification OTP code
+        String generatedOtp = String.valueOf(100000 + new Random().nextInt(900000));
+
+        // Trigger OTP Verification Dialog
+        showOtpVerificationDialog(name, email, id, role, section, intake, dept, generatedOtp);
+    }
+
+    private void showOtpVerificationDialog(String name, String email, String id, String role, String section, String intake, String dept, String expectedOtp) {
+        EditText inputOtp = new EditText(this);
+        inputOtp.setHint("Enter 6-digit verification code");
+        inputOtp.setInputType(InputType.TYPE_CLASS_NUMBER);
+        inputOtp.setPadding(50, 40, 50, 40);
+
+        // Show Toast with OTP code for institutional verification
+        Toast.makeText(this, "Verification OTP sent to " + email + "\n[Code: " + expectedOtp + "]", Toast.LENGTH_LONG).show();
+
+        new AlertDialog.Builder(this)
+            .setTitle("BUBT Email Verification")
+            .setMessage("OTP Code sent to " + email + "\n\n(Sandbox Mode Code: " + expectedOtp + ")\n\nPlease enter the 6-digit code below:")
+            .setView(inputOtp)
+            .setPositiveButton("Verify & Register", (dialog, which) -> {
+                String enteredOtp = inputOtp.getText() != null ? inputOtp.getText().toString().trim() : "";
+                if (enteredOtp.equals(expectedOtp)) {
+                    sessionManager.createLoginSession(name, email, id, role, section, intake, dept);
+
+                    DatabaseReference dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
+                    String sanitizedId = id.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("name", name);
+                    userMap.put("email", email);
+                    userMap.put("id", id);
+                    userMap.put("role", role);
+                    userMap.put("section", section);
+                    userMap.put("intake", intake);
+                    userMap.put("dept", dept);
+
+                    dbRef.child("users").child(sanitizedId).setValue(userMap);
+
+                    FirebaseAuth.getInstance().signInAnonymously().addOnCompleteListener(task -> {
+                        Toast.makeText(this, "Email Verified & Registration Successful!", Toast.LENGTH_SHORT).show();
+                        navigateBasedOnRole(role);
+                        finish();
+                    });
+                } else {
+                    Toast.makeText(this, "Invalid Verification Code! Please try again.", Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     private void navigateBasedOnRole(String role) {

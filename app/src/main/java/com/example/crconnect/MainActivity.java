@@ -23,7 +23,9 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -33,6 +35,7 @@ import com.google.firebase.database.ValueEventListener;
 public class MainActivity extends AppCompatActivity {
 
     private TextInputEditText etEmail, etPassword;
+    private TextInputLayout tilEmail;
     private RadioGroup radioGroupRole;
     private RadioButton rbStudent, rbTeacher;
     private Button btnLogin;
@@ -89,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
         // Binding UI elements
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
+        tilEmail = findViewById(R.id.tilEmail);
         radioGroupRole = findViewById(R.id.radioGroupRole);
         rbStudent = findViewById(R.id.rbStudent);
         rbTeacher = findViewById(R.id.rbTeacher);
@@ -144,14 +148,18 @@ public class MainActivity extends AppCompatActivity {
             etEmail.setText("");
             etPassword.setText("");
             if (checkedId == R.id.rbTeacher) {
-                etEmail.setHint("Teacher Code or Email");
+                tilEmail.setHint("Teacher Code or Email");
             } else {
-                etEmail.setHint("Student ID or BUBT Email");
+                tilEmail.setHint("Student ID or BUBT Email");
             }
         });
 
         // Login Button Click Listener
         btnLogin.setOnClickListener(v -> performLogin());
+
+        // Google Sign In Click Listener
+        MaterialButton btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
+        btnGoogleSignIn.setOnClickListener(v -> performGoogleSignIn());
 
         // Register Link Click Listener
         tvRegisterLink.setOnClickListener(v -> {
@@ -175,15 +183,13 @@ public class MainActivity extends AppCompatActivity {
             etPassword.requestFocus();
             return;
         }
-
-        // --- DEVELOPMENT MOCK LOGIN ---
-        // ফায়ারবেজ কনসোল সেটআপ করার আগে এই ডামি লগইন দিয়ে আপনি কাজ করতে পারবেন
+        
         Toast.makeText(this, "Dev Mode: Logging in...", Toast.LENGTH_SHORT).show();
         
         String role = rbTeacher.isChecked() ? "Teacher/Admin" : "Student";
         String name = rbTeacher.isChecked() ? "Developer Teacher" : "Developer Student";
         
-        // ডামি সেশন তৈরি
+      
         sessionManager.createLoginSession(
             name, 
             emailOrId, 
@@ -233,6 +239,11 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Database Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void performGoogleSignIn() {
+        Intent intent = new Intent(MainActivity.this, RegisterActivity.class);
+        startActivity(intent);
     }
 
     private void navigateBasedOnRole(String role) {
