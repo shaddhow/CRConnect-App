@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,6 +22,7 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.database.DataSnapshot;
@@ -29,7 +31,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class StudentDashboardActivity extends AppCompatActivity {
@@ -180,13 +184,41 @@ public class StudentDashboardActivity extends AppCompatActivity {
     private void refreshList() {
         if (allCandidatesSnapshot == null || containerCandidates == null) return;
         containerCandidates.removeAllViews();
+
+        // Convert snapshot to list for sorting by votes descending (Live Leaderboard)
+        List<DataSnapshot> candidateList = new ArrayList<>();
+        int maxVotes = 1;
         for (DataSnapshot item : allCandidatesSnapshot.getChildren()) {
-            addCandidateCard(item.getKey(), item.child("name").getValue(String.class), 
-                item.child("votes").getValue(Integer.class));
+            candidateList.add(item);
+            Integer vts = item.child("votes").getValue(Integer.class);
+            if (vts != null && vts > maxVotes) {
+                maxVotes = vts;
+            }
+        }
+
+        candidateList.sort((d1, d2) -> {
+            Integer v1 = d1.child("votes").getValue(Integer.class);
+            Integer v2 = d2.child("votes").getValue(Integer.class);
+            int votes1 = v1 != null ? v1 : 0;
+            int votes2 = v2 != null ? v2 : 0;
+            return Integer.compare(votes2, votes1); // Descending order
+        });
+
+        int rank = 1;
+        for (DataSnapshot item : candidateList) {
+            String name = item.child("name").getValue(String.class);
+            String dept = item.child("dept").getValue(String.class);
+            if (dept == null || dept.isEmpty()) dept = "Department of CSE, BUBT";
+            String manifesto = item.child("manifesto").getValue(String.class);
+            if (manifesto == null || manifesto.isEmpty()) manifesto = "Committed to student welfare, transparent CR communication, and academic excellence.";
+            Integer votes = item.child("votes").getValue(Integer.class);
+
+            addCandidateCard(item.getKey(), name, dept, manifesto, votes, rank, maxVotes);
+            rank++;
         }
     }
 
-    private void addCandidateCard(String id, String name, Integer vts) {
+    private void addCandidateCard(String id, String name, String dept, String manifesto, Integer vts, int rank, int maxVotes) {
         int votes = vts != null ? vts : 0;
         MaterialCardView card = new MaterialCardView(this);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
@@ -196,27 +228,45 @@ public class StudentDashboardActivity extends AppCompatActivity {
         card.setCardElevation(8);
         card.setCardBackgroundColor(Color.parseColor("#171A29"));
         card.setStrokeWidth(2);
-        card.setStrokeColor(Color.parseColor("#334155"));
+        card.setClickable(true);
+        card.setFocusable(true);
+        card.setOnClickListener(v -> showCandidateManifestoDialog(name, dept, manifesto));
+        
+        // Highlight Top 3 with smooth Neon Cyan and Soft Electric Purple borders
+        if (rank == 1) card.setStrokeColor(Color.parseColor("#38BDF8")); // Neon Cyan
+        else if (rank == 2) card.setStrokeColor(Color.parseColor("#8B5CF6")); // Soft Electric Purple
+        else if (rank == 3) card.setStrokeColor(Color.parseColor("#6366F1")); // Indigo
+        else card.setStrokeColor(Color.parseColor("#334155"));
 
         LinearLayout row = new LinearLayout(this);
-        row.setPadding(24, 20, 24, 20);
-        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setPadding(28, 24, 28, 24);
+
+        LinearLayout topRow = new LinearLayout(this);
+        topRow.setOrientation(LinearLayout.HORIZONTAL);
+        topRow.setGravity(Gravity.CENTER_VERTICAL);
 
         LinearLayout textCol = new LinearLayout(this);
         textCol.setOrientation(LinearLayout.VERTICAL);
         textCol.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f));
 
+        // Rank / Badge title
+        String rankTitle = name;
+        if (rank == 1) rankTitle = "🥇 " + name + " (1st Place)";
+        else if (rank == 2) rankTitle = "🥈 " + name + " (2nd Place)";
+        else if (rank == 3) rankTitle = "🥉 " + name + " (3rd Place)";
+
         TextView tvName = new TextView(this);
-        tvName.setText(name);
+        tvName.setText(rankTitle);
         tvName.setTextSize(17f);
         tvName.setTypeface(null, Typeface.BOLD);
         tvName.setTextColor(Color.parseColor("#F8FAFC"));
 
         TextView tvVotes = new TextView(this);
-        tvVotes.setText("Current Votes: " + votes);
+        tvVotes.setText("Votes: " + votes + "  •  Tap for Manifesto");
         tvVotes.setTextSize(14f);
-        tvVotes.setTextColor(Color.parseColor("#94A3B8"));
-        tvVotes.setPadding(0, 4, 0, 0);
+        tvVotes.setTextColor(Color.parseColor("#38BDF8"));
+        tvVotes.setPadding(0, 4, 0, 8);
 
         textCol.addView(tvName);
         textCol.addView(tvVotes);
@@ -234,13 +284,13 @@ public class StudentDashboardActivity extends AppCompatActivity {
         btnVote.setCornerRadius(16);
 
         btnVote.setOnClickListener(v -> {
+            v.setPressed(true);
             if (hasAlreadyVoted) {
                 Toast.makeText(this, "Security Alert: Dual voting is strictly blocked!", Toast.LENGTH_LONG).show();
                 return;
             }
 
             if (id != null) {
-                // Strict Full-Stack Dual Voting Check & Transaction
                 dbRef.child("voters").child(sanitizedStudentId).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -268,9 +318,62 @@ public class StudentDashboardActivity extends AppCompatActivity {
             }
         });
 
-        row.addView(textCol);
-        row.addView(btnVote);
+        topRow.addView(textCol);
+        topRow.addView(btnVote);
+        row.addView(topRow);
+
+        // Graphical Vote Count Progress Bar
+        ProgressBar progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        LinearLayout.LayoutParams pbParams = new LinearLayout.LayoutParams(-1, 20);
+        pbParams.setMargins(0, 12, 0, 0);
+        progressBar.setLayoutParams(pbParams);
+        progressBar.setMax(Math.max(maxVotes, 10));
+        progressBar.setProgress(votes);
+        progressBar.setProgressTintList(ColorStateList.valueOf(rank == 1 ? Color.parseColor("#38BDF8") : Color.parseColor("#8B5CF6")));
+        row.addView(progressBar);
+
         card.addView(row);
         containerCandidates.addView(card);
+    }
+
+    private void showCandidateManifestoDialog(String name, String dept, String manifesto) {
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
+        
+        LinearLayout view = new LinearLayout(this);
+        view.setOrientation(LinearLayout.VERTICAL);
+        view.setPadding(56, 56, 56, 56);
+        view.setBackgroundColor(Color.parseColor("#171A29"));
+
+        TextView tvName = new TextView(this);
+        tvName.setText(name);
+        tvName.setTextSize(22f);
+        tvName.setTypeface(null, Typeface.BOLD);
+        tvName.setTextColor(Color.parseColor("#F8FAFC"));
+
+        TextView tvDept = new TextView(this);
+        tvDept.setText(dept);
+        tvDept.setTextSize(15f);
+        tvDept.setTextColor(Color.parseColor("#38BDF8"));
+        tvDept.setPadding(0, 8, 0, 24);
+
+        TextView tvManifestoTitle = new TextView(this);
+        tvManifestoTitle.setText("Election Manifesto & Vision:");
+        tvManifestoTitle.setTextSize(16f);
+        tvManifestoTitle.setTypeface(null, Typeface.BOLD);
+        tvManifestoTitle.setTextColor(Color.parseColor("#CBD5E1"));
+
+        TextView tvManifestoBody = new TextView(this);
+        tvManifestoBody.setText(manifesto);
+        tvManifestoBody.setTextSize(14f);
+        tvManifestoBody.setTextColor(Color.parseColor("#94A3B8"));
+        tvManifestoBody.setPadding(0, 8, 0, 32);
+
+        view.addView(tvName);
+        view.addView(tvDept);
+        view.addView(tvManifestoTitle);
+        view.addView(tvManifestoBody);
+
+        bottomSheetDialog.setContentView(view);
+        bottomSheetDialog.show();
     }
 }

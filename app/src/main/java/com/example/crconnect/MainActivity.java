@@ -21,7 +21,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.core.view.WindowInsetsControllerCompat;
+  import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -184,27 +184,48 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         
-        Toast.makeText(this, "Dev Mode: Logging in...", Toast.LENGTH_SHORT).show();
-        
-        String role = rbTeacher.isChecked() ? "Teacher/Admin" : "Student";
-        String name = rbTeacher.isChecked() ? "Developer Teacher" : "Developer Student";
-        
-      
-        sessionManager.createLoginSession(
-            name, 
-            emailOrId, 
-            "2023-DEV-001", 
-            role, 
-            "55/8", 
-            "55", 
-            "CSE"
-        );
+        Toast.makeText(this, "Logging in...", Toast.LENGTH_SHORT).show();
 
-        // Authenticate with Firebase anonymously so database rules pass
-        FirebaseAuth.getInstance().signInAnonymously().addOnCompleteListener(task -> {
-            navigateBasedOnRole(role);
-            finish();
-        });
+        String sanitizedId = emailOrId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+
+        FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com")
+            .getReference("crconnect_db")
+            .child("users")
+            .child(sanitizedId)
+            .addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    String name, role, id, section, intake, dept;
+                    if (snapshot.exists()) {
+                        name = snapshot.child("name").getValue(String.class);
+                        role = snapshot.child("role").getValue(String.class);
+                        id = snapshot.child("id").getValue(String.class);
+                        section = snapshot.child("section").getValue(String.class);
+                        intake = snapshot.child("intake").getValue(String.class);
+                        dept = snapshot.child("dept").getValue(String.class);
+                    } else {
+                        role = rbTeacher.isChecked() ? "Teacher/Admin" : "Student";
+                        name = rbTeacher.isChecked() ? "Teacher " + emailOrId : "Student " + emailOrId;
+                        id = emailOrId;
+                        section = "55/8";
+                        intake = "55";
+                        dept = "CSE";
+                    }
+
+                    sessionManager.createLoginSession(name, emailOrId, id, role, section, intake, dept);
+
+                    FirebaseAuth.getInstance().signInAnonymously().addOnCompleteListener(task -> {
+                        Toast.makeText(MainActivity.this, "Welcome " + name, Toast.LENGTH_SHORT).show();
+                        navigateBasedOnRole(role);
+                        finish();
+                    });
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Toast.makeText(MainActivity.this, "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
     }
 
     private void fetchUserDataAndSaveSession(String uid) {

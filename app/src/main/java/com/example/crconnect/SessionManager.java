@@ -13,6 +13,7 @@ public class SessionManager {
     private static final String KEY_SECTION = "userSection";
     private static final String KEY_INTAKE = "userIntake";
     private static final String KEY_DEPT = "userDept";
+    private static final String KEY_DARK_MODE = "darkMode";
 
     private SharedPreferences pref;
     private SharedPreferences.Editor editor;
@@ -47,6 +48,15 @@ public class SessionManager {
     public String getUserSection() { return pref.getString(KEY_SECTION, "--"); }
     public String getUserIntake() { return pref.getString(KEY_INTAKE, "--"); }
     public String getUserDept() { return pref.getString(KEY_DEPT, "--"); }
+
+    public void setDarkMode(boolean isDarkMode) {
+        editor.putBoolean(KEY_DARK_MODE, isDarkMode);
+        editor.commit();
+    }
+
+    public boolean isDarkMode() {
+        return pref.getBoolean(KEY_DARK_MODE, true); // Default to Dark mode
+    }
 
     public void logoutUser() {
         editor.clear();
