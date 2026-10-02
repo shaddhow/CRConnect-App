@@ -11,17 +11,124 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingHorizontal="20dp">
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="16dp">
 
         <include layout="@layout/include_header" />
+
+        <!-- Live Statistics Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="20dp"
+            android:layout_marginBottom="24dp"
+            app:cardBackgroundColor="#D9171F2F"
+            app:strokeWidth="1.5dp"
+            app:strokeColor="#334155">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:baselineAligned="false"
+                android:padding="24dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📊 Live Election Statistics"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:textColor="#F8FAFC"
+                    android:layout_marginBottom="16dp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:baselineAligned="false"
+                    android:weightSum="3">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+                        <TextView
+                            android:id="@+id/tvStatTotalVotes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="22sp"
+                            android:textStyle="bold"
+                            android:textColor="#38BDF8"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Votes Cast"
+                            android:textSize="12sp"
+                            android:textColor="#94A3B8"
+                            android:layout_marginTop="4dp"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+                        <TextView
+                            android:id="@+id/tvStatTotalVoters"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="22sp"
+                            android:textStyle="bold"
+                            android:textColor="#10B981"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Voters"
+                            android:textSize="12sp"
+                            android:textColor="#94A3B8"
+                            android:layout_marginTop="4dp"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+                        <TextView
+                            android:id="@+id/tvStatTurnout"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0%"
+                            android:textSize="22sp"
+                            android:textStyle="bold"
+                            android:textColor="#F59E0B"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Turnout"
+                            android:textSize="12sp"
+                            android:textColor="#94A3B8"
+                            android:layout_marginTop="4dp"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Voting Gate Control (Dark Glassmorphism) -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="28dp"
-            app:cardElevation="16dp"
-            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="20dp"
+            android:layout_marginBottom="24dp"
             app:cardBackgroundColor="#D9171F2F"
             app:strokeWidth="1.5dp"
             app:strokeColor="#334155">
@@ -52,7 +159,7 @@
                         android:text="Control student access instantly"
                         android:textSize="13sp"
                         android:textColor="#94A3B8"
-                        android:layout_marginTop="2dp"/>
+                        android:layout_marginTop="4dp"/>
                 </LinearLayout>
 
                 <com.google.android.material.materialswitch.MaterialSwitch
@@ -67,9 +174,9 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="28dp"
-            app:cardElevation="16dp"
-            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="20dp"
+            android:layout_marginBottom="24dp"
             app:cardBackgroundColor="#D9171F2F"
             app:strokeWidth="1.5dp"
             app:strokeColor="#334155">
@@ -78,7 +185,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="24dp">
+                android:padding="28dp">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -103,7 +210,7 @@
                         android:textStyle="bold"
                         android:textColor="#38BDF8"
                         android:background="#2E374A"
-                        android:paddingHorizontal="12dp"
+                        android:paddingHorizontal="14dp"
                         android:paddingVertical="6dp"/>
                 </RelativeLayout>
 
@@ -150,24 +257,24 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="28dp"
-            app:cardElevation="10dp"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="16dp"
             app:cardBackgroundColor="#D9171F2F"
             app:strokeWidth="1.5dp"
             app:strokeColor="#334155"
-            android:layout_marginBottom="24dp">
+            android:layout_marginBottom="28dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="20dp">
+                android:padding="24dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Advanced Controls"
-                    android:textSize="14sp"
+                    android:textSize="15sp"
                     android:textStyle="bold"
                     android:textColor="#94A3B8"
                     android:layout_marginBottom="16dp"/>
@@ -175,7 +282,8 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:baselineAligned="false">
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnRunOff"
@@ -185,7 +293,7 @@
                         android:text="Run-off"
                         android:layout_marginEnd="8dp"
                         app:backgroundTint="#8B5CF6"
-                        app:cornerRadius="14dp"/>
+                        app:cornerRadius="16dp"/>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnResetVotes"
@@ -194,7 +302,7 @@
                         android:layout_weight="1"
                         android:text="Reset All"
                         app:backgroundTint="#EF4444"
-                        app:cornerRadius="14dp"/>
+                        app:cornerRadius="16dp"/>
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -204,7 +312,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingBottom="32dp">
+            android:paddingBottom="40dp">
 
             <TextView
                 android:layout_width="wrap_content"

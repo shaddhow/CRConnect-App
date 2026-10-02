@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -27,12 +28,15 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -47,6 +51,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private MaterialButton btnAddCandidate, btnRunOff, btnResetVotes, btnLogout, btnClearName;
     private ImageView imgUserProfile;
     private TextView tvHeaderTitle, tvHeaderSubtitle, tvTotalCandidates;
+    private TextView tvStatTotalVotes, tvStatTotalVoters, tvStatTurnout;
     private LinearLayout containerAdminCandidates;
     private DatabaseReference dbRef;
     private SessionManager sessionManager;
@@ -101,9 +106,39 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         tvHeaderSubtitle = findViewById(R.id.tvHeaderSubtitle);
         btnLogout = findViewById(R.id.btnLogout);
         tvTotalCandidates = findViewById(R.id.tvTotalCandidates);
+        
+        tvStatTotalVotes = findViewById(R.id.tvStatTotalVotes);
+        tvStatTotalVoters = findViewById(R.id.tvStatTotalVoters);
+        tvStatTurnout = findViewById(R.id.tvStatTurnout);
 
         tvHeaderTitle.setText("Admin Console");
-        tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
+        
+        // Dynamic Teacher Profile Loading from Firebase / Session
+        String rawTeacherId = sessionManager.getUserID();
+        String sanitizedTeacherId = rawTeacherId != null ? rawTeacherId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "";
+        
+        if (!sanitizedTeacherId.isEmpty()) {
+            dbRef.child("users").child(sanitizedTeacherId).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    if (snapshot.exists()) {
+                        String name = snapshot.child("name").getValue(String.class);
+                        String dept = snapshot.child("dept").getValue(String.class);
+                        if (name == null) name = sessionManager.getUserName();
+                        if (dept == null) dept = sessionManager.getUserDept();
+                        tvHeaderSubtitle.setText(name + " (" + dept + ")");
+                    } else {
+                        tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
+                    }
+                }
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
+                }
+            });
+        } else {
+            tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
+        }
 
         Glide.with(this).load(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
 
@@ -113,6 +148,12 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
+        });
+
+        // Clear Name Button
+        btnClearName.setOnClickListener(v -> {
+            etCandidateName.setText("");
+            etCandidateName.clearFocus();
         });
 
         dbRef.child("master_voting_enabled").addValueEventListener(new ValueEventListener() {
@@ -127,6 +168,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         switchMasterVoting.setOnCheckedChangeListener((btn, isChecked) -> {
             dbRef.child("master_voting_enabled").setValue(isChecked);
+            logAdminAction(isChecked ? "Enabled Master Voting" : "Disabled Master Voting");
         });
 
         btnAddCandidate.setOnClickListener(v -> {
@@ -142,14 +184,16 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 Map<String, Object> map = new HashMap<>();
                 map.put("name", name);
                 map.put("votes", 0);
+                map.put("dept", "Department of CSE, BUBT");
+                map.put("manifesto", "Committed to student welfare, transparent CR communication, and academic support sessions.");
 
-                // Clear input immediately so user can type a new name
                 etCandidateName.setText("");
                 etCandidateName.clearFocus();
 
                 dbRef.child("candidates").child(cid).setValue(map)
                     .addOnSuccessListener(aVoid -> {
                         Toast.makeText(this, "Successfully added to student portal!", Toast.LENGTH_SHORT).show();
+                        logAdminAction("Added New Candidate: " + name);
                     })
                     .addOnFailureListener(e -> {
                         Log.e("TeacherDashboard", "Failed to write candidate", e);
@@ -158,25 +202,83 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             }
         });
 
+        // Live Statistics and Candidate List
         dbRef.child("candidates").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 tvTotalCandidates.setText("Total: " + snapshot.getChildrenCount());
                 containerAdminCandidates.removeAllViews();
+                
+                int totalVotes = 0;
                 for (DataSnapshot ds : snapshot.getChildren()) {
-                    addAdminRow(ds.getKey(), ds.child("name").getValue(String.class), ds.child("votes").getValue(Integer.class));
+                    Integer vts = ds.child("votes").getValue(Integer.class);
+                    if (vts != null) totalVotes += vts;
+                    addAdminRow(ds.getKey(), ds.child("name").getValue(String.class), vts);
                 }
+                tvStatTotalVotes.setText(String.valueOf(totalVotes));
             }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {}
         });
 
+        // Live Voters Statistics Count
+        dbRef.child("voters").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                long totalVoters = snapshot.getChildrenCount();
+                tvStatTotalVoters.setText(String.valueOf(totalVoters));
+                
+                // Assuming estimated 50 active registered student voters for turnout percentage
+                int estimatedTotalStudents = 50; 
+                int turnout = (int) Math.min(100, (totalVoters * 100) / estimatedTotalStudents);
+                tvStatTurnout.setText(turnout + "%");
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
+
+        // Safety Confirmation Dialog for Reset All (Material Design 3)
         btnResetVotes.setOnClickListener(v -> {
-            new AlertDialog.Builder(this)
-                .setTitle("Reset Election")
-                .setMessage("Delete all candidates and votes?")
-                .setPositiveButton("Reset", (d, w) -> dbRef.child("candidates").removeValue())
-                .setNegativeButton("Cancel", null).show();
+            new MaterialAlertDialogBuilder(this)
+                .setTitle("⚠️ Reset All Election Data?")
+                .setMessage("This will permanently delete all published candidates, votes, and voter security logs. This action cannot be undone.")
+                .setPositiveButton("Yes, Reset", (d, w) -> {
+                    Map<String, Object> resetMap = new HashMap<>();
+                    resetMap.put("candidates", null);
+                    resetMap.put("voters", null);
+                    dbRef.updateChildren(resetMap).addOnSuccessListener(unused -> {
+                        showSnackBar("Election data successfully reset.", false);
+                        logAdminAction("Reset All Election Votes & Candidates");
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+        });
+
+        // Safety Confirmation Dialog for Run-Off (Material Design 3)
+        btnRunOff.setOnClickListener(v -> {
+            new MaterialAlertDialogBuilder(this)
+                .setTitle("⚡ Initialize Run-Off / Tie-Breaker?")
+                .setMessage("This will reset all vote counts to 0 while keeping the candidate list for a run-off election round. All voter security locks will be cleared. Proceed?")
+                .setPositiveButton("Proceed", (d, w) -> {
+                    dbRef.child("candidates").addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            Map<String, Object> updates = new HashMap<>();
+                            for (DataSnapshot ds : snapshot.getChildren()) {
+                                updates.put(ds.getKey() + "/votes", 0);
+                            }
+                            dbRef.child("candidates").updateChildren(updates);
+                            dbRef.child("voters").removeValue();
+                            showSnackBar("Run-off election round initialized!", false);
+                            logAdminAction("Initialized Run-Off Election Round");
+                        }
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {}
+                    });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
         });
     }
 
@@ -217,18 +319,21 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         MaterialButton btnDelete = new MaterialButton(this);
         btnDelete.setText("Delete");
         btnDelete.setTextSize(12f);
-        btnDelete.setCornerRadius(14);
-        btnDelete.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#F87171")));
+        btnDelete.setCornerRadius(16);
+        btnDelete.setStrokeWidth(2);
+        btnDelete.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#F87171")));
+        btnDelete.setTextColor(Color.parseColor("#F87171"));
+        btnDelete.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
         btnDelete.setLayoutParams(new LinearLayout.LayoutParams(-2, -2));
 
         btnDelete.setOnClickListener(v -> {
-            new AlertDialog.Builder(this)
+            new MaterialAlertDialogBuilder(this)
                 .setTitle("Delete Candidate")
                 .setMessage("Remove " + name + "?")
                 .setPositiveButton("Delete", (d, w) -> {
                     if (candidateId != null) {
                         dbRef.child("candidates").child(candidateId).removeValue()
-                            .addOnSuccessListener(aVoid -> Toast.makeText(this, "Candidate removed", Toast.LENGTH_SHORT).show());
+                            .addOnSuccessListener(aVoid -> showSnackBar("Candidate removed", false));
                     }
                 })
                 .setNegativeButton("Cancel", null)
@@ -239,5 +344,39 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         row.addView(btnDelete);
         card.addView(row);
         containerAdminCandidates.addView(card);
+    }
+
+    private void showSnackBar(String message, boolean isError) {
+        View rootView = findViewById(android.R.id.content);
+        Snackbar snackbar = Snackbar.make(rootView, (isError ? "⚠️  " : "✅  ") + message, Snackbar.LENGTH_LONG);
+        View sbView = snackbar.getView();
+        sbView.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(isError ? "#E6EF4444" : "#E610B981")));
+        
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) sbView.getLayoutParams();
+        params.setMargins(32, 0, 32, 32);
+        sbView.setLayoutParams(params);
+        
+        TextView tv = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
+        tv.setTextColor(Color.parseColor("#F8FAFC"));
+        tv.setTypeface(null, Typeface.BOLD);
+        snackbar.show();
+    }
+
+    private void logAdminAction(String actionDescription) {
+        String teacherName = sessionManager.getUserName();
+        String teacherEmail = sessionManager.getUserEmail();
+        String teacherId = sessionManager.getUserID();
+
+        String logId = dbRef.child("audit_logs").push().getKey();
+        if (logId != null) {
+            Map<String, Object> logMap = new HashMap<>();
+            logMap.put("teacherName", teacherName);
+            logMap.put("teacherEmail", teacherEmail);
+            logMap.put("teacherId", teacherId);
+            logMap.put("action", actionDescription);
+            logMap.put("timestamp", ServerValue.TIMESTAMP);
+
+            dbRef.child("audit_logs").child(logId).setValue(logMap);
+        }
     }
 }

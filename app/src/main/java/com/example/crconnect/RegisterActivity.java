@@ -1,19 +1,19 @@
 package com.example.crconnect;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
-import android.text.InputType;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -21,6 +21,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
@@ -28,13 +29,12 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    private TextInputEditText etFullName, etRegEmail, etIdCode, etRegPassword, etSection, etIntake, etDept;
+    private TextInputEditText etFullName, etRegEmail, etStudentId, etTeacherCode, etRegPassword, etSection, etIntake, etDept;
     private RadioGroup radioGroupRole;
-    private View layoutStudentFields;
+    private View layoutStudentFields, tilStudentId, tilTeacherCode;
     private RadioButton rbTeacher, rbStudent;
     private Button btnRegister;
     private TextView tvLoginLink;
@@ -66,7 +66,10 @@ public class RegisterActivity extends AppCompatActivity {
 
         etFullName = findViewById(R.id.etFullName);
         etRegEmail = findViewById(R.id.etRegEmail);
-        etIdCode = findViewById(R.id.etIdCode);
+        etStudentId = findViewById(R.id.etStudentId);
+        etTeacherCode = findViewById(R.id.etTeacherCode);
+        tilStudentId = findViewById(R.id.tilStudentId);
+        tilTeacherCode = findViewById(R.id.tilTeacherCode);
         etRegPassword = findViewById(R.id.etRegPassword);
         etSection = findViewById(R.id.etSection);
         etIntake = findViewById(R.id.etIntake);
@@ -81,8 +84,14 @@ public class RegisterActivity extends AppCompatActivity {
         radioGroupRole.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rbTeacher) {
                 layoutStudentFields.setVisibility(View.GONE);
+                tilStudentId.setVisibility(View.GONE);
+                tilTeacherCode.setVisibility(View.VISIBLE);
+                etStudentId.setText("");
             } else {
                 layoutStudentFields.setVisibility(View.VISIBLE);
+                tilStudentId.setVisibility(View.VISIBLE);
+                tilTeacherCode.setVisibility(View.GONE);
+                etTeacherCode.setText("");
             }
         });
 
@@ -127,6 +136,12 @@ public class RegisterActivity extends AppCompatActivity {
 
         boolean isStudent = rbStudent != null && rbStudent.isChecked();
 
+        if (id.isEmpty()) {
+            etIdCode.setError(isStudent ? "Student ID is required!" : "Teacher Code/ID is required!");
+            etIdCode.requestFocus();
+            return;
+        }
+
         if (isStudent) {
             if (section.isEmpty()) { etSection.setError("Required"); etSection.requestFocus(); return; }
             if (intake.isEmpty()) { etIntake.setError("Required"); etIntake.requestFocus(); return; }
@@ -141,56 +156,58 @@ public class RegisterActivity extends AppCompatActivity {
 
         String role = isStudent ? "Student" : "Teacher/Admin";
 
-        // Generate 6-digit verification OTP code
-        String generatedOtp = String.valueOf(100000 + new Random().nextInt(900000));
+        // Show loading state on button
+        btnRegister.setEnabled(false);
+        btnRegister.setText("Creating Account...");
 
-        // Trigger OTP Verification Dialog
-        showOtpVerificationDialog(name, email, id, role, section, intake, dept, generatedOtp);
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnSuccessListener(authResult -> {
+                String uid = authResult.getUser() != null ? authResult.getUser().getUid() : id;
+                String sanitizedId = id.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+
+                DatabaseReference dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
+
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("name", name);
+                userMap.put("email", email);
+                userMap.put("id", id);
+                userMap.put("role", role);
+                userMap.put("section", isStudent ? section : "--");
+                userMap.put("intake", isStudent ? intake : "--");
+                userMap.put("dept", isStudent ? dept : "Department of CSE, BUBT");
+                userMap.put("deviceId", Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID));
+
+                dbRef.child("users").child(uid).setValue(userMap);
+                dbRef.child("users").child(sanitizedId).setValue(userMap);
+
+                sessionManager.createLoginSession(name, email, id, role, isStudent ? section : "--", isStudent ? intake : "--", isStudent ? dept : "CSE");
+
+                showSnackBar("✅ Registration Successful!", false);
+                navigateBasedOnRole(role);
+                finish();
+            })
+            .addOnFailureListener(e -> {
+                btnRegister.setEnabled(true);
+                btnRegister.setText("REGISTER");
+                showSnackBar("⚠️ Registration Failed: " + e.getMessage(), true);
+            });
     }
 
-    private void showOtpVerificationDialog(String name, String email, String id, String role, String section, String intake, String dept, String expectedOtp) {
-        EditText inputOtp = new EditText(this);
-        inputOtp.setHint("Enter 6-digit verification code");
-        inputOtp.setInputType(InputType.TYPE_CLASS_NUMBER);
-        inputOtp.setPadding(50, 40, 50, 40);
-
-        // Show Toast with OTP code for institutional verification
-        Toast.makeText(this, "Verification OTP sent to " + email + "\n[Code: " + expectedOtp + "]", Toast.LENGTH_LONG).show();
-
-        new AlertDialog.Builder(this)
-            .setTitle("BUBT Email Verification")
-            .setMessage("OTP Code sent to " + email + "\n\n(Sandbox Mode Code: " + expectedOtp + ")\n\nPlease enter the 6-digit code below:")
-            .setView(inputOtp)
-            .setPositiveButton("Verify & Register", (dialog, which) -> {
-                String enteredOtp = inputOtp.getText() != null ? inputOtp.getText().toString().trim() : "";
-                if (enteredOtp.equals(expectedOtp)) {
-                    sessionManager.createLoginSession(name, email, id, role, section, intake, dept);
-
-                    DatabaseReference dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
-                    String sanitizedId = id.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
-
-                    Map<String, Object> userMap = new HashMap<>();
-                    userMap.put("name", name);
-                    userMap.put("email", email);
-                    userMap.put("id", id);
-                    userMap.put("role", role);
-                    userMap.put("section", section);
-                    userMap.put("intake", intake);
-                    userMap.put("dept", dept);
-
-                    dbRef.child("users").child(sanitizedId).setValue(userMap);
-
-                    FirebaseAuth.getInstance().signInAnonymously().addOnCompleteListener(task -> {
-                        Toast.makeText(this, "Email Verified & Registration Successful!", Toast.LENGTH_SHORT).show();
-                        navigateBasedOnRole(role);
-                        finish();
-                    });
-                } else {
-                    Toast.makeText(this, "Invalid Verification Code! Please try again.", Toast.LENGTH_SHORT).show();
-                }
-            })
-            .setNegativeButton("Cancel", null)
-            .show();
+    private void showSnackBar(String message, boolean isError) {
+        View rootView = findViewById(android.R.id.content);
+        Snackbar snackbar = Snackbar.make(rootView, message, Snackbar.LENGTH_LONG);
+        View sbView = snackbar.getView();
+        sbView.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(isError ? "#EF4444" : "#10B981")));
+        
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) sbView.getLayoutParams();
+        params.setMargins(32, 0, 32, 32);
+        sbView.setLayoutParams(params);
+        
+        TextView tv = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
+        tv.setTextColor(Color.parseColor("#F8FAFC"));
+        tv.setTypeface(null, Typeface.BOLD);
+        snackbar.show();
     }
 
     private void navigateBasedOnRole(String role) {

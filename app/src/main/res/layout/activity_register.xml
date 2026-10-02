@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
+    android:clipToPadding="false"
     android:background="@drawable/bg_gradient"
     tools:context=".RegisterActivity">
 
@@ -13,13 +14,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:clipToPadding="false"
         android:paddingHorizontal="24dp"
-        android:paddingVertical="36dp">
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+        android:paddingTop="36dp"
+        android:paddingBottom="120dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -35,7 +33,7 @@
             android:text="Join CRConnect Network"
             android:textSize="14sp"
             android:textColor="#94A3B8"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="24dp"
             android:layout_marginTop="4dp"/>
 
         <!-- Register Card (Figma Dark Glassmorphism) -->
@@ -46,12 +44,14 @@
             app:cardElevation="24dp"
             app:cardBackgroundColor="#E61E293B"
             app:strokeWidth="1.5dp"
-            app:strokeColor="#334155">
+            app:strokeColor="#334155"
+            android:layout_marginBottom="24dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
+                android:clipToPadding="false"
                 android:padding="24dp">
 
                 <RadioGroup
@@ -60,7 +60,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center"
-                    android:layout_marginBottom="20dp">
+                    android:layout_marginBottom="8dp">
 
                     <RadioButton
                         android:id="@+id/rbStudent"
@@ -88,13 +88,17 @@
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
-                    app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="4dp"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                    app:boxBackgroundColor="#141C2E"
                     app:boxStrokeColor="#6366F1"
                     app:hintTextColor="#6366F1"
-                    android:textColorHint="#94A3B8">
+                    android:textColorHint="#94A3B8"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etFullName"
@@ -102,25 +106,32 @@
                         android:layout_height="wrap_content"
                         android:hint="Full Name"
                         android:textColor="#FFFFFF"
-                        android:textSize="15sp"/>
+                        android:textSize="15sp"
+                        android:inputType="textPersonName|textCapWords"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
-                    app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="4dp"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                    app:boxBackgroundColor="#141C2E"
                     app:boxStrokeColor="#6366F1"
                     app:hintTextColor="#6366F1"
-                    android:textColorHint="#94A3B8">
+                    android:textColorHint="#94A3B8"
+                    app:helperText="e.g., @bubt.edu.bd"
+                    app:helperTextTextColor="#94A3B8"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etRegEmail"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="BUBT Email (e.g., @cse.bubt.edu.bd)"
+                        android:hint="BUBT Email"
                         android:inputType="textEmailAddress"
                         android:textColor="#FFFFFF"
                         android:textSize="15sp"/>
@@ -129,19 +140,23 @@
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
-                    app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="4dp"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                    app:boxBackgroundColor="#141C2E"
                     app:boxStrokeColor="#6366F1"
                     app:hintTextColor="#6366F1"
-                    android:textColorHint="#94A3B8">
+                    android:textColorHint="#94A3B8"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etIdCode"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Student ID / Teacher Code"
+                        android:hint="Student ID"
                         android:textColor="#FFFFFF"
                         android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
@@ -156,19 +171,25 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
-                        app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="4dp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                        app:boxBackgroundColor="#141C2E"
                         app:boxStrokeColor="#6366F1"
                         app:hintTextColor="#6366F1"
-                        android:textColorHint="#94A3B8">
+                        android:textColorHint="#94A3B8"
+                        app:helperText="e.g., 55/8"
+                        app:helperTextTextColor="#94A3B8"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etSection"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="Section (e.g., 55/8)"
+                            android:hint="Section"
                             android:textColor="#FFFFFF"
                             android:textSize="15sp"/>
                     </com.google.android.material.textfield.TextInputLayout>
@@ -176,19 +197,25 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
-                        app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="4dp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                        app:boxBackgroundColor="#141C2E"
                         app:boxStrokeColor="#6366F1"
                         app:hintTextColor="#6366F1"
-                        android:textColorHint="#94A3B8">
+                        android:textColorHint="#94A3B8"
+                        app:helperText="e.g., 55"
+                        app:helperTextTextColor="#94A3B8"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etIntake"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="Intake (e.g., 55)"
+                            android:hint="Intake"
                             android:textColor="#FFFFFF"
                             android:textSize="15sp"/>
                     </com.google.android.material.textfield.TextInputLayout>
@@ -196,19 +223,25 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
-                        app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="4dp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                        app:boxBackgroundColor="#141C2E"
                         app:boxStrokeColor="#6366F1"
                         app:hintTextColor="#6366F1"
-                        android:textColorHint="#94A3B8">
+                        android:textColorHint="#94A3B8"
+                        app:helperText="e.g., CSE"
+                        app:helperTextTextColor="#94A3B8"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etDept"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="Department (e.g., CSE)"
+                            android:hint="Department"
                             android:textColor="#FFFFFF"
                             android:textSize="15sp"/>
                     </com.google.android.material.textfield.TextInputLayout>
@@ -218,20 +251,25 @@
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="18dp"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="14dp" app:boxCornerRadiusTopEnd="14dp"
-                    app:boxCornerRadiusBottomStart="14dp" app:boxCornerRadiusBottomEnd="14dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="24dp"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                    app:boxBackgroundColor="#141C2E"
                     app:boxStrokeColor="#6366F1"
                     app:hintTextColor="#6366F1"
-                    android:textColorHint="#94A3B8"
-                    app:endIconMode="password_toggle" app:endIconTint="#94A3B8">
+     android:textColorHint="#94A3B8"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="#94A3B8">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etRegPassword"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Create Password"
+                        android:hint="Password"
                         android:inputType="textPassword"
                         android:textColor="#FFFFFF"
                         android:textSize="15sp"/>
@@ -240,13 +278,13 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnRegister"
                     android:layout_width="match_parent"
-                    android:layout_height="54dp"
+                    android:layout_height="56dp"
                     android:text="REGISTER"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     app:backgroundTint="#6366F1"
                     app:cornerRadius="16dp"
-                    android:layout_marginBottom="14dp"/>
+                    android:layout_marginBottom="16dp"/>
 
                 <TextView
                     android:id="@+id/tvLoginLink"
@@ -261,11 +299,6 @@
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
 
     </LinearLayout>
 </ScrollView>

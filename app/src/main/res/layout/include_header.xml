@@ -5,19 +5,19 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center"
-    android:paddingTop="36dp"
-    android:paddingBottom="24dp">
+    android:paddingTop="28dp"
+    android:paddingBottom="20dp">
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/imgUserProfile"
-        android:layout_width="84dp"
-        android:layout_height="84dp"
+        android:layout_width="92dp"
+        android:layout_height="92dp"
         android:src="@drawable/ic_app_main"
         android:scaleType="centerCrop"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Circular"
         android:padding="2dp"
         app:strokeWidth="3dp"
-        app:strokeColor="#6366F1"
+        app:strokeColor="#38BDF8"
         android:layout_marginBottom="14dp"/>
 
     <TextView
@@ -40,12 +40,25 @@
         android:alpha="0.95"
         android:layout_marginTop="4dp"/>
 
+    <!-- Live Secure Status Badge -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🟢 Live Secure • Encrypted"
+        android:textSize="12sp"
+        android:textColor="#10B981"
+        android:textStyle="bold"
+        android:background="#2610B981"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="5dp"
+        android:layout_marginTop="10dp"/>
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLogout"
         style="@style/Widget.Material3.Button.IconButton"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         app:icon="@android:drawable/ic_lock_power_off"
         app:iconTint="#F8FAFC"
         app:iconSize="20dp"
