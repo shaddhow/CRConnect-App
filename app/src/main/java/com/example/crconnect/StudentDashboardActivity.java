@@ -25,11 +25,14 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,6 +89,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
                 finish();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             }
         });
 
@@ -117,6 +121,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
         // Check if student has already voted (Anti-Dual-Voting Security)
@@ -160,12 +165,95 @@ public class StudentDashboardActivity extends AppCompatActivity {
     }
 
     private void displayStudentProfile() {
+        // Display local cached values from SessionManager first
         tvStudentName.setText(sessionManager.getUserName());
         tvStudentDetailsID.setText(sessionManager.getUserID());
         tvStudentIntake.setText(sessionManager.getUserIntake());
         tvStudentSection.setText(sessionManager.getUserSection());
         tvStudentDept.setText(sessionManager.getUserDept());
         tvHeaderSubtitle.setText("Dashboard | " + sessionManager.getUserDept());
+
+        // Fetch fresh profile details from Firebase Realtime Database & Firestore
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String uid = currentUser != null ? currentUser.getUid() : "";
+
+        ValueEventListener listener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    String name = snapshot.child("name").getValue(String.class);
+                    String id = snapshot.child("id").getValue(String.class);
+                    String intake = snapshot.child("intake").getValue(String.class);
+                    String section = snapshot.child("section").getValue(String.class);
+                    String dept = snapshot.child("dept").getValue(String.class);
+                    String email = snapshot.child("email").getValue(String.class);
+                    String role = snapshot.child("role").getValue(String.class);
+
+                    if (name != null) tvStudentName.setText(name);
+                    if (id != null) tvStudentDetailsID.setText(id);
+                    if (intake != null) tvStudentIntake.setText(intake);
+                    if (section != null) tvStudentSection.setText(section);
+                    if (dept != null) {
+                        tvStudentDept.setText(dept);
+                        tvHeaderSubtitle.setText("Dashboard | " + dept);
+                    }
+
+                    sessionManager.createLoginSession(
+                        name != null ? name : sessionManager.getUserName(),
+                        email != null ? email : sessionManager.getUserEmail(),
+                        id != null ? id : sessionManager.getUserID(),
+                        role != null ? role : sessionManager.getUserRole(),
+                        section != null ? section : sessionManager.getUserSection(),
+                        intake != null ? intake : sessionManager.getUserIntake(),
+                        dept != null ? dept : sessionManager.getUserDept()
+                    );
+                } else if (!uid.isEmpty()) {
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(uid)
+                        .get()
+                        .addOnSuccessListener(doc -> {
+                            if (doc.exists()) {
+                                String name = doc.getString("name");
+                                String id = doc.getString("id");
+                                String intake = doc.getString("intake");
+                                String section = doc.getString("section");
+                                String dept = doc.getString("dept");
+                                String email = doc.getString("email");
+                                String role = doc.getString("role");
+
+                                if (name != null) tvStudentName.setText(name);
+                                if (id != null) tvStudentDetailsID.setText(id);
+                                if (intake != null) tvStudentIntake.setText(intake);
+                                if (section != null) tvStudentSection.setText(section);
+                                if (dept != null) {
+                                    tvStudentDept.setText(dept);
+                                    tvHeaderSubtitle.setText("Dashboard | " + dept);
+                                }
+
+                                sessionManager.createLoginSession(
+                                    name != null ? name : sessionManager.getUserName(),
+                                    email != null ? email : sessionManager.getUserEmail(),
+                                    id != null ? id : sessionManager.getUserID(),
+                                    role != null ? role : sessionManager.getUserRole(),
+                                    section != null ? section : sessionManager.getUserSection(),
+                                    intake != null ? intake : sessionManager.getUserIntake(),
+                                    dept != null ? dept : sessionManager.getUserDept()
+                                );
+                            }
+                        });
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        };
+
+        if (!uid.isEmpty()) {
+            dbRef.child("users").child(uid).addListenerForSingleValueEvent(listener);
+        } else if (sanitizedStudentId != null && !sanitizedStudentId.isEmpty()) {
+            dbRef.child("users").child(sanitizedStudentId).addListenerForSingleValueEvent(listener);
+        }
     }
 
     private void updateStatusText() {

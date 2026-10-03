@@ -32,12 +32,15 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,6 +91,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
                 finish();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             }
         });
 
@@ -113,29 +117,62 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         tvHeaderTitle.setText("Admin Console");
         
-        // Dynamic Teacher Profile Loading from Firebase / Session
+        // Dynamic Teacher Profile Loading from Firebase Realtime Database & Firestore
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String uid = currentUser != null ? currentUser.getUid() : "";
         String rawTeacherId = sessionManager.getUserID();
         String sanitizedTeacherId = rawTeacherId != null ? rawTeacherId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "";
-        
-        if (!sanitizedTeacherId.isEmpty()) {
-            dbRef.child("users").child(sanitizedTeacherId).addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    if (snapshot.exists()) {
-                        String name = snapshot.child("name").getValue(String.class);
-                        String dept = snapshot.child("dept").getValue(String.class);
-                        if (name == null) name = sessionManager.getUserName();
-                        if (dept == null) dept = sessionManager.getUserDept();
-                        tvHeaderSubtitle.setText(name + " (" + dept + ")");
-                    } else {
-                        tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
-                    }
-                }
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
+
+        ValueEventListener teacherListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    String name = snapshot.child("name").getValue(String.class);
+                    String dept = snapshot.child("dept").getValue(String.class);
+                    if (name == null) name = sessionManager.getUserName();
+                    if (dept == null) dept = sessionManager.getUserDept();
+                    tvHeaderSubtitle.setText(name + " (" + dept + ")");
+
+                    sessionManager.createLoginSession(
+                        name,
+                        snapshot.child("email").getValue(String.class) != null ? snapshot.child("email").getValue(String.class) : sessionManager.getUserEmail(),
+                        snapshot.child("id").getValue(String.class) != null ? snapshot.child("id").getValue(String.class) : sessionManager.getUserID(),
+                        "Teacher/Admin",
+                        "--",
+                        "--",
+                        dept
+                    );
+                } else if (!uid.isEmpty()) {
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(uid)
+                        .get()
+                        .addOnSuccessListener(doc -> {
+                            if (doc.exists()) {
+                                String name = doc.getString("name");
+                                String dept = doc.getString("dept");
+                                if (name == null) name = sessionManager.getUserName();
+                                if (dept == null) dept = sessionManager.getUserDept();
+                                tvHeaderSubtitle.setText(name + " (" + dept + ")");
+                            } else {
+                                tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
+                            }
+                        });
+                } else {
                     tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
                 }
-            });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
+            }
+        };
+
+        if (!uid.isEmpty()) {
+            dbRef.child("users").child(uid).addListenerForSingleValueEvent(teacherListener);
+        } else if (!sanitizedTeacherId.isEmpty()) {
+            dbRef.child("users").child(sanitizedTeacherId).addListenerForSingleValueEvent(teacherListener);
         } else {
             tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
         }
@@ -148,6 +185,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
         // Clear Name Button
