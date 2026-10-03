@@ -8,6 +8,7 @@
         <item name="colorOnSurface">@color/text_primary</item>
         <item name="colorOnSurfaceVariant">@color/text_secondary</item>
         <item name="colorError">@color/error</item>
+        <item name="android:windowActivityTransitions">true</item>
     </style>
 
     <style name="Theme.CRConnect" parent="Base.Theme.CRConnect" />

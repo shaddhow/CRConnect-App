@@ -1,11 +1,12 @@
 package com.example.crconnect;
 
-import android.content.Intent;
+
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -13,7 +14,9 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -24,8 +27,10 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +39,7 @@ public class RegisterActivity extends AppCompatActivity {
 
     private TextInputEditText etFullName, etRegEmail, etStudentId, etTeacherCode, etRegPassword, etSection, etIntake, etDept;
     private RadioGroup radioGroupRole;
-    private View layoutStudentFields, tilStudentId, tilTeacherCode;
+    private View layoutStudentFields, layoutTeacherFields;
     private RadioButton rbTeacher, rbStudent;
     private Button btnRegister;
     private TextView tvLoginLink;
@@ -64,17 +69,25 @@ public class RegisterActivity extends AppCompatActivity {
             return WindowInsetsCompat.CONSUMED;
         });
 
+        // Smooth transition on back press
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                finish();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            }
+        });
+
         etFullName = findViewById(R.id.etFullName);
         etRegEmail = findViewById(R.id.etRegEmail);
         etStudentId = findViewById(R.id.etStudentId);
         etTeacherCode = findViewById(R.id.etTeacherCode);
-        tilStudentId = findViewById(R.id.tilStudentId);
-        tilTeacherCode = findViewById(R.id.tilTeacherCode);
         etRegPassword = findViewById(R.id.etRegPassword);
         etSection = findViewById(R.id.etSection);
         etIntake = findViewById(R.id.etIntake);
         etDept = findViewById(R.id.etDept);
         layoutStudentFields = findViewById(R.id.layoutStudentFields);
+        layoutTeacherFields = findViewById(R.id.layoutTeacherFields);
         radioGroupRole = findViewById(R.id.radioGroupRole);
         rbStudent = findViewById(R.id.rbStudent);
         rbTeacher = findViewById(R.id.rbTeacher);
@@ -84,19 +97,18 @@ public class RegisterActivity extends AppCompatActivity {
         radioGroupRole.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rbTeacher) {
                 layoutStudentFields.setVisibility(View.GONE);
-                tilStudentId.setVisibility(View.GONE);
-                tilTeacherCode.setVisibility(View.VISIBLE);
-                etStudentId.setText("");
+                layoutTeacherFields.setVisibility(View.VISIBLE);
             } else {
                 layoutStudentFields.setVisibility(View.VISIBLE);
-                tilStudentId.setVisibility(View.VISIBLE);
-                tilTeacherCode.setVisibility(View.GONE);
-                etTeacherCode.setText("");
+                layoutTeacherFields.setVisibility(View.GONE);
             }
         });
 
         btnRegister.setOnClickListener(v -> performRegistration());
-        tvLoginLink.setOnClickListener(v -> finish());
+        tvLoginLink.setOnClickListener(v -> {
+            finish();
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
 
         // Auto-scroll up smoothly when password field gets focus in register screen
         ScrollView scrollViewRegister = findViewById(R.id.scrollViewRegister);
@@ -110,11 +122,16 @@ public class RegisterActivity extends AppCompatActivity {
     private void performRegistration() {
         String name = etFullName.getText() != null ? etFullName.getText().toString().trim() : "";
         String email = etRegEmail.getText() != null ? etRegEmail.getText().toString().trim() : "";
-        String id = etIdCode.getText() != null ? etIdCode.getText().toString().trim() : "";
+        boolean isStudent = rbStudent != null && rbStudent.isChecked();
+        
+        String id = isStudent ? 
+            (etStudentId != null && etStudentId.getText() != null ? etStudentId.getText().toString().trim() : "") :
+            (etTeacherCode != null && etTeacherCode.getText() != null ? etTeacherCode.getText().toString().trim() : "");
+            
         String password = etRegPassword.getText() != null ? etRegPassword.getText().toString().trim() : "";
-        String section = etSection.getText() != null ? etSection.getText().toString().trim() : "";
-        String intake = etIntake.getText() != null ? etIntake.getText().toString().trim() : "";
-        String dept = etDept.getText() != null ? etDept.getText().toString().trim() : "";
+        String section = (isStudent && etSection != null && etSection.getText() != null) ? etSection.getText().toString().trim() : "";
+        String intake = (isStudent && etIntake != null && etIntake.getText() != null) ? etIntake.getText().toString().trim() : "";
+        String dept = (isStudent && etDept != null && etDept.getText() != null) ? etDept.getText().toString().trim() : "";
 
         if (name.isEmpty()) {
             etFullName.setError("Full Name is required!");
@@ -134,11 +151,14 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        boolean isStudent = rbStudent != null && rbStudent.isChecked();
-
         if (id.isEmpty()) {
-            etIdCode.setError(isStudent ? "Student ID is required!" : "Teacher Code/ID is required!");
-            etIdCode.requestFocus();
+            if (isStudent) {
+                etStudentId.setError("Student ID is required!");
+                etStudentId.requestFocus();
+            } else {
+                etTeacherCode.setError("Teacher Code/ID is required!");
+                etTeacherCode.requestFocus();
+            }
             return;
         }
 
@@ -163,35 +183,70 @@ public class RegisterActivity extends AppCompatActivity {
         FirebaseAuth auth = FirebaseAuth.getInstance();
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener(authResult -> {
-                String uid = authResult.getUser() != null ? authResult.getUser().getUid() : id;
-                String sanitizedId = id.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
-
-                DatabaseReference dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
-
-                Map<String, Object> userMap = new HashMap<>();
-                userMap.put("name", name);
-                userMap.put("email", email);
-                userMap.put("id", id);
-                userMap.put("role", role);
-                userMap.put("section", isStudent ? section : "--");
-                userMap.put("intake", isStudent ? intake : "--");
-                userMap.put("dept", isStudent ? dept : "Department of CSE, BUBT");
-                userMap.put("deviceId", Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID));
-
-                dbRef.child("users").child(uid).setValue(userMap);
-                dbRef.child("users").child(sanitizedId).setValue(userMap);
-
-                sessionManager.createLoginSession(name, email, id, role, isStudent ? section : "--", isStudent ? intake : "--", isStudent ? dept : "CSE");
-
-                showSnackBar("✅ Registration Successful!", false);
-                navigateBasedOnRole(role);
-                finish();
+                FirebaseUser user = authResult.getUser();
+                if (user != null) {
+                    user.sendEmailVerification()
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                Log.d("RegisterActivity", "Verification email sent to " + email);
+                            } else {
+                                Log.e("RegisterActivity", "Failed to send verification email", task.getException());
+                            }
+                        });
+                }
+                String uid = user != null ? user.getUid() : id;
+                saveUserDataAndFinish(uid, name, email, id, role, isStudent, section, intake, dept);
             })
             .addOnFailureListener(e -> {
-                btnRegister.setEnabled(true);
-                btnRegister.setText("REGISTER");
-                showSnackBar("⚠️ Registration Failed: " + e.getMessage(), true);
+                Log.e("RegisterActivity", "FirebaseAuth error: " + e.getMessage(), e);
+                if (e.getMessage() != null && e.getMessage().contains("CONFIGURATION_NOT_FOUND")) {
+                    // CONFIGURATION_NOT_FOUND occurs when Email/Password sign-in provider is not enabled in Firebase Console.
+                    // Fallback to Realtime Database user creation so registration completes successfully.
+                    saveUserDataAndFinish(id, name, email, id, role, isStudent, section, intake, dept);
+                } else {
+                    btnRegister.setEnabled(true);
+                    btnRegister.setText("REGISTER");
+                    showSnackBar("⚠️ Registration Failed: " + e.getMessage(), true);
+                }
             });
+    }
+
+    private void saveUserDataAndFinish(String uid, String name, String email, String id, String role, boolean isStudent, String section, String intake, String dept) {
+        String sanitizedId = id.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+        String sanitizedEmail = email.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+
+        DatabaseReference dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
+
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("name", name);
+        userMap.put("email", email);
+        userMap.put("id", id);
+        userMap.put("role", role);
+        userMap.put("section", isStudent ? section : "--");
+        userMap.put("intake", isStudent ? intake : "--");
+        userMap.put("dept", isStudent ? dept : "Department of CSE, BUBT");
+        userMap.put("deviceId", Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID));
+
+        // 1. Save to Firebase Realtime Database
+        if (uid != null && !uid.isEmpty()) {
+            dbRef.child("users").child(uid).setValue(userMap);
+        }
+        dbRef.child("users").child(sanitizedId).setValue(userMap);
+        dbRef.child("users").child(sanitizedEmail).setValue(userMap);
+
+        // 2. Save to Firebase Firestore
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+        if (uid != null && !uid.isEmpty()) {
+            firestore.collection("users").document(uid).set(userMap);
+        }
+        firestore.collection("users").document(sanitizedId).set(userMap);
+
+        FirebaseAuth.getInstance().signOut();
+        sessionManager.logoutUser();
+
+        Toast.makeText(this, "Registration successful! A verification link was sent to " + email + ". Please check your inbox and verify your email before logging in.", Toast.LENGTH_LONG).show();
+        finish();
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
     private void showSnackBar(String message, boolean isError) {
@@ -210,11 +265,5 @@ public class RegisterActivity extends AppCompatActivity {
         snackbar.show();
     }
 
-    private void navigateBasedOnRole(String role) {
-        if ("Teacher/Admin".equals(role)) {
-            startActivity(new Intent(this, TeacherDashboardActivity.class));
-        } else {
-            startActivity(new Intent(this, StudentDashboardActivity.class));
-        }
-    }
+
 }

@@ -137,36 +137,36 @@
                         android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginBottom="4dp"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
-                    app:boxBackgroundColor="#141C2E"
-                    app:boxStrokeColor="#6366F1"
-                    app:hintTextColor="#6366F1"
-                    android:textColorHint="#94A3B8"
-                    app:boxCornerRadiusTopStart="12dp"
-                    app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp"
-                    app:boxCornerRadiusBottomEnd="12dp">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etIdCode"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Student ID"
-                        android:textColor="#FFFFFF"
-                        android:textSize="15sp"/>
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- New Profile Fields -->
+                <!-- Student Specific Fields Container -->
                 <LinearLayout
                     android:id="@+id/layoutStudentFields"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="4dp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                        app:boxBackgroundColor="#141C2E"
+                        app:boxStrokeColor="#6366F1"
+                        app:hintTextColor="#6366F1"
+                        android:textColorHint="#94A3B8"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etStudentId"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Student ID"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp"/>
+                    </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
@@ -248,6 +248,40 @@
 
                 </LinearLayout>
 
+                <!-- Teacher Specific Fields Container -->
+                <LinearLayout
+                    android:id="@+id/layoutTeacherFields"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="4dp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                        app:boxBackgroundColor="#141C2E"
+                        app:boxStrokeColor="#6366F1"
+                        app:hintTextColor="#6366F1"
+                        android:textColorHint="#94A3B8"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etTeacherCode"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Teacher Code / ID"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -257,7 +291,7 @@
                     app:boxBackgroundColor="#141C2E"
                     app:boxStrokeColor="#6366F1"
                     app:hintTextColor="#6366F1"
-     android:textColorHint="#94A3B8"
+                    android:textColorHint="#94A3B8"
                     app:boxCornerRadiusTopStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"

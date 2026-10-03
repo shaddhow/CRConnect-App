@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -27,10 +28,13 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import android.util.Log;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -45,23 +49,38 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        sessionManager = new SessionManager(this);
-        if (sessionManager.isLoggedIn()) {
-            navigateBasedOnRole(sessionManager.getUserRole());
-            finish();
-            return;
-        }
 
         // --- TRUE FULL SCREEN (GOOGLE STYLE) ---
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
         
-        // Force the gradient background to the entire window (Removes white bars)
+        // Force the gradient background to the entire window (Removes white bars / black flashes)
         getWindow().setBackgroundDrawable(ContextCompat.getDrawable(this, R.drawable.bg_gradient));
 
         setContentView(R.layout.activity_main);
+        
+        sessionManager = new SessionManager(this);
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null && !currentUser.isAnonymous()) {
+            currentUser.reload().addOnCompleteListener(task -> {
+                FirebaseUser refreshedUser = FirebaseAuth.getInstance().getCurrentUser();
+                if (refreshedUser != null && !refreshedUser.isEmailVerified()) {
+                    FirebaseAuth.getInstance().signOut();
+                    sessionManager.logoutUser();
+                    Toast.makeText(MainActivity.this, "Please verify your email first.", Toast.LENGTH_LONG).show();
+                } else if (sessionManager.isLoggedIn()) {
+                    navigateBasedOnRole(sessionManager.getUserRole());
+                    finish();
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                }
+            });
+        } else if (sessionManager.isLoggedIn()) {
+            navigateBasedOnRole(sessionManager.getUserRole());
+            finish();
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            return;
+        }
 
         // Safe Area Padding (Content won't touch the bars)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
@@ -81,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
                 if (backPressedTime + 2000 > System.currentTimeMillis()) {
                     if (backToast != null) backToast.cancel();
                     finishAffinity();
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 } else {
                     backToast = Toast.makeText(MainActivity.this, "Press back again to exit", Toast.LENGTH_SHORT);
                     backToast.show();
@@ -165,6 +185,7 @@ public class MainActivity extends AppCompatActivity {
         tvRegisterLink.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, RegisterActivity.class);
             startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
     }
 
@@ -195,11 +216,12 @@ public class MainActivity extends AppCompatActivity {
             .addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    String name, role, id, section, intake, dept;
+                    String name, role, id, section, intake, dept, userEmail;
                     if (snapshot.exists()) {
                         name = snapshot.child("name").getValue(String.class);
                         role = snapshot.child("role").getValue(String.class);
                         id = snapshot.child("id").getValue(String.class);
+                        userEmail = snapshot.child("email").getValue(String.class);
                         section = snapshot.child("section").getValue(String.class);
                         intake = snapshot.child("intake").getValue(String.class);
                         dept = snapshot.child("dept").getValue(String.class);
@@ -207,18 +229,140 @@ public class MainActivity extends AppCompatActivity {
                         role = rbTeacher.isChecked() ? "Teacher/Admin" : "Student";
                         name = rbTeacher.isChecked() ? "Teacher " + emailOrId : "Student " + emailOrId;
                         id = emailOrId;
+                        userEmail = emailOrId.contains("@") ? emailOrId : emailOrId + "@bubt.edu.bd";
                         section = "55/8";
                         intake = "55";
                         dept = "CSE";
                     }
 
-                    sessionManager.createLoginSession(name, emailOrId, id, role, section, intake, dept);
+                    if (userEmail == null || userEmail.isEmpty()) {
+                        userEmail = emailOrId.contains("@") ? emailOrId : emailOrId + "@bubt.edu.bd";
+                    }
 
-                    FirebaseAuth.getInstance().signInAnonymously().addOnCompleteListener(task -> {
-                        Toast.makeText(MainActivity.this, "Welcome " + name, Toast.LENGTH_SHORT).show();
-                        navigateBasedOnRole(role);
-                        finish();
-                    });
+                    final String finalName = name != null ? name : emailOrId;
+                    final String finalRole = role != null ? role : "Student";
+                    final String finalId = id != null ? id : emailOrId;
+                    final String finalEmail = userEmail;
+                    final String finalSection = section != null ? section : "--";
+                    final String finalIntake = intake != null ? intake : "--";
+                    final String finalDept = dept != null ? dept : "CSE";
+
+                    FirebaseAuth.getInstance().signInWithEmailAndPassword(finalEmail, password)
+                        .addOnSuccessListener(authResult -> {
+                            FirebaseUser user = authResult.getUser();
+                            if (user != null && !user.isEmailVerified()) {
+                                FirebaseAuth.getInstance().signOut();
+                                sessionManager.logoutUser();
+                                Toast.makeText(MainActivity.this, "Please verify your email first.", Toast.LENGTH_LONG).show();
+                                return;
+                            }
+
+                            String uid = user != null ? user.getUid() : "";
+                            if (!uid.isEmpty()) {
+                                FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com")
+                                    .getReference("crconnect_db")
+                                    .child("users")
+                                    .child(uid)
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot uidSnapshot) {
+                                            if (uidSnapshot.exists()) {
+                                                String fetchName = uidSnapshot.child("name").getValue(String.class);
+                                                String fetchRole = uidSnapshot.child("role").getValue(String.class);
+                                                String fetchId = uidSnapshot.child("id").getValue(String.class);
+                                                String fetchEmail = uidSnapshot.child("email").getValue(String.class);
+                                                String fetchSection = uidSnapshot.child("section").getValue(String.class);
+                                                String fetchIntake = uidSnapshot.child("intake").getValue(String.class);
+                                                String fetchDept = uidSnapshot.child("dept").getValue(String.class);
+
+                                                sessionManager.createLoginSession(
+                                                    fetchName != null ? fetchName : finalName,
+                                                    fetchEmail != null ? fetchEmail : finalEmail,
+                                                    fetchId != null ? fetchId : finalId,
+                                                    fetchRole != null ? fetchRole : finalRole,
+                                                    fetchSection != null ? fetchSection : finalSection,
+                                                    fetchIntake != null ? fetchIntake : finalIntake,
+                                                    fetchDept != null ? fetchDept : finalDept
+                                                );
+                                                Toast.makeText(MainActivity.this, "Welcome " + (fetchName != null ? fetchName : finalName), Toast.LENGTH_SHORT).show();
+                                                navigateBasedOnRole(fetchRole != null ? fetchRole : finalRole);
+                                                finish();
+                                            } else {
+                                                // Fallback to Firestore
+                                                FirebaseFirestore.getInstance()
+                                                    .collection("users")
+                                                    .document(uid)
+                                                    .get()
+                                                    .addOnSuccessListener(doc -> {
+                                                        if (doc.exists()) {
+                                                            String fetchName = doc.getString("name");
+                                                            String fetchRole = doc.getString("role");
+                                                            String fetchId = doc.getString("id");
+                                                            String fetchEmail = doc.getString("email");
+                                                            String fetchSection = doc.getString("section");
+                                                            String fetchIntake = doc.getString("intake");
+                                                            String fetchDept = doc.getString("dept");
+
+                                                            sessionManager.createLoginSession(
+                                                                fetchName != null ? fetchName : finalName,
+                                                                fetchEmail != null ? fetchEmail : finalEmail,
+                                                                fetchId != null ? fetchId : finalId,
+                                                                fetchRole != null ? fetchRole : finalRole,
+                                                                fetchSection != null ? fetchSection : finalSection,
+                                                                fetchIntake != null ? fetchIntake : finalIntake,
+                                                                fetchDept != null ? fetchDept : finalDept
+                                                            );
+                                                            Toast.makeText(MainActivity.this, "Welcome " + (fetchName != null ? fetchName : finalName), Toast.LENGTH_SHORT).show();
+                                                            navigateBasedOnRole(fetchRole != null ? fetchRole : finalRole);
+                                                            finish();
+                                                        } else {
+                                                            sessionManager.createLoginSession(finalName, finalEmail, finalId, finalRole, finalSection, finalIntake, finalDept);
+                                                            Toast.makeText(MainActivity.this, "Welcome " + finalName, Toast.LENGTH_SHORT).show();
+                                                            navigateBasedOnRole(finalRole);
+                                                            finish();
+                                                        }
+                                                    })
+                                                    .addOnFailureListener(fsErr -> {
+                                                        sessionManager.createLoginSession(finalName, finalEmail, finalId, finalRole, finalSection, finalIntake, finalDept);
+                                                        Toast.makeText(MainActivity.this, "Welcome " + finalName, Toast.LENGTH_SHORT).show();
+                                                        navigateBasedOnRole(finalRole);
+                                                        finish();
+                                                    });
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError dbError) {
+                                            sessionManager.createLoginSession(finalName, finalEmail, finalId, finalRole, finalSection, finalIntake, finalDept);
+                                            Toast.makeText(MainActivity.this, "Welcome " + finalName, Toast.LENGTH_SHORT).show();
+                                            navigateBasedOnRole(finalRole);
+                                            finish();
+                                        }
+                                    });
+                            } else {
+                                sessionManager.createLoginSession(finalName, finalEmail, finalId, finalRole, finalSection, finalIntake, finalDept);
+                                Toast.makeText(MainActivity.this, "Welcome " + finalName, Toast.LENGTH_SHORT).show();
+                                navigateBasedOnRole(finalRole);
+                                finish();
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.w("MainActivity", "Firebase Auth sign-in failed: " + e.getMessage());
+                            FirebaseAuth.getInstance().signInAnonymously()
+                                .addOnSuccessListener(anonResult -> {
+                                    sessionManager.createLoginSession(finalName, finalEmail, finalId, finalRole, finalSection, finalIntake, finalDept);
+                                    Toast.makeText(MainActivity.this, "Welcome " + finalName, Toast.LENGTH_SHORT).show();
+                                    navigateBasedOnRole(finalRole);
+                                    finish();
+                                })
+                                .addOnFailureListener(anonErr -> {
+                                    Log.w("MainActivity", "Firebase Auth anonymous sign-in failed: " + anonErr.getMessage());
+                                    sessionManager.createLoginSession(finalName, finalEmail, finalId, finalRole, finalSection, finalIntake, finalDept);
+                                    Toast.makeText(MainActivity.this, "Welcome " + finalName, Toast.LENGTH_SHORT).show();
+                                    navigateBasedOnRole(finalRole);
+                                    finish();
+                                });
+                        });
                 }
 
                 @Override
@@ -265,15 +409,17 @@ public class MainActivity extends AppCompatActivity {
     private void performGoogleSignIn() {
         Intent intent = new Intent(MainActivity.this, RegisterActivity.class);
         startActivity(intent);
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
     private void navigateBasedOnRole(String role) {
+        Intent intent;
         if ("Teacher/Admin".equals(role)) {
-            Intent intent = new Intent(MainActivity.this, TeacherDashboardActivity.class);
-            startActivity(intent);
+            intent = new Intent(MainActivity.this, TeacherDashboardActivity.class);
         } else {
-            Intent intent = new Intent(MainActivity.this, StudentDashboardActivity.class);
-            startActivity(intent);
+            intent = new Intent(MainActivity.this, StudentDashboardActivity.class);
         }
+        startActivity(intent);
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 }
