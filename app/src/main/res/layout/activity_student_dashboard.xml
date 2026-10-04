@@ -71,6 +71,20 @@
                     <TextView android:id="@+id/tvStudentSection" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55/8" android:textSize="15sp" android:textColor="#F8FAFC" android:textStyle="bold" android:layout_marginTop="4dp"/>
                 </LinearLayout>
             </GridLayout>
+
+            <!-- Locked Profile Integrity Indicator -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🔒 Verified Student Profile • Read-Only (Locked for Election Integrity)"
+                android:textSize="11sp"
+                android:textColor="#10B981"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginTop="20dp"
+                android:background="#1A10B981"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"/>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

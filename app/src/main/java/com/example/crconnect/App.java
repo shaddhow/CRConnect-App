@@ -11,8 +11,10 @@ public class App extends Application {
         try {
             // Enable offline persistence for Firebase Realtime Database
             FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+            // Initialize FCM notification channel
+            MyFirebaseMessagingService.createNotificationChannel(this);
         } catch (Exception e) {
-            Log.e("App", "Failed to enable Firebase persistence", e);
+            Log.e("App", "Failed to initialize App settings", e);
         }
     }
 }

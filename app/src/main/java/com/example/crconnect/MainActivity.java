@@ -1,10 +1,14 @@
 package com.example.crconnect;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -24,12 +28,14 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
   import androidx.core.view.WindowInsetsControllerCompat;
 
+import android.widget.LinearLayout;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import android.util.Log;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
@@ -43,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private RadioGroup radioGroupRole;
     private RadioButton rbStudent, rbTeacher;
     private Button btnLogin;
-    private TextView tvRegisterLink;
+    private TextView tvRegisterLink, tvForgotPassword;
     private SessionManager sessionManager;
 
     @Override
@@ -118,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
         rbTeacher = findViewById(R.id.rbTeacher);
         btnLogin = findViewById(R.id.btnLogin);
         tvRegisterLink = findViewById(R.id.tvRegisterLink);
+        tvForgotPassword = findViewById(R.id.tvForgotPassword);
 
         // Professional keyboard-aware scaling & auto-scroll
         ScrollView scrollViewMain = findViewById(R.id.scrollViewMain);
@@ -177,9 +184,8 @@ public class MainActivity extends AppCompatActivity {
         // Login Button Click Listener
         btnLogin.setOnClickListener(v -> performLogin());
 
-        // Google Sign In Click Listener
-        MaterialButton btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
-        btnGoogleSignIn.setOnClickListener(v -> performGoogleSignIn());
+        // Forgot Password Click Listener
+        tvForgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
 
         // Register Link Click Listener
         tvRegisterLink.setOnClickListener(v -> {
@@ -187,6 +193,138 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
+    }
+
+    private void showForgotPasswordDialog() {
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
+        
+        LinearLayout view = new LinearLayout(this);
+        view.setOrientation(LinearLayout.VERTICAL);
+        view.setPadding(48, 48, 48, 48);
+        view.setBackgroundColor(Color.parseColor("#171A29"));
+
+        TextView tvTitle = new TextView(this);
+        tvTitle.setText("🔑 Reset Password");
+        tvTitle.setTextSize(22f);
+        tvTitle.setTypeface(null, Typeface.BOLD);
+        tvTitle.setTextColor(Color.parseColor("#F8FAFC"));
+
+        TextView tvSubtitle = new TextView(this);
+        tvSubtitle.setText("Enter your registered BUBT email (@bubt.edu.bd or @cse.bubt.edu.bd) to receive a secure password reset link.");
+        tvSubtitle.setTextSize(14f);
+        tvSubtitle.setTextColor(Color.parseColor("#94A3B8"));
+        tvSubtitle.setPadding(0, 12, 0, 24);
+
+        final TextInputLayout tilResetEmail = new TextInputLayout(this, null, com.google.android.material.R.style.Widget_Material3_TextInputLayout_OutlinedBox);
+        tilResetEmail.setHint("BUBT Email Address");
+        tilResetEmail.setBoxStrokeColor(Color.parseColor("#6366F1"));
+        tilResetEmail.setHintTextColor(ColorStateList.valueOf(Color.parseColor("#6366F1")));
+
+        final TextInputEditText etResetEmail = new TextInputEditText(tilResetEmail.getContext());
+        etResetEmail.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+        etResetEmail.setTextColor(Color.parseColor("#FFFFFF"));
+        etResetEmail.setTextSize(16f);
+
+        String currentInput = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+        if (currentInput.contains("@")) {
+            etResetEmail.setText(currentInput);
+        }
+
+        tilResetEmail.addView(etResetEmail);
+
+        LinearLayout btnLayout = new LinearLayout(this);
+        btnLayout.setOrientation(LinearLayout.HORIZONTAL);
+        btnLayout.setGravity(Gravity.END);
+        btnLayout.setPadding(0, 28, 0, 0);
+
+        MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.style.Widget_Material3_Button_TextButton);
+        btnCancel.setText("Cancel");
+        btnCancel.setTextColor(Color.parseColor("#94A3B8"));
+        btnCancel.setOnClickListener(v -> bottomSheetDialog.dismiss());
+
+        MaterialButton btnSend = new MaterialButton(this);
+        btnSend.setText("Send Reset Link");
+        btnSend.setTextColor(Color.parseColor("#FFFFFF"));
+        btnSend.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#6366F1")));
+        btnSend.setCornerRadius(16);
+        LinearLayout.LayoutParams sendLp = new LinearLayout.LayoutParams(-2, -2);
+        sendLp.setMargins(16, 0, 0, 0);
+        btnSend.setLayoutParams(sendLp);
+
+        btnSend.setOnClickListener(v -> {
+            String email = etResetEmail.getText() != null ? etResetEmail.getText().toString().trim() : "";
+            
+            if (email.isEmpty()) {
+                Toast.makeText(MainActivity.this, "Email is required for password reset!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!email.toLowerCase().endsWith("@bubt.edu.bd") && !email.toLowerCase().endsWith("@cse.bubt.edu.bd")) {
+                Toast.makeText(MainActivity.this, "Please enter a valid BUBT email (@bubt.edu.bd or @cse.bubt.edu.bd)", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            FirebaseAuth.getInstance().sendPasswordResetEmail(email)
+                .addOnSuccessListener(unused -> {
+                    bottomSheetDialog.dismiss();
+                    Toast.makeText(MainActivity.this, "Password reset link sent to your email. Please check your inbox.", Toast.LENGTH_LONG).show();
+                    showSuccessDialog(email);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("MainActivity", "Failed to send password reset email", e);
+                    String errorMsg = e.getLocalizedMessage();
+                    if (errorMsg != null && errorMsg.contains("there is no user record")) {
+                        errorMsg = "No account found matching " + email + ". Please verify your email or register a new account.";
+                    }
+                    Toast.makeText(MainActivity.this, "Error: " + errorMsg, Toast.LENGTH_LONG).show();
+                });
+        });
+
+        btnLayout.addView(btnCancel);
+        btnLayout.addView(btnSend);
+
+        view.addView(tvTitle);
+        view.addView(tvSubtitle);
+        view.addView(tilResetEmail);
+        view.addView(btnLayout);
+
+        bottomSheetDialog.setContentView(view);
+        bottomSheetDialog.show();
+    }
+
+    private void showSuccessDialog(String email) {
+        BottomSheetDialog successSheet = new BottomSheetDialog(this);
+        LinearLayout view = new LinearLayout(this);
+        view.setOrientation(LinearLayout.VERTICAL);
+        view.setPadding(48, 48, 48, 48);
+        view.setBackgroundColor(Color.parseColor("#171A29"));
+
+        TextView tvTitle = new TextView(this);
+        tvTitle.setText("✅ Reset Link Sent");
+        tvTitle.setTextSize(22f);
+        tvTitle.setTypeface(null, Typeface.BOLD);
+        tvTitle.setTextColor(Color.parseColor("#10B981"));
+
+        TextView tvMsg = new TextView(this);
+        tvMsg.setText("Password reset link sent to " + email + ". Please check your inbox and spam folder.");
+        tvMsg.setTextSize(15f);
+        tvMsg.setTextColor(Color.parseColor("#94A3B8"));
+        tvMsg.setPadding(0, 12, 0, 24);
+
+        MaterialButton btnOk = new MaterialButton(this);
+        btnOk.setText("OK");
+        btnOk.setTextColor(Color.parseColor("#FFFFFF"));
+        btnOk.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#10B981")));
+        btnOk.setCornerRadius(16);
+        btnOk.setLayoutParams(new LinearLayout.LayoutParams(-1, 56));
+        btnOk.setOnClickListener(v -> successSheet.dismiss());
+
+        view.addView(tvTitle);
+        view.addView(tvMsg);
+        view.addView(btnOk);
+
+        successSheet.setContentView(view);
+        successSheet.show();
     }
 
     private void performLogin() {
@@ -204,212 +342,141 @@ public class MainActivity extends AppCompatActivity {
             etPassword.requestFocus();
             return;
         }
-        
-        Toast.makeText(this, "Logging in...", Toast.LENGTH_SHORT).show();
 
-        String sanitizedId = emailOrId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+        final String email;
+        if (emailOrId.contains("@")) {
+            email = emailOrId;
+        } else {
+            email = emailOrId + "@bubt.edu.bd";
+        }
 
-        FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com")
-            .getReference("crconnect_db")
-            .child("users")
-            .child(sanitizedId)
-            .addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    String name, role, id, section, intake, dept, userEmail;
-                    if (snapshot.exists()) {
-                        name = snapshot.child("name").getValue(String.class);
-                        role = snapshot.child("role").getValue(String.class);
-                        id = snapshot.child("id").getValue(String.class);
-                        userEmail = snapshot.child("email").getValue(String.class);
-                        section = snapshot.child("section").getValue(String.class);
-                        intake = snapshot.child("intake").getValue(String.class);
-                        dept = snapshot.child("dept").getValue(String.class);
-                    } else {
-                        role = rbTeacher.isChecked() ? "Teacher/Admin" : "Student";
-                        name = rbTeacher.isChecked() ? "Teacher " + emailOrId : "Student " + emailOrId;
-                        id = emailOrId;
-                        userEmail = emailOrId.contains("@") ? emailOrId : emailOrId + "@bubt.edu.bd";
-                        section = "55/8";
-                        intake = "55";
-                        dept = "CSE";
-                    }
+        if (!email.toLowerCase().endsWith("@bubt.edu.bd") && !email.toLowerCase().endsWith("@cse.bubt.edu.bd")) {
+            etEmail.setError("Only official BUBT emails (@bubt.edu.bd or @cse.bubt.edu.bd) are allowed!");
+            etEmail.requestFocus();
+            return;
+        }
 
-                    if (userEmail == null || userEmail.isEmpty()) {
-                        userEmail = emailOrId.contains("@") ? emailOrId : emailOrId + "@bubt.edu.bd";
-                    }
+        Toast.makeText(this, "Authenticating...", Toast.LENGTH_SHORT).show();
+        btnLogin.setEnabled(false);
 
-                    final String finalName = name != null ? name : emailOrId;
-                    final String finalRole = role != null ? role : "Student";
-                    final String finalId = id != null ? id : emailOrId;
-                    final String finalEmail = userEmail;
-                    final String finalSection = section != null ? section : "--";
-                    final String finalIntake = intake != null ? intake : "--";
-                    final String finalDept = dept != null ? dept : "CSE";
-
-                    FirebaseAuth.getInstance().signInWithEmailAndPassword(finalEmail, password)
-                        .addOnSuccessListener(authResult -> {
-                            FirebaseUser user = authResult.getUser();
-                            if (user != null && !user.isEmailVerified()) {
-                                FirebaseAuth.getInstance().signOut();
-                                sessionManager.logoutUser();
-                                Toast.makeText(MainActivity.this, "Please verify your email first.", Toast.LENGTH_LONG).show();
-                                return;
-                            }
-
-                            String uid = user != null ? user.getUid() : "";
-                            if (!uid.isEmpty()) {
-                                FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com")
-                                    .getReference("crconnect_db")
-                                    .child("users")
-                                    .child(uid)
-                                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(@NonNull DataSnapshot uidSnapshot) {
-                                            if (uidSnapshot.exists()) {
-                                                String fetchName = uidSnapshot.child("name").getValue(String.class);
-                                                String fetchRole = uidSnapshot.child("role").getValue(String.class);
-                                                String fetchId = uidSnapshot.child("id").getValue(String.class);
-                                                String fetchEmail = uidSnapshot.child("email").getValue(String.class);
-                                                String fetchSection = uidSnapshot.child("section").getValue(String.class);
-                                                String fetchIntake = uidSnapshot.child("intake").getValue(String.class);
-                                                String fetchDept = uidSnapshot.child("dept").getValue(String.class);
-
-                                                sessionManager.createLoginSession(
-                                                    fetchName != null ? fetchName : finalName,
-                                                    fetchEmail != null ? fetchEmail : finalEmail,
-                                                    fetchId != null ? fetchId : finalId,
-                                                    fetchRole != null ? fetchRole : finalRole,
-                                                    fetchSection != null ? fetchSection : finalSection,
-                                                    fetchIntake != null ? fetchIntake : finalIntake,
-                                                    fetchDept != null ? fetchDept : finalDept
-                                                );
-                                                Toast.makeText(MainActivity.this, "Welcome " + (fetchName != null ? fetchName : finalName), Toast.LENGTH_SHORT).show();
-                                                navigateBasedOnRole(fetchRole != null ? fetchRole : finalRole);
-                                                finish();
-                                            } else {
-                                                // Fallback to Firestore
-                                                FirebaseFirestore.getInstance()
-                                                    .collection("users")
-                                                    .document(uid)
-                                                    .get()
-                                                    .addOnSuccessListener(doc -> {
-                                                        if (doc.exists()) {
-                                                            String fetchName = doc.getString("name");
-                                                            String fetchRole = doc.getString("role");
-                                                            String fetchId = doc.getString("id");
-                                                            String fetchEmail = doc.getString("email");
-                                                            String fetchSection = doc.getString("section");
-                                                            String fetchIntake = doc.getString("intake");
-                                                            String fetchDept = doc.getString("dept");
-
-                                                            sessionManager.createLoginSession(
-                                                                fetchName != null ? fetchName : finalName,
-                                                                fetchEmail != null ? fetchEmail : finalEmail,
-                                                                fetchId != null ? fetchId : finalId,
-                                                                fetchRole != null ? fetchRole : finalRole,
-                                                                fetchSection != null ? fetchSection : finalSection,
-                                                                fetchIntake != null ? fetchIntake : finalIntake,
-                                                                fetchDept != null ? fetchDept : finalDept
-                                                            );
-                                                            Toast.makeText(MainActivity.this, "Welcome " + (fetchName != null ? fetchName : finalName), Toast.LENGTH_SHORT).show();
-                                                            navigateBasedOnRole(fetchRole != null ? fetchRole : finalRole);
-                                                            finish();
-                                                        } else {
-                                                            sessionManager.createLoginSession(finalName, finalEmail, finalId, finalRole, finalSection, finalIntake, finalDept);
-                                                            Toast.makeText(MainActivity.this, "Welcome " + finalName, Toast.LENGTH_SHORT).show();
-                                                            navigateBasedOnRole(finalRole);
-                                                            finish();
-                                                        }
-                                                    })
-                                                    .addOnFailureListener(fsErr -> {
-                                                        sessionManager.createLoginSession(finalName, finalEmail, finalId, finalRole, finalSection, finalIntake, finalDept);
-                                                        Toast.makeText(MainActivity.this, "Welcome " + finalName, Toast.LENGTH_SHORT).show();
-                                                        navigateBasedOnRole(finalRole);
-                                                        finish();
-                                                    });
-                                            }
-                                        }
-
-                                        @Override
-                                        public void onCancelled(@NonNull DatabaseError dbError) {
-                                            sessionManager.createLoginSession(finalName, finalEmail, finalId, finalRole, finalSection, finalIntake, finalDept);
-                                            Toast.makeText(MainActivity.this, "Welcome " + finalName, Toast.LENGTH_SHORT).show();
-                                            navigateBasedOnRole(finalRole);
-                                            finish();
-                                        }
-                                    });
-                            } else {
-                                sessionManager.createLoginSession(finalName, finalEmail, finalId, finalRole, finalSection, finalIntake, finalDept);
-                                Toast.makeText(MainActivity.this, "Welcome " + finalName, Toast.LENGTH_SHORT).show();
-                                navigateBasedOnRole(finalRole);
-                                finish();
-                            }
-                        })
-                        .addOnFailureListener(e -> {
-                            Log.w("MainActivity", "Firebase Auth sign-in failed: " + e.getMessage());
-                            FirebaseAuth.getInstance().signInAnonymously()
-                                .addOnSuccessListener(anonResult -> {
-                                    sessionManager.createLoginSession(finalName, finalEmail, finalId, finalRole, finalSection, finalIntake, finalDept);
-                                    Toast.makeText(MainActivity.this, "Welcome " + finalName, Toast.LENGTH_SHORT).show();
-                                    navigateBasedOnRole(finalRole);
-                                    finish();
-                                })
-                                .addOnFailureListener(anonErr -> {
-                                    Log.w("MainActivity", "Firebase Auth anonymous sign-in failed: " + anonErr.getMessage());
-                                    sessionManager.createLoginSession(finalName, finalEmail, finalId, finalRole, finalSection, finalIntake, finalDept);
-                                    Toast.makeText(MainActivity.this, "Welcome " + finalName, Toast.LENGTH_SHORT).show();
-                                    navigateBasedOnRole(finalRole);
-                                    finish();
-                                });
-                        });
+        FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
+            .addOnSuccessListener(authResult -> {
+                FirebaseUser user = authResult.getUser();
+                if (user == null) {
+                    btnLogin.setEnabled(true);
+                    Toast.makeText(MainActivity.this, "Authentication failed: User is null", Toast.LENGTH_LONG).show();
+                    return;
                 }
 
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                    Toast.makeText(MainActivity.this, "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                if (!user.isEmailVerified()) {
+                    FirebaseAuth.getInstance().signOut();
+                    sessionManager.logoutUser();
+                    btnLogin.setEnabled(true);
+                    Toast.makeText(MainActivity.this, "Email not verified. Please check your inbox and verify your account before logging in.", Toast.LENGTH_LONG).show();
+                    return;
                 }
+
+                String uid = user.getUid();
+                DatabaseReference dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
+
+                dbRef.child("users").child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (snapshot.exists()) {
+                            saveSessionAndNavigate(snapshot);
+                        } else {
+                            String sanitizedId = emailOrId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+                            dbRef.child("users").child(sanitizedId).addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot idSnapshot) {
+                                    if (idSnapshot.exists()) {
+                                        saveSessionAndNavigate(idSnapshot);
+                                    } else {
+                                        FirebaseFirestore.getInstance().collection("users").document(uid).get()
+                                            .addOnSuccessListener(doc -> {
+                                                if (doc.exists()) {
+                                                    String name = doc.getString("name");
+                                                    String role = doc.getString("role");
+                                                    String id = doc.getString("id");
+                                                    String userEmail = doc.getString("email");
+                                                    String section = doc.getString("section");
+                                                    String intake = doc.getString("intake");
+                                                    String dept = doc.getString("dept");
+
+                                                    sessionManager.createLoginSession(
+                                                        name != null ? name : email,
+                                                        userEmail != null ? userEmail : email,
+                                                        id != null ? id : emailOrId,
+                                                        role != null ? role : "Student",
+                                                        section != null ? section : "--",
+                                                        intake != null ? intake : "--",
+                                                        dept != null ? dept : "Department of CSE, BUBT"
+                                                    );
+                                                    Toast.makeText(MainActivity.this, "Welcome back, " + (name != null ? name : email) + "!", Toast.LENGTH_SHORT).show();
+                                                    navigateBasedOnRole(role != null ? role : "Student");
+                                                    finish();
+                                                } else {
+                                                    btnLogin.setEnabled(true);
+                                                    FirebaseAuth.getInstance().signOut();
+                                                    Toast.makeText(MainActivity.this, "User profile not found in database. Please register first.", Toast.LENGTH_LONG).show();
+                                                }
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                btnLogin.setEnabled(true);
+                                                FirebaseAuth.getInstance().signOut();
+                                                Toast.makeText(MainActivity.this, "User profile not found. Please register first.", Toast.LENGTH_LONG).show();
+                                            });
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+                                    btnLogin.setEnabled(true);
+                                    Toast.makeText(MainActivity.this, "Database error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        btnLogin.setEnabled(true);
+                        Toast.makeText(MainActivity.this, "Database error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+            })
+            .addOnFailureListener(e -> {
+                btnLogin.setEnabled(true);
+                Log.e("MainActivity", "Firebase Auth login failed", e);
+                String errorMsg = e.getLocalizedMessage();
+                if (errorMsg != null && (errorMsg.contains("no user record") || errorMsg.contains("password is invalid") || errorMsg.contains("malformed"))) {
+                    errorMsg = "Invalid email/ID or password. Please check your credentials or register.";
+                }
+                Toast.makeText(MainActivity.this, "Login Failed: " + errorMsg, Toast.LENGTH_LONG).show();
             });
     }
 
-    private void fetchUserDataAndSaveSession(String uid) {
-        FirebaseDatabase.getInstance()
-                .getReference("crconnect_db")
-                .child("users")
-                .child(uid)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    String name = snapshot.child("name").getValue(String.class);
-                    String email = snapshot.child("email").getValue(String.class);
-                    String id = snapshot.child("id").getValue(String.class);
-                    String role = snapshot.child("role").getValue(String.class);
-                    String section = snapshot.child("section").getValue(String.class);
-                    String intake = snapshot.child("intake").getValue(String.class);
-                    String dept = snapshot.child("dept").getValue(String.class);
+    private void saveSessionAndNavigate(DataSnapshot snapshot) {
+        String name = snapshot.child("name").getValue(String.class);
+        String role = snapshot.child("role").getValue(String.class);
+        String id = snapshot.child("id").getValue(String.class);
+        String userEmail = snapshot.child("email").getValue(String.class);
+        String section = snapshot.child("section").getValue(String.class);
+        String intake = snapshot.child("intake").getValue(String.class);
+        String dept = snapshot.child("dept").getValue(String.class);
 
-                    sessionManager.createLoginSession(name, email, id, role, section, intake, dept);
-                    
-                    Toast.makeText(MainActivity.this, "Welcome " + name, Toast.LENGTH_SHORT).show();
-                    navigateBasedOnRole(role);
-                    finish();
-                } else {
-                    Toast.makeText(MainActivity.this, "User profile not found in database", Toast.LENGTH_LONG).show();
-                }
-            }
+        if (name == null) name = "User";
+        if (role == null) role = "Student";
+        if (id == null) id = "";
+        if (userEmail == null) userEmail = "";
+        if (section == null) section = "--";
+        if (intake == null) intake = "--";
+        if (dept == null) dept = "Department of CSE, BUBT";
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(MainActivity.this, "Database Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void performGoogleSignIn() {
-        Intent intent = new Intent(MainActivity.this, RegisterActivity.class);
-        startActivity(intent);
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        sessionManager.createLoginSession(name, userEmail, id, role, section, intake, dept);
+        Toast.makeText(MainActivity.this, "Welcome back, " + name + "!", Toast.LENGTH_SHORT).show();
+        navigateBasedOnRole(role);
+        finish();
     }
 
     private void navigateBasedOnRole(String role) {

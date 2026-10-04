@@ -158,52 +158,20 @@
                     android:textStyle="bold"
                     app:cornerRadius="16dp"
                     app:backgroundTint="#6366F1"
-                    android:layout_marginBottom="12dp"/>
+                    android:layout_marginBottom="16dp"/>
 
-                <!-- Divider -->
-                <LinearLayout
+                <!-- Forgot Password Link -->
+                <TextView
+                    android:id="@+id/tvForgotPassword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="12dp">
-
-                    <View
-                        android:layout_width="0dp"
-                        android:layout_height="1dp"
-                        android:layout_weight="1"
-                        android:background="#334155"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text=" OR "
-                        android:textColor="#94A3B8"
-                        android:textSize="12sp"
-                        android:paddingHorizontal="12dp"/>
-
-                    <View
-                        android:layout_width="0dp"
-                        android:layout_height="1dp"
-                        android:layout_weight="1"
-                        android:background="#334155"/>
-                </LinearLayout>
-
-                <!-- Google Sign In Button -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnGoogleSignIn"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:text="Continue with BUBT Google"
-                    android:textSize="15sp"
+                    android:text="Forgot Password?"
+                    android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#F8FAFC"
-                    app:cornerRadius="16dp"
-                    app:strokeColor="#334155"
-                    app:strokeWidth="1.5dp"
-                    android:backgroundTint="#1E293B"
-                    android:layout_marginBottom="16dp"/>
+                    android:textColor="#38BDF8"
+                    android:gravity="center"
+                    android:padding="6dp"
+                    android:layout_marginBottom="8dp"/>
 
                 <!-- Register Link -->
                 <TextView
@@ -215,7 +183,7 @@
                     android:textStyle="bold"
                     android:textColor="#06B6D4"
                     android:gravity="center"
-                    android:padding="8dp"/>
+                    android:padding="6dp"/>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

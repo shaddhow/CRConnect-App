@@ -1,20 +1,38 @@
 package com.example.crconnect;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.ImageDecoder;
 import android.graphics.Typeface;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.util.Base64;
+import android.util.Log;
 import android.view.Gravity;
+import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
+
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -25,6 +43,7 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -33,6 +52,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,6 +70,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
     private LinearLayout containerCandidates;
     private DatabaseReference dbRef;
     private SessionManager sessionManager;
+    private ActivityResultLauncher<Intent> profileImagePickerLauncher;
     
     private boolean isVotingEnabled = false;
     private boolean hasAlreadyVoted = false;
@@ -113,7 +136,29 @@ public class StudentDashboardActivity extends AppCompatActivity {
         tvHeaderTitle.setText("Election Portal");
         displayStudentProfile();
 
-        Glide.with(this).load(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
+        String cachedProfileImg = sessionManager.getProfileImageUrl();
+        if (cachedProfileImg != null && !cachedProfileImg.isEmpty()) {
+            Glide.with(this).load(cachedProfileImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
+        } else {
+            Glide.with(this).load(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
+        }
+
+        profileImagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    Uri imageUri = result.getData().getData();
+                    if (imageUri != null) {
+                        uploadProfilePictureToFirebase(imageUri);
+                    }
+                }
+            }
+        );
+
+        imgUserProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            profileImagePickerLauncher.launch(intent);
+        });
 
         btnLogout.setOnClickListener(v -> {
             sessionManager.logoutUser();
@@ -122,6 +167,38 @@ public class StudentDashboardActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
+
+        // FCM Topic Subscription & Notification Permission Setup
+        FirebaseMessaging.getInstance().subscribeToTopic("all_students")
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    Log.d("StudentDashboard", "Subscribed to FCM topic: all_students");
+                }
+            });
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+
+        // Live Listener for Admin Broadcast Notifications
+        dbRef.child("broadcast_notifications").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    String title = snapshot.child("title").getValue(String.class);
+                    String body = snapshot.child("body").getValue(String.class);
+                    Long timestamp = snapshot.child("timestamp").getValue(Long.class);
+                    
+                    if (title != null && body != null && timestamp != null && (System.currentTimeMillis() - timestamp < 15000)) {
+                        showNotificationSnackBar(title + ": " + body);
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
         });
 
         // Check if student has already voted (Anti-Dual-Voting Security)
@@ -173,6 +250,11 @@ public class StudentDashboardActivity extends AppCompatActivity {
         tvStudentDept.setText(sessionManager.getUserDept());
         tvHeaderSubtitle.setText("Dashboard | " + sessionManager.getUserDept());
 
+        String cachedProfileImg = sessionManager.getProfileImageUrl();
+        if (cachedProfileImg != null && !cachedProfileImg.isEmpty()) {
+            Glide.with(this).load(cachedProfileImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
+        }
+
         // Fetch fresh profile details from Firebase Realtime Database & Firestore
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         String uid = currentUser != null ? currentUser.getUid() : "";
@@ -188,6 +270,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                     String dept = snapshot.child("dept").getValue(String.class);
                     String email = snapshot.child("email").getValue(String.class);
                     String role = snapshot.child("role").getValue(String.class);
+                    String profileImg = snapshot.child("profileImageUrl").getValue(String.class);
 
                     if (name != null) tvStudentName.setText(name);
                     if (id != null) tvStudentDetailsID.setText(id);
@@ -196,6 +279,10 @@ public class StudentDashboardActivity extends AppCompatActivity {
                     if (dept != null) {
                         tvStudentDept.setText(dept);
                         tvHeaderSubtitle.setText("Dashboard | " + dept);
+                    }
+                    if (profileImg != null && !profileImg.isEmpty()) {
+                        sessionManager.setProfileImageUrl(profileImg);
+                        loadProfileImage(StudentDashboardActivity.this, profileImg, imgUserProfile);
                     }
 
                     sessionManager.createLoginSession(
@@ -221,6 +308,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                                 String dept = doc.getString("dept");
                                 String email = doc.getString("email");
                                 String role = doc.getString("role");
+                                String profileImg = doc.getString("profileImageUrl");
 
                                 if (name != null) tvStudentName.setText(name);
                                 if (id != null) tvStudentDetailsID.setText(id);
@@ -229,6 +317,10 @@ public class StudentDashboardActivity extends AppCompatActivity {
                                 if (dept != null) {
                                     tvStudentDept.setText(dept);
                                     tvHeaderSubtitle.setText("Dashboard | " + dept);
+                                }
+                                if (profileImg != null && !profileImg.isEmpty()) {
+                                    sessionManager.setProfileImageUrl(profileImg);
+                                    loadProfileImage(StudentDashboardActivity.this, profileImg, imgUserProfile);
                                 }
 
                                 sessionManager.createLoginSession(
@@ -269,159 +361,206 @@ public class StudentDashboardActivity extends AppCompatActivity {
         }
     }
 
-    private void refreshList() {
-        if (allCandidatesSnapshot == null || containerCandidates == null) return;
-        containerCandidates.removeAllViews();
-
-        // Convert snapshot to list for sorting by votes descending (Live Leaderboard)
-        List<DataSnapshot> candidateList = new ArrayList<>();
-        int maxVotes = 1;
-        for (DataSnapshot item : allCandidatesSnapshot.getChildren()) {
-            candidateList.add(item);
-            Integer vts = item.child("votes").getValue(Integer.class);
-            if (vts != null && vts > maxVotes) {
-                maxVotes = vts;
-            }
+    private int getSafeVotes(DataSnapshot ds) {
+        try {
+            if (ds == null || !ds.hasChild("votes")) return 0;
+            Object val = ds.child("votes").getValue();
+            if (val instanceof Long) return ((Long) val).intValue();
+            if (val instanceof Integer) return (Integer) val;
+            if (val instanceof String) return Integer.parseInt((String) val);
+        } catch (Exception e) {
+            Log.e("StudentDashboard", "Error parsing safe votes", e);
         }
+        return 0;
+    }
 
-        candidateList.sort((d1, d2) -> {
-            Integer v1 = d1.child("votes").getValue(Integer.class);
-            Integer v2 = d2.child("votes").getValue(Integer.class);
-            int votes1 = v1 != null ? v1 : 0;
-            int votes2 = v2 != null ? v2 : 0;
-            return Integer.compare(votes2, votes1); // Descending order
-        });
+    private void refreshList() {
+        if (allCandidatesSnapshot == null || containerCandidates == null || isFinishing() || isDestroyed()) return;
+        try {
+            containerCandidates.removeAllViews();
 
-        int rank = 1;
-        for (DataSnapshot item : candidateList) {
-            String name = item.child("name").getValue(String.class);
-            String dept = item.child("dept").getValue(String.class);
-            if (dept == null || dept.isEmpty()) dept = "Department of CSE, BUBT";
-            String manifesto = item.child("manifesto").getValue(String.class);
-            if (manifesto == null || manifesto.isEmpty()) manifesto = "Committed to student welfare, transparent CR communication, and academic excellence.";
-            Integer votes = item.child("votes").getValue(Integer.class);
+            List<DataSnapshot> candidateList = new ArrayList<>();
+            int maxVotes = 1;
+            for (DataSnapshot item : allCandidatesSnapshot.getChildren()) {
+                candidateList.add(item);
+                int vts = getSafeVotes(item);
+                if (vts > maxVotes) {
+                    maxVotes = vts;
+                }
+            }
 
-            addCandidateCard(item.getKey(), name, dept, manifesto, votes, rank, maxVotes);
-            rank++;
+            candidateList.sort((d1, d2) -> {
+                int votes1 = getSafeVotes(d1);
+                int votes2 = getSafeVotes(d2);
+                return Integer.compare(votes2, votes1); // Descending order
+            });
+
+            int rank = 1;
+            for (DataSnapshot item : candidateList) {
+                String name = item.child("name").getValue(String.class);
+                if (name == null) name = "Candidate";
+                String dept = item.child("dept").getValue(String.class);
+                if (dept == null || dept.isEmpty()) dept = "Department of CSE, BUBT";
+                String manifesto = item.child("manifesto").getValue(String.class);
+                if (manifesto == null || manifesto.isEmpty()) manifesto = "Committed to student welfare, transparent CR communication, and academic excellence.";
+                int votes = getSafeVotes(item);
+                String imageUrl = item.child("imageUrl").getValue(String.class);
+
+                addCandidateCard(item.getKey(), name, dept, manifesto, votes, rank, maxVotes, imageUrl);
+                rank++;
+            }
+        } catch (Exception e) {
+            Log.e("StudentDashboard", "Error in refreshList", e);
         }
     }
 
-    private void addCandidateCard(String id, String name, String dept, String manifesto, Integer vts, int rank, int maxVotes) {
-        int votes = vts != null ? vts : 0;
-        MaterialCardView card = new MaterialCardView(this);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
-        params.setMargins(0, 0, 0, 16);
-        card.setLayoutParams(params);
-        card.setRadius(24);
-        card.setCardElevation(8);
-        card.setCardBackgroundColor(Color.parseColor("#171A29"));
-        card.setStrokeWidth(2);
-        card.setClickable(true);
-        card.setFocusable(true);
-        card.setOnClickListener(v -> showCandidateManifestoDialog(name, dept, manifesto));
-        
-        // Highlight Top 3 with smooth Neon Cyan and Soft Electric Purple borders
-        if (rank == 1) card.setStrokeColor(Color.parseColor("#38BDF8")); // Neon Cyan
-        else if (rank == 2) card.setStrokeColor(Color.parseColor("#8B5CF6")); // Soft Electric Purple
-        else if (rank == 3) card.setStrokeColor(Color.parseColor("#6366F1")); // Indigo
-        else card.setStrokeColor(Color.parseColor("#334155"));
+    private void addCandidateCard(String id, String name, String dept, String manifesto, int votes, int rank, int maxVotes, String imageUrl) {
+        try {
+            MaterialCardView card = new MaterialCardView(this);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+            params.setMargins(0, 0, 0, 16);
+            card.setLayoutParams(params);
+            card.setRadius(24);
+            card.setCardElevation(8);
+            card.setCardBackgroundColor(Color.parseColor("#171A29"));
+            card.setStrokeWidth(2);
+            card.setClickable(true);
+            card.setFocusable(true);
+            card.setOnClickListener(v -> showCandidateManifestoDialog(name, dept, manifesto));
+            
+            // Highlight Top 3 with smooth Neon Cyan and Soft Electric Purple borders
+            if (rank == 1) card.setStrokeColor(Color.parseColor("#38BDF8")); // Neon Cyan
+            else if (rank == 2) card.setStrokeColor(Color.parseColor("#8B5CF6")); // Soft Electric Purple
+            else if (rank == 3) card.setStrokeColor(Color.parseColor("#6366F1")); // Indigo
+            else card.setStrokeColor(Color.parseColor("#334155"));
 
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(28, 24, 28, 24);
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.VERTICAL);
+            row.setPadding(28, 24, 28, 24);
 
-        LinearLayout topRow = new LinearLayout(this);
-        topRow.setOrientation(LinearLayout.HORIZONTAL);
-        topRow.setGravity(Gravity.CENTER_VERTICAL);
+            LinearLayout topRow = new LinearLayout(this);
+            topRow.setOrientation(LinearLayout.HORIZONTAL);
+            topRow.setGravity(Gravity.CENTER_VERTICAL);
 
-        LinearLayout textCol = new LinearLayout(this);
-        textCol.setOrientation(LinearLayout.VERTICAL);
-        textCol.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f));
+            ImageView imgCandidate = new ImageView(this);
+            int size = (int) (52 * getResources().getDisplayMetrics().density);
+            LinearLayout.LayoutParams imgLp = new LinearLayout.LayoutParams(size, size);
+            imgLp.setMargins(0, 0, 20, 0);
+            imgCandidate.setLayoutParams(imgLp);
+            imgCandidate.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
-        // Rank / Badge title
-        String rankTitle = name;
-        if (rank == 1) rankTitle = "🥇 " + name + " (1st Place)";
-        else if (rank == 2) rankTitle = "🥈 " + name + " (2nd Place)";
-        else if (rank == 3) rankTitle = "🥉 " + name + " (3rd Place)";
+            loadCandidateImage(this, imageUrl, imgCandidate);
 
-        TextView tvName = new TextView(this);
-        tvName.setText(rankTitle);
-        tvName.setTextSize(17f);
-        tvName.setTypeface(null, Typeface.BOLD);
-        tvName.setTextColor(Color.parseColor("#F8FAFC"));
+            topRow.addView(imgCandidate);
 
-        TextView tvVotes = new TextView(this);
-        tvVotes.setText("Votes: " + votes + "  •  Tap for Manifesto");
-        tvVotes.setTextSize(14f);
-        tvVotes.setTextColor(Color.parseColor("#38BDF8"));
-        tvVotes.setPadding(0, 4, 0, 8);
+            LinearLayout textCol = new LinearLayout(this);
+            textCol.setOrientation(LinearLayout.VERTICAL);
+            textCol.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f));
 
-        textCol.addView(tvName);
-        textCol.addView(tvVotes);
+            // Rank / Badge title
+            String rankTitle = name;
+            if (rank == 1) rankTitle = "🥇 " + name + " (1st Place)";
+            else if (rank == 2) rankTitle = "🥈 " + name + " (2nd Place)";
+            else if (rank == 3) rankTitle = "🥉 " + name + " (3rd Place)";
 
-        MaterialButton btnVote = new MaterialButton(this);
-        if (hasAlreadyVoted) {
-            btnVote.setText("Voted");
-            btnVote.setEnabled(false);
-            btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#10B981")));
-        } else {
-            btnVote.setText("Vote");
-            btnVote.setEnabled(isVotingEnabled);
-            btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#6366F1")));
-        }
-        btnVote.setCornerRadius(16);
+            TextView tvName = new TextView(this);
+            tvName.setText(rankTitle);
+            tvName.setTextSize(17f);
+            tvName.setTypeface(null, Typeface.BOLD);
+            tvName.setTextColor(Color.parseColor("#F8FAFC"));
 
-        btnVote.setOnClickListener(v -> {
-            v.setPressed(true);
+            TextView tvVotes = new TextView(this);
+            tvVotes.setText("Votes: " + votes + "  •  Tap for Manifesto");
+            tvVotes.setTextSize(14f);
+            tvVotes.setTextColor(Color.parseColor("#38BDF8"));
+            tvVotes.setPadding(0, 4, 0, 8);
+
+            textCol.addView(tvName);
+            textCol.addView(tvVotes);
+
+            MaterialButton btnVote = new MaterialButton(this);
             if (hasAlreadyVoted) {
-                Toast.makeText(this, "Security Alert: Dual voting is strictly blocked!", Toast.LENGTH_LONG).show();
-                return;
+                btnVote.setText("Voted");
+                btnVote.setEnabled(false);
+                btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#10B981")));
+            } else {
+                btnVote.setText("Vote");
+                btnVote.setEnabled(isVotingEnabled);
+                btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#6366F1")));
             }
+            btnVote.setCornerRadius(16);
 
-            if (id != null) {
-                dbRef.child("voters").child(sanitizedStudentId).addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        if (snapshot.exists()) {
-                            hasAlreadyVoted = true;
-                            Toast.makeText(StudentDashboardActivity.this, "Security Alert: You have already cast your vote!", Toast.LENGTH_LONG).show();
-                            refreshList();
-                        } else {
-                            Map<String, Object> updates = new HashMap<>();
-                            updates.put("voters/" + sanitizedStudentId, id);
-                            updates.put("candidates/" + id + "/votes", votes + 1);
-
-                            dbRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
-                                hasAlreadyVoted = true;
-                                Toast.makeText(StudentDashboardActivity.this, "Vote successfully recorded & secured!", Toast.LENGTH_SHORT).show();
-                                refreshList();
-                            }).addOnFailureListener(e -> {
-                                Toast.makeText(StudentDashboardActivity.this, "Transaction failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                            });
-                        }
+            btnVote.setOnClickListener(v -> {
+                try {
+                    if (isFinishing() || isDestroyed()) return;
+                    v.setPressed(true);
+                    if (hasAlreadyVoted) {
+                        Toast.makeText(this, "Security Alert: Dual voting is strictly blocked!", Toast.LENGTH_LONG).show();
+                        return;
                     }
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {}
-                });
-            }
-        });
 
-        topRow.addView(textCol);
-        topRow.addView(btnVote);
-        row.addView(topRow);
+                    if (id != null && !id.isEmpty()) {
+                        String vId = (sanitizedStudentId != null && !sanitizedStudentId.isEmpty()) ? sanitizedStudentId : "guest_voter";
+                        dbRef.child("voters").child(vId).addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                try {
+                                    if (isFinishing() || isDestroyed()) return;
+                                    if (snapshot.exists()) {
+                                        hasAlreadyVoted = true;
+                                        Toast.makeText(StudentDashboardActivity.this, "Security Alert: You have already cast your vote!", Toast.LENGTH_LONG).show();
+                                        refreshList();
+                                    } else {
+                                        Map<String, Object> updates = new HashMap<>();
+                                        updates.put("voters/" + vId, id);
+                                        updates.put("candidates/" + id + "/votes", votes + 1);
 
-        // Graphical Vote Count Progress Bar
-        ProgressBar progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-        LinearLayout.LayoutParams pbParams = new LinearLayout.LayoutParams(-1, 20);
-        pbParams.setMargins(0, 12, 0, 0);
-        progressBar.setLayoutParams(pbParams);
-        progressBar.setMax(Math.max(maxVotes, 10));
-        progressBar.setProgress(votes);
-        progressBar.setProgressTintList(ColorStateList.valueOf(rank == 1 ? Color.parseColor("#38BDF8") : Color.parseColor("#8B5CF6")));
-        row.addView(progressBar);
+                                        dbRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
+                                            if (isFinishing() || isDestroyed()) return;
+                                            hasAlreadyVoted = true;
+                                            Toast.makeText(StudentDashboardActivity.this, "Vote successfully recorded & secured!", Toast.LENGTH_SHORT).show();
+                                            refreshList();
+                                        }).addOnFailureListener(e -> {
+                                            Log.e("StudentDashboard", "Vote update failure", e);
+                                            if (!isFinishing() && !isDestroyed()) {
+                                                Toast.makeText(StudentDashboardActivity.this, "Transaction failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
+                                    }
+                                } catch (Exception e) {
+                                    Log.e("StudentDashboard", "Error processing vote snapshot", e);
+                                }
+                            }
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {
+                                Log.e("StudentDashboard", "Voter check cancelled: " + error.getMessage());
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    Log.e("StudentDashboard", "Error in btnVote click listener", e);
+                }
+            });
 
-        card.addView(row);
-        containerCandidates.addView(card);
+            topRow.addView(textCol);
+            topRow.addView(btnVote);
+            row.addView(topRow);
+
+            // Graphical Vote Count Progress Bar
+            ProgressBar progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+            LinearLayout.LayoutParams pbParams = new LinearLayout.LayoutParams(-1, 20);
+            pbParams.setMargins(0, 12, 0, 0);
+            progressBar.setLayoutParams(pbParams);
+            progressBar.setMax(Math.max(maxVotes, 10));
+            progressBar.setProgress(votes);
+            progressBar.setProgressTintList(ColorStateList.valueOf(rank == 1 ? Color.parseColor("#38BDF8") : Color.parseColor("#8B5CF6")));
+            row.addView(progressBar);
+
+            card.addView(row);
+            containerCandidates.addView(card);
+        } catch (Exception e) {
+            Log.e("StudentDashboard", "Error adding candidate card", e);
+        }
     }
 
     private void showCandidateManifestoDialog(String name, String dept, String manifesto) {
@@ -463,5 +602,128 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
         bottomSheetDialog.setContentView(view);
         bottomSheetDialog.show();
+    }
+
+    private void showNotificationSnackBar(String message) {
+        View rootView = findViewById(android.R.id.content);
+        if (rootView == null) return;
+        Snackbar snackbar = Snackbar.make(rootView, message, Snackbar.LENGTH_LONG);
+        View sbView = snackbar.getView();
+        sbView.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#6366F1")));
+        
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) sbView.getLayoutParams();
+        params.setMargins(32, 0, 32, 32);
+        sbView.setLayoutParams(params);
+        
+        TextView tv = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (tv != null) {
+            tv.setTextColor(Color.parseColor("#F8FAFC"));
+            tv.setTypeface(null, Typeface.BOLD);
+        }
+        snackbar.show();
+    }
+
+    private String uriToBase64(Uri uri) {
+        try {
+            if (uri == null) return "";
+            Bitmap bitmap;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ImageDecoder.Source source = ImageDecoder.createSource(getContentResolver(), uri);
+                bitmap = ImageDecoder.decodeBitmap(source);
+            } else {
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+            }
+            if (bitmap != null) {
+                int maxSize = 200;
+                int width = bitmap.getWidth();
+                int height = bitmap.getHeight();
+                float ratio = (float) width / (float) height;
+                if (ratio > 1) {
+                    width = maxSize;
+                    height = (int) (width / ratio);
+                } else {
+                    height = maxSize;
+                    width = (int) (height * ratio);
+                }
+                Bitmap resized = Bitmap.createScaledBitmap(bitmap, width, height, true);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                resized.compress(Bitmap.CompressFormat.JPEG, 75, baos);
+                byte[] bytes = baos.toByteArray();
+                return Base64.encodeToString(bytes, Base64.DEFAULT);
+            }
+        } catch (Exception e) {
+            Log.e("Base64Util", "Error converting uri to base64", e);
+        }
+        return "";
+    }
+
+    public static void loadCandidateImage(Context context, String base64OrUrl, ImageView imageView) {
+        try {
+            if (base64OrUrl != null && !base64OrUrl.isEmpty()) {
+                if (base64OrUrl.startsWith("http")) {
+                    Glide.with(context).load(base64OrUrl).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).centerCrop().into(imageView);
+                } else {
+                    byte[] decodedBytes = Base64.decode(base64OrUrl, Base64.DEFAULT);
+                    Glide.with(context).load(decodedBytes).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).centerCrop().into(imageView);
+                }
+            } else {
+                Glide.with(context).load(R.drawable.ic_app_main).centerCrop().into(imageView);
+            }
+        } catch (Exception e) {
+            Glide.with(context).load(R.drawable.ic_app_main).centerCrop().into(imageView);
+        }
+    }
+
+    public static void loadProfileImage(Context context, String base64OrUrl, ImageView imageView) {
+        try {
+            if (base64OrUrl != null && !base64OrUrl.isEmpty()) {
+                if (base64OrUrl.startsWith("http")) {
+                    Glide.with(context).load(base64OrUrl).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imageView);
+                } else {
+                    byte[] decodedBytes = Base64.decode(base64OrUrl, Base64.DEFAULT);
+                    Glide.with(context).load(decodedBytes).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imageView);
+                }
+            } else {
+                Glide.with(context).load(R.drawable.ic_app_main).circleCrop().into(imageView);
+            }
+        } catch (Exception e) {
+            Glide.with(context).load(R.drawable.ic_app_main).circleCrop().into(imageView);
+        }
+    }
+
+    private void uploadProfilePictureToFirebase(Uri imageUri) {
+        try {
+            if (imageUri == null) return;
+            String base64Img = uriToBase64(imageUri);
+            if (base64Img.isEmpty()) {
+                Toast.makeText(this, "Failed to process image", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            String uid = currentUser != null ? currentUser.getUid() : "";
+            String rawId = sessionManager != null ? sessionManager.getUserID() : "";
+            String sanitizedId = rawId != null ? rawId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "user";
+
+            sessionManager.setProfileImageUrl(base64Img);
+            loadProfileImage(this, base64Img, imgUserProfile);
+
+            Map<String, Object> updateMap = new HashMap<>();
+            updateMap.put("profileImageUrl", base64Img);
+
+            if (!uid.isEmpty()) {
+                dbRef.child("users").child(uid).updateChildren(updateMap);
+                FirebaseFirestore.getInstance().collection("users").document(uid).update(updateMap);
+            }
+            if (!sanitizedId.isEmpty()) {
+                dbRef.child("users").child(sanitizedId).updateChildren(updateMap);
+                FirebaseFirestore.getInstance().collection("users").document(sanitizedId).update(updateMap);
+            }
+
+            Toast.makeText(this, "Profile picture updated successfully!", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e("StudentDashboard", "Exception in uploadProfilePictureToFirebase (Base64)", e);
+            Toast.makeText(this, "Error updating profile picture: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 }

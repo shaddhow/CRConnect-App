@@ -14,7 +14,6 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,6 +23,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
@@ -41,8 +41,9 @@ public class RegisterActivity extends AppCompatActivity {
     private RadioGroup radioGroupRole;
     private View layoutStudentFields, layoutTeacherFields;
     private RadioButton rbTeacher, rbStudent;
-    private Button btnRegister;
+    private Button btnRegister, btnBackToLogin;
     private TextView tvLoginLink;
+    private MaterialCardView layoutFormCard, layoutSuccessCard;
     private SessionManager sessionManager;
 
     @Override
@@ -93,6 +94,14 @@ public class RegisterActivity extends AppCompatActivity {
         rbTeacher = findViewById(R.id.rbTeacher);
         btnRegister = findViewById(R.id.btnRegister);
         tvLoginLink = findViewById(R.id.tvLoginLink);
+        layoutFormCard = findViewById(R.id.layoutFormCard);
+        layoutSuccessCard = findViewById(R.id.layoutSuccessCard);
+        btnBackToLogin = findViewById(R.id.btnBackToLogin);
+
+        btnBackToLogin.setOnClickListener(v -> {
+            finish();
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
 
         radioGroupRole.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rbTeacher) {
@@ -199,15 +208,9 @@ public class RegisterActivity extends AppCompatActivity {
             })
             .addOnFailureListener(e -> {
                 Log.e("RegisterActivity", "FirebaseAuth error: " + e.getMessage(), e);
-                if (e.getMessage() != null && e.getMessage().contains("CONFIGURATION_NOT_FOUND")) {
-                    // CONFIGURATION_NOT_FOUND occurs when Email/Password sign-in provider is not enabled in Firebase Console.
-                    // Fallback to Realtime Database user creation so registration completes successfully.
-                    saveUserDataAndFinish(id, name, email, id, role, isStudent, section, intake, dept);
-                } else {
-                    btnRegister.setEnabled(true);
-                    btnRegister.setText("REGISTER");
-                    showSnackBar("⚠️ Registration Failed: " + e.getMessage(), true);
-                }
+                btnRegister.setEnabled(true);
+                btnRegister.setText("REGISTER");
+                showSnackBar("⚠️ Registration Failed: " + e.getMessage(), true);
             });
     }
 
@@ -244,9 +247,10 @@ public class RegisterActivity extends AppCompatActivity {
         FirebaseAuth.getInstance().signOut();
         sessionManager.logoutUser();
 
-        Toast.makeText(this, "Registration successful! A verification link was sent to " + email + ". Please check your inbox and verify your email before logging in.", Toast.LENGTH_LONG).show();
-        finish();
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        runOnUiThread(() -> {
+            if (layoutFormCard != null) layoutFormCard.setVisibility(View.GONE);
+            if (layoutSuccessCard != null) layoutSuccessCard.setVisibility(View.VISIBLE);
+        });
     }
 
     private void showSnackBar(String message, boolean isError) {

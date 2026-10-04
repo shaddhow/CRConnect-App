@@ -119,6 +119,19 @@
                             android:layout_marginTop="4dp"/>
                     </LinearLayout>
                 </LinearLayout>
+
+                <!-- Export Results to PDF Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnExportPdf"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="📄 Export Results to PDF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#F8FAFC"
+                    app:backgroundTint="#0284C7"
+                    app:cornerRadius="16dp"
+                    android:layout_marginTop="20dp"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -218,7 +231,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_marginBottom="20dp"
+                    android:layout_marginBottom="16dp"
                     app:boxCornerRadiusTopStart="16dp" app:boxCornerRadiusTopEnd="16dp"
                     app:boxCornerRadiusBottomStart="16dp" app:boxCornerRadiusBottomEnd="16dp"
                     app:boxStrokeColor="#10B981"
@@ -232,6 +245,36 @@
                         android:hint="Full Name"
                         android:textColor="#FFFFFF"/>
                 </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Candidate Photo Picker Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="20dp">
+
+                    <ImageView
+                        android:id="@+id/imgCandidatePhotoPreview"
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:src="@drawable/ic_app_main"
+                        android:scaleType="centerCrop"
+                        android:background="#2E374A"
+                        android:layout_marginEnd="16dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPickCandidatePhoto"
+                        android:layout_width="0dp"
+                        android:layout_height="52dp"
+                        android:layout_weight="1"
+                        android:text="Select Candidate Photo"
+                        android:textSize="13sp"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        app:strokeColor="#10B981"
+                        android:textColor="#38BDF8"
+                        app:cornerRadius="16dp"/>
+                </LinearLayout>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnAddCandidate"

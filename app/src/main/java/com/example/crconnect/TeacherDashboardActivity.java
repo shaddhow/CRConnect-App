@@ -1,10 +1,18 @@
 package com.example.crconnect;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.ImageDecoder;
 import android.graphics.Typeface;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -14,11 +22,16 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
+
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -26,6 +39,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -41,8 +55,12 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,8 +69,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
     private MaterialSwitch switchMasterVoting;
     private TextInputEditText etCandidateName;
-    private MaterialButton btnAddCandidate, btnRunOff, btnResetVotes, btnLogout, btnClearName;
-    private ImageView imgUserProfile;
+    private MaterialButton btnAddCandidate, btnRunOff, btnResetVotes, btnLogout, btnClearName, btnExportPdf, btnPickCandidatePhoto;
+    private ImageView imgUserProfile, imgCandidatePhotoPreview;
+    private Uri selectedImageUri = null;
+    private ActivityResultLauncher<Intent> imagePickerLauncher, profileImagePickerLauncher;
     private TextView tvHeaderTitle, tvHeaderSubtitle, tvTotalCandidates;
     private TextView tvStatTotalVotes, tvStatTotalVoters, tvStatTurnout;
     private LinearLayout containerAdminCandidates;
@@ -106,6 +126,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         btnClearName = findViewById(R.id.btnClearName);
         containerAdminCandidates = findViewById(R.id.containerAdminCandidates);
         imgUserProfile = findViewById(R.id.imgUserProfile);
+        imgCandidatePhotoPreview = findViewById(R.id.imgCandidatePhotoPreview);
+        btnPickCandidatePhoto = findViewById(R.id.btnPickCandidatePhoto);
         tvHeaderTitle = findViewById(R.id.tvHeaderTitle);
         tvHeaderSubtitle = findViewById(R.id.tvHeaderSubtitle);
         btnLogout = findViewById(R.id.btnLogout);
@@ -114,8 +136,28 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         tvStatTotalVotes = findViewById(R.id.tvStatTotalVotes);
         tvStatTotalVoters = findViewById(R.id.tvStatTotalVoters);
         tvStatTurnout = findViewById(R.id.tvStatTurnout);
+        btnExportPdf = findViewById(R.id.btnExportPdf);
+
+        btnExportPdf.setOnClickListener(v -> exportElectionResultsToPdf());
 
         tvHeaderTitle.setText("Admin Console");
+
+        imagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    selectedImageUri = result.getData().getData();
+                    if (selectedImageUri != null) {
+                        Glide.with(this).load(selectedImageUri).circleCrop().into(imgCandidatePhotoPreview);
+                    }
+                }
+            }
+        );
+
+        btnPickCandidatePhoto.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            imagePickerLauncher.launch(intent);
+        });
         
         // Dynamic Teacher Profile Loading from Firebase Realtime Database & Firestore
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -129,9 +171,15 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 if (snapshot.exists()) {
                     String name = snapshot.child("name").getValue(String.class);
                     String dept = snapshot.child("dept").getValue(String.class);
+                    String profileImg = snapshot.child("profileImageUrl").getValue(String.class);
                     if (name == null) name = sessionManager.getUserName();
                     if (dept == null) dept = sessionManager.getUserDept();
                     tvHeaderSubtitle.setText(name + " (" + dept + ")");
+
+                    if (profileImg != null && !profileImg.isEmpty()) {
+                        sessionManager.setProfileImageUrl(profileImg);
+                        loadProfileImage(TeacherDashboardActivity.this, profileImg, imgUserProfile);
+                    }
 
                     sessionManager.createLoginSession(
                         name,
@@ -151,9 +199,15 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                             if (doc.exists()) {
                                 String name = doc.getString("name");
                                 String dept = doc.getString("dept");
+                                String profileImg = doc.getString("profileImageUrl");
                                 if (name == null) name = sessionManager.getUserName();
                                 if (dept == null) dept = sessionManager.getUserDept();
                                 tvHeaderSubtitle.setText(name + " (" + dept + ")");
+
+                                if (profileImg != null && !profileImg.isEmpty()) {
+                                    sessionManager.setProfileImageUrl(profileImg);
+                                    Glide.with(TeacherDashboardActivity.this).load(profileImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
+                                }
                             } else {
                                 tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
                             }
@@ -177,7 +231,29 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
         }
 
-        Glide.with(this).load(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
+        String cachedProfileImg = sessionManager.getProfileImageUrl();
+        if (cachedProfileImg != null && !cachedProfileImg.isEmpty()) {
+            Glide.with(this).load(cachedProfileImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
+        } else {
+            Glide.with(this).load(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
+        }
+
+        profileImagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    Uri imageUri = result.getData().getData();
+                    if (imageUri != null) {
+                        uploadProfilePictureToFirebase(imageUri);
+                    }
+                }
+            }
+        );
+
+        imgUserProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            profileImagePickerLauncher.launch(intent);
+        });
 
         btnLogout.setOnClickListener(v -> {
             sessionManager.logoutUser();
@@ -192,6 +268,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         btnClearName.setOnClickListener(v -> {
             etCandidateName.setText("");
             etCandidateName.clearFocus();
+            selectedImageUri = null;
+            imgCandidatePhotoPreview.setImageResource(R.drawable.ic_app_main);
         });
 
         dbRef.child("master_voting_enabled").addValueEventListener(new ValueEventListener() {
@@ -207,36 +285,34 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         switchMasterVoting.setOnCheckedChangeListener((btn, isChecked) -> {
             dbRef.child("master_voting_enabled").setValue(isChecked);
             logAdminAction(isChecked ? "Enabled Master Voting" : "Disabled Master Voting");
+
+            String notifTitle = isChecked ? "🟢 Live Voting is OPEN" : "🔴 Live Voting is LOCKED";
+            String notifBody = isChecked ?
+                    "Election admin " + sessionManager.getUserName() + " has opened live voting! Cast your vote now." :
+                    "Live voting has been locked by election admin " + sessionManager.getUserName() + ".";
+            broadcastNotificationToStudents(notifTitle, notifBody, "GATE_CONTROL");
         });
 
         btnAddCandidate.setOnClickListener(v -> {
-            String name = etCandidateName.getText() != null ? etCandidateName.getText().toString().trim() : "";
-            if (name.isEmpty()) { 
-                etCandidateName.setError("Required"); 
-                etCandidateName.requestFocus();
-                return; 
-            }
+            try {
+                String name = etCandidateName.getText() != null ? etCandidateName.getText().toString().trim() : "";
+                if (name.isEmpty()) { 
+                    etCandidateName.setError("Required"); 
+                    etCandidateName.requestFocus();
+                    return; 
+                }
 
-            String cid = dbRef.child("candidates").push().getKey();
-            if (cid != null) {
-                Map<String, Object> map = new HashMap<>();
-                map.put("name", name);
-                map.put("votes", 0);
-                map.put("dept", "Department of CSE, BUBT");
-                map.put("manifesto", "Committed to student welfare, transparent CR communication, and academic support sessions.");
+                btnAddCandidate.setEnabled(false);
+                Toast.makeText(this, "Publishing candidate...", Toast.LENGTH_SHORT).show();
 
-                etCandidateName.setText("");
-                etCandidateName.clearFocus();
-
-                dbRef.child("candidates").child(cid).setValue(map)
-                    .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "Successfully added to student portal!", Toast.LENGTH_SHORT).show();
-                        logAdminAction("Added New Candidate: " + name);
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e("TeacherDashboard", "Failed to write candidate", e);
-                        Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    });
+                String base64Image = "";
+                if (selectedImageUri != null) {
+                    base64Image = uriToBase64(selectedImageUri);
+                }
+                saveCandidateToDatabase(name, base64Image);
+            } catch (Exception e) {
+                Log.e("TeacherDashboard", "Error in addCandidate button click", e);
+                btnAddCandidate.setEnabled(true);
             }
         });
 
@@ -244,19 +320,29 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         dbRef.child("candidates").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                tvTotalCandidates.setText("Total: " + snapshot.getChildrenCount());
-                containerAdminCandidates.removeAllViews();
-                
-                int totalVotes = 0;
-                for (DataSnapshot ds : snapshot.getChildren()) {
-                    Integer vts = ds.child("votes").getValue(Integer.class);
-                    if (vts != null) totalVotes += vts;
-                    addAdminRow(ds.getKey(), ds.child("name").getValue(String.class), vts);
+                try {
+                    if (isFinishing() || isDestroyed()) return;
+                    tvTotalCandidates.setText("Total: " + snapshot.getChildrenCount());
+                    containerAdminCandidates.removeAllViews();
+                    
+                    int totalVotes = 0;
+                    for (DataSnapshot ds : snapshot.getChildren()) {
+                        int vts = getSafeVotes(ds);
+                        totalVotes += vts;
+                        String imageUrl = ds.child("imageUrl").getValue(String.class);
+                        String cName = ds.child("name").getValue(String.class);
+                        if (cName == null) cName = "Candidate";
+                        addAdminRow(ds.getKey(), cName, vts, imageUrl);
+                    }
+                    tvStatTotalVotes.setText(String.valueOf(totalVotes));
+                } catch (Exception e) {
+                    Log.e("TeacherDashboard", "Error loading candidates list", e);
                 }
-                tvStatTotalVotes.setText(String.valueOf(totalVotes));
             }
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("TeacherDashboard", "Candidates query cancelled: " + error.getMessage());
+            }
         });
 
         // Live Voters Statistics Count
@@ -275,52 +361,178 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             public void onCancelled(@NonNull DatabaseError error) {}
         });
 
-        // Safety Confirmation Dialog for Reset All (Material Design 3)
+        // Safety Confirmation Bottom Sheet for Reset All (Material Design 3 & Glassmorphism)
         btnResetVotes.setOnClickListener(v -> {
-            new MaterialAlertDialogBuilder(this)
-                .setTitle("⚠️ Reset All Election Data?")
-                .setMessage("This will permanently delete all published candidates, votes, and voter security logs. This action cannot be undone.")
-                .setPositiveButton("Yes, Reset", (d, w) -> {
-                    Map<String, Object> resetMap = new HashMap<>();
-                    resetMap.put("candidates", null);
-                    resetMap.put("voters", null);
-                    dbRef.updateChildren(resetMap).addOnSuccessListener(unused -> {
-                        showSnackBar("Election data successfully reset.", false);
-                        logAdminAction("Reset All Election Votes & Candidates");
-                    });
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+            BottomSheetDialog sheet = new BottomSheetDialog(this);
+            LinearLayout view = new LinearLayout(this);
+            view.setOrientation(LinearLayout.VERTICAL);
+            view.setPadding(48, 48, 48, 48);
+            view.setBackgroundColor(Color.parseColor("#171A29"));
+
+            TextView title = new TextView(this);
+            title.setText("⚠️ Reset All Election Data?");
+            title.setTextSize(20f);
+            title.setTypeface(null, Typeface.BOLD);
+            title.setTextColor(Color.parseColor("#EF4444"));
+
+            TextView msg = new TextView(this);
+            msg.setText("This will permanently delete all published candidates, votes, and voter security logs. This action cannot be undone.");
+            msg.setTextSize(14f);
+            msg.setTextColor(Color.parseColor("#94A3B8"));
+            msg.setPadding(0, 12, 0, 24);
+
+            LinearLayout btnLayout = new LinearLayout(this);
+            btnLayout.setOrientation(LinearLayout.HORIZONTAL);
+            btnLayout.setGravity(Gravity.END);
+
+            MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.style.Widget_Material3_Button_TextButton);
+            btnCancel.setText("Cancel");
+            btnCancel.setTextColor(Color.parseColor("#94A3B8"));
+            btnCancel.setOnClickListener(dt -> sheet.dismiss());
+
+            MaterialButton btnConfirm = new MaterialButton(this);
+            btnConfirm.setText("Yes, Reset");
+            btnConfirm.setTextColor(Color.parseColor("#FFFFFF"));
+            btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#EF4444")));
+            btnConfirm.setCornerRadius(16);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+            lp.setMargins(16, 0, 0, 0);
+            btnConfirm.setLayoutParams(lp);
+
+            btnConfirm.setOnClickListener(dt -> {
+                sheet.dismiss();
+                Map<String, Object> resetMap = new HashMap<>();
+                resetMap.put("candidates", null);
+                resetMap.put("voters", null);
+                dbRef.updateChildren(resetMap).addOnSuccessListener(unused -> {
+                    showSnackBar("Election data successfully reset.", false);
+                    logAdminAction("Reset All Election Votes & Candidates");
+                    broadcastNotificationToStudents(
+                        "⚠️ Election Portal Reset",
+                        "Election portal data has been reset by the teacher.",
+                        "RESET"
+                    );
+                });
+            });
+
+            btnLayout.addView(btnCancel);
+            btnLayout.addView(btnConfirm);
+            view.addView(title);
+            view.addView(msg);
+            view.addView(btnLayout);
+            sheet.setContentView(view);
+            sheet.show();
         });
 
-        // Safety Confirmation Dialog for Run-Off (Material Design 3)
+        // Safety Confirmation Bottom Sheet for Run-Off (Material Design 3 & Glassmorphism)
         btnRunOff.setOnClickListener(v -> {
-            new MaterialAlertDialogBuilder(this)
-                .setTitle("⚡ Initialize Run-Off / Tie-Breaker?")
-                .setMessage("This will reset all vote counts to 0 while keeping the candidate list for a run-off election round. All voter security locks will be cleared. Proceed?")
-                .setPositiveButton("Proceed", (d, w) -> {
-                    dbRef.child("candidates").addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            Map<String, Object> updates = new HashMap<>();
-                            for (DataSnapshot ds : snapshot.getChildren()) {
-                                updates.put(ds.getKey() + "/votes", 0);
-                            }
-                            dbRef.child("candidates").updateChildren(updates);
-                            dbRef.child("voters").removeValue();
-                            showSnackBar("Run-off election round initialized!", false);
-                            logAdminAction("Initialized Run-Off Election Round");
+            BottomSheetDialog sheet = new BottomSheetDialog(this);
+            LinearLayout view = new LinearLayout(this);
+            view.setOrientation(LinearLayout.VERTICAL);
+            view.setPadding(48, 48, 48, 48);
+            view.setBackgroundColor(Color.parseColor("#171A29"));
+
+            TextView title = new TextView(this);
+            title.setText("⚡ Initialize Run-Off / Tie-Breaker?");
+            title.setTextSize(20f);
+            title.setTypeface(null, Typeface.BOLD);
+            title.setTextColor(Color.parseColor("#8B5CF6"));
+
+            TextView msg = new TextView(this);
+            msg.setText("This will reset all vote counts to 0 while keeping the candidate list for a run-off election round. All voter security locks will be cleared. Proceed?");
+            msg.setTextSize(14f);
+            msg.setTextColor(Color.parseColor("#94A3B8"));
+            msg.setPadding(0, 12, 0, 24);
+
+            LinearLayout btnLayout = new LinearLayout(this);
+            btnLayout.setOrientation(LinearLayout.HORIZONTAL);
+            btnLayout.setGravity(Gravity.END);
+
+            MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.style.Widget_Material3_Button_TextButton);
+            btnCancel.setText("Cancel");
+            btnCancel.setTextColor(Color.parseColor("#94A3B8"));
+            btnCancel.setOnClickListener(dt -> sheet.dismiss());
+
+            MaterialButton btnConfirm = new MaterialButton(this);
+            btnConfirm.setText("Proceed");
+            btnConfirm.setTextColor(Color.parseColor("#FFFFFF"));
+            btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#8B5CF6")));
+            btnConfirm.setCornerRadius(16);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+            lp.setMargins(16, 0, 0, 0);
+            btnConfirm.setLayoutParams(lp);
+
+            btnConfirm.setOnClickListener(dt -> {
+                sheet.dismiss();
+                dbRef.child("candidates").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        Map<String, Object> updates = new HashMap<>();
+                        for (DataSnapshot ds : snapshot.getChildren()) {
+                            updates.put(ds.getKey() + "/votes", 0);
                         }
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {}
-                    });
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+                        dbRef.child("candidates").updateChildren(updates);
+                        dbRef.child("voters").removeValue();
+                        showSnackBar("Run-off election round initialized!", false);
+                        logAdminAction("Initialized Run-Off Election Round");
+                        broadcastNotificationToStudents(
+                            "⚡ Run-Off Round Initialized",
+                            "A run-off election round has been initiated. All vote locks are cleared!",
+                            "RUN_OFF"
+                        );
+                    }
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
+            });
+
+            btnLayout.addView(btnCancel);
+            btnLayout.addView(btnConfirm);
+            view.addView(title);
+            view.addView(msg);
+            view.addView(btnLayout);
+            sheet.setContentView(view);
+            sheet.show();
         });
     }
 
-    private void addAdminRow(String candidateId, String name, Integer vts) {
+    private void saveCandidateToDatabase(String name, String imageUrl) {
+        String cid = dbRef.child("candidates").push().getKey();
+        if (cid != null) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", name);
+            map.put("votes", 0);
+            map.put("imageUrl", imageUrl != null ? imageUrl : "");
+            map.put("dept", "Department of CSE, BUBT");
+            map.put("manifesto", "Committed to student welfare, transparent CR communication, and academic support sessions.");
+
+            etCandidateName.setText("");
+            etCandidateName.clearFocus();
+            selectedImageUri = null;
+            imgCandidatePhotoPreview.setImageResource(R.drawable.ic_app_main);
+            btnAddCandidate.setEnabled(true);
+
+            dbRef.child("candidates").child(cid).setValue(map)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Successfully added to student portal!", Toast.LENGTH_SHORT).show();
+                    logAdminAction("Added New Candidate: " + name);
+                    broadcastNotificationToStudents(
+                        "📢 New Candidate Published",
+                        name + " has been added to the student election portal. Check out their manifesto!",
+                        "NEW_CANDIDATE"
+                    );
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("TeacherDashboard", "Failed to write candidate", e);
+                    btnAddCandidate.setEnabled(true);
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+        } else {
+            btnAddCandidate.setEnabled(true);
+        }
+    }
+
+    private void addAdminRow(String candidateId, String name, Integer vts, String imageUrl) {
         MaterialCardView card = new MaterialCardView(this);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(0, 0, 0, 16);
@@ -334,6 +546,17 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         LinearLayout row = new LinearLayout(this);
         row.setPadding(24, 20, 24, 20);
         row.setGravity(Gravity.CENTER_VERTICAL);
+
+        ImageView imgCandidate = new ImageView(this);
+        int size = (int) (48 * getResources().getDisplayMetrics().density);
+        LinearLayout.LayoutParams imgLp = new LinearLayout.LayoutParams(size, size);
+        imgLp.setMargins(0, 0, 20, 0);
+        imgCandidate.setLayoutParams(imgLp);
+        imgCandidate.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+        loadCandidateImage(this, imageUrl, imgCandidate);
+
+        row.addView(imgCandidate);
 
         LinearLayout textCol = new LinearLayout(this);
         textCol.setOrientation(LinearLayout.VERTICAL);
@@ -365,17 +588,57 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         btnDelete.setLayoutParams(new LinearLayout.LayoutParams(-2, -2));
 
         btnDelete.setOnClickListener(v -> {
-            new MaterialAlertDialogBuilder(this)
-                .setTitle("Delete Candidate")
-                .setMessage("Remove " + name + "?")
-                .setPositiveButton("Delete", (d, w) -> {
-                    if (candidateId != null) {
-                        dbRef.child("candidates").child(candidateId).removeValue()
-                            .addOnSuccessListener(aVoid -> showSnackBar("Candidate removed", false));
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+            BottomSheetDialog sheet = new BottomSheetDialog(this);
+            LinearLayout view = new LinearLayout(this);
+            view.setOrientation(LinearLayout.VERTICAL);
+            view.setPadding(48, 48, 48, 48);
+            view.setBackgroundColor(Color.parseColor("#171A29"));
+
+            TextView title = new TextView(this);
+            title.setText("Delete Candidate");
+            title.setTextSize(20f);
+            title.setTypeface(null, Typeface.BOLD);
+            title.setTextColor(Color.parseColor("#F87171"));
+
+            TextView msg = new TextView(this);
+            msg.setText("Remove " + name + "?");
+            msg.setTextSize(14f);
+            msg.setTextColor(Color.parseColor("#94A3B8"));
+            msg.setPadding(0, 12, 0, 24);
+
+            LinearLayout btnLayout = new LinearLayout(this);
+            btnLayout.setOrientation(LinearLayout.HORIZONTAL);
+            btnLayout.setGravity(Gravity.END);
+
+            MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.style.Widget_Material3_Button_TextButton);
+            btnCancel.setText("Cancel");
+            btnCancel.setTextColor(Color.parseColor("#94A3B8"));
+            btnCancel.setOnClickListener(dt -> sheet.dismiss());
+
+            MaterialButton btnConfirm = new MaterialButton(this);
+            btnConfirm.setText("Delete");
+            btnConfirm.setTextColor(Color.parseColor("#FFFFFF"));
+            btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#F87171")));
+            btnConfirm.setCornerRadius(16);
+            LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(-2, -2);
+            btnLp.setMargins(16, 0, 0, 0);
+            btnConfirm.setLayoutParams(btnLp);
+
+            btnConfirm.setOnClickListener(dt -> {
+                sheet.dismiss();
+                if (candidateId != null) {
+                    dbRef.child("candidates").child(candidateId).removeValue()
+                        .addOnSuccessListener(aVoid -> showSnackBar("Candidate removed", false));
+                }
+            });
+
+            btnLayout.addView(btnCancel);
+            btnLayout.addView(btnConfirm);
+            view.addView(title);
+            view.addView(msg);
+            view.addView(btnLayout);
+            sheet.setContentView(view);
+            sheet.show();
         });
 
         row.addView(textCol);
@@ -416,5 +679,244 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             dbRef.child("audit_logs").child(logId).setValue(logMap);
         }
+    }
+
+    private void broadcastNotificationToStudents(String title, String body, String actionType) {
+        String notifId = dbRef.child("notifications_queue").push().getKey();
+        Map<String, Object> notifMap = new HashMap<>();
+        notifMap.put("title", title);
+        notifMap.put("body", body);
+        notifMap.put("topic", "all_students");
+        notifMap.put("actionType", actionType);
+        notifMap.put("sender", sessionManager.getUserName());
+        notifMap.put("timestamp", ServerValue.TIMESTAMP);
+
+        if (notifId != null) {
+            dbRef.child("notifications_queue").child(notifId).setValue(notifMap);
+        }
+        dbRef.child("broadcast_notifications").setValue(notifMap);
+    }
+
+    private void exportElectionResultsToPdf() {
+        Toast.makeText(this, "Generating Election PDF Report...", Toast.LENGTH_SHORT).show();
+
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                DataSnapshot candidatesSnap = snapshot.child("candidates");
+                DataSnapshot votersSnap = snapshot.child("voters");
+                Boolean gateStatus = snapshot.child("master_voting_enabled").getValue(Boolean.class);
+
+                int totalVotes = 0;
+                List<PdfReportGenerator.CandidateResult> rawList = new ArrayList<>();
+
+                for (DataSnapshot ds : candidatesSnap.getChildren()) {
+                    String name = ds.child("name").getValue(String.class);
+                    String dept = ds.child("dept").getValue(String.class);
+                    if (name == null) name = "Candidate";
+                    if (dept == null || dept.isEmpty()) dept = "Department of CSE, BUBT";
+                    Integer vts = ds.child("votes").getValue(Integer.class);
+                    int votes = vts != null ? vts : 0;
+                    totalVotes += votes;
+
+                    rawList.add(new PdfReportGenerator.CandidateResult(name, dept, votes, 0));
+                }
+
+                rawList.sort((c1, c2) -> Integer.compare(c2.votes, c1.votes));
+
+                List<PdfReportGenerator.CandidateResult> rankedList = new ArrayList<>();
+                int rank = 1;
+                for (PdfReportGenerator.CandidateResult c : rawList) {
+                    rankedList.add(new PdfReportGenerator.CandidateResult(c.name, c.dept, c.votes, rank));
+                    rank++;
+                }
+
+                int totalVoters = (int) votersSnap.getChildrenCount();
+                int estimatedTotalStudents = 50;
+                int turnoutInt = (int) Math.min(100, (totalVoters * 100) / estimatedTotalStudents);
+                String turnoutStr = turnoutInt + "%";
+
+                String teacherName = sessionManager.getUserName();
+                String teacherDept = sessionManager.getUserDept();
+
+                File pdfFile = PdfReportGenerator.generatePdfDocument(
+                        TeacherDashboardActivity.this,
+                        teacherName,
+                        teacherDept,
+                        totalVotes,
+                        totalVoters,
+                        turnoutStr,
+                        gateStatus != null && gateStatus,
+                        rankedList
+                );
+
+                if (pdfFile != null) {
+                    logAdminAction("Exported Election Results to PDF Report");
+
+                    BottomSheetDialog pdfSheet = new BottomSheetDialog(TeacherDashboardActivity.this);
+                    View view = getLayoutInflater().inflate(R.layout.dialog_pdf_ready, null);
+
+                    MaterialButton btnPrint = view.findViewById(R.id.btnPrintPdf);
+                    MaterialButton btnShare = view.findViewById(R.id.btnSharePdf);
+                    MaterialButton btnOpen = view.findViewById(R.id.btnOpenPdf);
+
+                    btnPrint.setOnClickListener(dt -> {
+                        pdfSheet.dismiss();
+                        PdfReportGenerator.printPdfDocument(TeacherDashboardActivity.this, pdfFile);
+                    });
+
+                    btnShare.setOnClickListener(dt -> {
+                        pdfSheet.dismiss();
+                        PdfReportGenerator.sharePdfFile(TeacherDashboardActivity.this, pdfFile);
+                    });
+
+                    btnOpen.setOnClickListener(dt -> {
+                        pdfSheet.dismiss();
+                        try {
+                            Uri fileUri = FileProvider.getUriForFile(
+                                TeacherDashboardActivity.this,
+                                "com.example.crconnect.fileprovider",
+                                pdfFile
+                            );
+                            Intent openIntent = new Intent(Intent.ACTION_VIEW);
+                            openIntent.setDataAndType(fileUri, "application/pdf");
+                            openIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            openIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            TeacherDashboardActivity.this.startActivity(openIntent);
+                        } catch (Exception e) {
+                            Log.e("TeacherDashboard", "Error opening PDF", e);
+                            Toast.makeText(TeacherDashboardActivity.this, "No PDF viewer app found or error opening file", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+                    pdfSheet.setContentView(view);
+                    pdfSheet.show();
+                } else {
+                    Toast.makeText(TeacherDashboardActivity.this, "Error compiling PDF document", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(TeacherDashboardActivity.this, "Failed to load data for PDF: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private String uriToBase64(Uri uri) {
+        try {
+            if (uri == null) return "";
+            Bitmap bitmap;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ImageDecoder.Source source = ImageDecoder.createSource(getContentResolver(), uri);
+                bitmap = ImageDecoder.decodeBitmap(source);
+            } else {
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+            }
+            if (bitmap != null) {
+                int maxSize = 200;
+                int width = bitmap.getWidth();
+                int height = bitmap.getHeight();
+                float ratio = (float) width / (float) height;
+                if (ratio > 1) {
+                    width = maxSize;
+                    height = (int) (width / ratio);
+                } else {
+                    height = maxSize;
+                    width = (int) (height * ratio);
+                }
+                Bitmap resized = Bitmap.createScaledBitmap(bitmap, width, height, true);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                resized.compress(Bitmap.CompressFormat.JPEG, 75, baos);
+                byte[] bytes = baos.toByteArray();
+                return Base64.encodeToString(bytes, Base64.DEFAULT);
+            }
+        } catch (Exception e) {
+            Log.e("Base64Util", "Error converting uri to base64", e);
+        }
+        return "";
+    }
+
+    public static void loadCandidateImage(Context context, String base64OrUrl, ImageView imageView) {
+        try {
+            if (base64OrUrl != null && !base64OrUrl.isEmpty()) {
+                if (base64OrUrl.startsWith("http")) {
+                    Glide.with(context).load(base64OrUrl).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).centerCrop().into(imageView);
+                } else {
+                    byte[] decodedBytes = Base64.decode(base64OrUrl, Base64.DEFAULT);
+                    Glide.with(context).load(decodedBytes).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).centerCrop().into(imageView);
+                }
+            } else {
+                Glide.with(context).load(R.drawable.ic_app_main).centerCrop().into(imageView);
+            }
+        } catch (Exception e) {
+            Glide.with(context).load(R.drawable.ic_app_main).centerCrop().into(imageView);
+        }
+    }
+
+    public static void loadProfileImage(Context context, String base64OrUrl, ImageView imageView) {
+        try {
+            if (base64OrUrl != null && !base64OrUrl.isEmpty()) {
+                if (base64OrUrl.startsWith("http")) {
+                    Glide.with(context).load(base64OrUrl).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imageView);
+                } else {
+                    byte[] decodedBytes = Base64.decode(base64OrUrl, Base64.DEFAULT);
+                    Glide.with(context).load(decodedBytes).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imageView);
+                }
+            } else {
+                Glide.with(context).load(R.drawable.ic_app_main).circleCrop().into(imageView);
+            }
+        } catch (Exception e) {
+            Glide.with(context).load(R.drawable.ic_app_main).circleCrop().into(imageView);
+        }
+    }
+
+    private void uploadProfilePictureToFirebase(Uri imageUri) {
+        try {
+            if (imageUri == null) return;
+            String base64Img = uriToBase64(imageUri);
+            if (base64Img.isEmpty()) {
+                Toast.makeText(this, "Failed to process image", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            String uid = currentUser != null ? currentUser.getUid() : "";
+            String rawId = sessionManager != null ? sessionManager.getUserID() : "";
+            String sanitizedId = rawId != null ? rawId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "user";
+
+            sessionManager.setProfileImageUrl(base64Img);
+            loadProfileImage(this, base64Img, imgUserProfile);
+
+            Map<String, Object> updateMap = new HashMap<>();
+            updateMap.put("profileImageUrl", base64Img);
+
+            if (!uid.isEmpty()) {
+                dbRef.child("users").child(uid).updateChildren(updateMap);
+                FirebaseFirestore.getInstance().collection("users").document(uid).update(updateMap);
+            }
+            if (!sanitizedId.isEmpty()) {
+                dbRef.child("users").child(sanitizedId).updateChildren(updateMap);
+                FirebaseFirestore.getInstance().collection("users").document(sanitizedId).update(updateMap);
+            }
+
+            Toast.makeText(this, "Profile picture updated successfully!", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e("TeacherDashboard", "Exception in uploadProfilePictureToFirebase (Base64)", e);
+            Toast.makeText(this, "Error updating profile picture: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private int getSafeVotes(DataSnapshot ds) {
+        try {
+            if (ds == null || !ds.hasChild("votes")) return 0;
+            Object val = ds.child("votes").getValue();
+            if (val instanceof Long) return ((Long) val).intValue();
+            if (val instanceof Integer) return (Integer) val;
+            if (val instanceof String) return Integer.parseInt((String) val);
+        } catch (Exception e) {
+            Log.e("TeacherDashboard", "Error parsing safe votes", e);
+        }
+        return 0;
     }
 }

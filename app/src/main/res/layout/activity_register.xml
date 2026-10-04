@@ -38,6 +38,7 @@
 
         <!-- Register Card (Figma Dark Glassmorphism) -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/layoutFormCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="32dp"
@@ -330,6 +331,67 @@
                     android:textColor="#06B6D4"
                     android:gravity="center"
                     android:padding="8dp"/>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Success State Card (Initially Gone) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/layoutSuccessCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="24dp"
+            app:cardBackgroundColor="#E61E293B"
+            app:strokeWidth="1.5dp"
+            app:strokeColor="#10B981"
+            android:visibility="gone"
+            android:layout_marginBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp">
+
+                <ImageView
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:src="@drawable/ic_app_main"
+                    android:layout_marginBottom="16dp"
+                    tools:ignore="ContentDescription,UseAppTint" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Verification Required"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="#38BDF8"
+                    android:gravity="center"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:id="@+id/tvSuccessMessage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Verification link sent to your email. Please check your inbox and verify your account before logging in."
+                    android:textSize="15sp"
+                    android:textColor="#CBD5E1"
+                    android:gravity="center"
+                    android:lineSpacingExtra="4dp"
+                    android:layout_marginBottom="28dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBackToLogin"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="Back to Login"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="#10B981"
+                    app:cornerRadius="16dp" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
