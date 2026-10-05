@@ -82,9 +82,12 @@ public class StudentDashboardActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         
         sessionManager = new SessionManager(this);
+        if (!checkUserAuthenticationAndRole()) {
+            return;
+        }
         
         String rawId = sessionManager.getUserID();
-        sanitizedStudentId = rawId != null ? rawId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "guest_user";
+        sanitizedStudentId = rawId != null && !rawId.isEmpty() ? rawId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "";
 
         // --- TRUE FULL SCREEN (GOOGLE STYLE) ---
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
@@ -725,5 +728,58 @@ public class StudentDashboardActivity extends AppCompatActivity {
             Log.e("StudentDashboard", "Exception in uploadProfilePictureToFirebase (Base64)", e);
             Toast.makeText(this, "Error updating profile picture: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        checkUserAuthenticationAndRole();
+    }
+
+    private boolean checkUserAuthenticationAndRole() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null || currentUser.isAnonymous()) {
+            redirectToLogin("Authentication required. Please log in.");
+            return false;
+        }
+
+        if (!currentUser.isEmailVerified()) {
+            redirectToLogin("Email not verified. Please verify your BUBT email first.");
+            return false;
+        }
+
+        String email = currentUser.getEmail();
+        if (email == null || (!email.toLowerCase().endsWith("@bubt.edu.bd") && !email.toLowerCase().endsWith("@cse.bubt.edu.bd"))) {
+            redirectToLogin("Only official BUBT emails (@bubt.edu.bd or @cse.bubt.edu.bd) are authorized.");
+            return false;
+        }
+
+        if (!sessionManager.isLoggedIn()) {
+            redirectToLogin("Session expired. Please log in again.");
+            return false;
+        }
+
+        String role = sessionManager.getUserRole();
+        if ("Teacher/Admin".equals(role)) {
+            Intent intent = new Intent(this, TeacherDashboardActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+            return false;
+        }
+
+        return true;
+    }
+
+    private void redirectToLogin(String message) {
+        FirebaseAuth.getInstance().signOut();
+        sessionManager.logoutUser();
+        if (message != null && !message.isEmpty()) {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        }
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

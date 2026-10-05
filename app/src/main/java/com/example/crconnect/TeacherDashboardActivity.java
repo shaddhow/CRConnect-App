@@ -84,6 +84,9 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         
         sessionManager = new SessionManager(this);
+        if (!checkUserAuthenticationAndRole()) {
+            return;
+        }
         
         // --- TRUE FULL SCREEN (GOOGLE STYLE) ---
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
@@ -209,17 +212,17 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                     Glide.with(TeacherDashboardActivity.this).load(profileImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
                                 }
                             } else {
-                                tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
+                                redirectToLogin("Teacher profile not found in database. Access denied.");
                             }
                         });
                 } else {
-                    tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
+                    redirectToLogin("Teacher profile not found in database. Access denied.");
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
+                redirectToLogin("Database error verifying teacher account: " + error.getMessage());
             }
         };
 
@@ -228,7 +231,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         } else if (!sanitizedTeacherId.isEmpty()) {
             dbRef.child("users").child(sanitizedTeacherId).addListenerForSingleValueEvent(teacherListener);
         } else {
-            tvHeaderSubtitle.setText("Teacher: " + sessionManager.getUserName());
+            redirectToLogin("Teacher profile ID not found.");
         }
 
         String cachedProfileImg = sessionManager.getProfileImageUrl();
@@ -918,5 +921,59 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             Log.e("TeacherDashboard", "Error parsing safe votes", e);
         }
         return 0;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        checkUserAuthenticationAndRole();
+    }
+
+    private boolean checkUserAuthenticationAndRole() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null || currentUser.isAnonymous()) {
+            redirectToLogin("Authentication required. Please log in.");
+            return false;
+        }
+
+        if (!currentUser.isEmailVerified()) {
+            redirectToLogin("Email not verified. Please verify your BUBT email first.");
+            return false;
+        }
+
+        String email = currentUser.getEmail();
+        if (email == null || (!email.toLowerCase().endsWith("@bubt.edu.bd") && !email.toLowerCase().endsWith("@cse.bubt.edu.bd"))) {
+            redirectToLogin("Only official BUBT emails (@bubt.edu.bd or @cse.bubt.edu.bd) are authorized.");
+            return false;
+        }
+
+        if (!sessionManager.isLoggedIn()) {
+            redirectToLogin("Session expired. Please log in again.");
+            return false;
+        }
+
+        String role = sessionManager.getUserRole();
+        if (!"Teacher/Admin".equals(role)) {
+            Toast.makeText(this, "Unauthorized access: Teacher privileges required.", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(this, StudentDashboardActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+            return false;
+        }
+
+        return true;
+    }
+
+    private void redirectToLogin(String message) {
+        FirebaseAuth.getInstance().signOut();
+        sessionManager.logoutUser();
+        if (message != null && !message.isEmpty()) {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        }
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

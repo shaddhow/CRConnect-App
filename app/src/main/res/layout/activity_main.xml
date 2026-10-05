@@ -41,7 +41,7 @@
                 android:text="CRConnect"
                 android:textSize="32sp"
                 android:textStyle="bold"
-                android:textColor="#F8FAFC"/>
+                android:textColor="#FFFFFF"/>
 
             <TextView
                 android:id="@+id/tvAppSubtitle"
@@ -49,20 +49,20 @@
                 android:layout_height="wrap_content"
                 android:text="BUBT Department Network"
                 android:textSize="14sp"
-                android:textColor="#94A3B8"
+                android:textColor="#CBD5E1"
                 android:letterSpacing="0.05"
                 android:layout_marginTop="4dp"/>
         </LinearLayout>
 
-        <!-- Login Card (Figma Dark Glassmorphism) -->
+        <!-- Login Card Container (Distinct Surface Color & Visible Border) -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="32dp"
             app:cardElevation="24dp"
-            app:cardBackgroundColor="#E61E293B"
-            app:strokeWidth="1.5dp"
-            app:strokeColor="#334155">
+            app:cardBackgroundColor="#F2263345"
+            app:strokeWidth="2dp"
+            app:strokeColor="#38BDF8">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -87,8 +87,8 @@
                         android:checked="true"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="#F8FAFC"
-                        android:buttonTint="#6366F1"
+                        android:textColor="#FFFFFF"
+                        android:buttonTint="#38BDF8"
                         android:layout_marginEnd="32dp"/>
 
                     <RadioButton
@@ -98,22 +98,27 @@
                         android:text="Teacher"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="#F8FAFC"
-                        android:buttonTint="#6366F1"/>
+                        android:textColor="#FFFFFF"
+                        android:buttonTint="#38BDF8"/>
                 </RadioGroup>
 
-                <!-- Input Fields -->
+                <!-- Input Fields with Sharp, High-Contrast Neon Cyan Borders -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilEmail"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="16dp" app:boxCornerRadiusTopEnd="16dp"
-                    app:boxCornerRadiusBottomStart="16dp" app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxCornerRadiusTopStart="16dp"
+                    app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp"
+                    app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxBackgroundColor="#1A2234"
+                    app:boxStrokeColor="#38BDF8"
+                    app:boxStrokeWidth="2dp"
+                    app:boxStrokeWidthFocused="2dp"
                     android:textColorHint="#94A3B8"
-                    app:boxStrokeColor="#6366F1"
-                    app:hintTextColor="#6366F1">
+                    app:hintTextColor="#38BDF8">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etEmail"
@@ -130,13 +135,18 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="16dp" app:boxCornerRadiusTopEnd="16dp"
-                    app:boxCornerRadiusBottomStart="16dp" app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxCornerRadiusTopStart="16dp"
+                    app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp"
+                    app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxBackgroundColor="#1A2234"
+                    app:boxStrokeColor="#38BDF8"
+                    app:boxStrokeWidth="2dp"
+                    app:boxStrokeWidthFocused="2dp"
                     android:textColorHint="#94A3B8"
-                    app:boxStrokeColor="#6366F1"
-                    app:hintTextColor="#6366F1"
+                    app:hintTextColor="#38BDF8"
                     app:endIconMode="password_toggle"
-                    app:endIconTint="#94A3B8">
+                    app:endIconTint="#38BDF8">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etPassword"
@@ -148,7 +158,7 @@
                         android:textSize="16sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Login Button -->
+                <!-- Vibrant High-Contrast Sign In Button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnLogin"
                     android:layout_width="match_parent"
@@ -156,11 +166,12 @@
                     android:text="SIGN IN"
                     android:textSize="16sp"
                     android:textStyle="bold"
+                    android:textColor="#0F172A"
                     app:cornerRadius="16dp"
-                    app:backgroundTint="#6366F1"
+                    app:backgroundTint="#38BDF8"
                     android:layout_marginBottom="16dp"/>
 
-                <!-- Forgot Password Link -->
+                <!-- High-Contrast Footer Links -->
                 <TextView
                     android:id="@+id/tvForgotPassword"
                     android:layout_width="match_parent"
@@ -173,7 +184,6 @@
                     android:padding="6dp"
                     android:layout_marginBottom="8dp"/>
 
-                <!-- Register Link -->
                 <TextView
                     android:id="@+id/tvRegisterLink"
                     android:layout_width="match_parent"
@@ -181,7 +191,7 @@
                     android:text="Don't have an account? Register"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#06B6D4"
+                    android:textColor="#FFFFFF"
                     android:gravity="center"
                     android:padding="6dp"/>
 

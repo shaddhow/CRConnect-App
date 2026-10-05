@@ -38,6 +38,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -71,21 +72,36 @@ public class MainActivity extends AppCompatActivity {
         if (currentUser != null && !currentUser.isAnonymous()) {
             currentUser.reload().addOnCompleteListener(task -> {
                 FirebaseUser refreshedUser = FirebaseAuth.getInstance().getCurrentUser();
-                if (refreshedUser != null && !refreshedUser.isEmailVerified()) {
+                if (refreshedUser != null) {
+                    String refreshedEmail = refreshedUser.getEmail();
+                    boolean isValidDomain = refreshedEmail != null &&
+                        (refreshedEmail.toLowerCase().endsWith("@bubt.edu.bd") || refreshedEmail.toLowerCase().endsWith("@cse.bubt.edu.bd"));
+
+                    if (!refreshedUser.isEmailVerified()) {
+                        FirebaseAuth.getInstance().signOut();
+                        sessionManager.logoutUser();
+                        Toast.makeText(MainActivity.this, "Please verify your BUBT email first.", Toast.LENGTH_LONG).show();
+                    } else if (!isValidDomain) {
+                        FirebaseAuth.getInstance().signOut();
+                        sessionManager.logoutUser();
+                        Toast.makeText(MainActivity.this, "Only official BUBT emails (@bubt.edu.bd or @cse.bubt.edu.bd) are allowed.", Toast.LENGTH_LONG).show();
+                    } else if (sessionManager.isLoggedIn()) {
+                        navigateBasedOnRole(sessionManager.getUserRole());
+                        finish();
+                        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                    } else {
+                        FirebaseAuth.getInstance().signOut();
+                        sessionManager.logoutUser();
+                    }
+                } else {
                     FirebaseAuth.getInstance().signOut();
                     sessionManager.logoutUser();
-                    Toast.makeText(MainActivity.this, "Please verify your email first.", Toast.LENGTH_LONG).show();
-                } else if (sessionManager.isLoggedIn()) {
-                    navigateBasedOnRole(sessionManager.getUserRole());
-                    finish();
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 }
             });
-        } else if (sessionManager.isLoggedIn()) {
-            navigateBasedOnRole(sessionManager.getUserRole());
-            finish();
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-            return;
+        } else {
+            // Strictly require active Firebase user; clear stale local session
+            FirebaseAuth.getInstance().signOut();
+            sessionManager.logoutUser();
         }
 
         // Safe Area Padding (Content won't touch the bars)
@@ -364,85 +380,99 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseUser user = authResult.getUser();
                 if (user == null) {
                     btnLogin.setEnabled(true);
-                    Toast.makeText(MainActivity.this, "Authentication failed: User is null", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "Authentication failed: User session invalid", Toast.LENGTH_LONG).show();
                     return;
                 }
 
-                if (!user.isEmailVerified()) {
-                    FirebaseAuth.getInstance().signOut();
-                    sessionManager.logoutUser();
-                    btnLogin.setEnabled(true);
-                    Toast.makeText(MainActivity.this, "Email not verified. Please check your inbox and verify your account before logging in.", Toast.LENGTH_LONG).show();
-                    return;
-                }
+                user.reload().addOnCompleteListener(reloadTask -> {
+                    FirebaseUser refreshedUser = FirebaseAuth.getInstance().getCurrentUser();
+                    if (refreshedUser == null || !refreshedUser.isEmailVerified()) {
+                        FirebaseAuth.getInstance().signOut();
+                        sessionManager.logoutUser();
+                        btnLogin.setEnabled(true);
+                        Toast.makeText(MainActivity.this, "Email not verified. Please check your inbox and verify your BUBT email before logging in.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
 
-                String uid = user.getUid();
-                DatabaseReference dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
+                    String userEmail = refreshedUser.getEmail();
+                    if (userEmail == null || (!userEmail.toLowerCase().endsWith("@bubt.edu.bd") && !userEmail.toLowerCase().endsWith("@cse.bubt.edu.bd"))) {
+                        FirebaseAuth.getInstance().signOut();
+                        sessionManager.logoutUser();
+                        btnLogin.setEnabled(true);
+                        Toast.makeText(MainActivity.this, "Access Denied: Only official BUBT emails (@bubt.edu.bd or @cse.bubt.edu.bd) are allowed.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
 
-                dbRef.child("users").child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        if (snapshot.exists()) {
-                            saveSessionAndNavigate(snapshot);
-                        } else {
-                            String sanitizedId = emailOrId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
-                            dbRef.child("users").child(sanitizedId).addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot idSnapshot) {
-                                    if (idSnapshot.exists()) {
-                                        saveSessionAndNavigate(idSnapshot);
-                                    } else {
-                                        FirebaseFirestore.getInstance().collection("users").document(uid).get()
-                                            .addOnSuccessListener(doc -> {
-                                                if (doc.exists()) {
-                                                    String name = doc.getString("name");
-                                                    String role = doc.getString("role");
-                                                    String id = doc.getString("id");
-                                                    String userEmail = doc.getString("email");
-                                                    String section = doc.getString("section");
-                                                    String intake = doc.getString("intake");
-                                                    String dept = doc.getString("dept");
+                    String uid = refreshedUser.getUid();
+                    DatabaseReference dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
 
-                                                    sessionManager.createLoginSession(
-                                                        name != null ? name : email,
-                                                        userEmail != null ? userEmail : email,
-                                                        id != null ? id : emailOrId,
-                                                        role != null ? role : "Student",
-                                                        section != null ? section : "--",
-                                                        intake != null ? intake : "--",
-                                                        dept != null ? dept : "Department of CSE, BUBT"
-                                                    );
-                                                    Toast.makeText(MainActivity.this, "Welcome back, " + (name != null ? name : email) + "!", Toast.LENGTH_SHORT).show();
-                                                    navigateBasedOnRole(role != null ? role : "Student");
-                                                    finish();
-                                                } else {
+                    dbRef.child("users").child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            if (snapshot.exists()) {
+                                saveSessionAndNavigate(snapshot);
+                            } else {
+                                String sanitizedId = emailOrId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+                                dbRef.child("users").child(sanitizedId).addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot idSnapshot) {
+                                        if (idSnapshot.exists()) {
+                                            saveSessionAndNavigate(idSnapshot);
+                                        } else {
+                                            FirebaseFirestore.getInstance().collection("users").document(uid).get()
+                                                .addOnSuccessListener(doc -> {
+                                                    if (doc.exists()) {
+                                                        String name = doc.getString("name");
+                                                        String role = doc.getString("role");
+                                                        String id = doc.getString("id");
+                                                        String dbEmail = doc.getString("email");
+                                                        String section = doc.getString("section");
+                                                        String intake = doc.getString("intake");
+                                                        String dept = doc.getString("dept");
+
+                                                        sessionManager.createLoginSession(
+                                                            name != null ? name : email,
+                                                            dbEmail != null ? dbEmail : email,
+                                                            id != null ? id : emailOrId,
+                                                            role != null ? role : "Student",
+                                                            section != null ? section : "--",
+                                                            intake != null ? intake : "--",
+                                                            dept != null ? dept : "Department of CSE, BUBT"
+                                                        );
+                                                        Toast.makeText(MainActivity.this, "Welcome back, " + (name != null ? name : email) + "!", Toast.LENGTH_SHORT).show();
+                                                        navigateBasedOnRole(role != null ? role : "Student");
+                                                        finish();
+                                                    } else {
+                                                        btnLogin.setEnabled(true);
+                                                        FirebaseAuth.getInstance().signOut();
+                                                        sessionManager.logoutUser();
+                                                        Toast.makeText(MainActivity.this, "User profile not found in database. Please register first.", Toast.LENGTH_LONG).show();
+                                                    }
+                                                })
+                                                .addOnFailureListener(e -> {
                                                     btnLogin.setEnabled(true);
                                                     FirebaseAuth.getInstance().signOut();
-                                                    Toast.makeText(MainActivity.this, "User profile not found in database. Please register first.", Toast.LENGTH_LONG).show();
-                                                }
-                                            })
-                                            .addOnFailureListener(e -> {
-                                                btnLogin.setEnabled(true);
-                                                FirebaseAuth.getInstance().signOut();
-                                                Toast.makeText(MainActivity.this, "User profile not found. Please register first.", Toast.LENGTH_LONG).show();
-                                            });
+                                                    sessionManager.logoutUser();
+                                                    Toast.makeText(MainActivity.this, "User profile not found. Please register first.", Toast.LENGTH_LONG).show();
+                                                });
+                                        }
                                     }
-                                }
 
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError error) {
-                                    btnLogin.setEnabled(true);
-                                    Toast.makeText(MainActivity.this, "Database error: " + error.getMessage(), Toast.LENGTH_LONG).show();
-                                }
-                            });
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        btnLogin.setEnabled(true);
+                                        Toast.makeText(MainActivity.this, "Database error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                            }
                         }
-                    }
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        btnLogin.setEnabled(true);
-                        Toast.makeText(MainActivity.this, "Database error: " + error.getMessage(), Toast.LENGTH_LONG).show();
-                    }
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            btnLogin.setEnabled(true);
+                            Toast.makeText(MainActivity.this, "Database error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    });
                 });
             })
             .addOnFailureListener(e -> {

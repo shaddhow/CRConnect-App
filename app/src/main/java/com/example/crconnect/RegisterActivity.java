@@ -1,12 +1,12 @@
 package com.example.crconnect;
 
-
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -14,6 +14,7 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
@@ -128,6 +129,19 @@ public class RegisterActivity extends AppCompatActivity {
         });
     }
 
+    private boolean isDummyOrGibberish(String text) {
+        if (text == null || text.trim().isEmpty()) return true;
+        String lower = text.trim().toLowerCase();
+        String[] dummyKeywords = {
+            "test", "demo", "dummy", "admin", "qwerty", "asdf", "habijabi", "habi-jabi", 
+            "xyz", "xxxx", "aaaa", "zzzz", "12345", "00000", "null", "undefined", "sample", "temp"
+        };
+        for (String kw : dummyKeywords) {
+            if (lower.contains(kw)) return true;
+        }
+        return false;
+    }
+
     private void performRegistration() {
         String name = etFullName.getText() != null ? etFullName.getText().toString().trim() : "";
         String email = etRegEmail.getText() != null ? etRegEmail.getText().toString().trim() : "";
@@ -142,29 +156,49 @@ public class RegisterActivity extends AppCompatActivity {
         String intake = (isStudent && etIntake != null && etIntake.getText() != null) ? etIntake.getText().toString().trim() : "";
         String dept = (isStudent && etDept != null && etDept.getText() != null) ? etDept.getText().toString().trim() : "";
 
+        // 1. FULL NAME VALIDATION
         if (name.isEmpty()) {
+            Toast.makeText(this, "Full Name is required!", Toast.LENGTH_SHORT).show();
             etFullName.setError("Full Name is required!");
             etFullName.requestFocus();
             return;
         }
 
+        if (name.length() < 3 || name.length() > 50 || isDummyOrGibberish(name) || !name.matches("^[a-zA-Z.\\s-]+$")) {
+            Toast.makeText(this, "Invalid Full Name: Please enter a legitimate name (e.g., John Doe)", Toast.LENGTH_LONG).show();
+            etFullName.setError("Enter a legitimate full name (e.g., John Doe)");
+            etFullName.requestFocus();
+            return;
+        }
+
+        // 2. OFFICIAL BUBT EMAIL ENFORCEMENT
         if (email.isEmpty()) {
-            etRegEmail.setError("Email is required!");
+            Toast.makeText(this, "BUBT Email is required!", Toast.LENGTH_SHORT).show();
+            etRegEmail.setError("BUBT Email is required!");
             etRegEmail.requestFocus();
             return;
         }
 
-        if (!email.toLowerCase().endsWith("@bubt.edu.bd") && !email.toLowerCase().endsWith("@cse.bubt.edu.bd")) {
-            etRegEmail.setError("Only official BUBT emails (@bubt.edu.bd or @cse.bubt.edu.bd) are allowed!");
+        String lowerEmail = email.toLowerCase();
+        boolean isValidDomain = lowerEmail.endsWith("@bubt.edu.bd") || lowerEmail.endsWith("@cse.bubt.edu.bd");
+        boolean isValidEmailStructure = Patterns.EMAIL_ADDRESS.matcher(email).matches();
+        String emailUsername = email.contains("@") ? email.split("@")[0] : email;
+
+        if (!isValidEmailStructure || !isValidDomain || isDummyOrGibberish(emailUsername)) {
+            Toast.makeText(this, "Invalid Email: Only official BUBT emails (@bubt.edu.bd or @cse.bubt.edu.bd) are allowed!", Toast.LENGTH_LONG).show();
+            etRegEmail.setError("Must be an official BUBT email (@bubt.edu.bd or @cse.bubt.edu.bd)");
             etRegEmail.requestFocus();
             return;
         }
 
+        // 3. ID / TEACHER CODE VALIDATION
         if (id.isEmpty()) {
             if (isStudent) {
+                Toast.makeText(this, "Student ID is required!", Toast.LENGTH_SHORT).show();
                 etStudentId.setError("Student ID is required!");
                 etStudentId.requestFocus();
             } else {
+                Toast.makeText(this, "Teacher Code/ID is required!", Toast.LENGTH_SHORT).show();
                 etTeacherCode.setError("Teacher Code/ID is required!");
                 etTeacherCode.requestFocus();
             }
@@ -172,13 +206,81 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         if (isStudent) {
-            if (section.isEmpty()) { etSection.setError("Required"); etSection.requestFocus(); return; }
-            if (intake.isEmpty()) { etIntake.setError("Required"); etIntake.requestFocus(); return; }
-            if (dept.isEmpty()) { etDept.setError("Required"); etDept.requestFocus(); return; }
+            // Student ID format validation (e.g., numeric BUBT Student ID like 20211103001)
+            if (isDummyOrGibberish(id) || !id.matches("^[0-9-]{6,15}$")) {
+                Toast.makeText(this, "Invalid Student ID: Please enter a legitimate BUBT Student ID (e.g., 20211103001)", Toast.LENGTH_LONG).show();
+                etStudentId.setError("Enter a valid numeric BUBT Student ID");
+                etStudentId.requestFocus();
+                return;
+            }
+        } else {
+            // Teacher Code format validation (e.g., CSE-101, T-501)
+            if (isDummyOrGibberish(id) || id.length() < 3 || !id.matches("^[a-zA-Z0-9.-]{3,15}$")) {
+                Toast.makeText(this, "Invalid Teacher Code: Please enter a valid Teacher Code (e.g., CSE-101 or T-501)", Toast.LENGTH_LONG).show();
+                etTeacherCode.setError("Enter a valid Teacher Code (e.g., CSE-101)");
+                etTeacherCode.requestFocus();
+                return;
+            }
         }
 
-        if (password.length() < 6) {
-            etRegPassword.setError("Password must be at least 6 characters!");
+        // 4. STUDENT SPECIFIC FIELDS VALIDATION
+        if (isStudent) {
+            // Intake Validation (e.g., 55, 55/8)
+            if (intake.isEmpty()) {
+                Toast.makeText(this, "Intake is required!", Toast.LENGTH_SHORT).show();
+                etIntake.setError("Intake is required!");
+                etIntake.requestFocus();
+                return;
+            }
+            if (isDummyOrGibberish(intake) || !intake.matches("^(Intake\\s*)?[0-9]{1,3}(/[0-9]{1,2})?$")) {
+                Toast.makeText(this, "Invalid Intake: Please enter a valid intake number (e.g., 55 or 55/8)", Toast.LENGTH_LONG).show();
+                etIntake.setError("Enter a valid intake format (e.g., 55 or 55/8)");
+                etIntake.requestFocus();
+                return;
+            }
+
+            // Section Validation (e.g., 8, Sec-A, 55/8)
+            if (section.isEmpty()) {
+                Toast.makeText(this, "Section is required!", Toast.LENGTH_SHORT).show();
+                etSection.setError("Section is required!");
+                etSection.requestFocus();
+                return;
+            }
+            if (isDummyOrGibberish(section) || !section.matches("^[a-zA-Z0-9/\\s-]{1,10}$")) {
+                Toast.makeText(this, "Invalid Section: Please enter a valid section (e.g., 8, Sec-A, or 55/8)", Toast.LENGTH_LONG).show();
+                etSection.setError("Enter a valid section format (e.g., 8 or 55/8)");
+                etSection.requestFocus();
+                return;
+            }
+
+            // Department Validation (e.g., CSE, Department of CSE)
+            if (dept.isEmpty()) {
+                Toast.makeText(this, "Department is required!", Toast.LENGTH_SHORT).show();
+                etDept.setError("Department is required!");
+                etDept.requestFocus();
+                return;
+            }
+            if (isDummyOrGibberish(dept) || dept.length() < 2 || !dept.matches("^[a-zA-Z.\\s,-]+$")) {
+                Toast.makeText(this, "Invalid Department: Please enter a valid department (e.g., CSE or Department of CSE)", Toast.LENGTH_LONG).show();
+                etDept.setError("Enter a valid department name (e.g., CSE)");
+                etDept.requestFocus();
+                return;
+            }
+        }
+
+        // 5. STRONG PASSWORD REQUIREMENTS
+        if (password.isEmpty()) {
+            Toast.makeText(this, "Password is required!", Toast.LENGTH_SHORT).show();
+            etRegPassword.setError("Password is required!");
+            etRegPassword.requestFocus();
+            return;
+        }
+
+        boolean hasLetter = password.matches(".*[a-zA-Z].*");
+        boolean hasDigit = password.matches(".*[0-9].*");
+        if (password.length() < 8 || !hasLetter || !hasDigit || isDummyOrGibberish(password)) {
+            Toast.makeText(this, "Password Too Weak: Must be at least 8 characters long and contain both letters and numbers.", Toast.LENGTH_LONG).show();
+            etRegPassword.setError("Minimum 8 characters with letters and numbers");
             etRegPassword.requestFocus();
             return;
         }
@@ -193,18 +295,21 @@ public class RegisterActivity extends AppCompatActivity {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener(authResult -> {
                 FirebaseUser user = authResult.getUser();
-                if (user != null) {
-                    user.sendEmailVerification()
-                        .addOnCompleteListener(task -> {
-                            if (task.isSuccessful()) {
-                                Log.d("RegisterActivity", "Verification email sent to " + email);
-                            } else {
-                                Log.e("RegisterActivity", "Failed to send verification email", task.getException());
-                            }
-                        });
+                if (user == null) {
+                    btnRegister.setEnabled(true);
+                    btnRegister.setText("REGISTER");
+                    showSnackBar("⚠️ Registration Failed: Account creation error", true);
+                    return;
                 }
-                String uid = user != null ? user.getUid() : id;
-                saveUserDataAndFinish(uid, name, email, id, role, isStudent, section, intake, dept);
+                user.sendEmailVerification()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Log.d("RegisterActivity", "Verification email sent to " + email);
+                        } else {
+                            Log.e("RegisterActivity", "Failed to send verification email", task.getException());
+                        }
+                    });
+                saveUserDataAndFinish(user.getUid(), name, email, id, role, isStudent, section, intake, dept);
             })
             .addOnFailureListener(e -> {
                 Log.e("RegisterActivity", "FirebaseAuth error: " + e.getMessage(), e);
@@ -268,6 +373,4 @@ public class RegisterActivity extends AppCompatActivity {
         tv.setTypeface(null, Typeface.BOLD);
         snackbar.show();
     }
-
-
 }
