@@ -124,7 +124,7 @@
                         android:id="@+id/etEmail"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Student ID or BUBT Email"
+                        android:hint="Student ID / Teacher Code or Email"
                         android:inputType="textEmailAddress"
                         android:textColor="#FFFFFF"
                         android:textSize="16sp"/>

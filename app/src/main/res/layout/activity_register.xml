@@ -86,6 +86,23 @@
                         android:buttonTint="#6366F1"/>
                 </RadioGroup>
 
+                <!-- Document Scanner Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnScanIdCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="Scan BUBT ID Card"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="#4F46E5"
+                    app:cornerRadius="14dp"
+                    app:strokeColor="#818CF8"
+                    app:strokeWidth="1.5dp" />
+
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -121,7 +138,7 @@
                     app:boxStrokeColor="#6366F1"
                     app:hintTextColor="#6366F1"
                     android:textColorHint="#94A3B8"
-                    app:helperText="e.g., @bubt.edu.bd"
+                    app:helperText="e.g., name@gmail.com"
                     app:helperTextTextColor="#94A3B8"
                     app:boxCornerRadiusTopStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
@@ -132,7 +149,7 @@
                         android:id="@+id/etRegEmail"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="BUBT Email"
+                        android:hint="Email Address"
                         android:inputType="textEmailAddress"
                         android:textColor="#FFFFFF"
                         android:textSize="15sp"/>
@@ -179,7 +196,8 @@
                         app:boxStrokeColor="#6366F1"
                         app:hintTextColor="#6366F1"
                         android:textColorHint="#94A3B8"
-                        app:helperText="e.g., 55/8"
+                        android:hint="Section"
+                        app:helperText="e.g., 8"
                         app:helperTextTextColor="#94A3B8"
                         app:boxCornerRadiusTopStart="12dp"
                         app:boxCornerRadiusTopEnd="12dp"
@@ -190,7 +208,6 @@
                             android:id="@+id/etSection"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="Section"
                             android:textColor="#FFFFFF"
                             android:textSize="15sp"/>
                     </com.google.android.material.textfield.TextInputLayout>

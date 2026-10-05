@@ -743,6 +743,8 @@ public class StudentDashboardActivity extends AppCompatActivity {
             return false;
         }
 
+        // TEMPORARY TESTING BYPASS: Email verification and domain check disabled
+        /*
         if (!currentUser.isEmailVerified()) {
             redirectToLogin("Email not verified. Please verify your BUBT email first.");
             return false;
@@ -753,6 +755,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
             redirectToLogin("Only official BUBT emails (@bubt.edu.bd or @cse.bubt.edu.bd) are authorized.");
             return false;
         }
+        */
 
         if (!sessionManager.isLoggedIn()) {
             redirectToLogin("Session expired. Please log in again.");

@@ -6,85 +6,110 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/bg_gradient"
-    android:paddingHorizontal="24dp"
-    android:paddingVertical="16dp"
+    android:paddingHorizontal="20dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="0dp"
     tools:context=".StudentDashboardActivity">
 
     <include layout="@layout/include_header" />
 
-    <!-- Enhanced Profile Card (Dark Glassmorphism) -->
+    <!-- Compact Profile Card (Dark Glassmorphism) -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="32dp"
-        app:cardElevation="20dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="12dp"
         app:cardBackgroundColor="#D9171F2F"
         app:strokeWidth="1.5dp"
         app:strokeColor="#334155"
-        android:layout_marginBottom="20dp">
+        android:layout_marginBottom="12dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="28dp">
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="14dp">
 
-            <TextView
-                android:id="@+id/tvStudentName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Developer Student"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:textColor="#F8FAFC"/>
-
-            <View
-                android:layout_width="56dp"
-                android:layout_height="4dp"
-                android:background="#38BDF8"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="22dp"/>
-
-            <GridLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:columnCount="2"
-                android:rowCount="2">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
 
-                <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_columnWeight="1">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="STUDENT ID" android:textSize="11sp" android:textColor="#94A3B8" android:textStyle="bold" android:letterSpacing="0.06"/>
-                    <TextView android:id="@+id/tvStudentDetailsID" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2023-DEV-001" android:textSize="15sp" android:textColor="#F8FAFC" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                <TextView
+                    android:id="@+id/tvStudentName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Developer Student"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#F8FAFC"
+                    android:singleLine="true"
+                    android:ellipsize="end"/>
+
+                <TextView
+                    android:id="@+id/tvStudentDept"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="CSE"
+                    android:textSize="12sp"
+                    android:textColor="#38BDF8"
+                    android:textStyle="bold"
+                    android:background="#1A38BDF8"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp"
+                    android:layout_marginStart="8dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:baselineAligned="false"
+                android:weightSum="3"
+                android:layout_marginBottom="10dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1.2"
+                    android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="STUDENT ID" android:textSize="11sp" android:textColor="#94A3B8" android:textStyle="bold"/>
+                    <TextView android:id="@+id/tvStudentDetailsID" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2023-DEV-001" android:textSize="13sp" android:textColor="#F8FAFC" android:textStyle="bold" android:layout_marginTop="2dp" android:singleLine="true"/>
                 </LinearLayout>
 
-                <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_columnWeight="1">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DEPARTMENT" android:textSize="11sp" android:textColor="#94A3B8" android:textStyle="bold" android:letterSpacing="0.06"/>
-                    <TextView android:id="@+id/tvStudentDept" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="CSE" android:textSize="15sp" android:textColor="#38BDF8" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.9"
+                    android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="INTAKE" android:textSize="11sp" android:textColor="#94A3B8" android:textStyle="bold"/>
+                    <TextView android:id="@+id/tvStudentIntake" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55" android:textSize="13sp" android:textColor="#F8FAFC" android:textStyle="bold" android:layout_marginTop="2dp"/>
                 </LinearLayout>
 
-                <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_marginTop="18dp">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="INTAKE" android:textSize="11sp" android:textColor="#94A3B8" android:textStyle="bold" android:letterSpacing="0.06"/>
-                    <TextView android:id="@+id/tvStudentIntake" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55" android:textSize="15sp" android:textColor="#F8FAFC" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.9"
+                    android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SECTION" android:textSize="11sp" android:textColor="#94A3B8" android:textStyle="bold"/>
+                    <TextView android:id="@+id/tvStudentSection" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55/8" android:textSize="13sp" android:textColor="#F8FAFC" android:textStyle="bold" android:layout_marginTop="2dp"/>
                 </LinearLayout>
+            </LinearLayout>
 
-                <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_columnWeight="1" android:layout_marginTop="18dp">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SECTION" android:textSize="11sp" android:textColor="#94A3B8" android:textStyle="bold" android:letterSpacing="0.06"/>
-                    <TextView android:id="@+id/tvStudentSection" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55/8" android:textSize="15sp" android:textColor="#F8FAFC" android:textStyle="bold" android:layout_marginTop="4dp"/>
-                </LinearLayout>
-            </GridLayout>
-
-            <!-- Locked Profile Integrity Indicator -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="🔒 Verified Student Profile • Read-Only (Locked for Election Integrity)"
+                android:text="Verified Student Profile • Locked"
                 android:textSize="11sp"
                 android:textColor="#10B981"
                 android:textStyle="bold"
                 android:gravity="center"
-                android:layout_marginTop="20dp"
                 android:background="#1A10B981"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="6dp"/>
+                android:paddingVertical="4dp"/>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -93,37 +118,56 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:cardCornerRadius="100dp"
-        app:cardElevation="10dp"
+        app:cardElevation="6dp"
         app:cardBackgroundColor="#D9171F2F"
         app:strokeWidth="1.5dp"
         app:strokeColor="#334155"
         android:layout_gravity="center"
-        android:layout_marginBottom="24dp">
+        android:layout_marginBottom="12dp">
 
         <TextView
             android:id="@+id/tvVotingStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Syncing Live Data..."
-            android:paddingHorizontal="26dp"
-            android:paddingVertical="12dp"
-            android:textSize="13sp"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="8dp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:textColor="#94A3B8"/>
     </com.google.android.material.card.MaterialCardView>
 
-    <ScrollView
+    <!-- Expanded Candidate List Section (Maximizes available screen height) -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingBottom="32dp"
-        android:fillViewport="true">
+        android:orientation="vertical"
+        android:layout_marginBottom="8dp">
 
-        <LinearLayout
-            android:id="@+id/containerCandidates"
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"/>
-    </ScrollView>
+            android:text="Election Candidates"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#F8FAFC"
+            android:layout_marginBottom="8dp"
+            android:layout_marginStart="4dp"/>
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="24dp"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:id="@+id/containerCandidates"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+        </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
+
 </LinearLayout>

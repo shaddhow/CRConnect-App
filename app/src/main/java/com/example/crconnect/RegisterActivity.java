@@ -3,6 +3,7 @@ package com.example.crconnect;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
@@ -17,6 +18,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -24,6 +28,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
@@ -32,9 +37,20 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanner;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning;
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.TextRecognizer;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -43,9 +59,13 @@ public class RegisterActivity extends AppCompatActivity {
     private View layoutStudentFields, layoutTeacherFields;
     private RadioButton rbTeacher, rbStudent;
     private Button btnRegister, btnBackToLogin;
+    private MaterialButton btnScanIdCard;
     private TextView tvLoginLink;
     private MaterialCardView layoutFormCard, layoutSuccessCard;
     private SessionManager sessionManager;
+
+    private ActivityResultLauncher<IntentSenderRequest> docScannerLauncher;
+    private GmsDocumentScanner documentScanner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,10 +114,39 @@ public class RegisterActivity extends AppCompatActivity {
         rbStudent = findViewById(R.id.rbStudent);
         rbTeacher = findViewById(R.id.rbTeacher);
         btnRegister = findViewById(R.id.btnRegister);
+        btnScanIdCard = findViewById(R.id.btnScanIdCard);
         tvLoginLink = findViewById(R.id.tvLoginLink);
         layoutFormCard = findViewById(R.id.layoutFormCard);
         layoutSuccessCard = findViewById(R.id.layoutSuccessCard);
         btnBackToLogin = findViewById(R.id.btnBackToLogin);
+
+        // Configure Google Play Services Document Scanner API
+        GmsDocumentScannerOptions scannerOptions = new GmsDocumentScannerOptions.Builder()
+            .setGalleryImportAllowed(true)
+            .setPageLimit(1)
+            .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+            .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+            .build();
+
+        documentScanner = GmsDocumentScanning.getClient(scannerOptions);
+
+        docScannerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartIntentSenderForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    GmsDocumentScanningResult scanningResult =
+                        GmsDocumentScanningResult.fromActivityResultIntent(result.getData());
+                    if (scanningResult != null && scanningResult.getPages() != null && !scanningResult.getPages().isEmpty()) {
+                        GmsDocumentScanningResult.Page page = scanningResult.getPages().get(0);
+                        processScannedDocumentUri(page.getImageUri());
+                    }
+                }
+            }
+        );
+
+        if (btnScanIdCard != null) {
+            btnScanIdCard.setOnClickListener(v -> launchDocumentScanner());
+        }
 
         btnBackToLogin.setOnClickListener(v -> {
             finish();
@@ -127,6 +176,181 @@ public class RegisterActivity extends AppCompatActivity {
                 scrollViewRegister.postDelayed(() -> scrollViewRegister.smoothScrollTo(0, btnRegister.getBottom()), 200);
             }
         });
+    }
+
+    private void launchDocumentScanner() {
+        if (documentScanner == null) return;
+
+        if (btnScanIdCard != null) {
+            btnScanIdCard.setEnabled(false);
+            btnScanIdCard.setText("Opening Scanner...");
+        }
+
+        documentScanner.getStartScanIntent(this)
+            .addOnSuccessListener(intentSender -> {
+                if (btnScanIdCard != null) {
+                    btnScanIdCard.setEnabled(true);
+                    btnScanIdCard.setText("Scan BUBT ID Card");
+                }
+                docScannerLauncher.launch(new IntentSenderRequest.Builder(intentSender).build());
+            })
+            .addOnFailureListener(e -> {
+                if (btnScanIdCard != null) {
+                    btnScanIdCard.setEnabled(true);
+                    btnScanIdCard.setText("Scan BUBT ID Card");
+                }
+                Log.e("RegisterActivity", "Document scanner failed to start", e);
+                Toast.makeText(this, "Failed to launch document scanner: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+            });
+    }
+
+    private void processScannedDocumentUri(Uri imageUri) {
+        try {
+            InputImage image = InputImage.fromFilePath(this, imageUri);
+            TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+
+            if (btnScanIdCard != null) {
+                btnScanIdCard.setEnabled(false);
+                btnScanIdCard.setText("Processing Document...");
+            }
+
+            recognizer.process(image)
+                .addOnSuccessListener(visionText -> {
+                    if (btnScanIdCard != null) {
+                        btnScanIdCard.setEnabled(true);
+                        btnScanIdCard.setText("Scan BUBT ID Card");
+                    }
+                    parseAndAutoFillIdCardText(visionText.getText());
+                })
+                .addOnFailureListener(e -> {
+                    if (btnScanIdCard != null) {
+                        btnScanIdCard.setEnabled(true);
+                        btnScanIdCard.setText("Scan BUBT ID Card");
+                    }
+                    Log.e("RegisterActivity", "ML Kit OCR scan failed", e);
+                    Toast.makeText(RegisterActivity.this, "Failed to extract text from document: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                });
+        } catch (IOException e) {
+            Log.e("RegisterActivity", "Failed to load document image for OCR", e);
+            Toast.makeText(this, "Error opening document image file", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void parseAndAutoFillIdCardText(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            Toast.makeText(this, "No text detected on the ID Card image. Please try a clearer photo.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        String[] lines = text.split("\n");
+        String extractedName = null;
+        String extractedId = null;
+        String extractedIntake = null;
+        String extractedDept = null;
+        int idLineIndex = -1;
+
+        // 1. Loop through all the recognized text lines from the ML Kit result
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i] != null ? lines[i].trim() : "";
+            
+            // 2. Print every single line to Logcat using Log.d("OCR_DEBUG", line)
+            Log.d("OCR_DEBUG", line);
+
+            if (line.isEmpty()) continue;
+
+            // 3. Look for the line that contains "ID-" or starts with "20" (like "20255103311")
+            if (extractedId == null) {
+                if (line.contains("ID-") || line.startsWith("20") || line.toUpperCase().contains("ID")) {
+                    String cleanId = line.replaceAll("(?i)id[-:]?", "").replaceAll("[^0-9]", "").trim();
+                    if (cleanId.length() >= 6) {
+                        extractedId = cleanId;
+                        idLineIndex = i;
+                    }
+                }
+            }
+
+            // 5. Ensure Intake and Department map correctly as before
+            if (extractedIntake == null) {
+                Matcher intakeMatcher = Pattern.compile("(?i)intake\\s*[:.-]?\\s*([0-9]{1,3})").matcher(line);
+                if (intakeMatcher.find()) {
+                    extractedIntake = intakeMatcher.group(1);
+                }
+            }
+
+            if (extractedDept == null) {
+                String lowerLine = line.toLowerCase();
+                if (lowerLine.contains("cse") || lowerLine.contains("b.sc. engg. in cse") || lowerLine.contains("computer science in cse")) {
+                    extractedDept = "CSE";
+                }
+            }
+        }
+
+        // 4. Look at the lines above the ID line. Grab the text that forms the student's name, strip out words like "STUDENT" or university headers
+        if (idLineIndex != -1) {
+            StringBuilder nameBuilder = new StringBuilder();
+            int startIndex = Math.max(0, idLineIndex - 4);
+            for (int i = startIndex; i < idLineIndex; i++) {
+                String line = lines[i].trim();
+                if (line.isEmpty()) continue;
+                String upper = line.toUpperCase();
+                if (upper.contains("STUDENT") || upper.contains("BANGLADESH") || upper.contains("UNIVERSITY") ||
+                    upper.contains("BUSINESS") || upper.contains("TECHNOLOGY") || upper.contains("BUBT") ||
+                    upper.contains("IDENTITY") || upper.contains("CARD") || upper.contains("CAMPUS")) {
+                    continue;
+                }
+                String cleaned = line.replaceAll("(?i)^(name|student name|name\\s*:)\\s*[:.-]?", "").trim();
+                if (!cleaned.isEmpty()) {
+                    if (nameBuilder.length() > 0) {
+                        nameBuilder.append(" ");
+                    }
+                    nameBuilder.append(cleaned);
+                }
+            }
+            String candidateName = nameBuilder.toString().trim();
+            if (!candidateName.isEmpty()) {
+                extractedName = candidateName;
+            }
+        }
+
+        // Assign to fields
+        if (extractedName != null && !extractedName.isEmpty()) {
+            etFullName.setText(extractedName);
+        } else {
+            etFullName.setText("");
+        }
+
+        if (extractedId != null && !extractedId.isEmpty()) {
+            if (rbStudent != null && rbStudent.isChecked()) {
+                etStudentId.setText(extractedId);
+            } else if (etTeacherCode != null) {
+                etTeacherCode.setText(extractedId);
+            }
+        } else {
+            if (rbStudent != null && rbStudent.isChecked()) {
+                etStudentId.setText("");
+            } else if (etTeacherCode != null) {
+                etTeacherCode.setText("");
+            }
+        }
+
+        if (extractedIntake != null && etIntake != null) {
+            etIntake.setText(extractedIntake);
+        } else if (etIntake != null) {
+            etIntake.setText("");
+        }
+
+        if (extractedDept != null && etDept != null) {
+            etDept.setText(extractedDept);
+        } else if (etDept != null) {
+            etDept.setText("");
+        }
+
+        // Leave Section empty
+        if (etSection != null) {
+            etSection.setText("");
+        }
+
+        Toast.makeText(this, "OCR scan completed successfully.", Toast.LENGTH_SHORT).show();
     }
 
     private boolean isDummyOrGibberish(String text) {
@@ -171,22 +395,18 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        // 2. OFFICIAL BUBT EMAIL ENFORCEMENT
+        // 2. EMAIL VALIDATION
         if (email.isEmpty()) {
-            Toast.makeText(this, "BUBT Email is required!", Toast.LENGTH_SHORT).show();
-            etRegEmail.setError("BUBT Email is required!");
+            Toast.makeText(this, "Email address is required!", Toast.LENGTH_SHORT).show();
+            etRegEmail.setError("Email address is required!");
             etRegEmail.requestFocus();
             return;
         }
 
-        String lowerEmail = email.toLowerCase();
-        boolean isValidDomain = lowerEmail.endsWith("@bubt.edu.bd") || lowerEmail.endsWith("@cse.bubt.edu.bd");
         boolean isValidEmailStructure = Patterns.EMAIL_ADDRESS.matcher(email).matches();
-        String emailUsername = email.contains("@") ? email.split("@")[0] : email;
-
-        if (!isValidEmailStructure || !isValidDomain || isDummyOrGibberish(emailUsername)) {
-            Toast.makeText(this, "Invalid Email: Only official BUBT emails (@bubt.edu.bd or @cse.bubt.edu.bd) are allowed!", Toast.LENGTH_LONG).show();
-            etRegEmail.setError("Must be an official BUBT email (@bubt.edu.bd or @cse.bubt.edu.bd)");
+        if (!isValidEmailStructure) {
+            Toast.makeText(this, "Invalid Email: Please enter a valid email address (e.g., user@gmail.com)", Toast.LENGTH_LONG).show();
+            etRegEmail.setError("Enter a valid email address");
             etRegEmail.requestFocus();
             return;
         }
@@ -298,7 +518,7 @@ public class RegisterActivity extends AppCompatActivity {
                 if (user == null) {
                     btnRegister.setEnabled(true);
                     btnRegister.setText("REGISTER");
-                    showSnackBar("⚠️ Registration Failed: Account creation error", true);
+                    showSnackBar("Registration Failed: Account creation error", true);
                     return;
                 }
                 user.sendEmailVerification()
@@ -308,6 +528,9 @@ public class RegisterActivity extends AppCompatActivity {
                         } else {
                             Log.e("RegisterActivity", "Failed to send verification email", task.getException());
                         }
+                        // Immediately sign out to prevent auto-login before email verification
+                        FirebaseAuth.getInstance().signOut();
+                        sessionManager.logoutUser();
                     });
                 saveUserDataAndFinish(user.getUid(), name, email, id, role, isStudent, section, intake, dept);
             })
@@ -315,7 +538,7 @@ public class RegisterActivity extends AppCompatActivity {
                 Log.e("RegisterActivity", "FirebaseAuth error: " + e.getMessage(), e);
                 btnRegister.setEnabled(true);
                 btnRegister.setText("REGISTER");
-                showSnackBar("⚠️ Registration Failed: " + e.getMessage(), true);
+                showSnackBar("Registration Failed: " + e.getMessage(), true);
             });
     }
 
@@ -334,21 +557,23 @@ public class RegisterActivity extends AppCompatActivity {
         userMap.put("intake", isStudent ? intake : "--");
         userMap.put("dept", isStudent ? dept : "Department of CSE, BUBT");
         userMap.put("deviceId", Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID));
+        userMap.put("registeredAt", System.currentTimeMillis());
 
-        // 1. Save to Firebase Realtime Database
+        // 1. Dual-Database Persistence: Firebase Realtime Database
         if (uid != null && !uid.isEmpty()) {
             dbRef.child("users").child(uid).setValue(userMap);
         }
         dbRef.child("users").child(sanitizedId).setValue(userMap);
         dbRef.child("users").child(sanitizedEmail).setValue(userMap);
 
-        // 2. Save to Firebase Firestore
+        // 2. Dual-Database Persistence: Firebase Firestore
         FirebaseFirestore firestore = FirebaseFirestore.getInstance();
         if (uid != null && !uid.isEmpty()) {
             firestore.collection("users").document(uid).set(userMap);
         }
         firestore.collection("users").document(sanitizedId).set(userMap);
 
+        // Ensure unverified user session is terminated locally and remotely
         FirebaseAuth.getInstance().signOut();
         sessionManager.logoutUser();
 

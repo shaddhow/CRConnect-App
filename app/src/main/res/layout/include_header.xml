@@ -3,65 +3,79 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:paddingTop="28dp"
-    android:paddingBottom="20dp">
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="12dp"
+    android:paddingHorizontal="4dp"
+    android:layout_marginBottom="16dp">
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/imgUserProfile"
-        android:layout_width="92dp"
-        android:layout_height="92dp"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
         android:src="@drawable/ic_app_main"
         android:scaleType="centerCrop"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Circular"
-        android:padding="2dp"
-        app:strokeWidth="3dp"
+        app:strokeWidth="2dp"
         app:strokeColor="#38BDF8"
-        android:layout_marginBottom="14dp"/>
+        android:layout_marginEnd="12dp"/>
 
-    <TextView
-        android:id="@+id/tvHeaderTitle"
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvHeaderTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Dashboard"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#F8FAFC"
+            android:fontFamily="sans-serif-medium"/>
+
+        <TextView
+            android:id="@+id/tvHeaderSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BUBT Network"
+            android:textSize="12sp"
+            android:textColor="#94A3B8"
+            android:layout_marginTop="2dp"
+            android:singleLine="true"
+            android:ellipsize="end"/>
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Dashboard"
-        android:textSize="26sp"
-        android:textStyle="bold"
-        android:textColor="#F8FAFC"
-        android:fontFamily="sans-serif-medium"/>
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-    <TextView
-        android:id="@+id/tvHeaderSubtitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="BUBT Network"
-        android:textSize="14sp"
-        android:textColor="#94A3B8"
-        android:alpha="0.95"
-        android:layout_marginTop="4dp"/>
+        <!-- Live Secure Status Badge -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Secure"
+            android:textSize="11sp"
+            android:textColor="#10B981"
+            android:textStyle="bold"
+            android:background="#2610B981"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:layout_marginEnd="8dp"/>
 
-    <!-- Live Secure Status Badge -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="🟢 Live Secure • Encrypted"
-        android:textSize="12sp"
-        android:textColor="#10B981"
-        android:textStyle="bold"
-        android:background="#2610B981"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="5dp"
-        android:layout_marginTop="10dp"/>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnLogout"
-        style="@style/Widget.Material3.Button.IconButton"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginTop="10dp"
-        app:icon="@android:drawable/ic_lock_power_off"
-        app:iconTint="#F8FAFC"
-        app:iconSize="20dp"
-        android:backgroundTint="#26334155"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLogout"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            app:icon="@android:drawable/ic_lock_power_off"
+            app:iconTint="#F8FAFC"
+            app:iconSize="18dp"
+            android:backgroundTint="#26334155"/>
+    </LinearLayout>
 
 </LinearLayout>
