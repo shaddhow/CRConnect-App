@@ -23,6 +23,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -56,15 +64,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 public class TeacherDashboardActivity extends AppCompatActivity {
 
@@ -76,8 +75,25 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private TextView tvHeaderTitle, tvHeaderSubtitle, tvTotalCandidates;
     private TextView tvStatTotalVotes, tvStatTotalVoters, tvStatTurnout;
     private LinearLayout containerAdminCandidates;
+
     private DatabaseReference dbRef;
     private SessionManager sessionManager;
+    private final Set<String> sectionCandidateIds = new HashSet<>();
+
+    private String getTeacherAssignedSection() {
+        if (sessionManager != null) {
+            String sec = sessionManager.getAssignedSection();
+            if (sec != null && !sec.isEmpty()) {
+                return sec;
+            }
+        }
+        return "--";
+    }
+
+    private String getSanitizedSection(String sec) {
+        if (sec == null || sec.trim().isEmpty() || sec.equals("--")) return "--";
+        return sec.trim().replace("/", "_").replace(" ", "_").replace(".", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,7 +157,9 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         btnExportPdf.setOnClickListener(v -> exportElectionResultsToPdf());
 
-        tvHeaderTitle.setText("Admin Console");
+        String initialAssignedSec = getTeacherAssignedSection();
+        tvHeaderTitle.setText(initialAssignedSec.equals("--") ? "Admin Console" : "Admin Console - Sec " + initialAssignedSec);
+        tvHeaderSubtitle.setText(sessionManager.getUserName() + " (" + sessionManager.getUserDept() + " | Sec: " + initialAssignedSec + ")");
 
         NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
         etCandidateName.setOnFocusChangeListener((v, hasFocus) -> {
@@ -163,9 +181,17 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     String name = snapshot.child("name").getValue(String.class);
                     String dept = snapshot.child("dept").getValue(String.class);
                     String profileImg = snapshot.child("profileImageUrl").getValue(String.class);
+                    String assignedSection = snapshot.child("assignedSection").getValue(String.class);
                     if (name == null) name = sessionManager.getUserName();
                     if (dept == null) dept = sessionManager.getUserDept();
-                    tvHeaderSubtitle.setText(name + " (" + dept + ")");
+                    if (assignedSection == null || assignedSection.isEmpty() || assignedSection.equals("--")) {
+                        assignedSection = sessionManager.getAssignedSection();
+                    } else {
+                        sessionManager.setAssignedSection(assignedSection);
+                    }
+
+                    tvHeaderSubtitle.setText(name + " (" + dept + " | Sec: " + assignedSection + ")");
+                    tvHeaderTitle.setText("Admin Console - Sec " + assignedSection);
 
                     if (profileImg != null && !profileImg.isEmpty()) {
                         sessionManager.setProfileImageUrl(profileImg);
@@ -178,6 +204,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                         snapshot.child("id").getValue(String.class) != null ? snapshot.child("id").getValue(String.class) : sessionManager.getUserID(),
                         "Teacher/Admin",
                         "--",
+                        assignedSection,
                         "--",
                         dept
                     );
@@ -191,14 +218,33 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                 String name = doc.getString("name");
                                 String dept = doc.getString("dept");
                                 String profileImg = doc.getString("profileImageUrl");
+                                String assignedSection = doc.getString("assignedSection");
                                 if (name == null) name = sessionManager.getUserName();
                                 if (dept == null) dept = sessionManager.getUserDept();
-                                tvHeaderSubtitle.setText(name + " (" + dept + ")");
+                                if (assignedSection == null || assignedSection.isEmpty() || assignedSection.equals("--")) {
+                                    assignedSection = sessionManager.getAssignedSection();
+                                } else {
+                                    sessionManager.setAssignedSection(assignedSection);
+                                }
+
+                                tvHeaderSubtitle.setText(name + " (" + dept + " | Sec: " + assignedSection + ")");
+                                tvHeaderTitle.setText("Admin Console - Sec " + assignedSection);
 
                                 if (profileImg != null && !profileImg.isEmpty()) {
                                     sessionManager.setProfileImageUrl(profileImg);
                                     Glide.with(TeacherDashboardActivity.this).load(profileImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
                                 }
+
+                                sessionManager.createLoginSession(
+                                    name,
+                                    doc.getString("email") != null ? doc.getString("email") : sessionManager.getUserEmail(),
+                                    doc.getString("id") != null ? doc.getString("id") : sessionManager.getUserID(),
+                                    "Teacher/Admin",
+                                    "--",
+                                    assignedSection,
+                                    "--",
+                                    dept
+                                );
                             } else {
                                 redirectToLogin("Teacher profile not found in database. Access denied.");
                             }
@@ -261,24 +307,51 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             etCandidateName.clearFocus();
         });
 
-        dbRef.child("master_voting_enabled").addValueEventListener(new ValueEventListener() {
+        String teacherSec = getTeacherAssignedSection();
+        String sanitizedSec = getSanitizedSection(teacherSec);
+
+        DatabaseReference gateRef = !sanitizedSec.equals("--") ?
+                dbRef.child("voting_controls").child(sanitizedSec).child("isGateOpen") :
+                dbRef.child("master_voting_enabled");
+
+        gateRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 Boolean isEnabled = snapshot.getValue(Boolean.class);
-                if (isEnabled != null) switchMasterVoting.setChecked(isEnabled);
+                if (isEnabled != null) {
+                    switchMasterVoting.setChecked(isEnabled);
+                } else {
+                    dbRef.child("master_voting_enabled").addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snap) {
+                            Boolean globalEnabled = snap.getValue(Boolean.class);
+                            if (globalEnabled != null) switchMasterVoting.setChecked(globalEnabled);
+                        }
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {}
+                    });
+                }
             }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {}
         });
 
         switchMasterVoting.setOnCheckedChangeListener((btn, isChecked) -> {
-            dbRef.child("master_voting_enabled").setValue(isChecked);
-            logAdminAction(isChecked ? "Enabled Master Voting" : "Disabled Master Voting");
+            String currentSec = getTeacherAssignedSection();
+            String currentSanitizedSec = getSanitizedSection(currentSec);
 
-            String notifTitle = isChecked ? "🟢 Live Voting is OPEN" : "🔴 Live Voting is LOCKED";
+            if (!currentSanitizedSec.equals("--")) {
+                dbRef.child("voting_controls").child(currentSanitizedSec).child("isGateOpen").setValue(isChecked);
+                dbRef.child("sections").child(currentSanitizedSec).child("master_voting_enabled").setValue(isChecked);
+            }
+            dbRef.child("master_voting_enabled").setValue(isChecked);
+
+            logAdminAction(isChecked ? "Enabled Master Voting for Section " + currentSec : "Disabled Master Voting for Section " + currentSec);
+
+            String notifTitle = isChecked ? "🟢 Live Voting is OPEN (Sec " + currentSec + ")" : "🔴 Live Voting is LOCKED (Sec " + currentSec + ")";
             String notifBody = isChecked ?
-                    "Election admin " + sessionManager.getUserName() + " has opened live voting! Cast your vote now." :
-                    "Live voting has been locked by election admin " + sessionManager.getUserName() + ".";
+                    "Election admin " + sessionManager.getUserName() + " has opened live voting for Section " + currentSec + "! Cast your vote now." :
+                    "Live voting for Section " + currentSec + " has been locked by election admin " + sessionManager.getUserName() + ".";
             broadcastNotificationToStudents(notifTitle, notifBody, "GATE_CONTROL");
         });
 
@@ -302,26 +375,24 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         });
 
         // Live Statistics and Candidate List
-        dbRef.child("candidates").addValueEventListener(new ValueEventListener() {
+        DatabaseReference candidateRef = !sanitizedSec.equals("--") ?
+                dbRef.child("voting_controls").child(sanitizedSec).child("candidates") :
+                dbRef.child("candidates");
+
+        candidateRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                try {
-                    if (isFinishing() || isDestroyed()) return;
-                    tvTotalCandidates.setText("Total: " + snapshot.getChildrenCount());
-                    containerAdminCandidates.removeAllViews();
-                    
-                    int totalVotes = 0;
-                    for (DataSnapshot ds : snapshot.getChildren()) {
-                        int vts = getSafeVotes(ds);
-                        totalVotes += vts;
-                        String imageUrl = ds.child("imageUrl").getValue(String.class);
-                        String cName = ds.child("name").getValue(String.class);
-                        if (cName == null) cName = "Candidate";
-                        addAdminRow(ds.getKey(), cName, vts, imageUrl);
-                    }
-                    tvStatTotalVotes.setText(String.valueOf(totalVotes));
-                } catch (Exception e) {
-                    Log.e("TeacherDashboard", "Error loading candidates list", e);
+                if (snapshot.exists() && snapshot.hasChildren()) {
+                    displayAdminCandidatesSnapshot(snapshot);
+                } else {
+                    dbRef.child("candidates").addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot rootSnap) {
+                            displayAdminCandidatesSnapshot(rootSnap);
+                        }
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {}
+                    });
                 }
             }
             @Override
@@ -331,16 +402,25 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         });
 
         // Live Voters Statistics Count
-        dbRef.child("voters").addValueEventListener(new ValueEventListener() {
+        DatabaseReference votersRef = !sanitizedSec.equals("--") ?
+                dbRef.child("voting_controls").child(sanitizedSec).child("voters") :
+                dbRef.child("voters");
+
+        votersRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                long totalVoters = snapshot.getChildrenCount();
-                tvStatTotalVoters.setText(String.valueOf(totalVoters));
-                
-                // Assuming estimated 50 active registered student voters for turnout percentage
-                int estimatedTotalStudents = 50; 
-                int turnout = (int) Math.min(100, (totalVoters * 100) / estimatedTotalStudents);
-                tvStatTurnout.setText(turnout + "%");
+                if (snapshot.exists() && snapshot.hasChildren()) {
+                    displayVotersCountSnapshot(snapshot);
+                } else {
+                    dbRef.child("voters").addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot rootSnap) {
+                            displayVotersCountSnapshot(rootSnap);
+                        }
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {}
+                    });
+                }
             }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {}
@@ -348,6 +428,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         // Safety Confirmation Bottom Sheet for Reset All (Material Design 3 & Glassmorphism)
         btnResetVotes.setOnClickListener(v -> {
+            String activeSec = getTeacherAssignedSection();
             BottomSheetDialog sheet = new BottomSheetDialog(this);
             LinearLayout view = new LinearLayout(this);
             view.setOrientation(LinearLayout.VERTICAL);
@@ -355,13 +436,13 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             view.setBackgroundColor(Color.parseColor("#171A29"));
 
             TextView title = new TextView(this);
-            title.setText("⚠️ Reset All Election Data?");
+            title.setText("⚠️ Reset Section " + activeSec + " Election Data?");
             title.setTextSize(20f);
             title.setTypeface(null, Typeface.BOLD);
             title.setTextColor(Color.parseColor("#EF4444"));
 
             TextView msg = new TextView(this);
-            msg.setText("This will permanently delete all published candidates, votes, and voter security logs. This action cannot be undone.");
+            msg.setText("This will permanently delete published candidates, votes, and voter security locks for Section " + activeSec + ". Other sections will not be affected. Proceed?");
             msg.setTextSize(14f);
             msg.setTextColor(Color.parseColor("#94A3B8"));
             msg.setPadding(0, 12, 0, 24);
@@ -386,17 +467,64 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             btnConfirm.setOnClickListener(dt -> {
                 sheet.dismiss();
-                Map<String, Object> resetMap = new HashMap<>();
-                resetMap.put("candidates", null);
-                resetMap.put("voters", null);
-                dbRef.updateChildren(resetMap).addOnSuccessListener(unused -> {
-                    showSnackBar("Election data successfully reset.", false);
-                    logAdminAction("Reset All Election Votes & Candidates");
-                    broadcastNotificationToStudents(
-                        "⚠️ Election Portal Reset",
-                        "Election portal data has been reset by the teacher.",
-                        "RESET"
-                    );
+                dbRef.child("candidates").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        Map<String, Object> resetMap = new HashMap<>();
+                        for (DataSnapshot ds : snapshot.getChildren()) {
+                            String candSec = ds.child("section").getValue(String.class);
+                            if (candSec == null) candSec = ds.child("assignedSection").getValue(String.class);
+                            if (candSec == null || candSec.equals("--") || candSec.equalsIgnoreCase(activeSec) || activeSec.equals("--")) {
+                                resetMap.put("candidates/" + ds.getKey(), null);
+                            }
+                        }
+
+                        String sanitizedSec = getSanitizedSection(activeSec);
+                        if (!sanitizedSec.equals("--")) {
+                            resetMap.put("voting_controls/" + sanitizedSec + "/candidates", null);
+                            resetMap.put("voting_controls/" + sanitizedSec + "/votes", null);
+                            resetMap.put("voting_controls/" + sanitizedSec + "/voters", null);
+                            resetMap.put("voting_controls/" + sanitizedSec + "/isGateOpen", false);
+                            resetMap.put("sections/" + sanitizedSec + "/candidates", null);
+                            resetMap.put("sections/" + sanitizedSec + "/voters", null);
+                        }
+
+                        dbRef.child("voters").addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot vSnap) {
+                                for (DataSnapshot vDs : vSnap.getChildren()) {
+                                    String vSec = vDs.child("section").getValue(String.class);
+                                    if (vSec == null) vSec = vDs.child("assignedSection").getValue(String.class);
+                                    Object vVal = vDs.getValue();
+                                    boolean isThisSec = (vSec != null && vSec.equalsIgnoreCase(activeSec)) ||
+                                            (vVal instanceof String && sectionCandidateIds.contains((String) vVal));
+                                    if (isThisSec) {
+                                        resetMap.put("voters/" + vDs.getKey(), null);
+                                    }
+                                }
+
+                                if (!resetMap.isEmpty()) {
+                                    dbRef.updateChildren(resetMap).addOnSuccessListener(unused -> {
+                                        showSnackBar("Election data for Section " + activeSec + " reset successfully.", false);
+                                        logAdminAction("Reset Election Votes & Candidates for Section " + activeSec);
+                                        broadcastNotificationToStudents(
+                                            "⚠️ Election Portal Reset (Sec " + activeSec + ")",
+                                            "Election portal data for Section " + activeSec + " has been reset by the teacher.",
+                                            "RESET"
+                                        );
+                                    });
+                                } else {
+                                    showSnackBar("No election data found for Section " + activeSec + " to reset.", false);
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {}
+                        });
+                    }
+
+                    @Override
+                            public void onCancelled(@NonNull DatabaseError error) {}
                 });
             });
 
@@ -411,6 +539,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         // Safety Confirmation Bottom Sheet for Run-Off (Material Design 3 & Glassmorphism)
         btnRunOff.setOnClickListener(v -> {
+            String activeSec = getTeacherAssignedSection();
             BottomSheetDialog sheet = new BottomSheetDialog(this);
             LinearLayout view = new LinearLayout(this);
             view.setOrientation(LinearLayout.VERTICAL);
@@ -418,13 +547,13 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             view.setBackgroundColor(Color.parseColor("#171A29"));
 
             TextView title = new TextView(this);
-            title.setText("⚡ Initialize Run-Off / Tie-Breaker?");
+            title.setText("⚡ Initialize Run-Off for Section " + activeSec + "?");
             title.setTextSize(20f);
             title.setTypeface(null, Typeface.BOLD);
             title.setTextColor(Color.parseColor("#8B5CF6"));
 
             TextView msg = new TextView(this);
-            msg.setText("This will reset all vote counts to 0 while keeping the candidate list for a run-off election round. All voter security locks will be cleared. Proceed?");
+            msg.setText("This will reset vote counts to 0 for candidates in Section " + activeSec + " while keeping the candidate list. Voter security locks for Section " + activeSec + " will be cleared. Proceed?");
             msg.setTextSize(14f);
             msg.setTextColor(Color.parseColor("#94A3B8"));
             msg.setPadding(0, 12, 0, 24);
@@ -454,18 +583,54 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         Map<String, Object> updates = new HashMap<>();
                         for (DataSnapshot ds : snapshot.getChildren()) {
-                            updates.put(ds.getKey() + "/votes", 0);
+                            String candSec = ds.child("section").getValue(String.class);
+                            if (candSec == null) candSec = ds.child("assignedSection").getValue(String.class);
+                            if (candSec == null || candSec.equals("--") || candSec.equalsIgnoreCase(activeSec) || activeSec.equals("--")) {
+                                updates.put("candidates/" + ds.getKey() + "/votes", 0);
+                                String sanitizedSec = getSanitizedSection(activeSec);
+                                if (!sanitizedSec.equals("--")) {
+                                    updates.put("sections/" + sanitizedSec + "/candidates/" + ds.getKey() + "/votes", 0);
+                                }
+                            }
                         }
-                        dbRef.child("candidates").updateChildren(updates);
-                        dbRef.child("voters").removeValue();
-                        showSnackBar("Run-off election round initialized!", false);
-                        logAdminAction("Initialized Run-Off Election Round");
-                        broadcastNotificationToStudents(
-                            "⚡ Run-Off Round Initialized",
-                            "A run-off election round has been initiated. All vote locks are cleared!",
-                            "RUN_OFF"
-                        );
+
+                        dbRef.child("voters").addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot vSnap) {
+                                for (DataSnapshot vDs : vSnap.getChildren()) {
+                                    String vSec = vDs.child("section").getValue(String.class);
+                                    if (vSec == null) vSec = vDs.child("assignedSection").getValue(String.class);
+                                    Object vVal = vDs.getValue();
+                                    boolean isThisSec = (vSec != null && vSec.equalsIgnoreCase(activeSec)) ||
+                                            (vVal instanceof String && sectionCandidateIds.contains((String) vVal));
+                                    if (isThisSec) {
+                                        updates.put("voters/" + vDs.getKey(), null);
+                                    }
+                                }
+
+                                String sanitizedSec = getSanitizedSection(activeSec);
+                                if (!sanitizedSec.equals("--")) {
+                                    updates.put("sections/" + sanitizedSec + "/voters", null);
+                                }
+
+                                if (!updates.isEmpty()) {
+                                    dbRef.updateChildren(updates).addOnSuccessListener(unused -> {
+                                        showSnackBar("Run-off election round initialized for Section " + activeSec + "!", false);
+                                        logAdminAction("Initialized Run-Off Election Round for Section " + activeSec);
+                                        broadcastNotificationToStudents(
+                                            "⚡ Run-Off Round Initialized (Sec " + activeSec + ")",
+                                            "A run-off election round has been initiated for Section " + activeSec + ". All vote locks are cleared!",
+                                            "RUN_OFF"
+                                        );
+                                    });
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {}
+                        });
                     }
+
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {}
                 });
@@ -481,7 +646,86 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         });
     }
 
+    private void displayAdminCandidatesSnapshot(DataSnapshot snapshot) {
+        try {
+            if (isFinishing() || isDestroyed()) return;
+            String activeSec = getTeacherAssignedSection();
+            sectionCandidateIds.clear();
+
+            int totalCandidates = 0;
+            int totalVotes = 0;
+            containerAdminCandidates.removeAllViews();
+
+            for (DataSnapshot ds : snapshot.getChildren()) {
+                String candSec = ds.child("section").getValue(String.class);
+                if (candSec == null) candSec = ds.child("assignedSection").getValue(String.class);
+
+                if (candSec != null && !candSec.equals("--") && !activeSec.equals("--") && !candSec.equalsIgnoreCase(activeSec)) {
+                    continue;
+                }
+
+                String candId = ds.getKey();
+                if (candId != null) {
+                    sectionCandidateIds.add(candId);
+                }
+
+                totalCandidates++;
+                int vts = getSafeVotes(ds);
+                totalVotes += vts;
+                String imageUrl = ds.child("imageUrl").getValue(String.class);
+                String cName = ds.child("name").getValue(String.class);
+                if (cName == null) cName = "Candidate";
+                addAdminRow(candId, cName, vts, imageUrl);
+            }
+            tvTotalCandidates.setText("Total (Sec " + activeSec + "): " + totalCandidates);
+            tvStatTotalVotes.setText(String.valueOf(totalVotes));
+        } catch (Exception e) {
+            Log.e("TeacherDashboard", "Error loading candidates list", e);
+        }
+    }
+
+    private void displayVotersCountSnapshot(DataSnapshot snapshot) {
+        try {
+            if (isFinishing() || isDestroyed()) return;
+            String activeSec = getTeacherAssignedSection();
+            long totalVoters = 0;
+
+            for (DataSnapshot ds : snapshot.getChildren()) {
+                String vSec = ds.child("section").getValue(String.class);
+                if (vSec == null) vSec = ds.child("assignedSection").getValue(String.class);
+
+                boolean matchesSection;
+                if (vSec != null && !vSec.equals("--")) {
+                    matchesSection = vSec.equalsIgnoreCase(activeSec);
+                } else {
+                    Object votedVal = ds.getValue();
+                    if (votedVal instanceof String) {
+                        String votedCandId = (String) votedVal;
+                        matchesSection = sectionCandidateIds.contains(votedCandId);
+                    } else if (ds.hasChild("candidateId")) {
+                        String votedCandId = ds.child("candidateId").getValue(String.class);
+                        matchesSection = sectionCandidateIds.contains(votedCandId);
+                    } else {
+                        matchesSection = sectionCandidateIds.isEmpty() || activeSec.equals("--");
+                    }
+                }
+
+                if (matchesSection) {
+                    totalVoters++;
+                }
+            }
+
+            tvStatTotalVoters.setText(String.valueOf(totalVoters));
+            int estimatedTotalStudents = 50; 
+            int turnout = (int) Math.min(100, (totalVoters * 100) / estimatedTotalStudents);
+            tvStatTurnout.setText(turnout + "%");
+        } catch (Exception e) {
+            Log.e("TeacherDashboard", "Error counting voters", e);
+        }
+    }
+
     private void saveCandidateToDatabase(String name) {
+        String teacherSec = getTeacherAssignedSection();
         String cid = dbRef.child("candidates").push().getKey();
         if (cid != null) {
             Map<String, Object> map = new HashMap<>();
@@ -489,19 +733,30 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             map.put("votes", 0);
             map.put("imageUrl", "");
             map.put("dept", "Department of CSE, BUBT");
+            map.put("section", teacherSec);
+            map.put("assignedSection", teacherSec);
             map.put("manifesto", "Committed to student welfare, transparent CR communication, and academic support sessions.");
 
             etCandidateName.setText("");
             etCandidateName.clearFocus();
             btnAddCandidate.setEnabled(true);
 
-            dbRef.child("candidates").child(cid).setValue(map)
+            Map<String, Object> childUpdates = new HashMap<>();
+            childUpdates.put("candidates/" + cid, map);
+            String sanitizedSec = getSanitizedSection(teacherSec);
+            if (!sanitizedSec.equals("--")) {
+                childUpdates.put("voting_controls/" + sanitizedSec + "/candidates/" + cid, map);
+                childUpdates.put("voting_controls/" + sanitizedSec + "/votes/" + cid, 0);
+                childUpdates.put("sections/" + sanitizedSec + "/candidates/" + cid, map);
+            }
+
+            dbRef.updateChildren(childUpdates)
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Successfully added to student portal!", Toast.LENGTH_SHORT).show();
-                    logAdminAction("Added New Candidate: " + name);
+                    Toast.makeText(this, "Successfully added candidate to Section " + teacherSec + "!", Toast.LENGTH_SHORT).show();
+                    logAdminAction("Added New Candidate (" + name + ") for Section " + teacherSec);
                     broadcastNotificationToStudents(
-                        "📢 New Candidate Published",
-                        name + " has been added to the student election portal. Check out their manifesto!",
+                        "📢 New Candidate Published (Sec " + teacherSec + ")",
+                        name + " has been added to Section " + teacherSec + " election portal. Check out their manifesto!",
                         "NEW_CANDIDATE"
                     );
                 })
@@ -601,7 +856,16 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             btnConfirm.setOnClickListener(dt -> {
                 sheet.dismiss();
                 if (candidateId != null) {
-                    dbRef.child("candidates").child(candidateId).removeValue()
+                    String teacherSec = getTeacherAssignedSection();
+                    String sanitizedSec = getSanitizedSection(teacherSec);
+                    Map<String, Object> removeUpdates = new HashMap<>();
+                    removeUpdates.put("candidates/" + candidateId, null);
+                    if (!sanitizedSec.equals("--")) {
+                        removeUpdates.put("voting_controls/" + sanitizedSec + "/candidates/" + candidateId, null);
+                        removeUpdates.put("voting_controls/" + sanitizedSec + "/votes/" + candidateId, null);
+                        removeUpdates.put("sections/" + sanitizedSec + "/candidates/" + candidateId, null);
+                    }
+                    dbRef.updateChildren(removeUpdates)
                         .addOnSuccessListener(aVoid -> showSnackBar("Candidate removed", false));
                 }
             });
@@ -641,6 +905,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         String teacherName = sessionManager.getUserName();
         String teacherEmail = sessionManager.getUserEmail();
         String teacherId = sessionManager.getUserID();
+        String teacherSec = getTeacherAssignedSection();
 
         String logId = dbRef.child("audit_logs").push().getKey();
         if (logId != null) {
@@ -648,43 +913,83 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             logMap.put("teacherName", teacherName);
             logMap.put("teacherEmail", teacherEmail);
             logMap.put("teacherId", teacherId);
+            logMap.put("assignedSection", teacherSec);
             logMap.put("action", actionDescription);
             logMap.put("timestamp", ServerValue.TIMESTAMP);
 
             dbRef.child("audit_logs").child(logId).setValue(logMap);
+            String sanitizedSec = getSanitizedSection(teacherSec);
+            if (!sanitizedSec.equals("--")) {
+                dbRef.child("sections").child(sanitizedSec).child("audit_logs").child(logId).setValue(logMap);
+            }
         }
     }
 
     private void broadcastNotificationToStudents(String title, String body, String actionType) {
+        String teacherSec = getTeacherAssignedSection();
+        String sanitizedSec = getSanitizedSection(teacherSec);
         String notifId = dbRef.child("notifications_queue").push().getKey();
+
         Map<String, Object> notifMap = new HashMap<>();
         notifMap.put("title", title);
         notifMap.put("body", body);
-        notifMap.put("topic", "all_students");
+        notifMap.put("topic", !sanitizedSec.equals("--") ? "section_" + sanitizedSec : "all_students");
+        notifMap.put("section", teacherSec);
         notifMap.put("actionType", actionType);
         notifMap.put("sender", sessionManager.getUserName());
         notifMap.put("timestamp", ServerValue.TIMESTAMP);
 
         if (notifId != null) {
             dbRef.child("notifications_queue").child(notifId).setValue(notifMap);
+            if (!sanitizedSec.equals("--")) {
+                dbRef.child("sections").child(sanitizedSec).child("notifications_queue").child(notifId).setValue(notifMap);
+            }
         }
         dbRef.child("broadcast_notifications").setValue(notifMap);
+        if (!sanitizedSec.equals("--")) {
+            dbRef.child("sections").child(sanitizedSec).child("broadcast_notifications").setValue(notifMap);
+        }
     }
 
     private void exportElectionResultsToPdf() {
-        Toast.makeText(this, "Generating Election PDF Report...", Toast.LENGTH_SHORT).show();
+        String teacherSec = getTeacherAssignedSection();
+        Toast.makeText(this, "Generating Election PDF Report for Section " + teacherSec + "...", Toast.LENGTH_SHORT).show();
 
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                DataSnapshot candidatesSnap = snapshot.child("candidates");
-                DataSnapshot votersSnap = snapshot.child("voters");
-                Boolean gateStatus = snapshot.child("master_voting_enabled").getValue(Boolean.class);
+                String sanitizedSec = getSanitizedSection(teacherSec);
+                Boolean gateStatus = null;
+                if (!sanitizedSec.equals("--") && snapshot.child("voting_controls").child(sanitizedSec).hasChild("isGateOpen")) {
+                    gateStatus = snapshot.child("voting_controls").child(sanitizedSec).child("isGateOpen").getValue(Boolean.class);
+                }
+                if (gateStatus == null && !sanitizedSec.equals("--") && snapshot.child("sections").child(sanitizedSec).hasChild("master_voting_enabled")) {
+                    gateStatus = snapshot.child("sections").child(sanitizedSec).child("master_voting_enabled").getValue(Boolean.class);
+                }
+                if (gateStatus == null) {
+                    gateStatus = snapshot.child("master_voting_enabled").getValue(Boolean.class);
+                }
+
+                DataSnapshot candidatesSnap = (!sanitizedSec.equals("--") && snapshot.child("voting_controls").child(sanitizedSec).hasChild("candidates")) ?
+                        snapshot.child("voting_controls").child(sanitizedSec).child("candidates") :
+                        snapshot.child("candidates");
+
+                DataSnapshot votersSnap = (!sanitizedSec.equals("--") && snapshot.child("voting_controls").child(sanitizedSec).hasChild("voters")) ?
+                        snapshot.child("voting_controls").child(sanitizedSec).child("voters") :
+                        snapshot.child("voters");
 
                 int totalVotes = 0;
                 List<PdfReportGenerator.CandidateResult> rawList = new ArrayList<>();
 
                 for (DataSnapshot ds : candidatesSnap.getChildren()) {
+                    String candSec = ds.child("section").getValue(String.class);
+                    if (candSec == null) candSec = ds.child("assignedSection").getValue(String.class);
+
+                    // Filter strictly for teacher's assigned section
+                    if (candSec != null && !candSec.equals("--") && !teacherSec.equals("--") && !candSec.equalsIgnoreCase(teacherSec)) {
+                        continue;
+                    }
+
                     String name = ds.child("name").getValue(String.class);
                     String dept = ds.child("dept").getValue(String.class);
                     if (name == null) name = "Candidate";
@@ -705,13 +1010,25 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     rank++;
                 }
 
-                int totalVoters = (int) votersSnap.getChildrenCount();
+                int totalVoters = 0;
+                for (DataSnapshot vDs : votersSnap.getChildren()) {
+                    String vSec = vDs.child("section").getValue(String.class);
+                    if (vSec == null) vSec = vDs.child("assignedSection").getValue(String.class);
+                    Object vVal = vDs.getValue();
+                    boolean matchesSec = (vSec != null && vSec.equalsIgnoreCase(teacherSec)) ||
+                            (vVal instanceof String && sectionCandidateIds.contains((String) vVal)) ||
+                            (sectionCandidateIds.isEmpty() || teacherSec.equals("--"));
+                    if (matchesSec) {
+                        totalVoters++;
+                    }
+                }
+
                 int estimatedTotalStudents = 50;
                 int turnoutInt = (int) Math.min(100, (totalVoters * 100) / estimatedTotalStudents);
                 String turnoutStr = turnoutInt + "%";
 
                 String teacherName = sessionManager.getUserName();
-                String teacherDept = sessionManager.getUserDept();
+                String teacherDept = sessionManager.getUserDept() + " (Section " + teacherSec + ")";
 
                 File pdfFile = PdfReportGenerator.generatePdfDocument(
                         TeacherDashboardActivity.this,
@@ -725,7 +1042,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 );
 
                 if (pdfFile != null) {
-                    logAdminAction("Exported Election Results to PDF Report");
+                    logAdminAction("Exported Election Results to PDF Report for Section " + teacherSec);
 
                     BottomSheetDialog pdfSheet = new BottomSheetDialog(TeacherDashboardActivity.this);
                     View view = getLayoutInflater().inflate(R.layout.dialog_pdf_ready, null);
@@ -811,8 +1128,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         return "";
     }
 
-
-
     public static void loadProfileImage(Context context, String base64OrUrl, ImageView imageView) {
         try {
             if (base64OrUrl != null && !base64OrUrl.isEmpty()) {
@@ -892,27 +1207,13 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             return false;
         }
 
-        // TEMPORARY TESTING BYPASS: Email verification and domain check disabled
-        /*
-        if (!currentUser.isEmailVerified()) {
-            redirectToLogin("Email not verified. Please verify your BUBT email first.");
-            return false;
-        }
-
-        String email = currentUser.getEmail();
-        if (email == null || (!email.toLowerCase().endsWith("@bubt.edu.bd") && !email.toLowerCase().endsWith("@cse.bubt.edu.bd"))) {
-            redirectToLogin("Only official BUBT emails (@bubt.edu.bd or @cse.bubt.edu.bd) are authorized.");
-            return false;
-        }
-        */
-
         if (!sessionManager.isLoggedIn()) {
             redirectToLogin("Session expired. Please log in again.");
             return false;
         }
 
         String role = sessionManager.getUserRole();
-        if (!"Teacher/Admin".equals(role)) {
+        if (!"Teacher/Admin".equals(role) && !"Teacher".equalsIgnoreCase(role)) {
             Toast.makeText(this, "Unauthorized access: Teacher privileges required.", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(this, StudentDashboardActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

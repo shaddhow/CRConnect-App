@@ -178,10 +178,14 @@ public class MainActivity extends AppCompatActivity {
         radioGroupRole.setOnCheckedChangeListener((group, checkedId) -> {
             etEmail.setText("");
             etPassword.setText("");
+            etEmail.setError(null);
+            etPassword.setError(null);
             if (checkedId == R.id.rbTeacher) {
                 tilEmail.setHint("Teacher Code or Email");
+                etEmail.setHint("Teacher Code or Email");
             } else {
                 tilEmail.setHint("Student ID or BUBT Email");
+                etEmail.setHint("Student ID or BUBT Email");
             }
         });
 
@@ -433,6 +437,7 @@ public class MainActivity extends AppCompatActivity {
                                                                     String id = doc.getString("id");
                                                                     String dbEmail = doc.getString("email");
                                                                     String section = doc.getString("section");
+                                                                    String assignedSection = doc.getString("assignedSection");
                                                                     String intake = doc.getString("intake");
                                                                     String dept = doc.getString("dept");
 
@@ -442,6 +447,7 @@ public class MainActivity extends AppCompatActivity {
                                                                         id != null ? id : originalInput,
                                                                         role != null ? role : "Student",
                                                                         section != null ? section : "--",
+                                                                        assignedSection != null ? assignedSection : (section != null ? section : "--"),
                                                                         intake != null ? intake : "--",
                                                                         dept != null ? dept : "Department of CSE, BUBT"
                                                                     );
@@ -507,6 +513,7 @@ public class MainActivity extends AppCompatActivity {
         String id = snapshot.child("id").getValue(String.class);
         String userEmail = snapshot.child("email").getValue(String.class);
         String section = snapshot.child("section").getValue(String.class);
+        String assignedSection = snapshot.child("assignedSection").getValue(String.class);
         String intake = snapshot.child("intake").getValue(String.class);
         String dept = snapshot.child("dept").getValue(String.class);
 
@@ -515,10 +522,11 @@ public class MainActivity extends AppCompatActivity {
         if (id == null) id = "";
         if (userEmail == null) userEmail = "";
         if (section == null) section = "--";
+        if (assignedSection == null) assignedSection = section;
         if (intake == null) intake = "--";
         if (dept == null) dept = "Department of CSE, BUBT";
 
-        sessionManager.createLoginSession(name, userEmail, id, role, section, intake, dept);
+        sessionManager.createLoginSession(name, userEmail, id, role, section, assignedSection, intake, dept);
         Toast.makeText(MainActivity.this, "Welcome back, " + name + "!", Toast.LENGTH_SHORT).show();
         navigateBasedOnRole(role);
         finish();
@@ -526,7 +534,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void navigateBasedOnRole(String role) {
         Intent intent;
-        if ("Teacher/Admin".equals(role)) {
+        if ("Teacher/Admin".equals(role) || "Teacher".equalsIgnoreCase(role)) {
             intent = new Intent(MainActivity.this, TeacherDashboardActivity.class);
         } else {
             intent = new Intent(MainActivity.this, StudentDashboardActivity.class);

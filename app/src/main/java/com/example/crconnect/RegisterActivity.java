@@ -1,5 +1,6 @@
 package com.example.crconnect;
 
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -16,6 +17,9 @@ import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+import android.view.ViewGroup;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -29,6 +33,7 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
@@ -36,6 +41,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanner;
@@ -54,24 +60,43 @@ import java.util.regex.Pattern;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    private TextInputEditText etFullName, etRegEmail, etStudentId, etTeacherCode, etRegPassword, etSection, etIntake, etDept;
+    private TextInputEditText etFullName, etRegEmail, etStudentId, etTeacherCode, etRegPassword, etIntake;
+    private TextInputLayout tilRegEmail;
     private RadioGroup radioGroupRole;
     private View layoutStudentFields, layoutTeacherFields;
     private RadioButton rbTeacher, rbStudent;
+    private Spinner spinnerAssignedSection, spinnerStudentSection, spinnerDept, spinnerTeacherDept;
     private Button btnRegister, btnBackToLogin;
     private MaterialButton btnScanIdCard;
     private TextView tvLoginLink;
     private MaterialCardView layoutFormCard, layoutSuccessCard;
-    private SessionManager sessionManager;
 
     private ActivityResultLauncher<IntentSenderRequest> docScannerLauncher;
     private GmsDocumentScanner documentScanner;
 
+    private static final String[] SECTIONS = {
+        "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"
+    };
+
+    private static final String[] DEPARTMENTS = {
+        "Computer Science & Engineering (CSE)",
+        "Electrical & Electronic Engineering (EEE)",
+        "English (ENG)",
+        "Law & Justice (L&J)",
+        "Accounting (ACC)",
+        "Finance (FIN)",
+        "Management (MGT)",
+        "Marketing (MKT)",
+        "Civil Engineering (CE)",
+        "Textile Engineering (TE)",
+        "Mathematics & Statistics (M&S)",
+        "Economics (ECO)",
+        "Data Science & Engineering (DSE)"
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        sessionManager = new SessionManager(this);
 
         // --- TRUE FULL SCREEN (GOOGLE STYLE) ---
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
@@ -102,12 +127,11 @@ public class RegisterActivity extends AppCompatActivity {
 
         etFullName = findViewById(R.id.etFullName);
         etRegEmail = findViewById(R.id.etRegEmail);
+        tilRegEmail = findViewById(R.id.tilRegEmail);
         etStudentId = findViewById(R.id.etStudentId);
         etTeacherCode = findViewById(R.id.etTeacherCode);
         etRegPassword = findViewById(R.id.etRegPassword);
-        etSection = findViewById(R.id.etSection);
         etIntake = findViewById(R.id.etIntake);
-        etDept = findViewById(R.id.etDept);
         layoutStudentFields = findViewById(R.id.layoutStudentFields);
         layoutTeacherFields = findViewById(R.id.layoutTeacherFields);
         radioGroupRole = findViewById(R.id.radioGroupRole);
@@ -119,6 +143,68 @@ public class RegisterActivity extends AppCompatActivity {
         layoutFormCard = findViewById(R.id.layoutFormCard);
         layoutSuccessCard = findViewById(R.id.layoutSuccessCard);
         btnBackToLogin = findViewById(R.id.btnBackToLogin);
+        spinnerAssignedSection = findViewById(R.id.spinnerAssignedSection);
+        spinnerStudentSection = findViewById(R.id.spinnerStudentSection);
+        spinnerDept = findViewById(R.id.spinnerDept);
+        spinnerTeacherDept = findViewById(R.id.spinnerTeacherDept);
+
+        ArrayAdapter<String> sectionAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, SECTIONS) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView tv = view.findViewById(android.R.id.text1);
+                if (tv != null) {
+                    tv.setTextColor(Color.parseColor("#FFFFFF"));
+                    tv.setTextSize(15);
+                }
+                return view;
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView tv = view.findViewById(android.R.id.text1);
+                if (tv != null) {
+                    tv.setTextColor(Color.parseColor("#FFFFFF"));
+                    tv.setBackgroundColor(Color.parseColor("#141C2E"));
+                    tv.setTextSize(15);
+                    tv.setPadding(24, 16, 24, 16);
+                }
+                return view;
+            }
+        };
+        sectionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerAssignedSection.setAdapter(sectionAdapter);
+        spinnerStudentSection.setAdapter(sectionAdapter);
+
+        ArrayAdapter<String> deptAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, DEPARTMENTS) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView tv = view.findViewById(android.R.id.text1);
+                if (tv != null) {
+                    tv.setTextColor(Color.parseColor("#FFFFFF"));
+                    tv.setTextSize(15);
+                }
+                return view;
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView tv = view.findViewById(android.R.id.text1);
+                if (tv != null) {
+                    tv.setTextColor(Color.parseColor("#FFFFFF"));
+                    tv.setBackgroundColor(Color.parseColor("#141C2E"));
+                    tv.setTextSize(15);
+                    tv.setPadding(24, 16, 24, 16);
+                }
+                return view;
+            }
+        };
+        deptAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerDept.setAdapter(deptAdapter);
+        spinnerTeacherDept.setAdapter(deptAdapter);
 
         // Configure Google Play Services Document Scanner API
         GmsDocumentScannerOptions scannerOptions = new GmsDocumentScannerOptions.Builder()
@@ -153,13 +239,51 @@ public class RegisterActivity extends AppCompatActivity {
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
+        // Role Toggle Reset & Dynamic Hint Setup
         radioGroupRole.setOnCheckedChangeListener((group, checkedId) -> {
+            if (etFullName != null) {
+                etFullName.setText("");
+                etFullName.setError(null);
+            }
+            if (etRegEmail != null) {
+                etRegEmail.setText("");
+                etRegEmail.setError(null);
+            }
+            if (etStudentId != null) {
+                etStudentId.setText("");
+                etStudentId.setError(null);
+            }
+            if (etTeacherCode != null) {
+                etTeacherCode.setText("");
+                etTeacherCode.setError(null);
+            }
+            if (etRegPassword != null) {
+                etRegPassword.setText("");
+                etRegPassword.setError(null);
+            }
+            if (spinnerStudentSection != null) spinnerStudentSection.setSelection(0);
+            if (spinnerAssignedSection != null) spinnerAssignedSection.setSelection(0);
+            if (etIntake != null) {
+                etIntake.setText("");
+                etIntake.setError(null);
+            }
+            if (spinnerDept != null) spinnerDept.setSelection(0);
+            if (spinnerTeacherDept != null) spinnerTeacherDept.setSelection(0);
+
             if (checkedId == R.id.rbTeacher) {
                 layoutStudentFields.setVisibility(View.GONE);
                 layoutTeacherFields.setVisibility(View.VISIBLE);
+                if (tilRegEmail != null) {
+                    tilRegEmail.setHint("Teacher Email (@bubt.edu.bd)");
+                    tilRegEmail.setHelperText("e.g., name@bubt.edu.bd");
+                }
             } else {
                 layoutStudentFields.setVisibility(View.VISIBLE);
                 layoutTeacherFields.setVisibility(View.GONE);
+                if (tilRegEmail != null) {
+                    tilRegEmail.setHint("Student Email");
+                    tilRegEmail.setHelperText("e.g., name@gmail.com");
+                }
             }
         });
 
@@ -249,16 +373,12 @@ public class RegisterActivity extends AppCompatActivity {
         String extractedDept = null;
         int idLineIndex = -1;
 
-        // 1. Loop through all the recognized text lines from the ML Kit result
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i] != null ? lines[i].trim() : "";
-            
-            // 2. Print every single line to Logcat using Log.d("OCR_DEBUG", line)
             Log.d("OCR_DEBUG", line);
 
             if (line.isEmpty()) continue;
 
-            // 3. Look for the line that contains "ID-" or starts with "20" (like "20255103311")
             if (extractedId == null) {
                 if (line.contains("ID-") || line.startsWith("20") || line.toUpperCase().contains("ID")) {
                     String cleanId = line.replaceAll("(?i)id[-:]?", "").replaceAll("[^0-9]", "").trim();
@@ -269,7 +389,6 @@ public class RegisterActivity extends AppCompatActivity {
                 }
             }
 
-            // 5. Ensure Intake and Department map correctly as before
             if (extractedIntake == null) {
                 Matcher intakeMatcher = Pattern.compile("(?i)intake\\s*[:.-]?\\s*([0-9]{1,3})").matcher(line);
                 if (intakeMatcher.find()) {
@@ -279,13 +398,36 @@ public class RegisterActivity extends AppCompatActivity {
 
             if (extractedDept == null) {
                 String lowerLine = line.toLowerCase();
-                if (lowerLine.contains("cse") || lowerLine.contains("b.sc. engg. in cse") || lowerLine.contains("computer science in cse")) {
-                    extractedDept = "CSE";
+                if (lowerLine.contains("cse") || lowerLine.contains("computer science")) {
+                    extractedDept = "Computer Science & Engineering (CSE)";
+                } else if (lowerLine.contains("eee") || lowerLine.contains("electrical")) {
+                    extractedDept = "Electrical & Electronic Engineering (EEE)";
+                } else if (lowerLine.contains("eng") || lowerLine.contains("english")) {
+                    extractedDept = "English (ENG)";
+                } else if (lowerLine.contains("law") || lowerLine.contains("justice")) {
+                    extractedDept = "Law & Justice (L&J)";
+                } else if (lowerLine.contains("acc") || lowerLine.contains("accounting")) {
+                    extractedDept = "Accounting (ACC)";
+                } else if (lowerLine.contains("fin") || lowerLine.contains("finance")) {
+                    extractedDept = "Finance (FIN)";
+                } else if (lowerLine.contains("mgt") || lowerLine.contains("management")) {
+                    extractedDept = "Management (MGT)";
+                } else if (lowerLine.contains("mkt") || lowerLine.contains("marketing")) {
+                    extractedDept = "Marketing (MKT)";
+                } else if (lowerLine.contains("civil")) {
+                    extractedDept = "Civil Engineering (CE)";
+                } else if (lowerLine.contains("textile")) {
+                    extractedDept = "Textile Engineering (TE)";
+                } else if (lowerLine.contains("math") || lowerLine.contains("stat")) {
+                    extractedDept = "Mathematics & Statistics (M&S)";
+                } else if (lowerLine.contains("econ")) {
+                    extractedDept = "Economics (ECO)";
+                } else if (lowerLine.contains("dse") || lowerLine.contains("data science")) {
+                    extractedDept = "Data Science & Engineering (DSE)";
                 }
             }
         }
 
-        // 4. Look at the lines above the ID line. Grab the text that forms the student's name, strip out words like "STUDENT" or university headers
         if (idLineIndex != -1) {
             StringBuilder nameBuilder = new StringBuilder();
             int startIndex = Math.max(0, idLineIndex - 4);
@@ -312,7 +454,6 @@ public class RegisterActivity extends AppCompatActivity {
             }
         }
 
-        // Assign to fields
         if (extractedName != null && !extractedName.isEmpty()) {
             etFullName.setText(extractedName);
         } else {
@@ -339,15 +480,23 @@ public class RegisterActivity extends AppCompatActivity {
             etIntake.setText("");
         }
 
-        if (extractedDept != null && etDept != null) {
-            etDept.setText(extractedDept);
-        } else if (etDept != null) {
-            etDept.setText("");
+        if (extractedDept != null) {
+            int matchIndex = 0;
+            for (int i = 0; i < DEPARTMENTS.length; i++) {
+                if (DEPARTMENTS[i].equalsIgnoreCase(extractedDept) || DEPARTMENTS[i].toUpperCase().contains(extractedDept.toUpperCase())) {
+                    matchIndex = i;
+                    break;
+                }
+            }
+            if (spinnerDept != null) spinnerDept.setSelection(matchIndex);
+            if (spinnerTeacherDept != null) spinnerTeacherDept.setSelection(matchIndex);
+        } else {
+            if (spinnerDept != null) spinnerDept.setSelection(0);
+            if (spinnerTeacherDept != null) spinnerTeacherDept.setSelection(0);
         }
 
-        // Leave Section empty
-        if (etSection != null) {
-            etSection.setText("");
+        if (spinnerStudentSection != null) {
+            spinnerStudentSection.setSelection(0);
         }
 
         Toast.makeText(this, "OCR scan completed successfully.", Toast.LENGTH_SHORT).show();
@@ -376,9 +525,13 @@ public class RegisterActivity extends AppCompatActivity {
             (etTeacherCode != null && etTeacherCode.getText() != null ? etTeacherCode.getText().toString().trim() : "");
             
         String password = etRegPassword.getText() != null ? etRegPassword.getText().toString().trim() : "";
-        String section = (isStudent && etSection != null && etSection.getText() != null) ? etSection.getText().toString().trim() : "";
+        String section = isStudent ? 
+            (spinnerStudentSection != null && spinnerStudentSection.getSelectedItem() != null ? spinnerStudentSection.getSelectedItem().toString() : "1") :
+            (spinnerAssignedSection != null && spinnerAssignedSection.getSelectedItem() != null ? spinnerAssignedSection.getSelectedItem().toString() : "1");
         String intake = (isStudent && etIntake != null && etIntake.getText() != null) ? etIntake.getText().toString().trim() : "";
-        String dept = (isStudent && etDept != null && etDept.getText() != null) ? etDept.getText().toString().trim() : "";
+        String dept = isStudent ?
+            (spinnerDept != null && spinnerDept.getSelectedItem() != null ? spinnerDept.getSelectedItem().toString() : DEPARTMENTS[0]) :
+            (spinnerTeacherDept != null && spinnerTeacherDept.getSelectedItem() != null ? spinnerTeacherDept.getSelectedItem().toString() : DEPARTMENTS[0]);
 
         // 1. FULL NAME VALIDATION
         if (name.isEmpty()) {
@@ -411,6 +564,16 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
+        // Teacher Email Validation Requirement: Strictly enforce @bubt.edu.bd for Teacher registration
+        if (!isStudent) {
+            if (!email.toLowerCase().endsWith("@bubt.edu.bd")) {
+                Toast.makeText(this, "Teacher email must end with @bubt.edu.bd", Toast.LENGTH_LONG).show();
+                etRegEmail.setError("Teacher email must end with @bubt.edu.bd");
+                etRegEmail.requestFocus();
+                return;
+            }
+        }
+
         // 3. ID / TEACHER CODE VALIDATION
         if (id.isEmpty()) {
             if (isStudent) {
@@ -426,7 +589,6 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         if (isStudent) {
-            // Student ID format validation (e.g., numeric BUBT Student ID like 20211103001)
             if (isDummyOrGibberish(id) || !id.matches("^[0-9-]{6,15}$")) {
                 Toast.makeText(this, "Invalid Student ID: Please enter a legitimate BUBT Student ID (e.g., 20211103001)", Toast.LENGTH_LONG).show();
                 etStudentId.setError("Enter a valid numeric BUBT Student ID");
@@ -434,7 +596,6 @@ public class RegisterActivity extends AppCompatActivity {
                 return;
             }
         } else {
-            // Teacher Code format validation (e.g., CSE-101, T-501)
             if (isDummyOrGibberish(id) || id.length() < 3 || !id.matches("^[a-zA-Z0-9.-]{3,15}$")) {
                 Toast.makeText(this, "Invalid Teacher Code: Please enter a valid Teacher Code (e.g., CSE-101 or T-501)", Toast.LENGTH_LONG).show();
                 etTeacherCode.setError("Enter a valid Teacher Code (e.g., CSE-101)");
@@ -445,7 +606,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         // 4. STUDENT SPECIFIC FIELDS VALIDATION
         if (isStudent) {
-            // Intake Validation (e.g., 55, 55/8)
             if (intake.isEmpty()) {
                 Toast.makeText(this, "Intake is required!", Toast.LENGTH_SHORT).show();
                 etIntake.setError("Intake is required!");
@@ -456,34 +616,6 @@ public class RegisterActivity extends AppCompatActivity {
                 Toast.makeText(this, "Invalid Intake: Please enter a valid intake number (e.g., 55 or 55/8)", Toast.LENGTH_LONG).show();
                 etIntake.setError("Enter a valid intake format (e.g., 55 or 55/8)");
                 etIntake.requestFocus();
-                return;
-            }
-
-            // Section Validation (e.g., 8, Sec-A, 55/8)
-            if (section.isEmpty()) {
-                Toast.makeText(this, "Section is required!", Toast.LENGTH_SHORT).show();
-                etSection.setError("Section is required!");
-                etSection.requestFocus();
-                return;
-            }
-            if (isDummyOrGibberish(section) || !section.matches("^[a-zA-Z0-9/\\s-]{1,10}$")) {
-                Toast.makeText(this, "Invalid Section: Please enter a valid section (e.g., 8, Sec-A, or 55/8)", Toast.LENGTH_LONG).show();
-                etSection.setError("Enter a valid section format (e.g., 8 or 55/8)");
-                etSection.requestFocus();
-                return;
-            }
-
-            // Department Validation (e.g., CSE, Department of CSE)
-            if (dept.isEmpty()) {
-                Toast.makeText(this, "Department is required!", Toast.LENGTH_SHORT).show();
-                etDept.setError("Department is required!");
-                etDept.requestFocus();
-                return;
-            }
-            if (isDummyOrGibberish(dept) || dept.length() < 2 || !dept.matches("^[a-zA-Z.\\s,-]+$")) {
-                Toast.makeText(this, "Invalid Department: Please enter a valid department (e.g., CSE or Department of CSE)", Toast.LENGTH_LONG).show();
-                etDept.setError("Enter a valid department name (e.g., CSE)");
-                etDept.requestFocus();
                 return;
             }
         }
@@ -505,12 +637,45 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        String role = isStudent ? "Student" : "Teacher/Admin";
+        String role = isStudent ? "Student" : "Teacher";
+        String assignedSection = isStudent ? section : (spinnerAssignedSection != null && spinnerAssignedSection.getSelectedItem() != null ? spinnerAssignedSection.getSelectedItem().toString() : "1");
 
         // Show loading state on button
         btnRegister.setEnabled(false);
         btnRegister.setText("Creating Account...");
 
+        if (!isStudent) {
+            FirebaseFirestore.getInstance().collection("users")
+                .whereEqualTo("assignedSection", assignedSection)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    boolean alreadyClaimed = false;
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        String userRole = doc.getString("role");
+                        if (userRole != null && (userRole.equalsIgnoreCase("Teacher") || userRole.equalsIgnoreCase("Teacher/Admin"))) {
+                            alreadyClaimed = true;
+                            break;
+                        }
+                    }
+                    if (alreadyClaimed) {
+                        btnRegister.setEnabled(true);
+                        btnRegister.setText("REGISTER");
+                        Toast.makeText(RegisterActivity.this, "This section is already managed", Toast.LENGTH_SHORT).show();
+                        showSnackBar("This section is already managed", true);
+                    } else {
+                        executeFirebaseAuth(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("RegisterActivity", "Failed to check assigned section availability in Firestore", e);
+                    executeFirebaseAuth(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
+                });
+        } else {
+            executeFirebaseAuth(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
+        }
+    }
+
+    private void executeFirebaseAuth(String email, String password, String name, String id, String role, boolean isStudent, String section, String assignedSection, String intake, String dept) {
         FirebaseAuth auth = FirebaseAuth.getInstance();
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener(authResult -> {
@@ -528,11 +693,11 @@ public class RegisterActivity extends AppCompatActivity {
                         } else {
                             Log.e("RegisterActivity", "Failed to send verification email", task.getException());
                         }
-                        // Immediately sign out to prevent auto-login before email verification
-                        FirebaseAuth.getInstance().signOut();
-                        sessionManager.logoutUser();
                     });
-                saveUserDataAndFinish(user.getUid(), name, email, id, role, isStudent, section, intake, dept);
+                
+                auth.signOut();
+
+                saveUserDataAndFinish(user.getUid(), name, email, id, role, isStudent, section, assignedSection, intake, dept);
             })
             .addOnFailureListener(e -> {
                 Log.e("RegisterActivity", "FirebaseAuth error: " + e.getMessage(), e);
@@ -542,7 +707,7 @@ public class RegisterActivity extends AppCompatActivity {
             });
     }
 
-    private void saveUserDataAndFinish(String uid, String name, String email, String id, String role, boolean isStudent, String section, String intake, String dept) {
+    private void saveUserDataAndFinish(String uid, String name, String email, String id, String role, boolean isStudent, String section, String assignedSection, String intake, String dept) {
         String sanitizedId = id.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
         String sanitizedEmail = email.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
 
@@ -554,32 +719,34 @@ public class RegisterActivity extends AppCompatActivity {
         userMap.put("id", id);
         userMap.put("role", role);
         userMap.put("section", isStudent ? section : "--");
+        userMap.put("assignedSection", assignedSection);
         userMap.put("intake", isStudent ? intake : "--");
         userMap.put("dept", isStudent ? dept : "Department of CSE, BUBT");
         userMap.put("deviceId", Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID));
         userMap.put("registeredAt", System.currentTimeMillis());
 
-        // 1. Dual-Database Persistence: Firebase Realtime Database
         if (uid != null && !uid.isEmpty()) {
             dbRef.child("users").child(uid).setValue(userMap);
         }
         dbRef.child("users").child(sanitizedId).setValue(userMap);
         dbRef.child("users").child(sanitizedEmail).setValue(userMap);
 
-        // 2. Dual-Database Persistence: Firebase Firestore
         FirebaseFirestore firestore = FirebaseFirestore.getInstance();
         if (uid != null && !uid.isEmpty()) {
             firestore.collection("users").document(uid).set(userMap);
         }
         firestore.collection("users").document(sanitizedId).set(userMap);
-
-        // Ensure unverified user session is terminated locally and remotely
-        FirebaseAuth.getInstance().signOut();
-        sessionManager.logoutUser();
+        firestore.collection("users").document(sanitizedEmail).set(userMap);
 
         runOnUiThread(() -> {
-            if (layoutFormCard != null) layoutFormCard.setVisibility(View.GONE);
-            if (layoutSuccessCard != null) layoutSuccessCard.setVisibility(View.VISIBLE);
+            Toast.makeText(RegisterActivity.this, "Verification email sent. Please verify before logging in.", Toast.LENGTH_LONG).show();
+            showSnackBar("Verification email sent. Please verify before logging in.", false);
+
+            Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
     }
 

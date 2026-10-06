@@ -77,6 +77,10 @@ public class StudentDashboardActivity extends AppCompatActivity {
     private DataSnapshot allCandidatesSnapshot;
     private String sanitizedStudentId;
 
+    private String currentSectionId = "--";
+    private DatabaseReference gateRef, voterRef, candidateRef;
+    private ValueEventListener gateEventListener, voterEventListener, candidateEventListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -204,44 +208,139 @@ public class StudentDashboardActivity extends AppCompatActivity {
             public void onCancelled(@NonNull DatabaseError error) {}
         });
 
-        // Check if student has already voted (Anti-Dual-Voting Security)
-        dbRef.child("voters").child(sanitizedStudentId).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                hasAlreadyVoted = snapshot.exists();
-                updateStatusText();
-                refreshList();
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
-        });
+        // Initialize Section-Specific Firebase Listeners (/voting_controls/{sectionId}/isGateOpen)
+        setupSectionListeners(sessionManager.getUserSection());
+    }
 
-        // Live Sync Voting Enabled status
-        dbRef.child("master_voting_enabled").addValueEventListener(new ValueEventListener() {
+    private String getSanitizedSection(String sec) {
+        if (sec == null || sec.trim().isEmpty() || sec.equals("--")) return "--";
+        return sec.trim().replace("/", "_").replace(" ", "_").replace(".", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+    }
+
+    private synchronized void setupSectionListeners(String rawSection) {
+        String secId = getSanitizedSection(rawSection);
+        if (secId.equals(currentSectionId) && gateEventListener != null) {
+            return;
+        }
+
+        if (gateRef != null && gateEventListener != null) {
+            gateRef.removeEventListener(gateEventListener);
+        }
+        if (voterRef != null && voterEventListener != null) {
+            voterRef.removeEventListener(voterEventListener);
+        }
+        if (candidateRef != null && candidateEventListener != null) {
+            candidateRef.removeEventListener(candidateEventListener);
+        }
+
+        currentSectionId = secId;
+
+        // 1. Section Voting Status Gate (/voting_controls/{sectionId}/isGateOpen)
+        if (!secId.equals("--")) {
+            gateRef = dbRef.child("voting_controls").child(secId).child("isGateOpen");
+        } else {
+            gateRef = dbRef.child("master_voting_enabled");
+        }
+
+        gateEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 Boolean status = snapshot.getValue(Boolean.class);
-                isVotingEnabled = (status != null && status);
-                updateStatusText();
-                refreshList();
+                if (status != null) {
+                    isVotingEnabled = status;
+                    updateStatusText();
+                    refreshList();
+                } else {
+                    // Fallback to master_voting_enabled
+                    dbRef.child("master_voting_enabled").addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snap) {
+                            Boolean globalStatus = snap.getValue(Boolean.class);
+                            isVotingEnabled = (globalStatus != null && globalStatus);
+                            updateStatusText();
+                            refreshList();
+                        }
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {}
+                    });
+                }
             }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(StudentDashboardActivity.this, "DB Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("StudentDashboard", "Gate error: " + error.getMessage());
             }
-        });
+        };
+        gateRef.addValueEventListener(gateEventListener);
 
-        dbRef.child("candidates").addValueEventListener(new ValueEventListener() {
+        // 2. Anti-Dual Voting Security Lock (/voting_controls/{sectionId}/voters/{sanitizedStudentId})
+        if (!secId.equals("--") && sanitizedStudentId != null && !sanitizedStudentId.isEmpty()) {
+            voterRef = dbRef.child("voting_controls").child(secId).child("voters").child(sanitizedStudentId);
+        } else if (sanitizedStudentId != null && !sanitizedStudentId.isEmpty()) {
+            voterRef = dbRef.child("voters").child(sanitizedStudentId);
+        }
+
+        if (voterRef != null) {
+            voterEventListener = new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    if (snapshot.exists()) {
+                        hasAlreadyVoted = true;
+                        updateStatusText();
+                        refreshList();
+                    } else {
+                        // Check root voters node fallback
+                        dbRef.child("voters").child(sanitizedStudentId).addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot rootSnap) {
+                                hasAlreadyVoted = rootSnap.exists();
+                                updateStatusText();
+                                refreshList();
+                            }
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {}
+                        });
+                    }
+                }
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("StudentDashboard", "Voter error: " + error.getMessage());
+                }
+            };
+            voterRef.addValueEventListener(voterEventListener);
+        }
+
+        // 3. Candidate List & Section Vote Counts (/voting_controls/{sectionId}/candidates)
+        if (!secId.equals("--")) {
+            candidateRef = dbRef.child("voting_controls").child(secId).child("candidates");
+        } else {
+            candidateRef = dbRef.child("candidates");
+        }
+
+        candidateEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                allCandidatesSnapshot = snapshot;
-                refreshList();
+                if (snapshot.exists() && snapshot.hasChildren()) {
+                    allCandidatesSnapshot = snapshot;
+                    refreshList();
+                } else {
+                    // Fallback to root candidates
+                    dbRef.child("candidates").addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot rootSnap) {
+                            allCandidatesSnapshot = rootSnap;
+                            refreshList();
+                        }
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {}
+                    });
+                }
             }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(StudentDashboardActivity.this, "DB Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("StudentDashboard", "Candidate error: " + error.getMessage());
             }
-        });
+        };
+        candidateRef.addValueEventListener(candidateEventListener);
     }
 
     private void displayStudentProfile() {
@@ -270,6 +369,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                     String id = snapshot.child("id").getValue(String.class);
                     String intake = snapshot.child("intake").getValue(String.class);
                     String section = snapshot.child("section").getValue(String.class);
+                    String assignedSection = snapshot.child("assignedSection").getValue(String.class);
                     String dept = snapshot.child("dept").getValue(String.class);
                     String email = snapshot.child("email").getValue(String.class);
                     String role = snapshot.child("role").getValue(String.class);
@@ -294,9 +394,11 @@ public class StudentDashboardActivity extends AppCompatActivity {
                         id != null ? id : sessionManager.getUserID(),
                         role != null ? role : sessionManager.getUserRole(),
                         section != null ? section : sessionManager.getUserSection(),
+                        assignedSection != null ? assignedSection : (section != null ? section : sessionManager.getAssignedSection()),
                         intake != null ? intake : sessionManager.getUserIntake(),
                         dept != null ? dept : sessionManager.getUserDept()
                     );
+                    setupSectionListeners(section != null ? section : sessionManager.getUserSection());
                 } else if (!uid.isEmpty()) {
                     FirebaseFirestore.getInstance()
                         .collection("users")
@@ -308,6 +410,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                                 String id = doc.getString("id");
                                 String intake = doc.getString("intake");
                                 String section = doc.getString("section");
+                                String assignedSection = doc.getString("assignedSection");
                                 String dept = doc.getString("dept");
                                 String email = doc.getString("email");
                                 String role = doc.getString("role");
@@ -332,6 +435,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                                     id != null ? id : sessionManager.getUserID(),
                                     role != null ? role : sessionManager.getUserRole(),
                                     section != null ? section : sessionManager.getUserSection(),
+                                    assignedSection != null ? assignedSection : (section != null ? section : sessionManager.getAssignedSection()),
                                     intake != null ? intake : sessionManager.getUserIntake(),
                                     dept != null ? dept : sessionManager.getUserDept()
                                 );
@@ -504,7 +608,14 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
                     if (id != null && !id.isEmpty()) {
                         String vId = (sanitizedStudentId != null && !sanitizedStudentId.isEmpty()) ? sanitizedStudentId : "guest_voter";
-                        dbRef.child("voters").child(vId).addListenerForSingleValueEvent(new ValueEventListener() {
+                        String sec = sessionManager.getUserSection();
+                        String secId = getSanitizedSection(sec);
+
+                        DatabaseReference voterCheckRef = !secId.equals("--") ?
+                                dbRef.child("voting_controls").child(secId).child("voters").child(vId) :
+                                dbRef.child("voters").child(vId);
+
+                        voterCheckRef.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot snapshot) {
                                 try {
@@ -514,19 +625,42 @@ public class StudentDashboardActivity extends AppCompatActivity {
                                         Toast.makeText(StudentDashboardActivity.this, "Security Alert: You have already cast your vote!", Toast.LENGTH_LONG).show();
                                         refreshList();
                                     } else {
-                                        Map<String, Object> updates = new HashMap<>();
-                                        updates.put("voters/" + vId, id);
-                                        updates.put("candidates/" + id + "/votes", votes + 1);
+                                        // Also check root voters node fallback
+                                        dbRef.child("voters").child(vId).addListenerForSingleValueEvent(new ValueEventListener() {
+                                            @Override
+                                            public void onDataChange(@NonNull DataSnapshot rootVoterSnap) {
+                                                if (rootVoterSnap.exists()) {
+                                                    hasAlreadyVoted = true;
+                                                    Toast.makeText(StudentDashboardActivity.this, "Security Alert: You have already cast your vote!", Toast.LENGTH_LONG).show();
+                                                    refreshList();
+                                                } else {
+                                                    Map<String, Object> updates = new HashMap<>();
+                                                    updates.put("voters/" + vId, id);
+                                                    updates.put("candidates/" + id + "/votes", votes + 1);
 
-                                        dbRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
-                                            if (isFinishing() || isDestroyed()) return;
-                                            hasAlreadyVoted = true;
-                                            Toast.makeText(StudentDashboardActivity.this, "Vote successfully recorded & secured!", Toast.LENGTH_SHORT).show();
-                                            refreshList();
-                                        }).addOnFailureListener(e -> {
-                                            Log.e("StudentDashboard", "Vote update failure", e);
-                                            if (!isFinishing() && !isDestroyed()) {
-                                                Toast.makeText(StudentDashboardActivity.this, "Transaction failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                    if (!secId.equals("--")) {
+                                                        updates.put("voting_controls/" + secId + "/voters/" + vId, id);
+                                                        updates.put("voting_controls/" + secId + "/candidates/" + id + "/votes", votes + 1);
+                                                        updates.put("voting_controls/" + secId + "/votes/" + id, votes + 1);
+                                                    }
+
+                                                    dbRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
+                                                        if (isFinishing() || isDestroyed()) return;
+                                                        hasAlreadyVoted = true;
+                                                        Toast.makeText(StudentDashboardActivity.this, "Vote successfully recorded & secured!", Toast.LENGTH_SHORT).show();
+                                                        refreshList();
+                                                    }).addOnFailureListener(e -> {
+                                                        Log.e("StudentDashboard", "Vote update failure", e);
+                                                        if (!isFinishing() && !isDestroyed()) {
+                                                            Toast.makeText(StudentDashboardActivity.this, "Transaction failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                        }
+                                                    });
+                                                }
+                                            }
+
+                                            @Override
+                                            public void onCancelled(@NonNull DatabaseError error) {
+                                                Log.e("StudentDashboard", "Root voter check cancelled: " + error.getMessage());
                                             }
                                         });
                                     }
@@ -763,7 +897,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
         }
 
         String role = sessionManager.getUserRole();
-        if ("Teacher/Admin".equals(role)) {
+        if ("Teacher/Admin".equals(role) || "Teacher".equalsIgnoreCase(role)) {
             Intent intent = new Intent(this, TeacherDashboardActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
