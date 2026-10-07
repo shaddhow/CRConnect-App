@@ -209,7 +209,8 @@
                             android:layout_height="match_parent"
                             android:background="@null"
                             android:spinnerMode="dropdown"
-                            android:popupBackground="#141C2E"
+                            android:popupBackground="@drawable/spinner_popup_bg"
+                            android:dropDownHeight="240dp"
                             android:dropDownVerticalOffset="4dp"/>
                     </FrameLayout>
 
@@ -261,7 +262,8 @@
                             android:layout_height="match_parent"
                             android:background="@null"
                             android:spinnerMode="dropdown"
-                            android:popupBackground="#141C2E"
+                            android:popupBackground="@drawable/spinner_popup_bg"
+                            android:dropDownHeight="240dp"
                             android:dropDownVerticalOffset="4dp"/>
                     </FrameLayout>
 
@@ -321,7 +323,8 @@
                             android:layout_height="match_parent"
                             android:background="@null"
                             android:spinnerMode="dropdown"
-                            android:popupBackground="#141C2E"
+                            android:popupBackground="@drawable/spinner_popup_bg"
+                            android:dropDownHeight="240dp"
                             android:dropDownVerticalOffset="4dp"/>
                     </FrameLayout>
 
@@ -347,7 +350,8 @@
                             android:layout_height="match_parent"
                             android:background="@null"
                             android:spinnerMode="dropdown"
-                            android:popupBackground="#141C2E"
+                            android:popupBackground="@drawable/spinner_popup_bg"
+                            android:dropDownHeight="240dp"
                             android:dropDownVerticalOffset="4dp"/>
                     </FrameLayout>
 

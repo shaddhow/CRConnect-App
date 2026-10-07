@@ -113,28 +113,47 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Status Badge -->
+    <!-- Live Timer & Status Card -->
     <com.google.android.material.card.MaterialCardView
-        android:layout_width="wrap_content"
+        android:id="@+id/cardStudentTimerStatus"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="100dp"
-        app:cardElevation="6dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="8dp"
         app:cardBackgroundColor="#D9171F2F"
         app:strokeWidth="1.5dp"
         app:strokeColor="#334155"
-        android:layout_gravity="center"
         android:layout_marginBottom="12dp">
 
-        <TextView
-            android:id="@+id/tvVotingStatus"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Syncing Live Data..."
-            android:paddingHorizontal="20dp"
-            android:paddingVertical="8dp"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="#94A3B8"/>
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp">
+
+            <TextView
+                android:id="@+id/tvVotingStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Syncing Live Data..."
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#94A3B8"
+                android:gravity="center"/>
+
+            <TextView
+                android:id="@+id/tvStudentCountdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⏱️ --:--"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#10B981"
+                android:layout_marginTop="4dp"
+                android:gravity="center"/>
+        </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
     <!-- Expanded Candidate List Section (Maximizes available screen height) -->

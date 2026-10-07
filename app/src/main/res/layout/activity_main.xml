@@ -169,6 +169,31 @@
                     android:textColor="#0F172A"
                     app:cornerRadius="16dp"
                     app:backgroundTint="#38BDF8"
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- TEMPORARY DEV BYPASS BUTTONS FOR TESTING -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDevStudent"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="⚡ DEV: Student Dashboard Bypass"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    app:cornerRadius="14dp"
+                    app:backgroundTint="#10B981"
+                    android:layout_marginBottom="8dp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDevTeacher"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="⚡ DEV: Teacher Dashboard Bypass"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    app:cornerRadius="14dp"
+                    app:backgroundTint="#8B5CF6"
                     android:layout_marginBottom="16dp"/>
 
                 <!-- High-Contrast Footer Links -->

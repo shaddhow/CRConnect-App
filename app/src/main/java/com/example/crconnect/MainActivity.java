@@ -43,6 +43,10 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.HashMap;
+import java.util.Map;
+import android.provider.Settings;
+
 public class MainActivity extends AppCompatActivity {
 
     private TextInputEditText etEmail, etPassword;
@@ -74,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseUser refreshedUser = FirebaseAuth.getInstance().getCurrentUser();
                 if (refreshedUser != null && refreshedUser.isEmailVerified()) {
                     if (sessionManager.isLoggedIn()) {
-                        navigateBasedOnRole(sessionManager.getUserRole());
+                        navigateBasedOnRole(sessionManager.getUserRole(), sessionManager.getUserEmail());
                         finish();
                         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                     } else {
@@ -191,6 +195,52 @@ public class MainActivity extends AppCompatActivity {
 
         // Login Button Click Listener
         btnLogin.setOnClickListener(v -> performLogin());
+
+        // Dev Bypass Buttons Click Listeners
+        MaterialButton btnDevStudent = findViewById(R.id.btnDevStudent);
+        MaterialButton btnDevTeacher = findViewById(R.id.btnDevTeacher);
+
+        if (btnDevStudent != null) {
+            btnDevStudent.setOnClickListener(v -> {
+                sessionManager.createLoginSession(
+                    "Test Student (Dev)",
+                    "student@bubt.edu.bd",
+                    "22235103132",
+                    "Student",
+                    "5A",
+                    "5A",
+                    "47",
+                    "Department of CSE, BUBT"
+                );
+                Toast.makeText(MainActivity.this, "Bypassing to Student Dashboard...", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(MainActivity.this, StudentDashboardActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+
+        if (btnDevTeacher != null) {
+            btnDevTeacher.setOnClickListener(v -> {
+                sessionManager.createLoginSession(
+                    "Test Teacher (Dev)",
+                    "teacher@bubt.edu.bd",
+                    "T1001",
+                    "Teacher/Admin",
+                    "--",
+                    "5A",
+                    "--",
+                    "Department of CSE, BUBT"
+                );
+                Toast.makeText(MainActivity.this, "Bypassing to Teacher Dashboard...", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(MainActivity.this, TeacherDashboardActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
 
         // Forgot Password Click Listener
         tvForgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
@@ -376,6 +426,61 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void createDefaultTeacherAndNavigate(String uid, String email, String originalInput) {
+        String name = email != null ? email.split("@")[0] : "Teacher";
+        String assignedSection = "5A";
+        String dept = "Department of CSE, BUBT";
+        
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("name", name);
+        userMap.put("email", email);
+        userMap.put("id", originalInput != null && !originalInput.isEmpty() ? originalInput : "T1001");
+        userMap.put("role", "Teacher/Admin");
+        userMap.put("section", "--");
+        userMap.put("assignedSection", assignedSection);
+        userMap.put("intake", "--");
+        userMap.put("dept", dept);
+        userMap.put("deviceId", Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID));
+        userMap.put("registeredAt", System.currentTimeMillis());
+
+        DatabaseReference dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
+        String safeEmail = email != null ? email : "";
+        String safeInput = originalInput != null ? originalInput : "";
+        String sanitizedEmail = safeEmail.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+        String sanitizedInput = safeInput.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+
+        if (uid != null && !uid.isEmpty()) {
+            dbRef.child("users").child(uid).setValue(userMap);
+        }
+        dbRef.child("users").child(sanitizedEmail).setValue(userMap);
+        if (!sanitizedInput.isEmpty()) {
+            dbRef.child("users").child(sanitizedInput).setValue(userMap);
+        }
+
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+        if (uid != null && !uid.isEmpty()) {
+            firestore.collection("users").document(uid).set(userMap);
+        }
+        firestore.collection("users").document(sanitizedEmail).set(userMap);
+        if (!sanitizedInput.isEmpty()) {
+            firestore.collection("users").document(sanitizedInput).set(userMap);
+        }
+
+        sessionManager.createLoginSession(
+            name,
+            email,
+            originalInput != null && !originalInput.isEmpty() ? originalInput : "T1001",
+            "Teacher/Admin",
+            "--",
+            assignedSection,
+            "--",
+            dept
+        );
+        Toast.makeText(MainActivity.this, "Welcome, " + name + " (Teacher Profile Initialized)", Toast.LENGTH_SHORT).show();
+        navigateBasedOnRole("Teacher/Admin", email);
+        finish();
+    }
+
     private void authenticateWithEmail(String email, String password, String originalInput) {
         FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
             .addOnSuccessListener(authResult -> {
@@ -441,31 +546,42 @@ public class MainActivity extends AppCompatActivity {
                                                                     String intake = doc.getString("intake");
                                                                     String dept = doc.getString("dept");
 
+                                                                    String resolvedRole = role != null ? role : ((dbEmail != null && dbEmail.toLowerCase().endsWith("@bubt.edu.bd")) ? "Teacher" : "Student");
                                                                     sessionManager.createLoginSession(
                                                                         name != null ? name : email,
                                                                         dbEmail != null ? dbEmail : email,
                                                                         id != null ? id : originalInput,
-                                                                        role != null ? role : "Student",
+                                                                        resolvedRole,
                                                                         section != null ? section : "--",
                                                                         assignedSection != null ? assignedSection : (section != null ? section : "--"),
                                                                         intake != null ? intake : "--",
                                                                         dept != null ? dept : "Department of CSE, BUBT"
                                                                     );
                                                                     Toast.makeText(MainActivity.this, "Welcome back, " + (name != null ? name : email) + "!", Toast.LENGTH_SHORT).show();
-                                                                    navigateBasedOnRole(role != null ? role : "Student");
+                                                                    navigateBasedOnRole(resolvedRole, dbEmail != null ? dbEmail : email);
                                                                     finish();
+                                                                } else {
+                                                                    String userEmail = refreshedUser.getEmail();
+                                                                    if (isTeacherRole(null, userEmail) || (userEmail != null && userEmail.toLowerCase().endsWith("@bubt.edu.bd")) || rbTeacher.isChecked()) {
+                                                                        createDefaultTeacherAndNavigate(uid, userEmail != null ? userEmail : email, originalInput);
+                                                                    } else {
+                                                                        btnLogin.setEnabled(true);
+                                                                        FirebaseAuth.getInstance().signOut();
+                                                                        sessionManager.logoutUser();
+                                                                        Toast.makeText(MainActivity.this, "User profile not found in database. Please register first.", Toast.LENGTH_LONG).show();
+                                                                    }
+                                                                }
+                                                            })
+                                                            .addOnFailureListener(e -> {
+                                                                String userEmail = refreshedUser.getEmail();
+                                                                if (isTeacherRole(null, userEmail) || (userEmail != null && userEmail.toLowerCase().endsWith("@bubt.edu.bd")) || rbTeacher.isChecked()) {
+                                                                    createDefaultTeacherAndNavigate(uid, userEmail != null ? userEmail : email, originalInput);
                                                                 } else {
                                                                     btnLogin.setEnabled(true);
                                                                     FirebaseAuth.getInstance().signOut();
                                                                     sessionManager.logoutUser();
-                                                                    Toast.makeText(MainActivity.this, "User profile not found in database. Please register first.", Toast.LENGTH_LONG).show();
+                                                                    Toast.makeText(MainActivity.this, "User profile not found. Please register first.", Toast.LENGTH_LONG).show();
                                                                 }
-                                                            })
-                                                            .addOnFailureListener(e -> {
-                                                                btnLogin.setEnabled(true);
-                                                                FirebaseAuth.getInstance().signOut();
-                                                                sessionManager.logoutUser();
-                                                                Toast.makeText(MainActivity.this, "User profile not found. Please register first.", Toast.LENGTH_LONG).show();
                                                             });
                                                     }
                                                 }
@@ -507,6 +623,19 @@ public class MainActivity extends AppCompatActivity {
             });
     }
 
+    private boolean isTeacherRole(String role, String email) {
+        if (role != null) {
+            String lowerRole = role.toLowerCase();
+            if (lowerRole.contains("teacher") || lowerRole.contains("admin")) {
+                return true;
+            }
+        }
+        if (email != null && email.toLowerCase().endsWith("@bubt.edu.bd")) {
+            return true;
+        }
+        return false;
+    }
+
     private void saveSessionAndNavigate(DataSnapshot snapshot) {
         String name = snapshot.child("name").getValue(String.class);
         String role = snapshot.child("role").getValue(String.class);
@@ -518,9 +647,11 @@ public class MainActivity extends AppCompatActivity {
         String dept = snapshot.child("dept").getValue(String.class);
 
         if (name == null) name = "User";
-        if (role == null) role = "Student";
-        if (id == null) id = "";
         if (userEmail == null) userEmail = "";
+        if (role == null || role.trim().isEmpty()) {
+            role = isTeacherRole(null, userEmail) ? "Teacher" : "Student";
+        }
+        if (id == null) id = "";
         if (section == null) section = "--";
         if (assignedSection == null) assignedSection = section;
         if (intake == null) intake = "--";
@@ -528,13 +659,13 @@ public class MainActivity extends AppCompatActivity {
 
         sessionManager.createLoginSession(name, userEmail, id, role, section, assignedSection, intake, dept);
         Toast.makeText(MainActivity.this, "Welcome back, " + name + "!", Toast.LENGTH_SHORT).show();
-        navigateBasedOnRole(role);
+        navigateBasedOnRole(role, userEmail);
         finish();
     }
 
-    private void navigateBasedOnRole(String role) {
+    private void navigateBasedOnRole(String role, String email) {
         Intent intent;
-        if ("Teacher/Admin".equals(role) || "Teacher".equalsIgnoreCase(role)) {
+        if (isTeacherRole(role, email)) {
             intent = new Intent(MainActivity.this, TeacherDashboardActivity.class);
         } else {
             intent = new Intent(MainActivity.this, StudentDashboardActivity.class);

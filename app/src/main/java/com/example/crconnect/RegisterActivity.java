@@ -19,7 +19,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Spinner;
 import android.widget.ArrayAdapter;
-import android.view.ViewGroup;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -148,61 +147,13 @@ public class RegisterActivity extends AppCompatActivity {
         spinnerDept = findViewById(R.id.spinnerDept);
         spinnerTeacherDept = findViewById(R.id.spinnerTeacherDept);
 
-        ArrayAdapter<String> sectionAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, SECTIONS) {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                TextView tv = view.findViewById(android.R.id.text1);
-                if (tv != null) {
-                    tv.setTextColor(Color.parseColor("#FFFFFF"));
-                    tv.setTextSize(15);
-                }
-                return view;
-            }
-
-            @Override
-            public View getDropDownView(int position, View convertView, ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                TextView tv = view.findViewById(android.R.id.text1);
-                if (tv != null) {
-                    tv.setTextColor(Color.parseColor("#FFFFFF"));
-                    tv.setBackgroundColor(Color.parseColor("#141C2E"));
-                    tv.setTextSize(15);
-                    tv.setPadding(24, 16, 24, 16);
-                }
-                return view;
-            }
-        };
-        sectionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        ArrayAdapter<String> sectionAdapter = new ArrayAdapter<>(this, R.layout.spinner_item, SECTIONS);
+        sectionAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         spinnerAssignedSection.setAdapter(sectionAdapter);
         spinnerStudentSection.setAdapter(sectionAdapter);
 
-        ArrayAdapter<String> deptAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, DEPARTMENTS) {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                TextView tv = view.findViewById(android.R.id.text1);
-                if (tv != null) {
-                    tv.setTextColor(Color.parseColor("#FFFFFF"));
-                    tv.setTextSize(15);
-                }
-                return view;
-            }
-
-            @Override
-            public View getDropDownView(int position, View convertView, ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                TextView tv = view.findViewById(android.R.id.text1);
-                if (tv != null) {
-                    tv.setTextColor(Color.parseColor("#FFFFFF"));
-                    tv.setBackgroundColor(Color.parseColor("#141C2E"));
-                    tv.setTextSize(15);
-                    tv.setPadding(24, 16, 24, 16);
-                }
-                return view;
-            }
-        };
-        deptAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        ArrayAdapter<String> deptAdapter = new ArrayAdapter<>(this, R.layout.spinner_item, DEPARTMENTS);
+        deptAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         spinnerDept.setAdapter(deptAdapter);
         spinnerTeacherDept.setAdapter(deptAdapter);
 

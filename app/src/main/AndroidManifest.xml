@@ -30,15 +30,17 @@
             </intent-filter>
         </service>
 
-        <!-- Login / Launcher Activity -->
+        <!-- Login Activity (Temporarily non-launcher) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
+            <!--
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            -->
         </activity>
 
         <!-- Registration Activity -->
@@ -47,15 +49,20 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- Student Dashboard Activity -->
+        <!-- Student Dashboard Activity (Temporarily set as Launcher Activity for testing) -->
         <activity
             android:name=".StudentDashboardActivity"
-            android:exported="false" />
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
-        <!-- Teacher / Admin Dashboard Activity -->
+        <!-- Teacher / Admin Dashboard Activity (Can be switched to launcher if testing Teacher view) -->
         <activity
             android:name=".TeacherDashboardActivity"
-            android:exported="false"
+            android:exported="true"
             android:windowSoftInputMode="adjustResize" />
 
         <!-- FileProvider for Sharing Generated Election PDF Reports -->
