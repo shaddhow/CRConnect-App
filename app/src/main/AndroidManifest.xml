@@ -52,7 +52,8 @@
         <!-- Student Dashboard Activity (Temporarily set as Launcher Activity for testing) -->
         <activity
             android:name=".StudentDashboardActivity"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -62,7 +63,7 @@
         <!-- Teacher / Admin Dashboard Activity (Can be switched to launcher if testing Teacher view) -->
         <activity
             android:name=".TeacherDashboardActivity"
-            android:exported="true"
+            android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
         <!-- FileProvider for Sharing Generated Election PDF Reports -->

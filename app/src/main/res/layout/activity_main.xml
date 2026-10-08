@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/scrollViewMain"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="@drawable/bg_gradient"
+    android:background="@color/background"
     tools:context=".MainActivity">
 
     <LinearLayout
@@ -27,8 +27,8 @@
 
             <ImageView
                 android:id="@+id/ivBubtLogo"
-                android:layout_width="110dp"
-                android:layout_height="110dp"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
                 android:src="@drawable/bubt_logo"
                 android:scaleType="fitCenter"
                 android:contentDescription="BUBT Logo"
@@ -41,7 +41,8 @@
                 android:text="CRConnect"
                 android:textSize="32sp"
                 android:textStyle="bold"
-                android:textColor="#FFFFFF"/>
+                android:textColor="#FFFFFF"
+                android:letterSpacing="0.02"/>
 
             <TextView
                 android:id="@+id/tvAppSubtitle"
@@ -49,20 +50,20 @@
                 android:layout_height="wrap_content"
                 android:text="BUBT Department Network"
                 android:textSize="14sp"
-                android:textColor="#CBD5E1"
+                android:textColor="#9CA3AF"
                 android:letterSpacing="0.05"
                 android:layout_marginTop="4dp"/>
         </LinearLayout>
 
-        <!-- Login Card Container (Distinct Surface Color & Visible Border) -->
+        <!-- Login Card Container (Figma-Inspired Dark Mode Surface) -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="32dp"
-            app:cardElevation="24dp"
-            app:cardBackgroundColor="#F2263345"
-            app:strokeWidth="2dp"
-            app:strokeColor="#38BDF8">
+            app:cardCornerRadius="24dp"
+            app:cardElevation="12dp"
+            app:cardBackgroundColor="@color/surface"
+            app:strokeWidth="1.5dp"
+            app:strokeColor="@color/card_stroke">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -88,7 +89,7 @@
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        android:buttonTint="#38BDF8"
+                        android:buttonTint="@color/primary"
                         android:layout_marginEnd="32dp"/>
 
                     <RadioButton
@@ -99,26 +100,26 @@
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="#FFFFFF"
-                        android:buttonTint="#38BDF8"/>
+                        android:buttonTint="@color/primary"/>
                 </RadioGroup>
 
-                <!-- Input Fields with Sharp, High-Contrast Neon Cyan Borders -->
+                <!-- Input Fields with Sleek Dark Surface Styling -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilEmail"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="16dp"
-                    app:boxCornerRadiusTopEnd="16dp"
-                    app:boxCornerRadiusBottomStart="16dp"
-                    app:boxCornerRadiusBottomEnd="16dp"
-                    app:boxBackgroundColor="#1A2234"
-                    app:boxStrokeColor="#38BDF8"
-                    app:boxStrokeWidth="2dp"
+                    app:boxCornerRadiusTopStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxBackgroundColor="@color/input_bg"
+                    app:boxStrokeColor="@color/primary"
+                    app:boxStrokeWidth="1.5dp"
                     app:boxStrokeWidthFocused="2dp"
-                    android:textColorHint="#94A3B8"
-                    app:hintTextColor="#38BDF8">
+                    android:textColorHint="#9CA3AF"
+                    app:hintTextColor="@color/primary">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etEmail"
@@ -127,26 +128,26 @@
                         android:hint="Student ID / Teacher Code or Email"
                         android:inputType="textEmailAddress"
                         android:textColor="#FFFFFF"
-                        android:textSize="16sp"/>
+                        android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
+                    android:layout_marginBottom="24dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="16dp"
-                    app:boxCornerRadiusTopEnd="16dp"
-                    app:boxCornerRadiusBottomStart="16dp"
-                    app:boxCornerRadiusBottomEnd="16dp"
-                    app:boxBackgroundColor="#1A2234"
-                    app:boxStrokeColor="#38BDF8"
-                    app:boxStrokeWidth="2dp"
+                    app:boxCornerRadiusTopStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxBackgroundColor="@color/input_bg"
+                    app:boxStrokeColor="@color/primary"
+                    app:boxStrokeWidth="1.5dp"
                     app:boxStrokeWidthFocused="2dp"
-                    android:textColorHint="#94A3B8"
-                    app:hintTextColor="#38BDF8"
+                    android:textColorHint="#9CA3AF"
+                    app:hintTextColor="@color/primary"
                     app:endIconMode="password_toggle"
-                    app:endIconTint="#38BDF8">
+                    app:endIconTint="#9CA3AF">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etPassword"
@@ -155,48 +156,54 @@
                         android:hint="Password"
                         android:inputType="textPassword"
                         android:textColor="#FFFFFF"
-                        android:textSize="16sp"/>
+                        android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Vibrant High-Contrast Sign In Button -->
+                <!-- Electric Violet Primary Button (Solid #7C3AED, 12dp rounded) -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnLogin"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
+                    android:layout_height="50dp"
                     android:text="SIGN IN"
-                    android:textSize="16sp"
+                    android:textSize="15sp"
                     android:textStyle="bold"
-                    android:textColor="#0F172A"
-                    app:cornerRadius="16dp"
-                    app:backgroundTint="#38BDF8"
-                    android:layout_marginBottom="12dp"/>
+                    android:textColor="#FFFFFF"
+                    app:cornerRadius="12dp"
+                    app:backgroundTint="@color/primary"
+                    android:layout_marginBottom="14dp"/>
 
-                <!-- TEMPORARY DEV BYPASS BUTTONS FOR TESTING -->
+                <!-- DEV BYPASS BUTTONS (Outlined Secondary / Ghost) -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnDevStudent"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="44dp"
                     android:text="⚡ DEV: Student Dashboard Bypass"
                     android:textSize="13sp"
                     android:textStyle="bold"
-                    android:textColor="#FFFFFF"
-                    app:cornerRadius="14dp"
-                    app:backgroundTint="#10B981"
+                    android:textColor="#9CA3AF"
+                    app:cornerRadius="12dp"
+                    app:strokeColor="@color/card_stroke"
+                    app:strokeWidth="1.5dp"
+                    app:backgroundTint="@android:color/transparent"
                     android:layout_marginBottom="8dp"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnDevTeacher"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="44dp"
                     android:text="⚡ DEV: Teacher Dashboard Bypass"
                     android:textSize="13sp"
                     android:textStyle="bold"
-                    android:textColor="#FFFFFF"
-                    app:cornerRadius="14dp"
-                    app:backgroundTint="#8B5CF6"
+                    android:textColor="#9CA3AF"
+                    app:cornerRadius="12dp"
+                    app:strokeColor="@color/card_stroke"
+                    app:strokeWidth="1.5dp"
+                    app:backgroundTint="@android:color/transparent"
                     android:layout_marginBottom="16dp"/>
 
-                <!-- High-Contrast Footer Links -->
+                <!-- Minimalist Footer Links -->
                 <TextView
                     android:id="@+id/tvForgotPassword"
                     android:layout_width="match_parent"
@@ -204,7 +211,7 @@
                     android:text="Forgot Password?"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#38BDF8"
+                    android:textColor="@color/secondary"
                     android:gravity="center"
                     android:padding="6dp"
                     android:layout_marginBottom="8dp"/>
@@ -224,4 +231,4 @@
         </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

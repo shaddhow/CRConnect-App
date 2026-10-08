@@ -14,10 +14,11 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.ScrollView;
+import androidx.core.widget.NestedScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.os.Build;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,7 +27,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
-  import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import android.widget.LinearLayout;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -61,12 +62,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // --- TRUE FULL SCREEN (GOOGLE STYLE) ---
+        // --- STRICT EDGE-TO-EDGE FULL SCREEN ---
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
-        
-        // Force the gradient background to the entire window (Removes white bars / black flashes)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
+        WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        if (insetsController != null) {
+            insetsController.setAppearanceLightStatusBars(false);
+            insetsController.setAppearanceLightNavigationBars(false);
+        }
         getWindow().setBackgroundDrawable(ContextCompat.getDrawable(this, R.drawable.bg_gradient));
 
         setContentView(R.layout.activity_main);
@@ -96,13 +103,16 @@ public class MainActivity extends AppCompatActivity {
             sessionManager.logoutUser();
         }
 
-        // Safe Area Padding (Content won't touch the bars)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, Math.max(systemBars.bottom, ime.bottom));
-            return WindowInsetsCompat.CONSUMED;
-        });
+        // Safe Area Padding
+        View scrollMain = findViewById(R.id.scrollViewMain);
+        if (scrollMain != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(scrollMain, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, Math.max(systemBars.bottom, ime.bottom));
+                return WindowInsetsCompat.CONSUMED;
+            });
+        }
 
         // Double press back to exit from login page
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -135,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
 
         // Professional keyboard-aware scaling & auto-scroll
-        ScrollView scrollViewMain = findViewById(R.id.scrollViewMain);
+        NestedScrollView scrollViewMain = findViewById(R.id.scrollViewMain);
         View layoutBranding = findViewById(R.id.layoutBranding);
         View rootView = findViewById(android.R.id.content);
 

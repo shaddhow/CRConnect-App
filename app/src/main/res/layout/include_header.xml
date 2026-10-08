@@ -9,15 +9,27 @@
     android:paddingHorizontal="4dp"
     android:layout_marginBottom="16dp">
 
+    <!-- Drawer Hamburger Menu Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOpenDrawer"
+        style="@style/Widget.Material3.Button.IconButton"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        app:icon="@android:drawable/ic_menu_sort_by_size"
+        app:iconTint="#FFFFFF"
+        app:iconSize="22dp"
+        android:backgroundTint="@color/input_bg"
+        android:layout_marginEnd="12dp" />
+
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/imgUserProfile"
-        android:layout_width="52dp"
-        android:layout_height="52dp"
-        android:src="@drawable/ic_app_main"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@drawable/bubt_logo"
         android:scaleType="centerCrop"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Circular"
         app:strokeWidth="2dp"
-        app:strokeColor="#38BDF8"
+        app:strokeColor="@color/primary"
         android:layout_marginEnd="12dp"/>
 
     <LinearLayout
@@ -31,9 +43,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Dashboard"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="#F8FAFC"
+            android:textColor="#FFFFFF"
             android:fontFamily="sans-serif-medium"/>
 
         <TextView
@@ -42,7 +54,7 @@
             android:layout_height="wrap_content"
             android:text="BUBT Network"
             android:textSize="12sp"
-            android:textColor="#94A3B8"
+            android:textColor="#9CA3AF"
             android:layout_marginTop="2dp"
             android:singleLine="true"
             android:ellipsize="end"/>
@@ -60,9 +72,9 @@
             android:layout_height="wrap_content"
             android:text="Secure"
             android:textSize="11sp"
-            android:textColor="#10B981"
+            android:textColor="#9CA3AF"
             android:textStyle="bold"
-            android:background="#2610B981"
+            android:background="@color/input_bg"
             android:paddingHorizontal="10dp"
             android:paddingVertical="4dp"
             android:layout_marginEnd="8dp"/>
@@ -73,9 +85,9 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             app:icon="@android:drawable/ic_lock_power_off"
-            app:iconTint="#F8FAFC"
+            app:iconTint="#FFFFFF"
             app:iconSize="18dp"
-            android:backgroundTint="#26334155"/>
+            android:backgroundTint="@color/input_bg"/>
     </LinearLayout>
 
 </LinearLayout>

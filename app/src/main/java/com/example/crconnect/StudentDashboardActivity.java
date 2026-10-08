@@ -40,9 +40,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
+import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -72,11 +77,14 @@ public class StudentDashboardActivity extends AppCompatActivity {
     private TextView tvVotingStatus, tvHeaderTitle, tvHeaderSubtitle, tvStudentCountdown;
     private TextView tvStudentName, tvStudentDetailsID, tvStudentIntake, tvStudentSection, tvStudentDept;
     private ImageView imgUserProfile;
-    private MaterialButton btnLogout;
+    private MaterialButton btnLogout, btnOpenDrawer;
     private LinearLayout containerCandidates;
     private DatabaseReference dbRef;
     private SessionManager sessionManager;
     private ActivityResultLauncher<Intent> profileImagePickerLauncher;
+    private DrawerLayout drawerLayoutStudent;
+    private NavigationView navViewStudent;
+    private BottomNavigationView bottomNavStudent;
     
     private boolean isVotingEnabled = false;
     private boolean hasAlreadyVoted = false;
@@ -107,22 +115,30 @@ public class StudentDashboardActivity extends AppCompatActivity {
         String rawId = sessionManager.getUserID();
         sanitizedStudentId = rawId != null && !rawId.isEmpty() ? rawId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "";
 
-        // --- TRUE FULL SCREEN (GOOGLE STYLE) ---
+        // --- STRICT EDGE-TO-EDGE FULL SCREEN ---
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
-        
-        // Force the gradient background to the entire window (Removes white bars)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
+        WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        if (insetsController != null) {
+            insetsController.setAppearanceLightStatusBars(false);
+            insetsController.setAppearanceLightNavigationBars(false);
+        }
         getWindow().setBackgroundDrawable(ContextCompat.getDrawable(this, R.drawable.bg_gradient));
 
         setContentView(R.layout.activity_student_dashboard);
 
-        // Safe Area Padding
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return WindowInsetsCompat.CONSUMED;
-        });
+        View containerHeaderAndBody = findViewById(R.id.containerHeaderAndBody);
+        if (containerHeaderAndBody != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(containerHeaderAndBody, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
+                return insets;
+            });
+        }
 
         // Pressing back from dashboard returns to login page
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -140,6 +156,10 @@ public class StudentDashboardActivity extends AppCompatActivity {
         dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
 
         // Bind UI
+        drawerLayoutStudent = findViewById(R.id.drawerLayoutStudent);
+        btnOpenDrawer = findViewById(R.id.btnOpenDrawer);
+        navViewStudent = findViewById(R.id.navViewStudent);
+        bottomNavStudent = findViewById(R.id.bottomNavStudent);
         imgUserProfile = findViewById(R.id.imgUserProfile);
         tvHeaderTitle = findViewById(R.id.tvHeaderTitle);
         tvHeaderSubtitle = findViewById(R.id.tvHeaderSubtitle);
@@ -163,6 +183,88 @@ public class StudentDashboardActivity extends AppCompatActivity {
             Glide.with(this).load(cachedProfileImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
         } else {
             Glide.with(this).load(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
+        }
+
+        if (btnOpenDrawer != null) {
+            btnOpenDrawer.setOnClickListener(v -> {
+                if (drawerLayoutStudent != null) {
+                    if (drawerLayoutStudent.isDrawerOpen(GravityCompat.START)) {
+                        drawerLayoutStudent.closeDrawer(GravityCompat.START);
+                    } else {
+                        drawerLayoutStudent.openDrawer(GravityCompat.START);
+                    }
+                }
+            });
+        }
+
+        if (navViewStudent != null) {
+            View headerView = navViewStudent.getHeaderView(0);
+            if (headerView != null) {
+                TextView tvNavName = headerView.findViewById(R.id.tvNavHeaderName);
+                TextView tvNavRole = headerView.findViewById(R.id.tvNavHeaderRole);
+                ImageView imgNavProfile = headerView.findViewById(R.id.imgNavHeaderProfile);
+                if (tvNavName != null) tvNavName.setText(sessionManager.getUserName());
+                if (tvNavRole != null) tvNavRole.setText("Student • " + sessionManager.getUserDept());
+                if (imgNavProfile != null && cachedProfileImg != null && !cachedProfileImg.isEmpty()) {
+                    Glide.with(this).load(cachedProfileImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgNavProfile);
+                }
+            }
+
+            navViewStudent.setNavigationItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.drawer_student_candidates) {
+                    View v = findViewById(R.id.scrollViewCandidates);
+                    if (v != null) v.requestFocus();
+                } else if (id == R.id.drawer_student_status) {
+                    View v = findViewById(R.id.cardStudentTimerStatus);
+                    if (v != null) v.requestFocus();
+                } else if (id == R.id.drawer_student_profile) {
+                    Toast.makeText(this, "Profile: " + sessionManager.getUserName() + " (" + sessionManager.getUserID() + ")", Toast.LENGTH_LONG).show();
+                } else if (id == R.id.drawer_student_logout) {
+                    sessionManager.logoutUser();
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                }
+                if (drawerLayoutStudent != null) {
+                    drawerLayoutStudent.closeDrawer(GravityCompat.START);
+                }
+                return true;
+            });
+        }
+
+        if (bottomNavStudent != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(bottomNavStudent, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(0, 0, 0, systemBars.bottom);
+                return insets;
+            });
+            bottomNavStudent.setOnItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.nav_student_home) {
+                    View v = findViewById(R.id.scrollViewCandidates);
+                    if (v != null) v.requestFocus();
+                    return true;
+                } else if (id == R.id.nav_student_status) {
+                    View v = findViewById(R.id.cardStudentTimerStatus);
+                    if (v != null) v.requestFocus();
+                    return true;
+                } else if (id == R.id.nav_student_profile) {
+                    Toast.makeText(this, "Student Profile: " + sessionManager.getUserName(), Toast.LENGTH_SHORT).show();
+                    return true;
+                } else if (id == R.id.nav_student_logout) {
+                    sessionManager.logoutUser();
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                    return true;
+                }
+                return false;
+            });
         }
 
         profileImagePickerLauncher = registerForActivityResult(

@@ -1,510 +1,647 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/scrollViewAdmin"
+    android:id="@+id/drawerLayoutTeacher"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="@drawable/bg_gradient">
+    android:background="@color/background"
+    tools:context=".TeacherDashboardActivity">
 
-    <LinearLayout
+    <!-- Main Content Container with ConstraintLayout -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutMainContent"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="24dp"
-        android:paddingVertical="16dp">
+        android:layout_height="match_parent"
+        android:background="@color/background">
 
-        <include layout="@layout/include_header" />
-
-        <!-- Live Statistics Card -->
-        <com.google.android.material.card.MaterialCardView
+        <!-- Bottom Navigation Bar pinned to the bottom -->
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNavTeacher"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="32dp"
-            app:cardElevation="20dp"
-            android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="#D9171F2F"
-            app:strokeWidth="1.5dp"
-            app:strokeColor="#334155">
+            android:background="@color/surface"
+            app:itemIconTint="@color/bottom_nav_item_color"
+            app:itemTextColor="@color/bottom_nav_item_color"
+            app:itemRippleColor="@color/card_stroke"
+            app:itemActiveIndicatorStyle="@style/App.CustomActiveIndicator"
+            app:labelVisibilityMode="labeled"
+            app:itemIconSize="22dp"
+            app:elevation="12dp"
+            app:menu="@menu/bottom_nav_menu_teacher"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- NestedScrollView above the bottom navigation bar -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollViewAdmin"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:fillViewport="true"
+            android:clipToPadding="false"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/bottomNavTeacher"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
             <LinearLayout
+                android:id="@+id/containerHeaderAndBody"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:baselineAligned="false"
-                android:padding="24dp">
+                android:paddingHorizontal="16dp"
+                android:paddingBottom="150dp"
+                android:clipToPadding="false">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📊 Live Election Statistics"
-                    android:textSize="17sp"
-                    android:textStyle="bold"
-                    android:textColor="#F8FAFC"
-                    android:layout_marginBottom="16dp"/>
+                <include layout="@layout/include_header" />
 
-                <LinearLayout
+                <!-- Live Statistics Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardLiveStats"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:baselineAligned="false"
-                    android:weightSum="3">
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="@color/surface"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="6dp"
+                    app:strokeColor="@color/card_stroke"
+                    app:strokeWidth="1.5dp">
 
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
+                        android:baselineAligned="false"
                         android:orientation="vertical"
-                        android:gravity="center">
+                        android:padding="20dp">
+
                         <TextView
-                            android:id="@+id/tvStatTotalVotes"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textSize="22sp"
+                            android:layout_marginBottom="16dp"
+                            android:text="📊 Live Election Statistics"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:baselineAligned="false"
+                            android:orientation="horizontal"
+                            android:weightSum="3">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvStatTotalVotes"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0"
+                                    android:textColor="@color/secondary"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="Votes Cast"
+                                    android:textColor="#9CA3AF"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvStatTotalVoters"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="Voters"
+                                    android:textColor="#9CA3AF"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvStatTurnout"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0%"
+                                    android:textColor="#A78BFA"
+                                    android:textSize="22sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="Turnout"
+                                    android:textColor="#9CA3AF"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Export Results to PDF Button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnExportPdf"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:layout_marginTop="16dp"
+                            android:padding="0dp"
+                            android:text="📄 Export Results to PDF"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#38BDF8"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Votes Cast"
-                            android:textSize="12sp"
-                            android:textColor="#94A3B8"
-                            android:layout_marginTop="4dp"/>
+                            app:backgroundTint="@color/primary"
+                            app:cornerRadius="12dp"
+                            android:insetBottom="0dp"
+                            android:insetTop="0dp" />
                     </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center">
-                        <TextView
-                            android:id="@+id/tvStatTotalVoters"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textSize="22sp"
-                            android:textStyle="bold"
-                            android:textColor="#10B981"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Voters"
-                            android:textSize="12sp"
-                            android:textColor="#94A3B8"
-                            android:layout_marginTop="4dp"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:gravity="center">
-                        <TextView
-                            android:id="@+id/tvStatTurnout"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0%"
-                            android:textSize="22sp"
-                            android:textStyle="bold"
-                            android:textColor="#F59E0B"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Turnout"
-                            android:textSize="12sp"
-                            android:textColor="#94A3B8"
-                            android:layout_marginTop="4dp"/>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Export Results to PDF Button -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnExportPdf"
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:text="📄 Export Results to PDF"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textColor="#F8FAFC"
-                    app:backgroundTint="#0284C7"
-                    app:cornerRadius="16dp"
-                    android:layout_marginTop="20dp"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Voting Gate Control (Dark Glassmorphism) -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="32dp"
-            app:cardElevation="20dp"
-            android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="#D9171F2F"
-            app:strokeWidth="1.5dp"
-            app:strokeColor="#334155">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="24dp"
-                android:gravity="center_vertical">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Live Voting Gate"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="#F8FAFC"/>
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Control student access instantly"
-                        android:textSize="13sp"
-                        android:textColor="#94A3B8"
-                        android:layout_marginTop="4dp"/>
-                </LinearLayout>
-
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchMasterVoting"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:trackTint="#10B981"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Live Election Control & Timer Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardLiveElectionControls"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="32dp"
-            app:cardElevation="20dp"
-            android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="#D9171F2F"
-            app:strokeWidth="1.5dp"
-            app:strokeColor="#334155">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="24dp">
-
-                <RelativeLayout
+                <!-- Voting Gate Control Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardVotingGate"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="@color/surface"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="6dp"
+                    app:strokeColor="@color/card_stroke"
+                    app:strokeWidth="1.5dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="⏱️ Live Election Control"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="#F8FAFC"/>
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="20dp">
 
-                    <TextView
-                        android:id="@+id/tvAdminTimerStatus"
-                        android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Live Voting Gate"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Control student access instantly"
+                                android:textColor="#9CA3AF"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switchMasterVoting"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:trackTint="@color/primary" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Compact Live Election Control & Timer Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardLiveElectionControls"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="@color/surface"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="6dp"
+                    app:strokeColor="@color/card_stroke"
+                    app:strokeWidth="1.5dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:text="CLOSED 🔴"
-                        android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:textColor="#EF4444"
-                        android:background="#2E374A"
-                        android:paddingHorizontal="12dp"
-                        android:paddingVertical="4dp"/>
-                </RelativeLayout>
+                        android:orientation="vertical"
+                        android:padding="20dp">
 
-                <!-- Countdown Timer Display -->
+                        <!-- Top Header Row: Title & Status Badge -->
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_centerVertical="true"
+                                android:text="⏱️ Live Election Control"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvAdminTimerStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:background="@color/input_bg"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text="CLOSED"
+                                android:textColor="#9CA3AF"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </RelativeLayout>
+
+                        <!-- Compact Countdown Timer Display Box -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            android:background="@color/input_bg"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="14dp">
+
+                            <TextView
+                                android:id="@+id/tvAdminTimerDisplay"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_horizontal"
+                                android:letterSpacing="0.04"
+                                android:text="00:00"
+                                android:textAlignment="center"
+                                android:textColor="#FFFFFF"
+                                android:textSize="32sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:gravity="center_horizontal"
+                                android:text="Remaining Election Time"
+                                android:textAlignment="center"
+                                android:textColor="#9CA3AF"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <!-- Adjust Duration Section Header -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
+                            android:text="Adjust Duration"
+                            android:textColor="#9CA3AF"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <!-- Adjust Duration Buttons Row (Secondary Outlined Buttons) -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
+                            android:orientation="horizontal"
+                            android:weightSum="3">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnExtend5Min"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_marginEnd="6dp"
+                                android:layout_weight="1"
+                                android:padding="0dp"
+                                android:text="+5 Min"
+                                android:textColor="#9CA3AF"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                app:strokeColor="@color/card_stroke"
+                                app:strokeWidth="1.5dp"
+                                app:backgroundTint="@android:color/transparent"
+                                app:cornerRadius="10dp"
+                                android:insetBottom="0dp"
+                                android:insetTop="0dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnExtend10Min"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_marginEnd="6dp"
+                                android:layout_weight="1"
+                                android:padding="0dp"
+                                android:text="+10 Min"
+                                android:textColor="#9CA3AF"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                app:strokeColor="@color/card_stroke"
+                                app:strokeWidth="1.5dp"
+                                app:backgroundTint="@android:color/transparent"
+                                app:cornerRadius="10dp"
+                                android:insetBottom="0dp"
+                                android:insetTop="0dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnReduce5Min"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1"
+                                android:padding="0dp"
+                                android:text="-5 Min"
+                                android:textColor="#9CA3AF"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                app:strokeColor="@color/card_stroke"
+                                app:strokeWidth="1.5dp"
+                                app:backgroundTint="@android:color/transparent"
+                                app:cornerRadius="10dp"
+                                android:insetBottom="0dp"
+                                android:insetTop="0dp" />
+                        </LinearLayout>
+
+                        <!-- Action Buttons Section Row -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:weightSum="2">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnPauseResume"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_marginEnd="6dp"
+                                android:layout_weight="1"
+                                android:padding="0dp"
+                                android:text="⏸️ Pause Voting"
+                                android:textColor="#9CA3AF"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                app:strokeColor="@color/card_stroke"
+                                app:strokeWidth="1.5dp"
+                                app:backgroundTint="@android:color/transparent"
+                                app:cornerRadius="12dp"
+                                android:insetBottom="0dp"
+                                android:insetTop="0dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnEndVotingNow"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_weight="1"
+                                android:padding="0dp"
+                                android:text="⏹️ End Voting Now"
+                                android:textColor="@color/destructive_text"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                app:backgroundTint="@color/destructive_bg"
+                                app:cornerRadius="12dp"
+                                android:insetBottom="0dp"
+                                android:insetTop="0dp" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Add Candidate Section -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardAddCandidate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="@color/surface"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="6dp"
+                    app:strokeColor="@color/card_stroke"
+                    app:strokeWidth="1.5dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="New Candidate"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvTotalCandidates"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:background="@color/input_bg"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text="Total: 0"
+                                android:textColor="@color/secondary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </RelativeLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
+                            android:textColorHint="#9CA3AF"
+                            app:boxBackgroundColor="@color/input_bg"
+                            app:boxCornerRadiusBottomEnd="14dp"
+                            app:boxCornerRadiusBottomStart="14dp"
+                            app:boxCornerRadiusTopEnd="14dp"
+                            app:boxCornerRadiusTopStart="14dp"
+                            app:boxStrokeColor="@color/primary"
+                            app:hintTextColor="@color/primary">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etCandidateName"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Full Name"
+                                android:textColor="#FFFFFF" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAddCandidate"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:padding="0dp"
+                            android:text="Publish to Dashboard"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            app:backgroundTint="@color/primary"
+                            app:cornerRadius="12dp"
+                            android:insetBottom="0dp"
+                            android:insetTop="0dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnClearName"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Reset Input"
+                            android:textColor="#9CA3AF" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Advanced Controls -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardAdvancedControls"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    app:cardBackgroundColor="@color/surface"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="6dp"
+                    app:strokeColor="@color/card_stroke"
+                    app:strokeWidth="1.5dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
+                            android:text="Advanced Controls"
+                            android:textColor="#9CA3AF"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:baselineAligned="false"
+                            android:orientation="horizontal"
+                            android:weightSum="2">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnRunOff"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_marginEnd="6dp"
+                                android:layout_weight="1"
+                                android:padding="0dp"
+                                android:text="Run-off"
+                                android:textColor="#9CA3AF"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                app:strokeColor="@color/card_stroke"
+                                app:strokeWidth="1.5dp"
+                                app:backgroundTint="@android:color/transparent"
+                                app:cornerRadius="12dp"
+                                android:insetBottom="0dp"
+                                android:insetTop="0dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnResetVotes"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_weight="1"
+                                android:padding="0dp"
+                                android:text="Reset All"
+                                android:textColor="@color/destructive_text"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                app:backgroundTint="@color/destructive_bg"
+                                app:cornerRadius="12dp"
+                                android:insetBottom="0dp"
+                                android:insetTop="0dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Candidate List Container -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:gravity="center"
-                    android:background="#1E293B"
-                    android:padding="16dp"
-                    android:layout_marginBottom="16dp">
-
-                    <TextView
-                        android:id="@+id/tvAdminTimerDisplay"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="00:00"
-                        android:textSize="36sp"
-                        android:textStyle="bold"
-                        android:textColor="#10B981"
-                        android:letterSpacing="0.05"/>
+                    android:paddingBottom="24dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Remaining Election Time"
-                        android:textSize="12sp"
-                        android:textColor="#94A3B8"
-                        android:layout_marginTop="2dp"/>
-                </LinearLayout>
+                        android:layout_marginStart="4dp"
+                        android:layout_marginBottom="12dp"
+                        android:text="Published Candidates"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
 
-                <!-- Extend / Reduce Controls Row -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Adjust Duration"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:textColor="#94A3B8"
-                    android:layout_marginBottom="8dp"/>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="3"
-                    android:layout_marginBottom="16dp">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnExtend5Min"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="+5 Min"
-                        android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:layout_marginEnd="6dp"
-                        app:backgroundTint="#0284C7"
-                        app:cornerRadius="12dp"/>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnExtend10Min"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="+10 Min"
-                        android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:layout_marginEnd="6dp"
-                        app:backgroundTint="#0369A1"
-                        app:cornerRadius="12dp"/>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnReduce5Min"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="-5 Min"
-                        android:textSize="12sp"
-                        android:textStyle="bold"
-                        app:backgroundTint="#D97706"
-                        app:cornerRadius="12dp"/>
-                </LinearLayout>
-
-                <!-- Pause / Resume & End Voting Controls -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="2">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnPauseResume"
-                        android:layout_width="0dp"
-                        android:layout_height="52dp"
-                        android:layout_weight="1"
-                        android:text="⏸️ Pause Voting"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:layout_marginEnd="8dp"
-                        app:backgroundTint="#F59E0B"
-                        app:cornerRadius="16dp"/>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnEndVotingNow"
-                        android:layout_width="0dp"
-                        android:layout_height="52dp"
-                        android:layout_weight="1"
-                        android:text="⏹️ End Voting Now"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        app:backgroundTint="#EF4444"
-                        app:cornerRadius="16dp"/>
-                </LinearLayout>
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Add Candidate Section -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="32dp"
-            app:cardElevation="20dp"
-            android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="#D9171F2F"
-            app:strokeWidth="1.5dp"
-            app:strokeColor="#334155">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="28dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="New Candidate"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="#F8FAFC"/>
-
-                    <TextView
-                        android:id="@+id/tvTotalCandidates"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:text="Total: 0"
-                        android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:textColor="#38BDF8"
-                        android:background="#2E374A"
-                        android:paddingHorizontal="14dp"
-                        android:paddingVertical="6dp"/>
-                </RelativeLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_marginBottom="20dp"
-                    app:boxCornerRadiusTopStart="16dp" app:boxCornerRadiusTopEnd="16dp"
-                    app:boxCornerRadiusBottomStart="16dp" app:boxCornerRadiusBottomEnd="16dp"
-                    app:boxStrokeColor="#10B981"
-                    app:hintTextColor="#64748B"
-                    android:textColorHint="#94A3B8">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etCandidateName"
+                    <LinearLayout
+                        android:id="@+id/containerAdminCandidates"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Full Name"
-                        android:textColor="#FFFFFF"/>
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnAddCandidate"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:text="Publish to Dashboard"
-                    android:textStyle="bold"
-                    app:backgroundTint="#10B981"
-                    app:cornerRadius="16dp"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnClearName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Reset Input"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_marginTop="8dp"
-                    android:textColor="#94A3B8"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Advanced Controls -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="32dp"
-            app:cardElevation="16dp"
-            app:cardBackgroundColor="#D9171F2F"
-            app:strokeWidth="1.5dp"
-            app:strokeColor="#334155"
-            android:layout_marginBottom="28dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="24dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Advanced Controls"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="#94A3B8"
-                    android:layout_marginBottom="16dp"/>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:baselineAligned="false">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnRunOff"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Run-off"
-                        android:layout_marginEnd="8dp"
-                        app:backgroundTint="#8B5CF6"
-                        app:cornerRadius="16dp"/>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnResetVotes"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Reset All"
-                        app:backgroundTint="#EF4444"
-                        app:cornerRadius="16dp"/>
+                        android:orientation="vertical" />
                 </LinearLayout>
+
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
-        <!-- Candidate List Container -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="40dp">
+        </androidx.core.widget.NestedScrollView>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Published Candidates"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#F8FAFC"
-                android:layout_marginBottom="16dp"
-                android:layout_marginStart="4dp"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <LinearLayout
-                android:id="@+id/containerAdminCandidates"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"/>
-        </LinearLayout>
+    <!-- Sliding Navigation Drawer / Side Menu -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navViewTeacher"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@color/surface"
+        app:headerLayout="@layout/nav_header"
+        app:itemIconTint="@color/primary"
+        app:itemTextColor="#FFFFFF"
+        app:menu="@menu/drawer_menu_teacher" />
 
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+</androidx.drawerlayout.widget.DrawerLayout>

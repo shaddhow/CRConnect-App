@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_teacher_stats"
+        android:icon="@drawable/ic_nav_stats"
+        android:title="Stats" />
+    <item
+        android:id="@+id/nav_teacher_control"
+        android:icon="@drawable/ic_nav_timer"
+        android:title="Controls" />
+    <item
+        android:id="@+id/nav_teacher_candidates"
+        android:icon="@drawable/ic_nav_home"
+        android:title="Candidates" />
+    <item
+        android:id="@+id/nav_teacher_pdf"
+        android:icon="@drawable/ic_nav_pdf"
+        android:title="Export PDF" />
+    <item
+        android:id="@+id/nav_teacher_logout"
+        android:icon="@drawable/ic_nav_logout"
+        android:title="Logout" />
+</menu>

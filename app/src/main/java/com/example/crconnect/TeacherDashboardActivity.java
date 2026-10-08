@@ -20,6 +20,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -48,11 +49,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
+import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.core.widget.NestedScrollView;
+import androidx.drawerlayout.widget.DrawerLayout;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -82,6 +87,9 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private TextView tvHeaderTitle, tvHeaderSubtitle, tvTotalCandidates;
     private TextView tvStatTotalVotes, tvStatTotalVoters, tvStatTurnout;
     private LinearLayout containerAdminCandidates;
+    private BottomNavigationView bottomNavTeacher;
+    private DrawerLayout drawerLayoutTeacher;
+    private NavigationView navViewTeacher;
 
     // Live Election Control Views & State
     private TextView tvAdminTimerDisplay, tvAdminTimerStatus;
@@ -189,22 +197,31 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             return;
         }
         
-        // --- TRUE FULL SCREEN (GOOGLE STYLE) ---
+        // --- STRICT EDGE-TO-EDGE FULL SCREEN ---
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
-        
-        // Force the gradient background to the entire window (Removes white bars)
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
+        WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        if (insetsController != null) {
+            insetsController.setAppearanceLightStatusBars(false);
+            insetsController.setAppearanceLightNavigationBars(false);
+        }
         getWindow().setBackgroundDrawable(ContextCompat.getDrawable(this, R.drawable.bg_gradient));
 
         setContentView(R.layout.activity_teacher_dashboard);
 
-        // Safe Area Padding
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return WindowInsetsCompat.CONSUMED;
-        });
+        View containerHeaderAndBody = findViewById(R.id.containerHeaderAndBody);
+        if (containerHeaderAndBody != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(containerHeaderAndBody, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
+                return insets;
+            });
+        }
 
         // Pressing back from dashboard returns to login page
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -259,14 +276,73 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         setupVotingControlListener();
 
+        bottomNavTeacher = findViewById(R.id.bottomNavTeacher);
+        if (bottomNavTeacher != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(bottomNavTeacher, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(0, 0, 0, systemBars.bottom);
+                return insets;
+            });
+            bottomNavTeacher.setOnItemSelectedListener(item -> {
+                int id = item.getItemId();
+                NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
+                if (id == R.id.nav_teacher_stats) {
+                    View targetView = findViewById(R.id.cardLiveStats);
+                    if (scrollViewAdmin != null && targetView != null) {
+                        scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
+                        targetView.requestFocus();
+                    }
+                    return true;
+                } else if (id == R.id.nav_teacher_control) {
+                    View targetView = findViewById(R.id.cardLiveElectionControls);
+                    if (scrollViewAdmin != null && targetView != null) {
+                        scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
+                        targetView.requestFocus();
+                    }
+                    return true;
+                } else if (id == R.id.nav_teacher_candidates) {
+                    View targetView = findViewById(R.id.cardAddCandidate);
+                    if (scrollViewAdmin != null && targetView != null) {
+                        scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
+                        targetView.requestFocus();
+                    }
+                    return true;
+                } else if (id == R.id.nav_teacher_pdf) {
+                    exportElectionResultsToPdf();
+                    return true;
+                } else if (id == R.id.nav_teacher_logout) {
+                    sessionManager.logoutUser();
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                    return true;
+                }
+                return false;
+            });
+        }
+
         String initialAssignedSec = getTeacherAssignedSection();
         tvHeaderTitle.setText(initialAssignedSec.equals("--") ? "Admin Console" : "Admin Console - Sec " + initialAssignedSec);
         tvHeaderSubtitle.setText(sessionManager.getUserName() + " (" + sessionManager.getUserDept() + " | Sec: " + initialAssignedSec + ")");
 
         NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
+        if (scrollViewAdmin != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(scrollViewAdmin, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, Math.max(systemBars.bottom, ime.bottom));
+                return WindowInsetsCompat.CONSUMED;
+            });
+        }
+
         etCandidateName.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus && scrollViewAdmin != null) {
-                scrollViewAdmin.postDelayed(() -> scrollViewAdmin.smoothScrollTo(0, btnAddCandidate.getBottom()), 200);
+                View cardAddCandidate = findViewById(R.id.cardAddCandidate);
+                if (cardAddCandidate != null) {
+                    scrollViewAdmin.postDelayed(() -> scrollViewAdmin.smoothScrollTo(0, Math.max(0, cardAddCandidate.getTop() - 150)), 200);
+                }
             }
         });
         
@@ -396,6 +472,73 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             profileImagePickerLauncher.launch(intent);
         });
+
+        MaterialButton btnOpenDrawer = findViewById(R.id.btnOpenDrawer);
+        drawerLayoutTeacher = findViewById(R.id.drawerLayoutTeacher);
+        navViewTeacher = findViewById(R.id.navViewTeacher);
+
+        if (btnOpenDrawer != null) {
+            btnOpenDrawer.setOnClickListener(v -> {
+                if (drawerLayoutTeacher != null) {
+                    if (drawerLayoutTeacher.isDrawerOpen(GravityCompat.START)) {
+                        drawerLayoutTeacher.closeDrawer(GravityCompat.START);
+                    } else {
+                        drawerLayoutTeacher.openDrawer(GravityCompat.START);
+                    }
+                }
+            });
+        }
+
+        if (navViewTeacher != null) {
+            View headerView = navViewTeacher.getHeaderView(0);
+            if (headerView != null) {
+                TextView tvNavName = headerView.findViewById(R.id.tvNavHeaderName);
+                TextView tvNavRole = headerView.findViewById(R.id.tvNavHeaderRole);
+                ImageView imgNavProfile = headerView.findViewById(R.id.imgNavHeaderProfile);
+                if (tvNavName != null) tvNavName.setText(sessionManager.getUserName());
+                if (tvNavRole != null) tvNavRole.setText("Teacher / Admin • " + sessionManager.getUserDept());
+                String cachedImg = sessionManager.getProfileImageUrl();
+                if (imgNavProfile != null && cachedImg != null && !cachedImg.isEmpty()) {
+                    Glide.with(this).load(cachedImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgNavProfile);
+                }
+            }
+
+            navViewTeacher.setNavigationItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.drawer_teacher_stats) {
+                    View targetView = findViewById(R.id.cardLiveStats);
+                    if (scrollViewAdmin != null && targetView != null) {
+                        scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
+                        targetView.requestFocus();
+                    }
+                } else if (id == R.id.drawer_teacher_control) {
+                    View targetView = findViewById(R.id.cardLiveElectionControls);
+                    if (scrollViewAdmin != null && targetView != null) {
+                        scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
+                        targetView.requestFocus();
+                    }
+                } else if (id == R.id.drawer_teacher_candidates) {
+                    View targetView = findViewById(R.id.cardAddCandidate);
+                    if (scrollViewAdmin != null && targetView != null) {
+                        scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
+                        targetView.requestFocus();
+                    }
+                } else if (id == R.id.drawer_teacher_pdf) {
+                    exportElectionResultsToPdf();
+                } else if (id == R.id.drawer_teacher_logout) {
+                    sessionManager.logoutUser();
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                }
+                if (drawerLayoutTeacher != null) {
+                    drawerLayoutTeacher.closeDrawer(GravityCompat.START);
+                }
+                return true;
+            });
+        }
 
         btnLogout.setOnClickListener(v -> {
             sessionManager.logoutUser();
@@ -1013,149 +1156,118 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     }
 
     private void addAdminRow(String candidateId, String name, Integer vts, String imageUrl) {
-        MaterialCardView card = new MaterialCardView(this);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.setMargins(0, 0, 0, 16);
-        card.setLayoutParams(lp);
-        card.setRadius(24);
-        card.setCardElevation(8);
-        card.setCardBackgroundColor(Color.parseColor("#171A29"));
-        card.setStrokeWidth(2);
-        card.setStrokeColor(Color.parseColor("#334155"));
+        View cardView = getLayoutInflater().inflate(R.layout.list_item_candidate, containerAdminCandidates, false);
+        
+        TextView tvName = cardView.findViewById(R.id.tvCandidateName);
+        TextView tvVotes = cardView.findViewById(R.id.tvCandidateVotes);
+        MaterialButton btnDelete = cardView.findViewById(R.id.btnDeleteCandidate);
+        ProgressBar progressBar = cardView.findViewById(R.id.pbCandidateVotes);
 
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(28, 22, 28, 22);
+        if (tvName != null) {
+            tvName.setText(name);
+            tvName.setTextColor(Color.parseColor("#FAFAFA"));
+        }
 
-        LinearLayout topRow = new LinearLayout(this);
-        topRow.setOrientation(LinearLayout.HORIZONTAL);
-        topRow.setGravity(Gravity.CENTER_VERTICAL);
+        if (tvVotes != null) {
+            tvVotes.setText("0 Votes");
+            tvVotes.setTextColor(Color.parseColor("#2979FF"));
+        }
 
-        LinearLayout textCol = new LinearLayout(this);
-        textCol.setOrientation(LinearLayout.VERTICAL);
-        textCol.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f));
+        if (btnDelete != null) {
+            btnDelete.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#FF3D00")));
+            btnDelete.setStrokeWidth(2);
+            btnDelete.setTextColor(Color.parseColor("#FF3D00"));
+            btnDelete.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
 
-        TextView tvName = new TextView(this);
-        tvName.setText(name);
-        tvName.setTextSize(17f);
-        tvName.setTextColor(Color.parseColor("#F8FAFC"));
-        tvName.setTypeface(null, Typeface.BOLD);
+            btnDelete.setOnClickListener(v -> {
+                BottomSheetDialog sheet = new BottomSheetDialog(this);
+                LinearLayout view = new LinearLayout(this);
+                view.setOrientation(LinearLayout.VERTICAL);
+                view.setPadding(48, 48, 48, 48);
+                view.setBackgroundColor(Color.parseColor("#1E1E1E"));
 
-        TextView tvVotes = new TextView(this);
-        tvVotes.setText("0 Votes");
-        tvVotes.setTextSize(14f);
-        tvVotes.setTextColor(Color.parseColor("#38BDF8"));
-        tvVotes.setPadding(0, 6, 0, 0);
-        tvVotes.setTypeface(null, Typeface.BOLD);
+                TextView title = new TextView(this);
+                title.setText("Delete Candidate");
+                title.setTextSize(20f);
+                title.setTypeface(null, Typeface.BOLD);
+                title.setTextColor(Color.parseColor("#FF3D00"));
 
-        textCol.addView(tvName);
-        textCol.addView(tvVotes);
+                TextView msg = new TextView(this);
+                msg.setText("Remove " + name + "?");
+                msg.setTextSize(14f);
+                msg.setTextColor(Color.parseColor("#9E9E9E"));
+                msg.setPadding(0, 12, 0, 24);
 
-        MaterialButton btnDelete = new MaterialButton(this);
-        btnDelete.setText("Delete");
-        btnDelete.setTextSize(13f);
-        btnDelete.setCornerRadius(16);
-        btnDelete.setStrokeWidth(2);
-        btnDelete.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#EF4444")));
-        btnDelete.setTextColor(Color.parseColor("#EF4444"));
-        btnDelete.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
-        btnDelete.setLayoutParams(new LinearLayout.LayoutParams(-2, -2));
+                LinearLayout btnLayout = new LinearLayout(this);
+                btnLayout.setOrientation(LinearLayout.HORIZONTAL);
+                btnLayout.setGravity(Gravity.END);
 
-        btnDelete.setOnClickListener(v -> {
-            BottomSheetDialog sheet = new BottomSheetDialog(this);
-            LinearLayout view = new LinearLayout(this);
-            view.setOrientation(LinearLayout.VERTICAL);
-            view.setPadding(48, 48, 48, 48);
-            view.setBackgroundColor(Color.parseColor("#171A29"));
+                MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.style.Widget_Material3_Button_TextButton);
+                btnCancel.setText("Cancel");
+                btnCancel.setTextColor(Color.parseColor("#9E9E9E"));
+                btnCancel.setOnClickListener(dt -> sheet.dismiss());
 
-            TextView title = new TextView(this);
-            title.setText("Delete Candidate");
-            title.setTextSize(20f);
-            title.setTypeface(null, Typeface.BOLD);
-            title.setTextColor(Color.parseColor("#F87171"));
+                MaterialButton btnConfirm = new MaterialButton(this);
+                btnConfirm.setText("Delete");
+                btnConfirm.setTextColor(Color.parseColor("#FFFFFF"));
+                btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF3D00")));
+                btnConfirm.setCornerRadius(16);
+                LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(-2, -2);
+                btnLp.setMargins(16, 0, 0, 0);
+                btnConfirm.setLayoutParams(btnLp);
 
-            TextView msg = new TextView(this);
-            msg.setText("Remove " + name + "?");
-            msg.setTextSize(14f);
-            msg.setTextColor(Color.parseColor("#94A3B8"));
-            msg.setPadding(0, 12, 0, 24);
-
-            LinearLayout btnLayout = new LinearLayout(this);
-            btnLayout.setOrientation(LinearLayout.HORIZONTAL);
-            btnLayout.setGravity(Gravity.END);
-
-            MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.style.Widget_Material3_Button_TextButton);
-            btnCancel.setText("Cancel");
-            btnCancel.setTextColor(Color.parseColor("#94A3B8"));
-            btnCancel.setOnClickListener(dt -> sheet.dismiss());
-
-            MaterialButton btnConfirm = new MaterialButton(this);
-            btnConfirm.setText("Delete");
-            btnConfirm.setTextColor(Color.parseColor("#FFFFFF"));
-            btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#F87171")));
-            btnConfirm.setCornerRadius(16);
-            LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(-2, -2);
-            btnLp.setMargins(16, 0, 0, 0);
-            btnConfirm.setLayoutParams(btnLp);
-
-            btnConfirm.setOnClickListener(dt -> {
-                sheet.dismiss();
-                if (candidateId != null) {
-                    String teacherDept = getTeacherDepartment();
-                    String sanitizedDept = getSanitizedDepartment(teacherDept);
-                    String teacherSec = getTeacherAssignedSection();
-                    String sanitizedSec = getSanitizedSection(teacherSec);
-                    Map<String, Object> removeUpdates = new HashMap<>();
-                    removeUpdates.put("candidates/" + candidateId, null);
-                    if (!sanitizedSec.equals("--")) {
-                        removeUpdates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + candidateId, null);
-                        removeUpdates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/votes/" + candidateId, null);
-                        removeUpdates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + candidateId, null);
+                btnConfirm.setOnClickListener(dt -> {
+                    sheet.dismiss();
+                    if (candidateId != null) {
+                        String teacherDept = getTeacherDepartment();
+                        String sanitizedDept = getSanitizedDepartment(teacherDept);
+                        String teacherSec = getTeacherAssignedSection();
+                        String sanitizedSec = getSanitizedSection(teacherSec);
+                        Map<String, Object> removeUpdates = new HashMap<>();
+                        removeUpdates.put("candidates/" + candidateId, null);
+                        if (!sanitizedSec.equals("--")) {
+                            removeUpdates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + candidateId, null);
+                            removeUpdates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/votes/" + candidateId, null);
+                            removeUpdates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + candidateId, null);
+                        }
+                        dbRef.updateChildren(removeUpdates)
+                            .addOnSuccessListener(aVoid -> showSnackBar("Candidate removed", false));
                     }
-                    dbRef.updateChildren(removeUpdates)
-                        .addOnSuccessListener(aVoid -> showSnackBar("Candidate removed", false));
-                }
+                });
+
+                btnLayout.addView(btnCancel);
+                btnLayout.addView(btnConfirm);
+                view.addView(title);
+                view.addView(msg);
+                view.addView(btnLayout);
+                sheet.setContentView(view);
+                sheet.show();
             });
+        }
 
-            btnLayout.addView(btnCancel);
-            btnLayout.addView(btnConfirm);
-            view.addView(title);
-            view.addView(msg);
-            view.addView(btnLayout);
-            sheet.setContentView(view);
-            sheet.show();
-        });
-
-        topRow.addView(textCol);
-        topRow.addView(btnDelete);
-        row.addView(topRow);
-
-        // Animated Progress Bar with Smooth Real-time Animation
-        ProgressBar progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-        LinearLayout.LayoutParams pbParams = new LinearLayout.LayoutParams(-1, 16);
-        pbParams.setMargins(0, 12, 0, 0);
-        progressBar.setLayoutParams(pbParams);
-        progressBar.setMax(50);
-        progressBar.setProgress(0);
-        progressBar.setProgressTintList(ColorStateList.valueOf(Color.parseColor("#38BDF8")));
-        row.addView(progressBar);
+        if (progressBar != null) {
+            progressBar.setProgressTintList(ColorStateList.valueOf(Color.parseColor("#2979FF")));
+        }
 
         int finalVotes = vts != null ? vts : 0;
-        ObjectAnimator progressAnim = ObjectAnimator.ofInt(progressBar, "progress", 0, finalVotes);
-        progressAnim.setDuration(800);
-        progressAnim.setInterpolator(new DecelerateInterpolator());
-        progressAnim.start();
+        if (progressBar != null) {
+            ObjectAnimator progressAnim = ObjectAnimator.ofInt(progressBar, "progress", 0, finalVotes);
+            progressAnim.setDuration(800);
+            progressAnim.setInterpolator(new DecelerateInterpolator());
+            progressAnim.start();
+        }
 
-        ValueAnimator countAnim = ValueAnimator.ofInt(0, finalVotes);
-        countAnim.setDuration(800);
-        countAnim.addUpdateListener(animation -> {
-            int val = (int) animation.getAnimatedValue();
-            tvVotes.setText(val + " Votes");
-        });
-        countAnim.start();
+        if (tvVotes != null) {
+            ValueAnimator countAnim = ValueAnimator.ofInt(0, finalVotes);
+            countAnim.setDuration(800);
+            countAnim.addUpdateListener(animation -> {
+                int val = (int) animation.getAnimatedValue();
+                tvVotes.setText(val + " Votes");
+            });
+            countAnim.start();
+        }
 
-        card.addView(row);
-        containerAdminCandidates.addView(card);
+        containerAdminCandidates.addView(cardView);
     }
 
     private void showSnackBar(String message, boolean isError) {
@@ -1606,9 +1718,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         if (!currentIsGateOpen) {
             tvAdminTimerDisplay.setText("00:00");
-            tvAdminTimerDisplay.setTextColor(Color.parseColor("#EF4444"));
-            tvAdminTimerStatus.setText("CLOSED 🔴");
-            tvAdminTimerStatus.setTextColor(Color.parseColor("#EF4444"));
+            tvAdminTimerDisplay.setTextColor(Color.parseColor("#FAFAFA"));
+            tvAdminTimerStatus.setText("CLOSED");
+            tvAdminTimerStatus.setTextColor(Color.parseColor("#FFFFFF"));
+            tvAdminTimerStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#B0BEC5")));
 
             if (btnPauseResume != null) {
                 btnPauseResume.setText("⏸️ Pause Voting");
@@ -1624,9 +1737,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (currentIsPaused) {
             long rem = currentRemainingMs > 0 ? currentRemainingMs : Math.max(0, currentExpiryTime - System.currentTimeMillis());
             tvAdminTimerDisplay.setText(formatTimeMs(rem));
-            tvAdminTimerDisplay.setTextColor(Color.parseColor("#F59E0B"));
-            tvAdminTimerStatus.setText("PAUSED ⏸️");
-            tvAdminTimerStatus.setTextColor(Color.parseColor("#F59E0B"));
+            tvAdminTimerDisplay.setTextColor(Color.parseColor("#FAFAFA"));
+            tvAdminTimerStatus.setText("PAUSED");
+            tvAdminTimerStatus.setTextColor(Color.parseColor("#FFFFFF"));
+            tvAdminTimerStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FFA726")));
 
             if (btnPauseResume != null) {
                 btnPauseResume.setText("▶️ Resume Voting");
@@ -1642,9 +1756,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         long millisLeft = currentExpiryTime - System.currentTimeMillis();
         if (millisLeft <= 0) {
             tvAdminTimerDisplay.setText("00:00");
-            tvAdminTimerDisplay.setTextColor(Color.parseColor("#EF4444"));
-            tvAdminTimerStatus.setText("ENDED 🔴");
-            tvAdminTimerStatus.setTextColor(Color.parseColor("#EF4444"));
+            tvAdminTimerDisplay.setTextColor(Color.parseColor("#FAFAFA"));
+            tvAdminTimerStatus.setText("CLOSED");
+            tvAdminTimerStatus.setTextColor(Color.parseColor("#FFFFFF"));
+            tvAdminTimerStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#B0BEC5")));
 
             if (btnPauseResume != null) {
                 btnPauseResume.setText("⏸️ Pause Voting");
@@ -1669,9 +1784,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             }
         } else {
             tvAdminTimerDisplay.setText(formatTimeMs(millisLeft));
-            tvAdminTimerDisplay.setTextColor(Color.parseColor("#10B981"));
-            tvAdminTimerStatus.setText("ACTIVE 🟢");
-            tvAdminTimerStatus.setTextColor(Color.parseColor("#10B981"));
+            tvAdminTimerDisplay.setTextColor(Color.parseColor("#FAFAFA"));
+            tvAdminTimerStatus.setText("OPEN");
+            tvAdminTimerStatus.setTextColor(Color.parseColor("#FFFFFF"));
+            tvAdminTimerStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#00C853")));
 
             if (btnPauseResume != null) {
                 btnPauseResume.setText("⏸️ Pause Voting");

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/drawer_student_candidates"
+            android:icon="@android:drawable/ic_menu_today"
+            android:title="Election Candidates" />
+        <item
+            android:id="@+id/drawer_student_status"
+            android:icon="@android:drawable/ic_dialog_info"
+            android:title="Live Status &amp; Countdown" />
+        <item
+            android:id="@+id/drawer_student_profile"
+            android:icon="@android:drawable/ic_menu_myplaces"
+            android:title="Student Profile" />
+        <item
+            android:id="@+id/drawer_student_logout"
+            android:icon="@android:drawable/ic_lock_power_off"
+            android:title="Logout Account" />
+    </group>
+</menu>

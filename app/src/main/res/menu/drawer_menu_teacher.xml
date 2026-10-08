@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/drawer_teacher_stats"
+            android:icon="@android:drawable/ic_menu_sort_by_size"
+            android:title="Live Statistics" />
+        <item
+            android:id="@+id/drawer_teacher_control"
+            android:icon="@android:drawable/ic_menu_manage"
+            android:title="Live Election Gate Control" />
+        <item
+            android:id="@+id/drawer_teacher_candidates"
+            android:icon="@android:drawable/ic_menu_agenda"
+            android:title="Candidate Management" />
+        <item
+            android:id="@+id/drawer_teacher_pdf"
+            android:icon="@android:drawable/ic_menu_save"
+            android:title="Export PDF Report" />
+        <item
+            android:id="@+id/drawer_teacher_logout"
+            android:icon="@android:drawable/ic_lock_power_off"
+            android:title="Logout Account" />
+    </group>
+</menu>
