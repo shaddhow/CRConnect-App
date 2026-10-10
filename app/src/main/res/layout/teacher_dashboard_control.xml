@@ -6,10 +6,11 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="16dp"
-    app:cardBackgroundColor="@color/surface"
+    android:hapticFeedbackEnabled="true"
+    app:cardBackgroundColor="#CC161B22"
     app:cardCornerRadius="20dp"
-    app:cardElevation="6dp"
-    app:strokeColor="@color/card_stroke"
+    app:cardElevation="8dp"
+    app:strokeColor="#26FFFFFF"
     app:strokeWidth="1.5dp">
 
     <LinearLayout
@@ -24,15 +25,36 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
-                android:text="⏱️ Live Election Control"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Glass Badge Icon Container -->
+                <FrameLayout
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/glass_badge_bg"
+                    android:layout_marginEnd="10dp">
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@android:drawable/ic_menu_recent_history"
+                        app:tint="#D8B4FE" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Live Election Control"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvAdminTimerStatus"
@@ -40,7 +62,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:background="@color/input_bg"
+                android:background="@drawable/glass_badge_bg"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="4dp"
                 android:text="CLOSED"
@@ -49,16 +71,16 @@
                 android:textStyle="bold" />
         </RelativeLayout>
 
-        <!-- Compact Countdown Timer Display Box -->
+        <!-- Compact Countdown Timer Display Box with Glass Background -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:background="@color/input_bg"
+            android:background="@drawable/glass_card_bg"
             android:gravity="center_horizontal"
             android:orientation="vertical"
             android:paddingHorizontal="12dp"
-            android:paddingVertical="14dp">
+            android:paddingVertical="16dp">
 
             <TextView
                 android:id="@+id/tvAdminTimerDisplay"
@@ -69,7 +91,7 @@
                 android:text="00:00"
                 android:textAlignment="center"
                 android:textColor="#FFFFFF"
-                android:textSize="32sp"
+                android:textSize="36sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -79,7 +101,7 @@
                 android:gravity="center_horizontal"
                 android:text="Remaining Election Time"
                 android:textAlignment="center"
-                android:textColor="#9CA3AF"
+                android:textColor="#94A3B8"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -89,11 +111,11 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:text="Adjust Duration"
-            android:textColor="#9CA3AF"
+            android:textColor="#94A3B8"
             android:textSize="12sp"
             android:textStyle="bold" />
 
-        <!-- Adjust Duration Buttons Row (Secondary Outlined Buttons) -->
+        <!-- Adjust Duration Buttons Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -108,14 +130,15 @@
                 android:layout_height="40dp"
                 android:layout_marginEnd="6dp"
                 android:layout_weight="1"
+                android:hapticFeedbackEnabled="true"
                 android:padding="0dp"
                 android:text="+5 Min"
-                android:textColor="#9CA3AF"
+                android:textColor="#E2E8F0"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                app:strokeColor="@color/card_stroke"
-                app:strokeWidth="1.5dp"
-                app:backgroundTint="@android:color/transparent"
+                app:strokeColor="#33FFFFFF"
+                app:strokeWidth="1dp"
+                app:backgroundTint="@drawable/glass_button_bg"
                 app:cornerRadius="10dp"
                 android:insetBottom="0dp"
                 android:insetTop="0dp" />
@@ -127,14 +150,15 @@
                 android:layout_height="40dp"
                 android:layout_marginEnd="6dp"
                 android:layout_weight="1"
+                android:hapticFeedbackEnabled="true"
                 android:padding="0dp"
                 android:text="+10 Min"
-                android:textColor="#9CA3AF"
+                android:textColor="#E2E8F0"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                app:strokeColor="@color/card_stroke"
-                app:strokeWidth="1.5dp"
-                app:backgroundTint="@android:color/transparent"
+                app:strokeColor="#33FFFFFF"
+                app:strokeWidth="1dp"
+                app:backgroundTint="@drawable/glass_button_bg"
                 app:cornerRadius="10dp"
                 android:insetBottom="0dp"
                 android:insetTop="0dp" />
@@ -145,14 +169,15 @@
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_weight="1"
+                android:hapticFeedbackEnabled="true"
                 android:padding="0dp"
                 android:text="-5 Min"
-                android:textColor="#9CA3AF"
+                android:textColor="#E2E8F0"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                app:strokeColor="@color/card_stroke"
-                app:strokeWidth="1.5dp"
-                app:backgroundTint="@android:color/transparent"
+                app:strokeColor="#33FFFFFF"
+                app:strokeWidth="1dp"
+                app:backgroundTint="@drawable/glass_button_bg"
                 app:cornerRadius="10dp"
                 android:insetBottom="0dp"
                 android:insetTop="0dp" />
@@ -172,14 +197,21 @@
                 android:layout_height="44dp"
                 android:layout_marginEnd="6dp"
                 android:layout_weight="1"
+                android:hapticFeedbackEnabled="true"
                 android:padding="0dp"
-                android:text="⏸️ Pause Voting"
-                android:textColor="#9CA3AF"
+                android:text="Pause Voting"
+                android:textColor="#FBBF24"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                app:strokeColor="@color/card_stroke"
-                app:strokeWidth="1.5dp"
-                app:backgroundTint="@android:color/transparent"
+                app:icon="@drawable/ic_pause"
+                app:iconTint="#FBBF24"
+                app:iconSize="16dp"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                android:gravity="center"
+                app:strokeColor="#33FBBF24"
+                app:strokeWidth="1dp"
+                app:backgroundTint="@drawable/glass_button_bg"
                 app:cornerRadius="12dp"
                 android:insetBottom="0dp"
                 android:insetTop="0dp" />
@@ -189,11 +221,18 @@
                 android:layout_width="0dp"
                 android:layout_height="44dp"
                 android:layout_weight="1"
+                android:hapticFeedbackEnabled="true"
                 android:padding="0dp"
-                android:text="⏹️ End Voting Now"
+                android:text="End Voting"
                 android:textColor="@color/destructive_text"
                 android:textSize="13sp"
                 android:textStyle="bold"
+                app:icon="@drawable/ic_stop"
+                app:iconTint="@color/destructive_text"
+                app:iconSize="16dp"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                android:gravity="center"
                 app:backgroundTint="@color/destructive_bg"
                 app:cornerRadius="12dp"
                 android:insetBottom="0dp"

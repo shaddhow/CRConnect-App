@@ -30,6 +30,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.crconnect.core.utils.HapticUtils;
+
 import java.io.ByteArrayOutputStream;
 
 import androidx.activity.OnBackPressedCallback;
@@ -242,6 +244,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                 return insets;
             });
             bottomNavStudent.setOnItemSelectedListener(item -> {
+                HapticUtils.lightClick(bottomNavStudent);
                 int id = item.getItemId();
                 if (id == R.id.nav_student_home) {
                     View v = findViewById(R.id.scrollViewCandidates);
@@ -327,6 +330,17 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
         // Initialize Section-Specific Firebase Listeners (/voting_controls/{deptId}/{sectionId}/isGateOpen)
         setupSectionListeners(sessionManager.getUserDept(), sessionManager.getUserSection());
+        setupHapticFeedback();
+    }
+
+    private void setupHapticFeedback() {
+        if (btnOpenDrawer != null) HapticUtils.attachLight(btnOpenDrawer);
+        if (btnLogout != null) HapticUtils.attachLight(btnLogout);
+        if (imgUserProfile != null) HapticUtils.attachLight(imgUserProfile);
+        if (bottomNavStudent != null) HapticUtils.attachBottomNav(bottomNavStudent);
+
+        View cardTimer = findViewById(R.id.cardStudentTimerStatus);
+        if (cardTimer != null) HapticUtils.attachLight(cardTimer);
     }
 
     private String getSanitizedSection(String sec) {
@@ -647,7 +661,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
             } else {
                 tvVotingStatus.setText("Live Voting is OPEN");
                 tvVotingStatus.setTextColor(Color.parseColor("#10B981"));
-                tvStudentCountdown.setText("⏱️ " + formatTimeMs(millisLeft) + " remaining");
+                tvStudentCountdown.setText(formatTimeMs(millisLeft) + " remaining");
                 tvStudentCountdown.setTextColor(Color.parseColor("#10B981"));
                 isVotingEnabled = true;
             }
@@ -751,7 +765,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
             chartLayout.setPadding(28, 24, 28, 24);
 
             TextView tvChartTitle = new TextView(this);
-            tvChartTitle.setText("📊 Live Vote Distribution Chart");
+            tvChartTitle.setText("Live Vote Distribution Chart");
             tvChartTitle.setTextSize(16f);
             tvChartTitle.setTypeface(null, Typeface.BOLD);
             tvChartTitle.setTextColor(Color.parseColor("#F8FAFC"));
@@ -840,7 +854,11 @@ public class StudentDashboardActivity extends AppCompatActivity {
             card.setStrokeWidth(2);
             card.setClickable(true);
             card.setFocusable(true);
-            card.setOnClickListener(v -> showCandidateManifestoDialog(name, dept, manifesto));
+            HapticUtils.attachLight(card);
+            card.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                showCandidateManifestoDialog(name, dept, manifesto);
+            });
             
             // Highlight Top 3 with smooth Neon Cyan and Soft Electric Purple borders
             if (rank == 1) card.setStrokeColor(Color.parseColor("#38BDF8")); // Neon Cyan
@@ -911,8 +929,10 @@ public class StudentDashboardActivity extends AppCompatActivity {
                 btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#6366F1")));
             }
             btnVote.setCornerRadius(16);
+            HapticUtils.attachHeavy(btnVote);
 
             btnVote.setOnClickListener(v -> {
+                HapticUtils.heavyClick(v);
                 try {
                     if (isFinishing() || isDestroyed()) return;
                     v.setPressed(true);

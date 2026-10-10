@@ -23,12 +23,12 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
-            android:layout_marginBottom="32dp">
+            android:layout_marginBottom="28dp">
 
             <ImageView
                 android:id="@+id/ivBubtLogo"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
+                android:layout_width="90dp"
+                android:layout_height="90dp"
                 android:src="@drawable/bubt_logo"
                 android:scaleType="fitCenter"
                 android:contentDescription="BUBT Logo"
@@ -71,49 +71,58 @@
                 android:orientation="vertical"
                 android:padding="28dp">
 
-                <!-- Role Selector -->
+                <!-- Pill-Shaped Segmented Tab Toggle for Role Selection -->
                 <RadioGroup
                     android:id="@+id/radioGroupRole"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="52dp"
                     android:orientation="horizontal"
-                    android:gravity="center"
+                    android:background="@drawable/segmented_bg"
+                    android:padding="4dp"
                     android:layout_marginBottom="24dp">
 
                     <RadioButton
                         android:id="@+id/rbStudent"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
                         android:text="Student"
                         android:checked="true"
-                        android:textSize="15sp"
+                        android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#FFFFFF"
-                        android:buttonTint="@color/primary"
-                        android:layout_marginEnd="32dp"/>
+                        android:textColor="@color/segmented_tab_text"
+                        android:background="@drawable/segmented_tab_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:elevation="2dp"/>
 
                     <RadioButton
                         android:id="@+id/rbTeacher"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
                         android:text="Teacher"
-                        android:textSize="15sp"
+                        android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#FFFFFF"
-                        android:buttonTint="@color/primary"/>
+                        android:textColor="@color/segmented_tab_text"
+                        android:background="@drawable/segmented_tab_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:elevation="2dp"/>
                 </RadioGroup>
 
-                <!-- Input Fields with Sleek Dark Surface Styling -->
+                <!-- Input Fields with Sleek Dark Surface Styling & 12dp Corner Radius -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilEmail"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="14dp"
-                    app:boxCornerRadiusTopEnd="14dp"
-                    app:boxCornerRadiusBottomStart="14dp"
-                    app:boxCornerRadiusBottomEnd="14dp"
+                    android:hint="Student ID / Teacher Code or Email"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
                     app:boxBackgroundColor="@color/input_bg"
                     app:boxStrokeColor="@color/primary"
                     app:boxStrokeWidth="1.5dp"
@@ -125,7 +134,6 @@
                         android:id="@+id/etEmail"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Student ID / Teacher Code or Email"
                         android:inputType="textEmailAddress"
                         android:textColor="#FFFFFF"
                         android:textSize="15sp"/>
@@ -136,10 +144,11 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="24dp"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    app:boxCornerRadiusTopStart="14dp"
-                    app:boxCornerRadiusTopEnd="14dp"
-                    app:boxCornerRadiusBottomStart="14dp"
-                    app:boxCornerRadiusBottomEnd="14dp"
+                    android:hint="Password"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
                     app:boxBackgroundColor="@color/input_bg"
                     app:boxStrokeColor="@color/primary"
                     app:boxStrokeWidth="1.5dp"
@@ -153,55 +162,59 @@
                         android:id="@+id/etPassword"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Password"
                         android:inputType="textPassword"
                         android:textColor="#FFFFFF"
                         android:textSize="15sp"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Electric Violet Primary Button (Solid #7C3AED, 12dp rounded) -->
+                <!-- High-Grade Gradient Button with Subtle Purple Glow (#7C3AED) -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnLogin"
                     android:layout_width="match_parent"
-                    android:layout_height="50dp"
+                    android:layout_height="52dp"
+                    android:hapticFeedbackEnabled="true"
                     android:text="SIGN IN"
                     android:textSize="15sp"
                     android:textStyle="bold"
                     android:textColor="#FFFFFF"
                     app:cornerRadius="12dp"
-                    app:backgroundTint="@color/primary"
-                    android:layout_marginBottom="14dp"/>
+                    android:background="@drawable/btn_gradient_glow"
+                    app:backgroundTint="@null"
+                    app:elevation="8dp"
+                    android:layout_marginBottom="16dp"/>
 
-                <!-- DEV BYPASS BUTTONS (Outlined Secondary / Ghost) -->
+                <!-- DEV BYPASS BUTTONS (Outlined Clean Badge Style with Soft Amber/Yellow Text) -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnDevStudent"
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
+                    android:layout_height="46dp"
+                    android:hapticFeedbackEnabled="true"
                     android:text="⚡ DEV: Student Dashboard Bypass"
                     android:textSize="13sp"
                     android:textStyle="bold"
-                    android:textColor="#9CA3AF"
+                    android:textColor="#F59E0B"
                     app:cornerRadius="12dp"
-                    app:strokeColor="@color/card_stroke"
+                    app:strokeColor="#33F59E0B"
                     app:strokeWidth="1.5dp"
-                    app:backgroundTint="@android:color/transparent"
-                    android:layout_marginBottom="8dp"/>
+                    app:backgroundTint="#0DF59E0B"
+                    android:layout_marginBottom="10dp"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnDevTeacher"
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
+                    android:layout_height="46dp"
+                    android:hapticFeedbackEnabled="true"
                     android:text="⚡ DEV: Teacher Dashboard Bypass"
                     android:textSize="13sp"
                     android:textStyle="bold"
-                    android:textColor="#9CA3AF"
+                    android:textColor="#F59E0B"
                     app:cornerRadius="12dp"
-                    app:strokeColor="@color/card_stroke"
+                    app:strokeColor="#33F59E0B"
                     app:strokeWidth="1.5dp"
-                    app:backgroundTint="@android:color/transparent"
-                    android:layout_marginBottom="16dp"/>
+                    app:backgroundTint="#0DF59E0B"
+                    android:layout_marginBottom="20dp"/>
 
                 <!-- Minimalist Footer Links -->
                 <TextView

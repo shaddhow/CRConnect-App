@@ -29,6 +29,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.crconnect.core.utils.HapticUtils;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
@@ -277,6 +279,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         setupVotingControlListener();
 
         bottomNavTeacher = findViewById(R.id.bottomNavTeacher);
+        setupHapticFeedback();
         if (bottomNavTeacher != null) {
             ViewCompat.setOnApplyWindowInsetsListener(bottomNavTeacher, (v, insets) -> {
                 Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -284,6 +287,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 return insets;
             });
             bottomNavTeacher.setOnItemSelectedListener(item -> {
+                HapticUtils.lightClick(bottomNavTeacher);
                 int id = item.getItemId();
                 NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
                 if (id == R.id.nav_teacher_stats) {
@@ -701,10 +705,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             LinearLayout view = new LinearLayout(this);
             view.setOrientation(LinearLayout.VERTICAL);
             view.setPadding(48, 48, 48, 48);
-            view.setBackgroundColor(Color.parseColor("#171A29"));
+            view.setBackground(ContextCompat.getDrawable(this, R.drawable.glass_card_bg));
 
             TextView title = new TextView(this);
-            title.setText("⚠️ Reset Section " + activeSec + " Election Data?");
+            title.setText("Reset Section " + activeSec + " Election Data?");
             title.setTextSize(20f);
             title.setTypeface(null, Typeface.BOLD);
             title.setTextColor(Color.parseColor("#EF4444"));
@@ -717,21 +721,33 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             LinearLayout btnLayout = new LinearLayout(this);
             btnLayout.setOrientation(LinearLayout.HORIZONTAL);
-            btnLayout.setGravity(Gravity.END);
+            btnLayout.setGravity(Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams btnLayoutLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            btnLayoutLp.setMargins(0, 8, 0, 0);
+            btnLayout.setLayoutParams(btnLayoutLp);
 
-            MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.style.Widget_Material3_Button_TextButton);
+            MaterialButton btnCancel = new MaterialButton(this);
             btnCancel.setText("Cancel");
-            btnCancel.setTextColor(Color.parseColor("#94A3B8"));
+            btnCancel.setTextColor(Color.parseColor("#FFFFFF"));
+            btnCancel.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#334155")));
+            btnCancel.setCornerRadius(12);
+            btnCancel.setTypeface(null, Typeface.BOLD);
+            btnCancel.setAllCaps(false);
+            LinearLayout.LayoutParams lpCancel = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            lpCancel.setMargins(0, 0, 6, 0);
+            btnCancel.setLayoutParams(lpCancel);
             btnCancel.setOnClickListener(dt -> sheet.dismiss());
 
             MaterialButton btnConfirm = new MaterialButton(this);
             btnConfirm.setText("Yes, Reset");
             btnConfirm.setTextColor(Color.parseColor("#FFFFFF"));
             btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#EF4444")));
-            btnConfirm.setCornerRadius(16);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
-            lp.setMargins(16, 0, 0, 0);
-            btnConfirm.setLayoutParams(lp);
+            btnConfirm.setCornerRadius(12);
+            btnConfirm.setTypeface(null, Typeface.BOLD);
+            btnConfirm.setAllCaps(false);
+            LinearLayout.LayoutParams lpConfirm = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            lpConfirm.setMargins(6, 0, 0, 0);
+            btnConfirm.setLayoutParams(lpConfirm);
 
             btnConfirm.setOnClickListener(dt -> {
                 sheet.dismiss();
@@ -778,7 +794,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                         showSnackBar("Election data for Section " + activeSec + " reset successfully.", false);
                                         logAdminAction("Reset Election Votes & Candidates for Section " + activeSec);
                                         broadcastNotificationToStudents(
-                                            "⚠️ Election Portal Reset (Sec " + activeSec + ")",
+                                            "Election Portal Reset (Sec " + activeSec + ")",
                                             "Election portal data for Section " + activeSec + " has been reset by the teacher.",
                                             "RESET"
                                         );
@@ -814,10 +830,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             LinearLayout view = new LinearLayout(this);
             view.setOrientation(LinearLayout.VERTICAL);
             view.setPadding(48, 48, 48, 48);
-            view.setBackgroundColor(Color.parseColor("#171A29"));
+            view.setBackground(ContextCompat.getDrawable(this, R.drawable.glass_card_bg));
 
             TextView title = new TextView(this);
-            title.setText("⚡ Initialize Run-Off for Section " + activeSec + "?");
+            title.setText("Initialize Run-Off for Section " + activeSec + "?");
             title.setTextSize(20f);
             title.setTypeface(null, Typeface.BOLD);
             title.setTextColor(Color.parseColor("#8B5CF6"));
@@ -830,21 +846,33 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             LinearLayout btnLayout = new LinearLayout(this);
             btnLayout.setOrientation(LinearLayout.HORIZONTAL);
-            btnLayout.setGravity(Gravity.END);
+            btnLayout.setGravity(Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams btnLayoutLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            btnLayoutLp.setMargins(0, 8, 0, 0);
+            btnLayout.setLayoutParams(btnLayoutLp);
 
-            MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.style.Widget_Material3_Button_TextButton);
+            MaterialButton btnCancel = new MaterialButton(this);
             btnCancel.setText("Cancel");
-            btnCancel.setTextColor(Color.parseColor("#94A3B8"));
+            btnCancel.setTextColor(Color.parseColor("#FFFFFF"));
+            btnCancel.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#334155")));
+            btnCancel.setCornerRadius(12);
+            btnCancel.setTypeface(null, Typeface.BOLD);
+            btnCancel.setAllCaps(false);
+            LinearLayout.LayoutParams lpCancel = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            lpCancel.setMargins(0, 0, 6, 0);
+            btnCancel.setLayoutParams(lpCancel);
             btnCancel.setOnClickListener(dt -> sheet.dismiss());
 
             MaterialButton btnConfirm = new MaterialButton(this);
             btnConfirm.setText("Proceed");
             btnConfirm.setTextColor(Color.parseColor("#FFFFFF"));
             btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#8B5CF6")));
-            btnConfirm.setCornerRadius(16);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
-            lp.setMargins(16, 0, 0, 0);
-            btnConfirm.setLayoutParams(lp);
+            btnConfirm.setCornerRadius(12);
+            btnConfirm.setTypeface(null, Typeface.BOLD);
+            btnConfirm.setAllCaps(false);
+            LinearLayout.LayoutParams lpConfirm = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            lpConfirm.setMargins(6, 0, 0, 0);
+            btnConfirm.setLayoutParams(lpConfirm);
 
             btnConfirm.setOnClickListener(dt -> {
                 sheet.dismiss();
@@ -920,6 +948,36 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             sheet.setContentView(view);
             sheet.show();
         });
+
+        setupHapticFeedback();
+    }
+
+    private void setupHapticFeedback() {
+        HapticUtils.attachToggle(switchMasterVoting);
+        HapticUtils.attachMedium(btnAddCandidate);
+        HapticUtils.attachMedium(btnRunOff);
+        HapticUtils.attachHeavy(btnResetVotes);
+        HapticUtils.attachLight(btnClearName);
+        HapticUtils.attachLight(btnLogout);
+        HapticUtils.attachMedium(btnExportPdf);
+
+        HapticUtils.attachLight(btnExtend5Min);
+        HapticUtils.attachLight(btnExtend10Min);
+        HapticUtils.attachLight(btnReduce5Min);
+        HapticUtils.attachMedium(btnPauseResume);
+        HapticUtils.attachHeavy(btnEndVotingNow);
+
+        MaterialButton btnOpenDrawer = findViewById(R.id.btnOpenDrawer);
+        if (btnOpenDrawer != null) {
+            HapticUtils.attachLight(btnOpenDrawer);
+        }
+        if (imgUserProfile != null) {
+            HapticUtils.attachLight(imgUserProfile);
+        }
+
+        if (bottomNavTeacher != null) {
+            HapticUtils.attachBottomNav(bottomNavTeacher);
+        }
     }
 
     private void displayAdminCandidatesSnapshot(DataSnapshot snapshot) {
@@ -990,7 +1048,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             chartLayout.setPadding(28, 24, 28, 24);
 
             TextView tvChartTitle = new TextView(this);
-            tvChartTitle.setText("📊 Live Vote Distribution Chart");
+            tvChartTitle.setText("Live Vote Distribution Chart");
             tvChartTitle.setTextSize(16f);
             tvChartTitle.setTypeface(null, Typeface.BOLD);
             tvChartTitle.setTextColor(Color.parseColor("#F8FAFC"));
@@ -1174,9 +1232,9 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         }
 
         if (btnDelete != null) {
-            btnDelete.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#FF3D00")));
+            btnDelete.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#FF5252")));
             btnDelete.setStrokeWidth(2);
-            btnDelete.setTextColor(Color.parseColor("#FF3D00"));
+            btnDelete.setTextColor(Color.parseColor("#FF5252"));
             btnDelete.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
 
             btnDelete.setOnClickListener(v -> {
@@ -1184,37 +1242,49 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 LinearLayout view = new LinearLayout(this);
                 view.setOrientation(LinearLayout.VERTICAL);
                 view.setPadding(48, 48, 48, 48);
-                view.setBackgroundColor(Color.parseColor("#1E1E1E"));
+                view.setBackground(ContextCompat.getDrawable(this, R.drawable.glass_card_bg));
 
                 TextView title = new TextView(this);
                 title.setText("Delete Candidate");
                 title.setTextSize(20f);
                 title.setTypeface(null, Typeface.BOLD);
-                title.setTextColor(Color.parseColor("#FF3D00"));
+                title.setTextColor(Color.parseColor("#FF5252"));
 
                 TextView msg = new TextView(this);
-                msg.setText("Remove " + name + "?");
+                msg.setText("Remove " + name + "? This action cannot be undone.");
                 msg.setTextSize(14f);
-                msg.setTextColor(Color.parseColor("#9E9E9E"));
+                msg.setTextColor(Color.parseColor("#94A3B8"));
                 msg.setPadding(0, 12, 0, 24);
 
                 LinearLayout btnLayout = new LinearLayout(this);
                 btnLayout.setOrientation(LinearLayout.HORIZONTAL);
-                btnLayout.setGravity(Gravity.END);
+                btnLayout.setGravity(Gravity.CENTER_VERTICAL);
+                LinearLayout.LayoutParams btnLayoutLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                btnLayoutLp.setMargins(0, 8, 0, 0);
+                btnLayout.setLayoutParams(btnLayoutLp);
 
-                MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.style.Widget_Material3_Button_TextButton);
+                MaterialButton btnCancel = new MaterialButton(this);
                 btnCancel.setText("Cancel");
-                btnCancel.setTextColor(Color.parseColor("#9E9E9E"));
+                btnCancel.setTextColor(Color.parseColor("#FFFFFF"));
+                btnCancel.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#334155")));
+                btnCancel.setCornerRadius(12);
+                btnCancel.setTypeface(null, Typeface.BOLD);
+                btnCancel.setAllCaps(false);
+                LinearLayout.LayoutParams lpCancel = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                lpCancel.setMargins(0, 0, 6, 0);
+                btnCancel.setLayoutParams(lpCancel);
                 btnCancel.setOnClickListener(dt -> sheet.dismiss());
 
                 MaterialButton btnConfirm = new MaterialButton(this);
                 btnConfirm.setText("Delete");
                 btnConfirm.setTextColor(Color.parseColor("#FFFFFF"));
-                btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF3D00")));
-                btnConfirm.setCornerRadius(16);
-                LinearLayout.LayoutParams btnLp = new LinearLayout.LayoutParams(-2, -2);
-                btnLp.setMargins(16, 0, 0, 0);
-                btnConfirm.setLayoutParams(btnLp);
+                btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF5252")));
+                btnConfirm.setCornerRadius(12);
+                btnConfirm.setTypeface(null, Typeface.BOLD);
+                btnConfirm.setAllCaps(false);
+                LinearLayout.LayoutParams lpConfirm = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                lpConfirm.setMargins(6, 0, 0, 0);
+                btnConfirm.setLayoutParams(lpConfirm);
 
                 btnConfirm.setOnClickListener(dt -> {
                     sheet.dismiss();
@@ -1272,7 +1342,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
     private void showSnackBar(String message, boolean isError) {
         View rootView = findViewById(android.R.id.content);
-        Snackbar snackbar = Snackbar.make(rootView, (isError ? "⚠️  " : "✅  ") + message, Snackbar.LENGTH_LONG);
+        Snackbar snackbar = Snackbar.make(rootView, message, Snackbar.LENGTH_LONG);
         View sbView = snackbar.getView();
         sbView.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(isError ? "#E6EF4444" : "#E610B981")));
         
@@ -1686,7 +1756,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             logAdminAction(isChecked ? "Enabled Master Voting for Section " + currentSec : "Disabled Master Voting for Section " + currentSec);
 
-            String notifTitle = isChecked ? "🟢 Live Voting is OPEN (Sec " + currentSec + ")" : "🔴 Live Voting is LOCKED (Sec " + currentSec + ")";
+            String notifTitle = isChecked ? " Live Voting is OPEN (Sec " + currentSec + ")" : " Live Voting is LOCKED (Sec " + currentSec + ")";
             String notifBody = isChecked ?
                     "Election admin " + sessionManager.getUserName() + " has opened live voting for Section " + currentSec + "! Cast your vote now." :
                     "Live voting for Section " + currentSec + " has been locked by election admin " + sessionManager.getUserName() + ".";
@@ -1724,7 +1794,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             tvAdminTimerStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#B0BEC5")));
 
             if (btnPauseResume != null) {
-                btnPauseResume.setText("⏸️ Pause Voting");
+                btnPauseResume.setText("Pause Voting");
+                btnPauseResume.setIconResource(R.drawable.ic_pause);
                 btnPauseResume.setEnabled(false);
             }
             if (btnExtend5Min != null) btnExtend5Min.setEnabled(true);
@@ -1743,7 +1814,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             tvAdminTimerStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FFA726")));
 
             if (btnPauseResume != null) {
-                btnPauseResume.setText("▶️ Resume Voting");
+                btnPauseResume.setText("Resume Voting");
+                btnPauseResume.setIconResource(R.drawable.ic_play);
                 btnPauseResume.setEnabled(true);
             }
             if (btnExtend5Min != null) btnExtend5Min.setEnabled(true);
@@ -1762,7 +1834,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             tvAdminTimerStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#B0BEC5")));
 
             if (btnPauseResume != null) {
-                btnPauseResume.setText("⏸️ Pause Voting");
+                btnPauseResume.setText("Pause Voting");
+                btnPauseResume.setIconResource(R.drawable.ic_pause);
                 btnPauseResume.setEnabled(false);
             }
             if (btnExtend5Min != null) btnExtend5Min.setEnabled(true);
@@ -1790,7 +1863,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             tvAdminTimerStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#00C853")));
 
             if (btnPauseResume != null) {
-                btnPauseResume.setText("⏸️ Pause Voting");
+                btnPauseResume.setText("Pause Voting");
+                btnPauseResume.setIconResource(R.drawable.ic_pause);
                 btnPauseResume.setEnabled(true);
             }
             if (btnExtend5Min != null) btnExtend5Min.setEnabled(true);
@@ -1847,7 +1921,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             showSnackBar("Time extended by +" + mins + " minutes.", false);
             logAdminAction("Extended election time by +" + mins + " minutes for Sec " + getTeacherAssignedSection());
             broadcastNotificationToStudents(
-                "⏱️ Election Time Extended",
+                "Election Time Extended",
                 "Admin extended election time by +" + mins + " minutes for Section " + getTeacherAssignedSection() + ".",
                 "TIMER_UPDATE"
             );
@@ -1893,7 +1967,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             showSnackBar("Time reduced by -5 minutes.", false);
             logAdminAction("Reduced election time by -5 minutes for Sec " + getTeacherAssignedSection());
             broadcastNotificationToStudents(
-                "⏱️ Election Time Adjusted",
+                "Election Time Adjusted",
                 "Admin reduced election time by -5 minutes for Section " + getTeacherAssignedSection() + ".",
                 "TIMER_UPDATE"
             );
@@ -1918,7 +1992,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 showSnackBar("Voting is temporarily paused.", false);
                 logAdminAction("Paused live voting for Sec " + getTeacherAssignedSection());
                 broadcastNotificationToStudents(
-                    "⏸️ Voting Paused",
+                    "Voting Paused",
                     "Voting is temporarily paused by the admin for Section " + getTeacherAssignedSection() + ".",
                     "PAUSE_RESUME"
                 );
@@ -1935,7 +2009,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 showSnackBar("Voting resumed.", false);
                 logAdminAction("Resumed live voting for Sec " + getTeacherAssignedSection());
                 broadcastNotificationToStudents(
-                    "▶️ Voting Resumed",
+                    "Voting Resumed",
                     "Voting has resumed for Section " + getTeacherAssignedSection() + "! Cast your vote now.",
                     "PAUSE_RESUME"
                 );
@@ -1952,7 +2026,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         }
 
         new MaterialAlertDialogBuilder(this)
-            .setTitle("⏹️ End Voting Now?")
+            .setTitle("End Voting Now?")
             .setMessage("Are you sure you want to manually end voting now for Section " + getTeacherAssignedSection() + "? This will immediately close election access for all students.")
             .setPositiveButton("Yes, End Now", (dialog, which) -> {
                 DatabaseReference ref = dbRef.child("voting_controls").child(dept).child(sec);

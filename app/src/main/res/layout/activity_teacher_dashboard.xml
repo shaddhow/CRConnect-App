@@ -21,6 +21,7 @@
             android:id="@+id/bottomNavTeacher"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:hapticFeedbackEnabled="true"
             android:background="@color/surface"
             app:itemIconTint="@color/bottom_nav_item_color"
             app:itemTextColor="@color/bottom_nav_item_color"
@@ -63,10 +64,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    app:cardBackgroundColor="@color/surface"
+                    android:hapticFeedbackEnabled="true"
+                    app:cardBackgroundColor="#CC161B22"
                     app:cardCornerRadius="20dp"
-                    app:cardElevation="6dp"
-                    app:strokeColor="@color/card_stroke"
+                    app:cardElevation="8dp"
+                    app:strokeColor="#26FFFFFF"
                     app:strokeWidth="1.5dp">
 
                     <LinearLayout
@@ -76,14 +78,36 @@
                         android:orientation="vertical"
                         android:padding="20dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="16dp"
-                            android:text="📊 Live Election Statistics"
-                            android:textColor="#FFFFFF"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <!-- Glass Badge Icon Container -->
+                            <FrameLayout
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:background="@drawable/glass_badge_bg"
+                                android:layout_marginEnd="10dp">
+                                <ImageView
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_gravity="center"
+                                    android:src="@android:drawable/ic_menu_sort_by_size"
+                                    app:tint="#D8B4FE"
+                                    tools:ignore="ContentDescription" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Live Election Statistics"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -113,7 +137,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="4dp"
                                     android:text="Votes Cast"
-                                    android:textColor="#9CA3AF"
+                                    android:textColor="#94A3B8"
                                     android:textSize="12sp" />
                             </LinearLayout>
 
@@ -138,7 +162,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="4dp"
                                     android:text="Voters"
-                                    android:textColor="#9CA3AF"
+                                    android:textColor="#94A3B8"
                                     android:textSize="12sp" />
                             </LinearLayout>
 
@@ -163,7 +187,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="4dp"
                                     android:text="Turnout"
-                                    android:textColor="#9CA3AF"
+                                    android:textColor="#94A3B8"
                                     android:textSize="12sp" />
                             </LinearLayout>
                         </LinearLayout>
@@ -174,8 +198,9 @@
                             android:layout_width="match_parent"
                             android:layout_height="48dp"
                             android:layout_marginTop="16dp"
-                            android:padding="0dp"
-                            android:text="📄 Export Results to PDF"
+                            android:hapticFeedbackEnabled="true"
+                            android:paddingHorizontal="16dp"
+                            android:text="Export Results to PDF"
                             android:textColor="#FFFFFF"
                             android:textSize="14sp"
                             android:textStyle="bold"
@@ -192,10 +217,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    app:cardBackgroundColor="@color/surface"
+                    android:hapticFeedbackEnabled="true"
+                    app:cardBackgroundColor="#CC161B22"
                     app:cardCornerRadius="20dp"
-                    app:cardElevation="6dp"
-                    app:strokeColor="@color/card_stroke"
+                    app:cardElevation="8dp"
+                    app:strokeColor="#26FFFFFF"
                     app:strokeWidth="1.5dp">
 
                     <LinearLayout
@@ -204,6 +230,21 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:padding="20dp">
+
+                        <!-- Glass Badge Icon Container -->
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/glass_badge_bg"
+                            android:layout_marginEnd="12dp">
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@android:drawable/ic_menu_compass"
+                                app:tint="#D8B4FE"
+                                tools:ignore="ContentDescription" />
+                        </FrameLayout>
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -224,7 +265,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
                                 android:text="Control student access instantly"
-                                android:textColor="#9CA3AF"
+                                android:textColor="#94A3B8"
                                 android:textSize="12sp" />
                         </LinearLayout>
 
@@ -232,6 +273,7 @@
                             android:id="@+id/switchMasterVoting"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:hapticFeedbackEnabled="true"
                             app:trackTint="@color/primary" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -242,10 +284,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    app:cardBackgroundColor="@color/surface"
+                    android:hapticFeedbackEnabled="true"
+                    app:cardBackgroundColor="#CC161B22"
                     app:cardCornerRadius="20dp"
-                    app:cardElevation="6dp"
-                    app:strokeColor="@color/card_stroke"
+                    app:cardElevation="8dp"
+                    app:strokeColor="#26FFFFFF"
                     app:strokeWidth="1.5dp">
 
                     <LinearLayout
@@ -260,15 +303,37 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp">
 
-                            <TextView
+                            <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentStart="true"
                                 android:layout_centerVertical="true"
-                                android:text="⏱️ Live Election Control"
-                                android:textColor="#FFFFFF"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <!-- Glass Badge Icon Container -->
+                                <FrameLayout
+                                    android:layout_width="32dp"
+                                    android:layout_height="32dp"
+                                    android:background="@drawable/glass_badge_bg"
+                                    android:layout_marginEnd="10dp">
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:layout_gravity="center"
+                                        android:src="@android:drawable/ic_menu_recent_history"
+                                        app:tint="#D8B4FE"
+                                        tools:ignore="ContentDescription" />
+                                </FrameLayout>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Live Election Control"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
 
                             <TextView
                                 android:id="@+id/tvAdminTimerStatus"
@@ -276,7 +341,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentEnd="true"
                                 android:layout_centerVertical="true"
-                                android:background="@color/input_bg"
+                                android:background="@drawable/glass_badge_bg"
                                 android:paddingHorizontal="10dp"
                                 android:paddingVertical="4dp"
                                 android:text="CLOSED"
@@ -285,12 +350,12 @@
                                 android:textStyle="bold" />
                         </RelativeLayout>
 
-                        <!-- Compact Countdown Timer Display Box -->
+                        <!-- Compact Countdown Timer Display Box with Glass Background -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="16dp"
-                            android:background="@color/input_bg"
+                            android:background="@drawable/glass_card_bg"
                             android:gravity="center_horizontal"
                             android:orientation="vertical"
                             android:paddingHorizontal="12dp"
@@ -315,7 +380,7 @@
                                 android:gravity="center_horizontal"
                                 android:text="Remaining Election Time"
                                 android:textAlignment="center"
-                                android:textColor="#9CA3AF"
+                                android:textColor="#94A3B8"
                                 android:textSize="12sp" />
                         </LinearLayout>
 
@@ -325,7 +390,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="8dp"
                             android:text="Adjust Duration"
-                            android:textColor="#9CA3AF"
+                            android:textColor="#94A3B8"
                             android:textSize="12sp"
                             android:textStyle="bold" />
 
@@ -344,9 +409,10 @@
                                 android:layout_height="40dp"
                                 android:layout_marginEnd="6dp"
                                 android:layout_weight="1"
-                                android:padding="0dp"
+                                android:hapticFeedbackEnabled="true"
+                                android:paddingHorizontal="8dp"
                                 android:text="+5 Min"
-                                android:textColor="#9CA3AF"
+                                android:textColor="#94A3B8"
                                 android:textSize="12sp"
                                 android:textStyle="bold"
                                 app:strokeColor="@color/card_stroke"
@@ -363,9 +429,10 @@
                                 android:layout_height="40dp"
                                 android:layout_marginEnd="6dp"
                                 android:layout_weight="1"
-                                android:padding="0dp"
+                                android:hapticFeedbackEnabled="true"
+                                android:paddingHorizontal="8dp"
                                 android:text="+10 Min"
-                                android:textColor="#9CA3AF"
+                                android:textColor="#94A3B8"
                                 android:textSize="12sp"
                                 android:textStyle="bold"
                                 app:strokeColor="@color/card_stroke"
@@ -381,9 +448,10 @@
                                 android:layout_width="0dp"
                                 android:layout_height="40dp"
                                 android:layout_weight="1"
-                                android:padding="0dp"
+                                android:hapticFeedbackEnabled="true"
+                                android:paddingHorizontal="8dp"
                                 android:text="-5 Min"
-                                android:textColor="#9CA3AF"
+                                android:textColor="#94A3B8"
                                 android:textSize="12sp"
                                 android:textStyle="bold"
                                 app:strokeColor="@color/card_stroke"
@@ -408,11 +476,18 @@
                                 android:layout_height="44dp"
                                 android:layout_marginEnd="6dp"
                                 android:layout_weight="1"
-                                android:padding="0dp"
-                                android:text="⏸️ Pause Voting"
-                                android:textColor="#9CA3AF"
+                                android:hapticFeedbackEnabled="true"
+                                android:paddingHorizontal="12dp"
+                                android:text="Pause Voting"
+                                android:textColor="#94A3B8"
                                 android:textSize="13sp"
                                 android:textStyle="bold"
+                                app:icon="@drawable/ic_pause"
+                                app:iconTint="#94A3B8"
+                                app:iconSize="16dp"
+                                app:iconGravity="textStart"
+                                app:iconPadding="8dp"
+                                android:gravity="center"
                                 app:strokeColor="@color/card_stroke"
                                 app:strokeWidth="1.5dp"
                                 app:backgroundTint="@android:color/transparent"
@@ -425,11 +500,18 @@
                                 android:layout_width="0dp"
                                 android:layout_height="44dp"
                                 android:layout_weight="1"
-                                android:padding="0dp"
-                                android:text="⏹️ End Voting Now"
+                                android:hapticFeedbackEnabled="true"
+                                android:paddingHorizontal="12dp"
+                                android:text="End Voting Now"
                                 android:textColor="@color/destructive_text"
                                 android:textSize="13sp"
                                 android:textStyle="bold"
+                                app:icon="@drawable/ic_stop"
+                                app:iconTint="@color/destructive_text"
+                                app:iconSize="16dp"
+                                app:iconGravity="textStart"
+                                app:iconPadding="8dp"
+                                android:gravity="center"
                                 app:backgroundTint="@color/destructive_bg"
                                 app:cornerRadius="12dp"
                                 android:insetBottom="0dp"
@@ -445,9 +527,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    app:cardBackgroundColor="@color/surface"
-                    app:cardCornerRadius="20dp"
-                    app:cardElevation="6dp"
+                    android:hapticFeedbackEnabled="true"
+                    app:cardBackgroundColor="@color/glass_card"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
                     app:strokeColor="@color/card_stroke"
                     app:strokeWidth="1.5dp">
 
@@ -489,7 +572,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp"
-                            android:textColorHint="#9CA3AF"
+                            android:textColorHint="#94A3B8"
                             app:boxBackgroundColor="@color/input_bg"
                             app:boxCornerRadiusBottomEnd="14dp"
                             app:boxCornerRadiusBottomStart="14dp"
@@ -510,7 +593,8 @@
                             android:id="@+id/btnAddCandidate"
                             android:layout_width="match_parent"
                             android:layout_height="48dp"
-                            android:padding="0dp"
+                            android:hapticFeedbackEnabled="true"
+                            android:paddingHorizontal="16dp"
                             android:text="Publish to Dashboard"
                             android:textColor="#FFFFFF"
                             android:textSize="14sp"
@@ -526,8 +610,9 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
+                            android:hapticFeedbackEnabled="true"
                             android:text="Reset Input"
-                            android:textColor="#9CA3AF" />
+                            android:textColor="#94A3B8" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -537,9 +622,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
-                    app:cardBackgroundColor="@color/surface"
-                    app:cardCornerRadius="20dp"
-                    app:cardElevation="6dp"
+                    android:hapticFeedbackEnabled="true"
+                    app:cardBackgroundColor="@color/glass_card"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
                     app:strokeColor="@color/card_stroke"
                     app:strokeWidth="1.5dp">
 
@@ -554,7 +640,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp"
                             android:text="Advanced Controls"
-                            android:textColor="#9CA3AF"
+                            android:textColor="#94A3B8"
                             android:textSize="13sp"
                             android:textStyle="bold" />
 
@@ -572,9 +658,10 @@
                                 android:layout_height="44dp"
                                 android:layout_marginEnd="6dp"
                                 android:layout_weight="1"
-                                android:padding="0dp"
+                                android:hapticFeedbackEnabled="true"
+                                android:paddingHorizontal="12dp"
                                 android:text="Run-off"
-                                android:textColor="#9CA3AF"
+                                android:textColor="#94A3B8"
                                 android:textSize="13sp"
                                 android:textStyle="bold"
                                 app:strokeColor="@color/card_stroke"
@@ -589,7 +676,8 @@
                                 android:layout_width="0dp"
                                 android:layout_height="44dp"
                                 android:layout_weight="1"
-                                android:padding="0dp"
+                                android:hapticFeedbackEnabled="true"
+                                android:paddingHorizontal="12dp"
                                 android:text="Reset All"
                                 android:textColor="@color/destructive_text"
                                 android:textSize="13sp"

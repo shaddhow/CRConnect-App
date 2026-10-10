@@ -32,6 +32,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import android.widget.LinearLayout;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
+import com.example.crconnect.core.utils.HapticUtils;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -261,6 +262,21 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
+
+        setupHapticFeedback();
+    }
+
+    private void setupHapticFeedback() {
+        if (btnLogin != null) HapticUtils.attachMedium(btnLogin);
+        MaterialButton btnDevStudent = findViewById(R.id.btnDevStudent);
+        MaterialButton btnDevTeacher = findViewById(R.id.btnDevTeacher);
+        if (btnDevStudent != null) HapticUtils.attachLight(btnDevStudent);
+        if (btnDevTeacher != null) HapticUtils.attachLight(btnDevTeacher);
+        if (radioGroupRole != null) HapticUtils.attachLight(radioGroupRole);
+        if (rbStudent != null) HapticUtils.attachLight(rbStudent);
+        if (rbTeacher != null) HapticUtils.attachLight(rbTeacher);
+        if (tvForgotPassword != null) HapticUtils.attachLight(tvForgotPassword);
+        if (tvRegisterLink != null) HapticUtils.attachLight(tvRegisterLink);
     }
 
     private void showForgotPasswordDialog() {
@@ -269,7 +285,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout view = new LinearLayout(this);
         view.setOrientation(LinearLayout.VERTICAL);
         view.setPadding(48, 48, 48, 48);
-        view.setBackgroundColor(Color.parseColor("#171A29"));
+        view.setBackground(ContextCompat.getDrawable(this, R.drawable.glass_card_bg));
 
         TextView tvTitle = new TextView(this);
         tvTitle.setText("Reset Password");
@@ -302,22 +318,33 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout btnLayout = new LinearLayout(this);
         btnLayout.setOrientation(LinearLayout.HORIZONTAL);
-        btnLayout.setGravity(Gravity.END);
-        btnLayout.setPadding(0, 28, 0, 0);
+        btnLayout.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams btnLayoutLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        btnLayoutLp.setMargins(0, 24, 0, 0);
+        btnLayout.setLayoutParams(btnLayoutLp);
 
-        MaterialButton btnCancel = new MaterialButton(this, null, com.google.android.material.R.style.Widget_Material3_Button_TextButton);
+        MaterialButton btnCancel = new MaterialButton(this);
         btnCancel.setText("Cancel");
-        btnCancel.setTextColor(Color.parseColor("#94A3B8"));
+        btnCancel.setTextColor(Color.parseColor("#FFFFFF"));
+        btnCancel.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#334155")));
+        btnCancel.setCornerRadius(12);
+        btnCancel.setTypeface(null, Typeface.BOLD);
+        btnCancel.setAllCaps(false);
+        LinearLayout.LayoutParams lpCancel = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        lpCancel.setMargins(0, 0, 6, 0);
+        btnCancel.setLayoutParams(lpCancel);
         btnCancel.setOnClickListener(v -> bottomSheetDialog.dismiss());
 
         MaterialButton btnSend = new MaterialButton(this);
         btnSend.setText("Send Reset Link");
         btnSend.setTextColor(Color.parseColor("#FFFFFF"));
         btnSend.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#6366F1")));
-        btnSend.setCornerRadius(16);
-        LinearLayout.LayoutParams sendLp = new LinearLayout.LayoutParams(-2, -2);
-        sendLp.setMargins(16, 0, 0, 0);
-        btnSend.setLayoutParams(sendLp);
+        btnSend.setCornerRadius(12);
+        btnSend.setTypeface(null, Typeface.BOLD);
+        btnSend.setAllCaps(false);
+        LinearLayout.LayoutParams lpSend = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        lpSend.setMargins(6, 0, 0, 0);
+        btnSend.setLayoutParams(lpSend);
 
         btnSend.setOnClickListener(v -> {
             String email = etResetEmail.getText() != null ? etResetEmail.getText().toString().trim() : "";
@@ -360,7 +387,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout view = new LinearLayout(this);
         view.setOrientation(LinearLayout.VERTICAL);
         view.setPadding(48, 48, 48, 48);
-        view.setBackgroundColor(Color.parseColor("#171A29"));
+        view.setBackground(ContextCompat.getDrawable(this, R.drawable.glass_card_bg));
 
         TextView tvTitle = new TextView(this);
         tvTitle.setText("Reset Link Sent");
