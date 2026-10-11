@@ -7,6 +7,11 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.InputType;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
+import android.text.style.TypefaceSpan;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -144,6 +149,19 @@ public class MainActivity extends AppCompatActivity {
         btnLogin = findViewById(R.id.btnLogin);
         tvRegisterLink = findViewById(R.id.tvRegisterLink);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
+        TextView tvDontHaveAccount = findViewById(R.id.tvDontHaveAccount);
+
+        if (tvRegisterLink != null) {
+            tvRegisterLink.getPaint().setAntiAlias(true);
+        }
+
+        if (tvForgotPassword != null) {
+            tvForgotPassword.getPaint().setAntiAlias(true);
+        }
+
+        if (tvDontHaveAccount != null) {
+            tvDontHaveAccount.getPaint().setAntiAlias(true);
+        }
 
         // Professional keyboard-aware scaling & auto-scroll
         NestedScrollView scrollViewMain = findViewById(R.id.scrollViewMain);
@@ -197,10 +215,8 @@ public class MainActivity extends AppCompatActivity {
             etPassword.setError(null);
             if (checkedId == R.id.rbTeacher) {
                 tilEmail.setHint("Teacher Code or Email");
-                etEmail.setHint("Teacher Code or Email");
             } else {
                 tilEmail.setHint("Student ID or BUBT Email");
-                etEmail.setHint("Student ID or BUBT Email");
             }
         });
 
