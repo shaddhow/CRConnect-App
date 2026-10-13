@@ -56,18 +56,21 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class RoutineActivity extends AppCompatActivity {
 
     private SessionManager sessionManager;
     private TextView tvGreetingTitle, tvHeaderDate;
     private View cardUpNext;
-    private TextView tvUpNextSubject, tvUpNextTime, tvUpNextRoom, tvUpNextCountdown;
+    private TextView tvUpNextSubject, tvUpNextCourse, tvUpNextFaculty, tvUpNextTime, tvUpNextRoom, tvUpNextCountdown;
     private TextView tvDailyRoutineTitle, tvNoRoutineClasses;
     private RecyclerView recyclerViewRoutine;
     private FloatingActionButton fabAddRoutineClass;
@@ -109,6 +112,8 @@ public class RoutineActivity extends AppCompatActivity {
         tvHeaderDate = findViewById(R.id.tvHeaderDate);
         cardUpNext = findViewById(R.id.cardUpNext);
         tvUpNextSubject = findViewById(R.id.tvUpNextSubject);
+        tvUpNextCourse = tvUpNextSubject;
+        tvUpNextFaculty = findViewById(R.id.tvUpNextFaculty);
         tvUpNextTime = findViewById(R.id.tvUpNextTime);
         tvUpNextRoom = findViewById(R.id.tvUpNextRoom);
         tvUpNextCountdown = findViewById(R.id.tvUpNextCountdown);
@@ -190,6 +195,40 @@ public class RoutineActivity extends AppCompatActivity {
     }
 
     private void checkInitialRoutineState() {
+        // 1. Check local storage / cache first for instant persistence on launch
+        List<RoutineClassItem> cachedItems = RoutineLocalCache.loadRoutineLocally(this);
+        if (cachedItems != null && !cachedItems.isEmpty()) {
+            List<RoutineClassItem> dayClasses = new ArrayList<>();
+            for (RoutineClassItem item : cachedItems) {
+                if (item != null && item.day != null && matchesSelectedDay(item.day, selectedDay)) {
+                    dayClasses.add(item);
+                }
+            }
+            if (dayClasses.isEmpty() && !cachedItems.isEmpty()) {
+                dayClasses = cachedItems;
+            }
+
+            routineList.clear();
+            routineList.addAll(dayClasses);
+            if (routineAdapter != null) {
+                routineAdapter.notifyDataSetChanged();
+            }
+
+            if (!routineList.isEmpty()) {
+                if (cardUpNext != null) cardUpNext.setVisibility(View.VISIBLE);
+                if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.GONE);
+                if (recyclerViewRoutine != null) recyclerViewRoutine.setVisibility(View.VISIBLE);
+            } else {
+                if (cardUpNext != null) cardUpNext.setVisibility(View.GONE);
+                if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.VISIBLE);
+                if (recyclerViewRoutine != null) recyclerViewRoutine.setVisibility(View.GONE);
+            }
+
+            updateUpNextBanner();
+            loadRoutineForDay(selectedDay);
+            return;
+        }
+
         String dept = getSanitizedKey(sessionManager.getUserDept());
         String intake = getSanitizedKey(sessionManager.getUserIntake());
         String section = getSanitizedKey(sessionManager.getUserSection());
@@ -430,7 +469,26 @@ public class RoutineActivity extends AppCompatActivity {
                         }
                     }
 
-                    // 3. Protect against transient empty snapshots clearing locally loaded OCR items
+                    // 3. Deduplicate by day + timeSlot + courseCode
+                    List<RoutineClassItem> uniqueClasses = new ArrayList<>();
+                    Set<String> seenKeys = new HashSet<>();
+                    for (RoutineClassItem item : dayClasses) {
+                        String key = (item.day + "_" + item.timeSlot + "_" + item.getDisplayCourseCode()).toLowerCase();
+                        if (!seenKeys.contains(key)) {
+                            seenKeys.add(key);
+                            uniqueClasses.add(item);
+                        }
+                    }
+                    dayClasses = uniqueClasses;
+
+                    // 4. Sort chronologically by start time
+                    Collections.sort(dayClasses, (a, b) -> {
+                        String timeA = a.startTime != null ? a.startTime : (a.timeSlot != null ? a.timeSlot : "");
+                        String timeB = b.startTime != null ? b.startTime : (b.timeSlot != null ? b.timeSlot : "");
+                        return timeA.compareTo(timeB);
+                    });
+
+                    // 5. Protect against transient empty snapshots clearing locally loaded OCR items
                     if (dayClasses.isEmpty() && !routineList.isEmpty()) {
                         if (querySnapshot.getMetadata().isFromCache() || querySnapshot.getMetadata().hasPendingWrites()) {
                             // Transient cache read or in-flight write; keep existing UI items intact
@@ -445,7 +503,7 @@ public class RoutineActivity extends AppCompatActivity {
                         routineAdapter.notifyDataSetChanged();
                     }
 
-                    // 4. Correct UI visibility toggling
+                    // 6. Correct UI visibility toggling
                     if (!routineList.isEmpty()) {
                         if (cardUpNext != null) cardUpNext.setVisibility(View.VISIBLE);
                         if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.GONE);
@@ -471,7 +529,7 @@ public class RoutineActivity extends AppCompatActivity {
                 .collection("schedule")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
-                    List<RoutineClassItem> todayList = new ArrayList<>();
+                    List<RoutineClassItem> allItems = new ArrayList<>();
                     if (querySnapshot != null) {
                         for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
                             RoutineClassItem item = doc.toObject(RoutineClassItem.class);
@@ -484,31 +542,92 @@ public class RoutineActivity extends AppCompatActivity {
                                 if (itemDay != null) {
                                     item.day = itemDay;
                                 }
-                                if (itemDay != null && matchesSelectedDay(itemDay, today)) {
-                                    todayList.add(item);
-                                }
+                                allItems.add(item);
                             }
                         }
                     }
-                    if (!todayList.isEmpty()) {
-                        RoutineClassItem next = todayList.get(0);
-                        tvUpNextSubject.setText(next.getDisplayCourseCode());
-                        tvUpNextTime.setText(next.timeSlot != null ? next.timeSlot : "");
 
-                        String roomVal = next.room != null ? next.room.replace("Room", "").replace("ROOM", "").replace("R:", "").trim() : "";
-                        tvUpNextRoom.setText(roomVal.isEmpty() ? "ROOM" : "ROOM " + roomVal);
-                        if (cardUpNext != null) cardUpNext.setVisibility(View.VISIBLE);
-                    } else if (querySnapshot != null && !querySnapshot.isEmpty()) {
-                        RoutineClassItem anyClass = querySnapshot.getDocuments().get(0).toObject(RoutineClassItem.class);
-                        if (anyClass != null) {
-                            tvUpNextSubject.setText(anyClass.getDisplayCourseCode());
-                            tvUpNextTime.setText(anyClass.timeSlot != null ? anyClass.timeSlot : "");
-                            String roomVal = anyClass.room != null ? anyClass.room.replace("Room", "").replace("ROOM", "").replace("R:", "").trim() : "";
-                            tvUpNextRoom.setText(roomVal.isEmpty() ? "ROOM" : "ROOM " + roomVal);
-                            if (cardUpNext != null) cardUpNext.setVisibility(View.VISIBLE);
-                        } else {
-                            if (cardUpNext != null) cardUpNext.setVisibility(View.GONE);
+                    if (allItems.isEmpty()) {
+                        if (cardUpNext != null) cardUpNext.setVisibility(View.GONE);
+                        return;
+                    }
+
+                    // Filter today's classes
+                    List<RoutineClassItem> todayList = new ArrayList<>();
+                    for (RoutineClassItem item : allItems) {
+                        if (item.day != null && matchesSelectedDay(item.day, today)) {
+                            todayList.add(item);
                         }
+                    }
+
+                    // Sort today's classes chronologically by start time
+                    SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+                    Calendar nowCal = Calendar.getInstance();
+                    long nowMillis = nowCal.getTimeInMillis();
+
+                    Collections.sort(todayList, (a, b) -> {
+                        try {
+                            Date dateA = sdf.parse(a.getStartTime());
+                            Date dateB = sdf.parse(b.getStartTime());
+                            if (dateA != null && dateB != null) return dateA.compareTo(dateB);
+                        } catch (Exception ignored) {}
+                        return 0;
+                    });
+
+                    RoutineClassItem upcomingClass = null;
+                    boolean isToday = true;
+
+                    // Find closest upcoming future class or ongoing class for today
+                    for (RoutineClassItem item : todayList) {
+                        try {
+                            Date startTime = sdf.parse(item.getStartTime());
+                            Date endTime = sdf.parse(item.getEndTime());
+                            if (startTime != null) {
+                                Calendar classStartCal = Calendar.getInstance();
+                                classStartCal.setTime(startTime);
+                                Calendar startCal = Calendar.getInstance();
+                                startCal.set(Calendar.HOUR_OF_DAY, classStartCal.get(Calendar.HOUR_OF_DAY));
+                                startCal.set(Calendar.MINUTE, classStartCal.get(Calendar.MINUTE));
+                                startCal.set(Calendar.SECOND, 0);
+
+                                Calendar endCal = Calendar.getInstance();
+                                if (endTime != null) {
+                                    Calendar classEndCal = Calendar.getInstance();
+                                    classEndCal.setTime(endTime);
+                                    endCal.set(Calendar.HOUR_OF_DAY, classEndCal.get(Calendar.HOUR_OF_DAY));
+                                    endCal.set(Calendar.MINUTE, classEndCal.get(Calendar.MINUTE));
+                                    endCal.set(Calendar.SECOND, 0);
+                                } else {
+                                    endCal.setTimeInMillis(startCal.getTimeInMillis() + 90 * 60 * 1000);
+                                }
+
+                                // If class has not ended yet, pick it as UP NEXT
+                                if (endCal.getTimeInMillis() >= nowMillis) {
+                                    upcomingClass = item;
+                                    break;
+                                }
+                            }
+                        } catch (Exception ignored) {}
+                    }
+
+                    // If all classes for today have finished, pick the first class of the schedule (tomorrow/next)
+                    if (upcomingClass == null && !allItems.isEmpty()) {
+                        isToday = false;
+                        upcomingClass = allItems.get(0);
+                    }
+
+                    if (upcomingClass != null) {
+                        if (tvUpNextSubject != null) tvUpNextSubject.setText(upcomingClass.getCourseCode());
+                        if (tvUpNextTime != null) tvUpNextTime.setText(upcomingClass.getStartTime() + " - " + upcomingClass.getEndTime());
+                        if (tvUpNextRoom != null) tvUpNextRoom.setText(upcomingClass.getRoomNumber());
+                        if (tvUpNextCountdown != null) {
+                            if (isToday) {
+                                tvUpNextCountdown.setText("Starts in " + calculateRemainingTime(upcomingClass.getStartTime()));
+                            } else {
+                                tvUpNextCountdown.setText("Next (" + (upcomingClass.day != null ? upcomingClass.day : "Upcoming") + ")");
+                            }
+                        }
+                        if (cardUpNext != null) cardUpNext.setVisibility(View.VISIBLE);
                     } else {
                         if (cardUpNext != null) cardUpNext.setVisibility(View.GONE);
                     }
@@ -516,6 +635,38 @@ public class RoutineActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> {
                     if (cardUpNext != null) cardUpNext.setVisibility(View.GONE);
                 });
+    }
+
+    private String calculateRemainingTime(String startTimeStr) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+            Date classTime = sdf.parse(startTimeStr);
+            if (classTime == null) return "Upcoming";
+
+            Calendar nowCal = Calendar.getInstance();
+            Calendar classCal = Calendar.getInstance();
+            classCal.setTime(classTime);
+            classCal.set(Calendar.YEAR, nowCal.get(Calendar.YEAR));
+            classCal.set(Calendar.MONTH, nowCal.get(Calendar.MONTH));
+            classCal.set(Calendar.DAY_OF_MONTH, nowCal.get(Calendar.DAY_OF_MONTH));
+
+            long diffMs = classCal.getTimeInMillis() - nowCal.getTimeInMillis();
+            if (diffMs < 0) {
+                classCal.add(Calendar.DAY_OF_MONTH, 1);
+                diffMs = classCal.getTimeInMillis() - nowCal.getTimeInMillis();
+            }
+
+            long hours = diffMs / (1000 * 60 * 60);
+            long minutes = (diffMs / (1000 * 60)) % 60;
+
+            if (hours > 0) {
+                return String.format(Locale.getDefault(), "%dh %dm", hours, minutes);
+            } else {
+                return String.format(Locale.getDefault(), "%dm", minutes);
+            }
+        } catch (Exception e) {
+            return "Upcoming";
+        }
     }
 
     private void startUpNextCountdownTimer() {
@@ -626,14 +777,20 @@ public class RoutineActivity extends AppCompatActivity {
 
             // 1. Extract Intake & Section if present e.g. "Intake: 55 - 6"
             if (sessionManager != null) {
-                Matcher intakeMatcher = Pattern.compile("(?i)(?:Intake|Int|Sec|Section)[:\\s]*(\\d{1,3})\\s*[-_/,:]?\\s*(\\d{1,3})").matcher(fullText);
-                if (intakeMatcher.find()) {
-                    String intakeStr = intakeMatcher.group(1);
-                    String secStr = intakeMatcher.group(2);
-                    if (intakeStr != null && secStr != null) {
-                        sessionManager.setUserIntake(intakeStr.trim());
-                        sessionManager.setUserSection(secStr.trim());
+                try {
+                    Matcher intakeMatcher = Pattern.compile("(?i)(Intake|Int|Sec|Section)[: ]*([0-9]{1,3})[ _/,:-]*([0-9]{1,3})").matcher(fullText);
+                    if (intakeMatcher.find()) {
+                        String intakeStr = intakeMatcher.group(2);
+                        String secStr = intakeMatcher.group(3);
+                        if (intakeStr != null && secStr != null) {
+                            sessionManager.setUserIntake(intakeStr.trim());
+                            sessionManager.setUserSection(secStr.trim());
+                        }
                     }
+                } catch (PatternSyntaxException e) {
+                    Log.e("RoutineActivity", "PatternSyntaxException in intake matching 1", e);
+                } catch (Exception e) {
+                    Log.e("RoutineActivity", "Error in intake matching 1", e);
                 }
             }
 
@@ -881,50 +1038,89 @@ public class RoutineActivity extends AppCompatActivity {
 
     private boolean containsCourseCodePattern(String text) {
         if (text == null) return false;
-        return text.matches(".*(?i)(CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV)\\s*[-_]?\\s*\\d{3,4}.*") ||
-                text.matches(".*[A-Z]{2,4}\\s*[-_]?\\s*\\d{3,4}.*");
+        try {
+            return text.matches(".*(?i)(CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV)[-_ ]*[0-9]{3,4}.*") ||
+                    text.matches(".*[A-Z]{2,4}[-_ ]*[0-9]{3,4}.*");
+        } catch (PatternSyntaxException e) {
+            Log.e("RoutineActivity", "PatternSyntaxException in containsCourseCodePattern", e);
+            return false;
+        } catch (Exception e) {
+            Log.e("RoutineActivity", "Error in containsCourseCodePattern", e);
+            return false;
+        }
     }
 
     private String extractCourseCode(String text) {
         if (text == null) return null;
-        Matcher m = Pattern.compile("(?i)\\b((?:CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV|[A-Z]{2,4})\\s*[-_]?\\s*\\d{3,4}[A-Z]?)\\b").matcher(text);
-        if (m.find()) {
-            String matched = m.group(1);
-            if (matched != null) {
-                return matched.toUpperCase().replaceAll("\\s+", " ");
+        try {
+            Matcher m = Pattern.compile("(?i)((?:CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV|[A-Z]{2,4})[-_ ]*[0-9]{3,4}[A-Z]?)").matcher(text);
+            if (m.find()) {
+                String matched = m.group(1);
+                if (matched != null) {
+                    return matched.toUpperCase().replaceAll("[ \t\n\r]+", " ");
+                }
             }
+        } catch (PatternSyntaxException e) {
+            Log.e("RoutineActivity", "PatternSyntaxException in extractCourseCode", e);
+        } catch (Exception e) {
+            Log.e("RoutineActivity", "Error in extractCourseCode", e);
         }
         return text.trim();
     }
 
     private String extractFacultyCode(String text) {
         if (text == null) return null;
-        Matcher m1 = Pattern.compile("(?i)(?:FC:|Faculty:|Instructor:|Teacher:)\\s*([A-Za-z]{2,5})").matcher(text);
-        if (m1.find()) {
-            return m1.group(1).toUpperCase();
-        }
-        Matcher m2 = Pattern.compile("\\b([A-Z]{2,5})\\b").matcher(text);
-        while (m2.find()) {
-            String candidate = m2.group(1);
-            if (!isBlacklistedKeyword(candidate)) {
-                return candidate;
+        try {
+            Matcher m1 = Pattern.compile("(?i)(FC:|Faculty:|Instructor:|Teacher:)[^a-zA-Z]*([a-zA-Z]{2,5})").matcher(text);
+            if (m1.find()) {
+                String f = m1.group(2);
+                if (f != null) return f.toUpperCase();
             }
+        } catch (PatternSyntaxException e) {
+            Log.e("RoutineActivity", "PatternSyntaxException in extractFacultyCode m1", e);
+        } catch (Exception e) {
+            Log.e("RoutineActivity", "Error in extractFacultyCode m1", e);
+        }
+        try {
+            Matcher m2 = Pattern.compile("([A-Z]{2,5})").matcher(text);
+            while (m2.find()) {
+                String candidate = m2.group(1);
+                if (!isBlacklistedKeyword(candidate)) {
+                    return candidate;
+                }
+            }
+        } catch (PatternSyntaxException e) {
+            Log.e("RoutineActivity", "PatternSyntaxException in extractFacultyCode m2", e);
+        } catch (Exception e) {
+            Log.e("RoutineActivity", "Error in extractFacultyCode m2", e);
         }
         return null;
     }
 
     private String extractRoomNumber(String text) {
         if (text == null) return null;
-        Matcher m1 = Pattern.compile("(?i)(?:R:|Room|R)?\\s*(\\d{3,4}|Lab\\s*\\d+)").matcher(text);
-        if (m1.find()) {
-            String rm = m1.group(1);
-            if (rm != null && !rm.isEmpty() && !rm.equalsIgnoreCase("ROOM")) {
-                return rm;
+        try {
+            Matcher m1 = Pattern.compile("(?i)(R:|Room|R)?[^0-9]*([0-9]{3,4}|Lab[^0-9]*[0-9]+)").matcher(text);
+            if (m1.find()) {
+                String rm = m1.group(2);
+                if (rm != null && !rm.isEmpty() && !rm.equalsIgnoreCase("ROOM")) {
+                    return rm;
+                }
             }
+        } catch (PatternSyntaxException e) {
+            Log.e("RoutineActivity", "PatternSyntaxException in extractRoomNumber m1", e);
+        } catch (Exception e) {
+            Log.e("RoutineActivity", "Error in extractRoomNumber m1", e);
         }
-        Matcher m2 = Pattern.compile("\\b(\\d{3,4})\\b").matcher(text);
-        if (m2.find()) {
-            return m2.group(1);
+        try {
+            Matcher m2 = Pattern.compile("([0-9]{3,4})").matcher(text);
+            if (m2.find()) {
+                return m2.group(1);
+            }
+        } catch (PatternSyntaxException e) {
+            Log.e("RoutineActivity", "PatternSyntaxException in extractRoomNumber m2", e);
+        } catch (Exception e) {
+            Log.e("RoutineActivity", "Error in extractRoomNumber m2", e);
         }
         return null;
     }
@@ -932,12 +1128,29 @@ public class RoutineActivity extends AppCompatActivity {
     private String formatRoomWithBuilding(String room) {
         if (room == null || room.trim().isEmpty()) return "Room 808 (Bldg 2)";
         String r = room.replace("Room", "").replace("ROOM", "").replace("R:", "").trim();
-        if (r.matches("\\d{4}")) {
-            char bldg = r.charAt(0);
-            String roomNum = r.substring(1);
-            return "Room " + roomNum + " (Bldg " + bldg + ")";
+        try {
+            if (r.matches("[0-9]{4}")) {
+                char bldg = r.charAt(0);
+                String roomNum = r.substring(1);
+                return "Room " + roomNum + " (Bldg " + bldg + ")";
+            }
+        } catch (PatternSyntaxException e) {
+            Log.e("RoutineActivity", "PatternSyntaxException in formatRoomWithBuilding", e);
+        } catch (Exception e) {
+            Log.e("RoutineActivity", "Error in formatRoomWithBuilding", e);
         }
         return r;
+    }
+
+    private String formatRoomBadge(String room) {
+        if (room == null || room.trim().isEmpty()) return "517";
+        String r = room.replace("Room", "").replace("ROOM", "").replace("R:", "").trim();
+        try {
+            if (r.matches("[0-9]{4}")) {
+                return r.substring(1); // Last 3 digits e.g. "517"
+            }
+        } catch (Exception ignored) {}
+        return r.isEmpty() ? "517" : r;
     }
 
     private boolean isBlacklistedKeyword(String word) {
@@ -1001,7 +1214,7 @@ public class RoutineActivity extends AppCompatActivity {
             // Try extracting Intake & Section if present e.g. "Intake: 48 - 2"
             if (ocrText.toLowerCase().contains("intake") && sessionManager != null) {
                 try {
-                    Matcher m = Pattern.compile("(?i)Intake[:\\s]*(\\d+)\\s*[-_,]\\s*(\\d+)").matcher(ocrText);
+                    Matcher m = Pattern.compile("(?i)Intake[^0-9]*([0-9]+)[^0-9]*([0-9]+)").matcher(ocrText);
                     if (m.find()) {
                         String intakeStr = m.group(1);
                         String secStr = m.group(2);
@@ -1010,6 +1223,8 @@ public class RoutineActivity extends AppCompatActivity {
                             sessionManager.setUserSection(secStr);
                         }
                     }
+                } catch (PatternSyntaxException e) {
+                    Log.e("RoutineActivity", "PatternSyntaxException in OCR text intake matching", e);
                 } catch (Exception ignored) {
                 }
             }
@@ -1031,8 +1246,17 @@ public class RoutineActivity extends AppCompatActivity {
                     continue;
                 }
 
-                if (trimmed.matches(".*(?i)(CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV)\\s*[-_]?\\s*\\d{3,4}.*") ||
-                        trimmed.matches(".*[A-Z]{2,4}\\s*[-_]?\\s*\\d{3,4}.*")) {
+                boolean matchesCode = false;
+                try {
+                    matchesCode = trimmed.matches(".*(?i)(CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV)[-_ ]*[0-9]{3,4}.*") ||
+                            trimmed.matches(".*[A-Z]{2,4}[-_ ]*[0-9]{3,4}.*");
+                } catch (PatternSyntaxException e) {
+                    Log.e("RoutineActivity", "PatternSyntaxException in OCR line matching", e);
+                } catch (Exception e) {
+                    Log.e("RoutineActivity", "Error in OCR line matching", e);
+                }
+
+                if (matchesCode) {
 
                     String courseCode = extractCourseCode(trimmed);
                     String timeSlot = BUBT_TIME_SLOTS[slotIndex % BUBT_TIME_SLOTS.length];
@@ -1239,6 +1463,9 @@ public class RoutineActivity extends AppCompatActivity {
                 return;
             }
 
+            // Save locally immediately for instant persistence across app restarts
+            RoutineLocalCache.saveRoutineLocally(RoutineActivity.this, items);
+
             String dept = sessionManager != null ? getSanitizedKey(sessionManager.getUserDept()) : "default";
             String intake = sessionManager != null ? getSanitizedKey(sessionManager.getUserIntake()) : "default";
             String section = sessionManager != null ? getSanitizedKey(sessionManager.getUserSection()) : "default";
@@ -1406,37 +1633,7 @@ public class RoutineActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    public static class RoutineClassItem {
-        public String id;
-        public String subject;
-        public String courseCode;
-        public String timeSlot;
-        public String startTime;
-        public String endTime;
-        public String room;
-        public String teacher;
-        public String faculty;
-        public String day;
 
-        public RoutineClassItem() {
-        }
-
-        public String getDisplayCourseCode() {
-            if (courseCode != null && !courseCode.trim().isEmpty()) return courseCode;
-            if (subject != null && !subject.trim().isEmpty()) return subject;
-            return "Class";
-        }
-
-        public String getDisplayFaculty() {
-            if (faculty != null && !faculty.trim().isEmpty()) return faculty;
-            if (teacher != null && !teacher.trim().isEmpty()) return teacher;
-            return "Faculty";
-        }
-
-        public String getDay() {
-            return day;
-        }
-    }
 
     public static class RoutineAdapter extends RecyclerView.Adapter<RoutineAdapter.ViewHolder> {
         private final List<RoutineClassItem> list;
@@ -1479,9 +1676,8 @@ public class RoutineActivity extends AppCompatActivity {
             holder.tvSubject.setText(displayCode);
             holder.tvTime.setText(timeSlot);
 
-            String rawRoom = item.room != null ? item.room.replace("Room", "").replace("ROOM", "").replace("R:", "").trim() : "--";
-            if (rawRoom.isEmpty()) rawRoom = "--";
-            holder.tvRoom.setText(rawRoom);
+            String roomNum = item != null ? item.getRoomNumber() : "2517";
+            holder.tvRoom.setText("ROOM " + roomNum);
 
             String rawTeacher = displayFac.replace("Instructor:", "").replace("Faculty:", "").replace("FC:", "").trim();
             if (rawTeacher.isEmpty()) rawTeacher = "Faculty";
