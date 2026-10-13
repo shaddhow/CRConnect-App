@@ -14,6 +14,10 @@
             android:icon="@android:drawable/ic_menu_agenda"
             android:title="Candidate Management" />
         <item
+            android:id="@+id/drawer_teacher_manage_cr"
+            android:icon="@android:drawable/ic_menu_my_calendar"
+            android:title="Manage CR" />
+        <item
             android:id="@+id/drawer_teacher_pdf"
             android:icon="@android:drawable/ic_menu_save"
             android:title="Export PDF Report" />

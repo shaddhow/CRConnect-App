@@ -67,6 +67,12 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Routine Activity -->
+        <activity
+            android:name=".RoutineActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- FileProvider for Sharing Generated Election PDF Reports -->
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.text.format.DateFormat;
 import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
@@ -38,6 +39,7 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -64,9 +66,18 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.materialswitch.MaterialSwitch;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import android.view.LayoutInflater;
+import android.view.ViewGroup;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -179,6 +190,36 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
         tvHeaderTitle.setText("Election Portal");
         displayStudentProfile();
+
+        FloatingActionButton fabCreateAnnouncement = findViewById(R.id.fabCreateAnnouncement);
+        MaterialButton btnViewAnnouncements = findViewById(R.id.btnViewAnnouncements);
+
+        String currentRole = sessionManager.getUserRole();
+        if (currentRole != null && currentRole.equalsIgnoreCase("CR")) {
+            if (fabCreateAnnouncement != null) fabCreateAnnouncement.setVisibility(View.VISIBLE);
+        } else {
+            if (fabCreateAnnouncement != null) fabCreateAnnouncement.setVisibility(View.GONE);
+        }
+
+        if (fabCreateAnnouncement != null) {
+            fabCreateAnnouncement.setOnClickListener(v -> showCreateAnnouncementDialog());
+            HapticUtils.attachMedium(fabCreateAnnouncement);
+        }
+
+        if (btnViewAnnouncements != null) {
+            btnViewAnnouncements.setOnClickListener(v -> showAnnouncementsDialog());
+            HapticUtils.attachLight(btnViewAnnouncements);
+        }
+
+        MaterialButton btnOpenRoutine = findViewById(R.id.btnOpenRoutine);
+        if (btnOpenRoutine != null) {
+            btnOpenRoutine.setOnClickListener(v -> {
+                Intent intent = new Intent(this, RoutineActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+            HapticUtils.attachLight(btnOpenRoutine);
+        }
 
         String cachedProfileImg = sessionManager.getProfileImageUrl();
         if (cachedProfileImg != null && !cachedProfileImg.isEmpty()) {
@@ -891,9 +932,10 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
             // Rank / Badge title
             String rankTitle = name;
-            if (rank == 1) rankTitle = "🥇 " + name + " (1st Place)";
-            else if (rank == 2) rankTitle = "🥈 " + name + " (2nd Place)";
-            else if (rank == 3) rankTitle = "🥉 " + name + " (3rd Place)";
+            if (rank == 1) rankTitle = "#1 - " + name;
+            else if (rank == 2) rankTitle = "#2 - " + name;
+            else if (rank == 3) rankTitle = "#3 - " + name;
+            else rankTitle = "#" + rank + " - " + name;
 
             TextView tvName = new TextView(this);
             tvName.setText(rankTitle);
@@ -918,11 +960,11 @@ public class StudentDashboardActivity extends AppCompatActivity {
             } else if (studentIsPaused) {
                 btnVote.setText("Paused");
                 btnVote.setEnabled(false);
-                btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#F59E0B")));
+                btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#2A2E3D")));
             } else if (!studentIsGateOpen || (studentExpiryTime > 0 && studentExpiryTime <= System.currentTimeMillis())) {
                 btnVote.setText("Closed");
                 btnVote.setEnabled(false);
-                btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#64748B")));
+                btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#2A2E3D")));
             } else {
                 btnVote.setText("Vote");
                 btnVote.setEnabled(isVotingEnabled);
@@ -1259,9 +1301,9 @@ public class StudentDashboardActivity extends AppCompatActivity {
                 "student@bubt.edu.bd",
                 "22235103132",
                 "Student",
-                "5A",
-                "5A",
-                "47",
+                "6",
+                "6",
+                "50",
                 "Department of CSE, BUBT"
             );
         }
@@ -1288,5 +1330,164 @@ public class StudentDashboardActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    private void showCreateAnnouncementDialog() {
+        View view = getLayoutInflater().inflate(R.layout.dialog_create_announcement, null);
+        TextInputEditText etTitle = view.findViewById(R.id.etAnnouncementTitleInput);
+        TextInputEditText etContent = view.findViewById(R.id.etAnnouncementContentInput);
+        MaterialSwitch switchUrgent = view.findViewById(R.id.switchUrgent);
+        MaterialButton btnPublish = view.findViewById(R.id.btnPublishAnnouncement);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+            .setView(view)
+            .create();
+
+        btnPublish.setOnClickListener(v -> {
+            String title = etTitle.getText() != null ? etTitle.getText().toString().trim() : "";
+            String content = etContent.getText() != null ? etContent.getText().toString().trim() : "";
+            boolean isUrgent = switchUrgent.isChecked();
+
+            if (title.isEmpty()) {
+                etTitle.setError("Required");
+                etTitle.requestFocus();
+                return;
+            }
+            if (content.isEmpty()) {
+                etContent.setError("Required");
+                etContent.requestFocus();
+                return;
+            }
+
+            btnPublish.setEnabled(false);
+            Toast.makeText(this, "Publishing announcement...", Toast.LENGTH_SHORT).show();
+
+            Map<String, Object> announcementMap = new HashMap<>();
+            announcementMap.put("title", title);
+            announcementMap.put("content", content);
+            announcementMap.put("urgent", isUrgent);
+            announcementMap.put("authorName", sessionManager.getUserName());
+            announcementMap.put("authorId", sessionManager.getUserID());
+            announcementMap.put("department", sessionManager.getUserDept());
+            announcementMap.put("section", sessionManager.getUserSection());
+            announcementMap.put("intake", sessionManager.getUserIntake());
+            announcementMap.put("timestamp", System.currentTimeMillis());
+
+            FirebaseFirestore.getInstance().collection("announcements")
+                .add(announcementMap)
+                .addOnSuccessListener(documentReference -> {
+                    Toast.makeText(this, "Announcement published successfully!", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                })
+                .addOnFailureListener(e -> {
+                    btnPublish.setEnabled(true);
+                    Toast.makeText(this, "Failed to publish: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+        });
+
+        dialog.show();
+    }
+
+    private void showAnnouncementsDialog() {
+        View view = getLayoutInflater().inflate(R.layout.dialog_announcements, null);
+        RecyclerView recyclerView = view.findViewById(R.id.recyclerViewAnnouncements);
+        TextView tvNo = view.findViewById(R.id.tvNoAnnouncements);
+
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        List<AnnouncementItem> announcementList = new ArrayList<>();
+        AnnouncementAdapter adapter = new AnnouncementAdapter(announcementList);
+        recyclerView.setAdapter(adapter);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+            .setView(view)
+            .setPositiveButton("Close", null)
+            .create();
+
+        String section = sessionManager.getUserSection();
+
+        FirebaseFirestore.getInstance().collection("announcements")
+            .whereEqualTo("section", section)
+            .get()
+            .addOnSuccessListener(querySnapshot -> {
+                announcementList.clear();
+                for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                    AnnouncementItem item = doc.toObject(AnnouncementItem.class);
+                    if (item != null) {
+                        item.id = doc.getId();
+                        announcementList.add(item);
+                    }
+                }
+                announcementList.sort((a, b) -> Long.compare(b.timestamp != null ? b.timestamp : 0L, a.timestamp != null ? a.timestamp : 0L));
+                adapter.notifyDataSetChanged();
+
+                if (announcementList.isEmpty()) {
+                    tvNo.setVisibility(View.VISIBLE);
+                    recyclerView.setVisibility(View.GONE);
+                } else {
+                    tvNo.setVisibility(View.GONE);
+                    recyclerView.setVisibility(View.VISIBLE);
+                }
+            })
+            .addOnFailureListener(e -> {
+                tvNo.setVisibility(View.VISIBLE);
+                recyclerView.setVisibility(View.GONE);
+            });
+
+        dialog.show();
+    }
+
+    public static class AnnouncementItem {
+        public String id;
+        public String title;
+        public String content;
+        public boolean urgent;
+        public String authorName;
+        public String department;
+        public String section;
+        public String intake;
+        public Long timestamp;
+
+        public AnnouncementItem() {}
+    }
+
+    public static class AnnouncementAdapter extends RecyclerView.Adapter<AnnouncementAdapter.ViewHolder> {
+        private final List<AnnouncementItem> list;
+        public AnnouncementAdapter(List<AnnouncementItem> list) { this.list = list; }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_announcement, parent, false);
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            AnnouncementItem item = list.get(position);
+            holder.tvTitle.setText(item.title != null ? item.title : "");
+            holder.tvContent.setText(item.content != null ? item.content : "");
+            holder.tvAuthor.setText("By: " + (item.authorName != null ? item.authorName : "CR"));
+            holder.tvDate.setText(item.timestamp != null ? DateFormat.format("MMM dd, yyyy HH:mm", item.timestamp).toString() : "");
+            if (item.urgent) {
+                holder.tvUrgentBadge.setVisibility(View.VISIBLE);
+            } else {
+                holder.tvUrgentBadge.setVisibility(View.GONE);
+            }
+        }
+
+        @Override
+        public int getItemCount() { return list.size(); }
+
+        static class ViewHolder extends RecyclerView.ViewHolder {
+            TextView tvTitle, tvContent, tvAuthor, tvDate, tvUrgentBadge;
+            ViewHolder(View itemView) {
+                super(itemView);
+                tvTitle = itemView.findViewById(R.id.tvAnnouncementTitle);
+                tvContent = itemView.findViewById(R.id.tvAnnouncementContent);
+                tvAuthor = itemView.findViewById(R.id.tvAnnouncementAuthor);
+                tvDate = itemView.findViewById(R.id.tvAnnouncementDate);
+                tvUrgentBadge = itemView.findViewById(R.id.tvUrgentBadge);
+            }
+        }
     }
 }

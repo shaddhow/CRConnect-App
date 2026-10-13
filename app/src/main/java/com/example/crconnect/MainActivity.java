@@ -234,9 +234,9 @@ public class MainActivity extends AppCompatActivity {
                     "student@bubt.edu.bd",
                     "22235103132",
                     "Student",
-                    "5A",
-                    "5A",
-                    "47",
+                    "6",
+                    "6",
+                    "50",
                     "Department of CSE, BUBT"
                 );
                 Toast.makeText(MainActivity.this, "Bypassing to Student Dashboard...", Toast.LENGTH_SHORT).show();
@@ -256,7 +256,7 @@ public class MainActivity extends AppCompatActivity {
                     "T1001",
                     "Teacher/Admin",
                     "--",
-                    "5A",
+                    "6",
                     "--",
                     "Department of CSE, BUBT"
                 );
@@ -481,7 +481,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void createDefaultTeacherAndNavigate(String uid, String email, String originalInput) {
         String name = email != null ? email.split("@")[0] : "Teacher";
-        String assignedSection = "5A";
+        String assignedSection = "6";
         String dept = "Department of CSE, BUBT";
         
         Map<String, Object> userMap = new HashMap<>();

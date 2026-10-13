@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    tools:context=".RoutineActivity">
+
+    <!-- Header Toolbar -->
+    <LinearLayout
+        android:id="@+id/layoutRoutineHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- Circular Menu / Back Icon Left -->
+        <FrameLayout
+            android:id="@+id/btnRoutineBack"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/glass_badge_bg"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_nav_home"
+                app:tint="#FFFFFF"
+                tools:ignore="ContentDescription" />
+        </FrameLayout>
+
+        <!-- Dynamic Greeting Title & Subtitle Date -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp">
+
+            <TextView
+                android:id="@+id/tvGreetingTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="Burning the midnight oil"
+                android:textColor="#FFFFFF"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:ellipsize="end"
+                android:maxLines="1"/>
+
+            <TextView
+                android:id="@+id/tvHeaderDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="Saturday, Oct 28"
+                android:textColor="#94A3B8"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp"/>
+        </LinearLayout>
+
+        <!-- Circular + FAB Right to Open Scan BottomSheet -->
+        <FrameLayout
+            android:id="@+id/btnScanRoutine"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/glass_badge_bg"
+            android:backgroundTint="#7C3AED"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="+"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold"/>
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/layoutRoutineHeader"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="80dp">
+
+            <!-- Hero Card ('UP NEXT' Class - hidden by default if no routine) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardUpNext"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="20dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="#121622"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="8dp"
+                app:strokeColor="#7C3AED"
+                app:strokeWidth="1.5dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <!-- Top Row: 'UP NEXT' Pill + Countdown -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="14dp">
+
+                        <!-- 'UP NEXT' Status Pill -->
+                        <TextView
+                            android:id="@+id/tvUpNextStatusPill"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="UP NEXT"
+                            android:textColor="#FFFFFF"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:background="@drawable/glass_badge_bg"
+                            android:backgroundTint="#7C3AED"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp"/>
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"/>
+
+                        <TextView
+                            android:id="@+id/tvUpNextCountdown"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            tools:text="Live • 09:00:00"
+                            android:textColor="#10B981"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:background="@drawable/glass_card_bg"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp"/>
+                    </LinearLayout>
+
+                    <!-- Main Content Row: Course Code + Time Range (Left) & Room Badge (Right) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <!-- Bold Course Code -->
+                            <TextView
+                                android:id="@+id/tvUpNextSubject"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                tools:text="CSE 341"
+                                android:textColor="#FFFFFF"
+                                android:textSize="22sp"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="4dp"/>
+
+                            <!-- Time Range -->
+                            <TextView
+                                android:id="@+id/tvUpNextTime"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                tools:text="09:00 AM - 10:30 AM"
+                                android:textColor="#94A3B8"
+                                android:textSize="14sp"/>
+                        </LinearLayout>
+
+                        <!-- Right White Room Badge -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="12dp"
+                            app:cardElevation="2dp"
+                            app:strokeWidth="0dp">
+
+                            <TextView
+                                android:id="@+id/tvUpNextRoom"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                tools:text="ROOM 2808"
+                                android:textColor="#0F172A"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                android:paddingHorizontal="12dp"
+                                android:paddingVertical="8dp"/>
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Date Bar Header Row ("This week" + Nav Arrows) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:id="@+id/tvThisWeekHeader"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="This week"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/btnPrevWeek"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:text="‹"
+                    android:textColor="#94A3B8"
+                    android:textSize="22sp"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:layout_marginEnd="8dp"/>
+
+                <TextView
+                    android:id="@+id/btnNextWeek"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:text="›"
+                    android:textColor="#94A3B8"
+                    android:textSize="22sp"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"/>
+            </LinearLayout>
+
+            <!-- Horizontal 7-Day Pill Selector (SAT-FRI) -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:layout_marginBottom="20dp">
+
+                <LinearLayout
+                    android:id="@+id/containerDayPicker"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <!-- Day pill views populated dynamically in code -->
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <!-- Section Title Header for Daily Routine -->
+            <TextView
+                android:id="@+id/tvDailyRoutineTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Saturday Classes"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="14dp"
+                android:layout_marginStart="2dp"/>
+
+            <!-- RecyclerView Timeline for Daily Classes -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewRoutine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"/>
+
+            <!-- Empty view when no classes -->
+            <TextView
+                android:id="@+id/tvNoRoutineClasses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No classes scheduled for this day."
+                android:textColor="#94A3B8"
+                android:textSize="14sp"
+                android:gravity="center"
+                android:padding="40dp"
+                android:visibility="gone"/>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Floating Action Button for CR / Teacher -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddRoutineClass"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="24dp"
+        android:contentDescription="Add Class"
+        android:src="@android:drawable/ic_input_add"
+        app:backgroundTint="#7C3AED"
+        app:tint="#FFFFFF"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="gone"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

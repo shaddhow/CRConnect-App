@@ -77,6 +77,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class TeacherDashboardActivity extends AppCompatActivity {
@@ -95,7 +96,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
     // Live Election Control Views & State
     private TextView tvAdminTimerDisplay, tvAdminTimerStatus;
-    private MaterialButton btnExtend5Min, btnExtend10Min, btnReduce5Min, btnPauseResume, btnEndVotingNow;
+    private MaterialButton btnExtend5Min, btnExtend10Min, btnReduce5Min, btnPauseResume, btnEndVotingNow, btnManageCR;
 
     private DatabaseReference votingControlRef;
     private ValueEventListener votingControlListener;
@@ -114,11 +115,22 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private String getTeacherAssignedSection() {
         if (sessionManager != null) {
             String sec = sessionManager.getAssignedSection();
-            if (sec != null && !sec.isEmpty()) {
+            if (sec != null && !sec.isEmpty() && !sec.equalsIgnoreCase("5A") && !sec.equals("--")) {
                 return sec;
             }
+            sessionManager.setAssignedSection("6");
         }
-        return "--";
+        return "6";
+    }
+
+    private void sanitizeSectionAndBindHeader() {
+        String currentSection = getTeacherAssignedSection();
+        if (tvHeaderTitle != null) {
+            tvHeaderTitle.setText("Admin Console - Sec " + currentSection);
+        }
+        if (tvHeaderSubtitle != null && sessionManager != null) {
+            tvHeaderSubtitle.setText(sessionManager.getUserName() + " (" + sessionManager.getUserDept() + " | Sec: " + currentSection + ")");
+        }
     }
 
     private String getTeacherDepartment() {
@@ -147,7 +159,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         String userEmail = currentUser != null && currentUser.getEmail() != null ? currentUser.getEmail() : (sessionManager != null && sessionManager.getUserEmail() != null ? sessionManager.getUserEmail() : "teacher@bubt.edu.bd");
         String name = sessionManager != null && sessionManager.getUserName() != null ? sessionManager.getUserName() : "Test Teacher (Dev)";
         String id = sessionManager != null && sessionManager.getUserID() != null ? sessionManager.getUserID() : "T1001";
-        String assignedSection = sessionManager != null && sessionManager.getAssignedSection() != null ? sessionManager.getAssignedSection() : "5A";
+        String assignedSection = sessionManager != null && sessionManager.getAssignedSection() != null ? sessionManager.getAssignedSection() : "6";
         String dept = sessionManager != null && sessionManager.getUserDept() != null ? sessionManager.getUserDept() : "Department of CSE, BUBT";
 
         Map<String, Object> userMap = new HashMap<>();
@@ -269,12 +281,17 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         btnReduce5Min = findViewById(R.id.btnReduce5Min);
         btnPauseResume = findViewById(R.id.btnPauseResume);
         btnEndVotingNow = findViewById(R.id.btnEndVotingNow);
+        btnManageCR = findViewById(R.id.btnManageCR);
 
         if (btnExtend5Min != null) btnExtend5Min.setOnClickListener(v -> extendElectionTime(5 * 60 * 1000L));
         if (btnExtend10Min != null) btnExtend10Min.setOnClickListener(v -> extendElectionTime(10 * 60 * 1000L));
         if (btnReduce5Min != null) btnReduce5Min.setOnClickListener(v -> reduceElectionTime(5 * 60 * 1000L));
         if (btnPauseResume != null) btnPauseResume.setOnClickListener(v -> togglePauseResume());
         if (btnEndVotingNow != null) btnEndVotingNow.setOnClickListener(v -> endVotingNow());
+        if (btnManageCR != null) {
+            btnManageCR.setOnClickListener(v -> showManageCRDialog());
+            HapticUtils.attachLight(btnManageCR);
+        }
 
         setupVotingControlListener();
 
@@ -327,9 +344,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             });
         }
 
-        String initialAssignedSec = getTeacherAssignedSection();
-        tvHeaderTitle.setText(initialAssignedSec.equals("--") ? "Admin Console" : "Admin Console - Sec " + initialAssignedSec);
-        tvHeaderSubtitle.setText(sessionManager.getUserName() + " (" + sessionManager.getUserDept() + " | Sec: " + initialAssignedSec + ")");
+        sanitizeSectionAndBindHeader();
 
         NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
         if (scrollViewAdmin != null) {
@@ -366,11 +381,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     String assignedSection = snapshot.child("assignedSection").getValue(String.class);
                     if (name == null) name = sessionManager.getUserName();
                     if (dept == null) dept = sessionManager.getUserDept();
-                    if (assignedSection == null || assignedSection.isEmpty() || assignedSection.equals("--")) {
-                        assignedSection = sessionManager.getAssignedSection();
-                    } else {
-                        sessionManager.setAssignedSection(assignedSection);
+                    if (assignedSection == null || assignedSection.isEmpty() || assignedSection.equalsIgnoreCase("5A") || assignedSection.equals("--")) {
+                        assignedSection = "6";
                     }
+                    sessionManager.setAssignedSection(assignedSection);
 
                     tvHeaderSubtitle.setText(name + " (" + dept + " | Sec: " + assignedSection + ")");
                     tvHeaderTitle.setText("Admin Console - Sec " + assignedSection);
@@ -403,11 +417,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                 String assignedSection = doc.getString("assignedSection");
                                 if (name == null) name = sessionManager.getUserName();
                                 if (dept == null) dept = sessionManager.getUserDept();
-                                if (assignedSection == null || assignedSection.isEmpty() || assignedSection.equals("--")) {
-                                    assignedSection = sessionManager.getAssignedSection();
-                                } else {
-                                    sessionManager.setAssignedSection(assignedSection);
+                                if (assignedSection == null || assignedSection.isEmpty() || assignedSection.equalsIgnoreCase("5A") || assignedSection.equals("--")) {
+                                    assignedSection = "6";
                                 }
+                                sessionManager.setAssignedSection(assignedSection);
 
                                 tvHeaderSubtitle.setText(name + " (" + dept + " | Sec: " + assignedSection + ")");
                                 tvHeaderTitle.setText("Admin Console - Sec " + assignedSection);
@@ -527,6 +540,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                         scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
                         targetView.requestFocus();
                     }
+                } else if (id == R.id.drawer_teacher_manage_cr) {
+                    showManageCRDialog();
                 } else if (id == R.id.drawer_teacher_pdf) {
                     exportElectionResultsToPdf();
                 } else if (id == R.id.drawer_teacher_logout) {
@@ -637,7 +652,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 }
 
                 btnAddCandidate.setEnabled(false);
-                Toast.makeText(this, "Publishing candidate...", Toast.LENGTH_SHORT).show();
+                showSnackBar("Publishing candidate...", false);
 
                 saveCandidateToDatabase(name);
             } catch (Exception e) {
@@ -1195,7 +1210,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             dbRef.updateChildren(childUpdates)
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Successfully added candidate to Section " + teacherSec + "!", Toast.LENGTH_SHORT).show();
+                    showSnackBar("Successfully added candidate to Section " + teacherSec + "!", false);
                     logAdminAction("Added New Candidate (" + name + ") for Section " + teacherSec);
                     broadcastNotificationToStudents(
                         "📢 New Candidate Published (Sec " + teacherSec + ")",
@@ -1206,7 +1221,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> {
                     Log.e("TeacherDashboard", "Failed to write candidate", e);
                     btnAddCandidate.setEnabled(true);
-                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    showSnackBar("Error: " + e.getMessage(), true);
                 });
         } else {
             btnAddCandidate.setEnabled(true);
@@ -1343,15 +1358,14 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private void showSnackBar(String message, boolean isError) {
         View rootView = findViewById(android.R.id.content);
         Snackbar snackbar = Snackbar.make(rootView, message, Snackbar.LENGTH_LONG);
+        if (bottomNavTeacher != null) {
+            snackbar.setAnchorView(bottomNavTeacher);
+        }
         View sbView = snackbar.getView();
-        sbView.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(isError ? "#E6EF4444" : "#E610B981")));
-        
-        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) sbView.getLayoutParams();
-        params.setMargins(32, 0, 32, 32);
-        sbView.setLayoutParams(params);
+        sbView.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#1E2330")));
         
         TextView tv = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
-        tv.setTextColor(Color.parseColor("#F8FAFC"));
+        tv.setTextColor(Color.parseColor("#A5B4FC"));
         tv.setTypeface(null, Typeface.BOLD);
         snackbar.show();
     }
@@ -1414,7 +1428,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         String teacherDept = getTeacherDepartment();
         String sanitizedDept = getSanitizedDepartment(teacherDept);
         String teacherSec = getTeacherAssignedSection();
-        Toast.makeText(this, "Generating Election PDF Report for Section " + teacherSec + "...", Toast.LENGTH_SHORT).show();
+        showSnackBar("Generating Election PDF Report for Section " + teacherSec + "...", false);
 
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -1537,20 +1551,20 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                             TeacherDashboardActivity.this.startActivity(openIntent);
                         } catch (Exception e) {
                             Log.e("TeacherDashboard", "Error opening PDF", e);
-                            Toast.makeText(TeacherDashboardActivity.this, "No PDF viewer app found or error opening file", Toast.LENGTH_SHORT).show();
+                            showSnackBar("No PDF viewer app found or error opening file", true);
                         }
                     });
 
                     pdfSheet.setContentView(view);
                     pdfSheet.show();
                 } else {
-                    Toast.makeText(TeacherDashboardActivity.this, "Error compiling PDF document", Toast.LENGTH_SHORT).show();
+                    showSnackBar("Error compiling PDF document", true);
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(TeacherDashboardActivity.this, "Failed to load data for PDF: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                showSnackBar("Failed to load data for PDF: " + error.getMessage(), true);
             }
         });
     }
@@ -1611,7 +1625,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             if (imageUri == null) return;
             String base64Img = uriToBase64(imageUri);
             if (base64Img.isEmpty()) {
-                Toast.makeText(this, "Failed to process image", Toast.LENGTH_SHORT).show();
+                showSnackBar("Failed to process image", true);
                 return;
             }
 
@@ -1635,10 +1649,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 FirebaseFirestore.getInstance().collection("users").document(sanitizedId).update(updateMap);
             }
 
-            Toast.makeText(this, "Profile picture updated successfully!", Toast.LENGTH_SHORT).show();
+            showSnackBar("Profile picture updated successfully!", false);
         } catch (Exception e) {
             Log.e("TeacherDashboard", "Exception in uploadProfilePictureToFirebase (Base64)", e);
-            Toast.makeText(this, "Error updating profile picture: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            showSnackBar("Error updating profile picture: " + e.getMessage(), true);
         }
     }
 
@@ -1659,6 +1673,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         checkUserAuthenticationAndRole();
+        sanitizeSectionAndBindHeader();
         startAdminTimerLoop();
     }
 
@@ -1853,6 +1868,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     autoEndMap.put("isOpen", false);
                     autoEndMap.put("isPaused", false);
                     dbRef.child("voting_controls").child(dept).child(sec).updateChildren(autoEndMap);
+                    promoteHighestVotedStudentToCR();
                 }
             }
         } else {
@@ -2040,6 +2056,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 ref.updateChildren(updates).addOnSuccessListener(aVoid -> {
                     showSnackBar("Voting ended manually.", false);
                     logAdminAction("Manually ended voting for Sec " + getTeacherAssignedSection());
+                    promoteHighestVotedStudentToCR();
                     broadcastNotificationToStudents(
                         "🔴 Voting Closed",
                         "Voting for Section " + getTeacherAssignedSection() + " has been ended by the admin.",
@@ -2049,6 +2066,145 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             })
             .setNegativeButton("Cancel", null)
             .show();
+    }
+
+    private void promoteHighestVotedStudentToCR() {
+        String dept = getSanitizedDepartment(getTeacherDepartment());
+        String sec = getSanitizedSection(getTeacherAssignedSection());
+        if (sec.equals("--")) return;
+
+        DatabaseReference candidateRef = dbRef.child("voting_controls").child(dept).child(sec).child("candidates");
+        candidateRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String highestCandidateName = null;
+                int maxVotes = -1;
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    int vts = getSafeVotes(ds);
+                    String cName = ds.child("name").getValue(String.class);
+                    if (vts > maxVotes && cName != null) {
+                        maxVotes = vts;
+                        highestCandidateName = cName;
+                    }
+                }
+
+                if (highestCandidateName != null && maxVotes > 0) {
+                    final String winnerName = highestCandidateName;
+                    String rawTargetSec = getTeacherAssignedSection();
+                    String normTargetSec = rawTargetSec != null ? rawTargetSec.replaceAll("[^a-zA-Z0-9]", "").toLowerCase() : "";
+
+                    FirebaseFirestore.getInstance().collection("users")
+                        .get()
+                        .addOnSuccessListener(querySnapshot -> {
+                            boolean matched = false;
+                            for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                                String userSec = doc.getString("section");
+                                if (userSec == null || userSec.equals("--")) {
+                                    userSec = doc.getString("assignedSection");
+                                }
+                                String normUserSec = userSec != null ? userSec.replaceAll("[^a-zA-Z0-9]", "").toLowerCase() : "";
+                                String name = doc.getString("name");
+
+                                if (normUserSec.equals(normTargetSec) && name != null && name.equalsIgnoreCase(winnerName)) {
+                                    matched = true;
+                                    String studentId = doc.getId();
+                                    Map<String, Object> update = new HashMap<>();
+                                    update.put("role", "CR");
+                                    doc.getReference().update(update);
+                                    dbRef.child("users").child(studentId).child("role").setValue("CR");
+                                    logAdminAction("Automatically promoted " + winnerName + " (ID: " + studentId + ") to CR for Section " + rawTargetSec);
+                                    showSnackBar("Automated CR Promotion: " + winnerName + " promoted to CR!", false);
+                                    break;
+                                }
+                            }
+                            if (!matched) {
+                                Log.d("TeacherDashboard", "Automated Promotion debug: No matching student found for winner " + winnerName + " in section " + rawTargetSec + " (norm: " + normTargetSec + ")");
+                            }
+                        })
+                        .addOnFailureListener(e -> Log.e("TeacherDashboard", "Failed to query users for automated promotion", e));
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
+    }
+
+    private void showManageCRDialog() {
+        String assignedSec = getTeacherAssignedSection();
+        if (assignedSec.equals("--")) {
+            showSnackBar("No section assigned.", true);
+            return;
+        }
+
+        String normTargetSec = assignedSec.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+        Log.d("TeacherDashboard", "ManageCR query path: Firestore collection 'users', targeting section: " + assignedSec + " (normalized: " + normTargetSec + ")");
+
+        FirebaseFirestore.getInstance().collection("users")
+            .get()
+            .addOnSuccessListener(querySnapshot -> {
+                List<DocumentSnapshot> students = new ArrayList<>();
+                for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                    String role = doc.getString("role");
+                    String userSec = doc.getString("section");
+                    if (userSec == null || userSec.equals("--")) {
+                        userSec = doc.getString("assignedSection");
+                    }
+                    String normUserSec = userSec != null ? userSec.replaceAll("[^a-zA-Z0-9]", "").toLowerCase() : "";
+
+                    if (normUserSec.equals(normTargetSec)) {
+                        if (role == null || !role.equalsIgnoreCase("Teacher/Admin")) {
+                            students.add(doc);
+                        }
+                    }
+                }
+
+                if (students.isEmpty()) {
+                    Log.d("TeacherDashboard", "ManageCR debug: Fetched " + querySnapshot.size() + " total users, but 0 matched normalized section: " + normTargetSec + " (raw assignedSec: " + assignedSec + ")");
+                    showSnackBar("No students found in Section " + assignedSec, false);
+                    return;
+                }
+
+                CharSequence[] items = new CharSequence[students.size()];
+                for (int i = 0; i < students.size(); i++) {
+                    DocumentSnapshot doc = students.get(i);
+                    String name = doc.getString("name");
+                    String id = doc.getString("id");
+                    String role = doc.getString("role");
+                    if (name == null) name = "Student";
+                    if (role == null) role = "Student";
+                    items[i] = name + " (ID: " + (id != null ? id : doc.getId()) + ") - Role: " + role;
+                }
+
+                new MaterialAlertDialogBuilder(this)
+                    .setTitle("Manage CR - Section " + assignedSec)
+                    .setItems(items, (dialog, which) -> {
+                        DocumentSnapshot selectedDoc = students.get(which);
+                        String currentRole = selectedDoc.getString("role");
+                        boolean isCr = currentRole != null && currentRole.equalsIgnoreCase("CR");
+                        String newRole = isCr ? "Student" : "CR";
+                        String studentId = selectedDoc.getId();
+                        String studentDbId = selectedDoc.getString("id");
+
+                        Map<String, Object> update = new HashMap<>();
+                        update.put("role", newRole);
+
+                        selectedDoc.getReference().update(update).addOnSuccessListener(aVoid -> {
+                            if (studentDbId != null && !studentDbId.isEmpty()) {
+                                dbRef.child("users").child(studentDbId).child("role").setValue(newRole);
+                            }
+                            dbRef.child("users").child(studentId).child("role").setValue(newRole);
+                            showSnackBar("Successfully updated " + selectedDoc.getString("name") + " role to " + newRole, false);
+                            logAdminAction("Manually updated student " + selectedDoc.getString("name") + " role to " + newRole);
+                        });
+                    })
+                    .setNegativeButton("Close", null)
+                    .show();
+            })
+            .addOnFailureListener(e -> {
+                Log.e("TeacherDashboard", "Failed to load students for Manage CR", e);
+                showSnackBar("Failed to load students: " + e.getMessage(), true);
+            });
     }
 
     private boolean checkUserAuthenticationAndRole() {
@@ -2061,7 +2217,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 "T1001",
                 "Teacher/Admin",
                 "--",
-                "5A",
+                "6",
                 "--",
                 "Department of CSE, BUBT"
             );

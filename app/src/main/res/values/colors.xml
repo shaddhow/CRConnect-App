@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Figma-Inspired Professional Dark Mode Palette -->
+    <!-- Professional Modern Dark Palette -->
     <color name="primary">#7C3AED</color>
     <color name="primaryVariant">#6D28D9</color>
     <color name="secondary">#A78BFA</color>
-    <color name="background">#0B0F19</color>
-    <color name="surface">#111827</color>
-    <color name="surface_card">#111827</color>
-    <color name="card_stroke">#2D3748</color>
-    <color name="input_bg">#161B22</color>
-    <color name="glass_card">#CC161B22</color>
+    <color name="background">#0A0D14</color>
+    <color name="surface">#161B26</color>
+    <color name="surface_card">#161B26</color>
+    <color name="card_stroke">#222938</color>
+    <color name="input_bg">#161B26</color>
+    <color name="glass_card">#CC161B26</color>
     <color name="error">#7F1D1D</color>
     <color name="text_primary">#FFFFFF</color>
     <color name="text_secondary">#94A3B8</color>

@@ -61,6 +61,16 @@ public class SessionManager {
         editor.commit();
     }
 
+    public void setUserIntake(String intake) {
+        editor.putString(KEY_INTAKE, intake);
+        editor.commit();
+    }
+
+    public void setUserSection(String section) {
+        editor.putString(KEY_SECTION, section);
+        editor.commit();
+    }
+
     public void setAssignedSection(String assignedSection) {
         editor.putString(KEY_ASSIGNED_SECTION, assignedSection);
         editor.commit();
