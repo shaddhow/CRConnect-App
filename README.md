@@ -1,35 +1,57 @@
 # CRConnect Application
 
-CRConnect is a modern Android application developed for university class management, class representative elections, academic routines, and student-teacher interactions. The application is built using a dark glassmorphic design system and standard Android UI architecture.
+CRConnect is a specialized, production-ready native Android application built for Bangladesh University of Business and Technology (BUBT). It digitizes university class representative (CR) elections, routines, and academic management, replacing manual paper-based processes with an automated, role-tailored platform for Students and Faculty/Admins.
 
 ---
 
-## Architecture and Features
+## Key System Features
 
-- Dark Glassmorphic User Interface: Designed with frosted translucent surfaces, subtle strokes, and consistent typography.
-- Edge-to-Edge Display: Full-screen layout integration utilizing modern window insets for system bar compatibility.
-- Role-Based Portals:
-  - Student Portal: Access to class routines, candidate listings, voting status, and academic profile management.
-  - Teacher Portal: Administrative controls for candidate management and election publishing workflows.
-- Dynamic Navigation: Tab-driven navigation structure with state-managed backstack handling.
+### Authentication & Domain Enforcement
+- Academic Domain Verification: Restricts sign-ups strictly to institutional domains (`@bubt.edu.bd` and `@cse.bubt.edu.bd`).
+- Verification Gate: Enforces Firebase email verification protocols prior to granting dashboard authorization.
+- Dual Data Syncing: Dual persistence layer syncing user credentials across Firebase Realtime Database and Cloud Firestore.
+
+### Student Voting & Academic Portal
+- Live Leaderboard: Real-time candidate ranking ordered by vote count with live dynamic progress indicators.
+- Single-Ballot Protection: Transaction-level voter checks enforcing strict one-student-one-vote mechanics.
+- Master Voting Gate: Automatically validates administrative election toggles before permitting ballot submission.
+- Candidate Manifestos: Bottom sheet interactive views displaying candidate vision statements and profiles.
+
+### Teacher & Administrative Console
+- Master Election Switch: Global toggle to open, pause, or lock voting operations system-wide in real time.
+- Lifecycle Management: Modules to onboard, publish, or remove candidates with safety confirmations.
+- Election Analytics: Real-time metric tracking for total votes cast, unique voter count, and turnout percentages.
+- Run-Off & Emergency Workflows: Tie-breaker mechanism to reset vote metrics while maintaining registered candidates, complete with full reset confirmation protection.
+
+### Document Generation & Reporting
+- Native A4 PDF Engine: Custom canvas rendering for official A4 result sheets generated directly on-device using Android Graphics APIs.
+- Certified Reports: Includes official institution branding, timestamping, candidate rank breakdowns, and turnout percentage shares.
+- Direct Sharing & Printing: Native integration with Android PrintManager and secure file sharing via FileProvider URIs.
+
+### Infrastructure & Offline Support
+- Local Persistence: Disk persistence enabled for uninterrupted functionality during network drops.
+- FCM Push Notifications: High-priority broadcast notification channels for instant university-wide announcements.
 
 ---
 
-## Technology Stack
+## Technical Stack
 
-- Language: Java
-- Layout & Design: Material Design 3, ConstraintLayout, Constraint Chains
-- Architecture: View Binding, WindowInsets API, Fragment and Activity management
-- Backend: Firebase Realtime Database and Authentication
-- Development Environment: Android Studio
+- Architecture: Native Android Architecture, View Binding, Dynamic Insets API
+- Programming Language: Java
+- UI/UX Guidelines: Material Design 3, Dark Glassmorphism, Constraint Layout Chains
+- Backend Services: Firebase Realtime Database, Cloud Firestore, Firebase Authentication
+- Storage & Utilities: Glide, Base64 Encoding, Native PDF Print Framework
 
 ---
 
-## Project Structure Overview
+## Project Structure
 
-- Student Dashboard: Handles routine displays, candidate viewing, status tracking, and profile configurations.
-- Teacher Control Panel: Provides administrative oversight for election procedures and candidate publishing.
-- Adapters and Models: Structured data handling for recycler views and list representations.
+* `activities` - Core Portal Activities (Student & Teacher Dashboards)
+* `adapters` - RecyclerView Adapters for Candidates, Routines, and Statuses
+* `models` - Data Models for Users, Candidates, Votes, and Logs
+* `pdf` - Native Canvas PDF Generator Implementation
+* `services` - Firebase Messaging Service & Background Receivers
+* `utils` - WindowInsets, SessionManager, and UI Utilities
 
 ---
 
@@ -38,9 +60,9 @@ CRConnect is a modern Android application developed for university class managem
 ### Prerequisites
 - Android Studio
 - JDK 17 or higher
-- Android SDK compatible with API Level 24 or above
+- Physical or Virtual Android Device (API Level 24+)
 
-### Installation and Setup
+### Installation
 
 1. Clone the repository:
    ```bash
