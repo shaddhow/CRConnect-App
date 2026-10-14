@@ -17,38 +17,35 @@ public class RoutineClassItem {
     }
 
     public String getCourseCode() {
-        if (courseCode != null && !courseCode.trim().isEmpty()) return courseCode;
-        if (subject != null && !subject.trim().isEmpty()) return subject;
-        return "CSE 208";
+        if (courseCode != null && !courseCode.trim().isEmpty()) return courseCode.trim();
+        if (subject != null && !subject.trim().isEmpty()) return subject.trim();
+        return "Class";
     }
 
     public String getFaculty() {
-        if (faculty != null && !faculty.trim().isEmpty()) return faculty;
-        if (teacher != null && !teacher.trim().isEmpty()) return teacher;
-        return "AAG";
+        if (faculty != null && !faculty.trim().isEmpty()) return faculty.trim();
+        if (teacher != null && !teacher.trim().isEmpty()) return teacher.trim();
+        return "Faculty";
     }
 
     public String getStartTime() {
-        if (startTime != null && !startTime.trim().isEmpty()) return startTime;
+        if (startTime != null && !startTime.trim().isEmpty()) return startTime.trim();
         if (timeSlot != null && timeSlot.contains("-")) return timeSlot.split("-")[0].trim();
-        return "11:15 AM";
+        return "";
     }
 
     public String getEndTime() {
-        if (endTime != null && !endTime.trim().isEmpty()) return endTime;
+        if (endTime != null && !endTime.trim().isEmpty()) return endTime.trim();
         if (timeSlot != null && timeSlot.contains("-")) return timeSlot.split("-")[1].trim();
-        return "12:45 PM";
+        return "";
     }
 
     public String getRoomNumber() {
-        if (room == null || room.trim().isEmpty()) return "2517";
-        String r = room.replace("Room", "").replace("ROOM", "").replace("R:", "").trim();
-        try {
-            if (r.matches("[0-9]{4}")) {
-                return r; // e.g. "2517"
-            }
-        } catch (Exception ignored) {}
-        return r.isEmpty() ? "2517" : r;
+        if (room != null && !room.trim().isEmpty()) {
+            String r = room.replace("Room", "").replace("ROOM", "").replace("R:", "").trim();
+            if (!r.isEmpty()) return r;
+        }
+        return "TBA";
     }
 
     public String getDisplayCourseCode() {
@@ -63,3 +60,4 @@ public class RoutineClassItem {
         return day;
     }
 }
+

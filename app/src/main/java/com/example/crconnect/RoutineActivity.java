@@ -1,5 +1,7 @@
 package com.example.crconnect;
 
+import com.example.crconnect.core.utils.HapticUtils;
+
 import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Rect;
@@ -76,6 +78,10 @@ public class RoutineActivity extends AppCompatActivity {
     private FloatingActionButton fabAddRoutineClass;
     private LinearLayout containerDayPicker;
 
+    private View layoutEmptyState;
+    private TextView tvEmptyStateTitle, tvEmptyStateSubtitle;
+    private MaterialButton btnAddClassEmptyState;
+
     private final String[] DAYS = {"Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
     private String selectedDay = "Saturday";
     private int weekOffset = 0;
@@ -123,6 +129,18 @@ public class RoutineActivity extends AppCompatActivity {
         fabAddRoutineClass = findViewById(R.id.fabAddRoutineClass);
         containerDayPicker = findViewById(R.id.containerDayPicker);
 
+        layoutEmptyState = findViewById(R.id.layoutEmptyState);
+        tvEmptyStateTitle = findViewById(R.id.tvEmptyStateTitle);
+        tvEmptyStateSubtitle = findViewById(R.id.tvEmptyStateSubtitle);
+        btnAddClassEmptyState = findViewById(R.id.btnAddClassEmptyState);
+
+        if (btnAddClassEmptyState != null) {
+            btnAddClassEmptyState.setOnClickListener(v -> {
+                HapticUtils.mediumClick(v);
+                showScanOptionsBottomSheet();
+            });
+        }
+
         View btnRoutineBack = findViewById(R.id.btnRoutineBack);
         View btnScanRoutine = findViewById(R.id.btnScanRoutine);
         TextView btnPrevWeek = findViewById(R.id.btnPrevWeek);
@@ -138,15 +156,22 @@ public class RoutineActivity extends AppCompatActivity {
         }
 
         if (btnRoutineBack != null) {
-            btnRoutineBack.setOnClickListener(v -> finish());
+            btnRoutineBack.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                finish();
+            });
         }
 
         if (btnScanRoutine != null) {
-            btnScanRoutine.setOnClickListener(v -> showScanOptionsBottomSheet());
+            btnScanRoutine.setOnClickListener(v -> {
+                HapticUtils.mediumClick(v);
+                showScanOptionsBottomSheet();
+            });
         }
 
         if (btnPrevWeek != null) {
             btnPrevWeek.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
                 weekOffset--;
                 setupDayPicker();
                 loadRoutineForDay(selectedDay);
@@ -155,6 +180,7 @@ public class RoutineActivity extends AppCompatActivity {
 
         if (btnNextWeek != null) {
             btnNextWeek.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
                 weekOffset++;
                 setupDayPicker();
                 loadRoutineForDay(selectedDay);
@@ -165,10 +191,16 @@ public class RoutineActivity extends AppCompatActivity {
         boolean canEdit = role != null && (role.equalsIgnoreCase("CR") || role.equalsIgnoreCase("Teacher/Admin") || role.equalsIgnoreCase("Teacher"));
         if (canEdit) {
             fabAddRoutineClass.setVisibility(View.VISIBLE);
-            fabAddRoutineClass.setOnClickListener(v -> showScanOptionsBottomSheet());
+            fabAddRoutineClass.setOnClickListener(v -> {
+                HapticUtils.mediumClick(v);
+                showScanOptionsBottomSheet();
+            });
         } else {
             fabAddRoutineClass.setVisibility(View.GONE);
         }
+
+        // Attach global haptics across all interactive views in activity layout
+        HapticUtils.attachHapticsToAllInteractiveViews(findViewById(android.R.id.content));
 
         recyclerViewRoutine.setLayoutManager(new LinearLayoutManager(this));
         routineAdapter = new RoutineAdapter(routineList, canEdit, this);
@@ -197,65 +229,68 @@ public class RoutineActivity extends AppCompatActivity {
     private void checkInitialRoutineState() {
         // 1. Check local storage / cache first for instant persistence on launch
         List<RoutineClassItem> cachedItems = RoutineLocalCache.loadRoutineLocally(this);
+        List<RoutineClassItem> dayClasses = new ArrayList<>();
         if (cachedItems != null && !cachedItems.isEmpty()) {
-            List<RoutineClassItem> dayClasses = new ArrayList<>();
             for (RoutineClassItem item : cachedItems) {
                 if (item != null && item.day != null && matchesSelectedDay(item.day, selectedDay)) {
                     dayClasses.add(item);
                 }
             }
-            if (dayClasses.isEmpty() && !cachedItems.isEmpty()) {
-                dayClasses = cachedItems;
-            }
-
-            routineList.clear();
-            routineList.addAll(dayClasses);
-            if (routineAdapter != null) {
-                routineAdapter.notifyDataSetChanged();
-            }
-
-            if (!routineList.isEmpty()) {
-                if (cardUpNext != null) cardUpNext.setVisibility(View.VISIBLE);
-                if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.GONE);
-                if (recyclerViewRoutine != null) recyclerViewRoutine.setVisibility(View.VISIBLE);
-            } else {
-                if (cardUpNext != null) cardUpNext.setVisibility(View.GONE);
-                if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.VISIBLE);
-                if (recyclerViewRoutine != null) recyclerViewRoutine.setVisibility(View.GONE);
-            }
-
-            updateUpNextBanner();
-            loadRoutineForDay(selectedDay);
-            return;
+            sortClassesChronologically(dayClasses);
         }
 
-        String dept = getSanitizedKey(sessionManager.getUserDept());
-        String intake = getSanitizedKey(sessionManager.getUserIntake());
-        String section = getSanitizedKey(sessionManager.getUserSection());
+        routineList.clear();
+        routineList.addAll(dayClasses);
+        if (routineAdapter != null) {
+            routineAdapter.notifyDataSetChanged();
+        }
 
-        FirebaseFirestore.getInstance().collection("routines")
-                .document(dept)
-                .collection(intake)
-                .document(section)
-                .collection("schedule")
-                .limit(1)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    if (querySnapshot == null || querySnapshot.isEmpty()) {
-                        if (cardUpNext != null) cardUpNext.setVisibility(View.GONE);
-                        tvNoRoutineClasses.setVisibility(View.VISIBLE);
-                        recyclerViewRoutine.setVisibility(View.GONE);
-                        showScanOptionsBottomSheet();
-                    } else {
-                        loadRoutineForDay(selectedDay);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    if (cardUpNext != null) cardUpNext.setVisibility(View.GONE);
-                    tvNoRoutineClasses.setVisibility(View.VISIBLE);
-                    recyclerViewRoutine.setVisibility(View.GONE);
-                    showScanOptionsBottomSheet();
-                });
+        updateUiVisibilityAndSummary();
+        updateUpNextBanner();
+        loadRoutineForDay(selectedDay);
+    }
+
+    private void updateUiVisibilityAndSummary() {
+        if (tvDailyRoutineTitle != null) {
+            tvDailyRoutineTitle.setText(String.format("%s Classes", selectedDay));
+        }
+
+        TextView tvClassSummary = findViewById(R.id.tvClassSummary);
+
+        if (!routineList.isEmpty()) {
+            if (recyclerViewRoutine != null) recyclerViewRoutine.setVisibility(View.VISIBLE);
+            if (layoutEmptyState != null) layoutEmptyState.setVisibility(View.GONE);
+            if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.GONE);
+
+            if (tvClassSummary != null) {
+                String startTime = routineList.get(0).getStartTime();
+                String endTime = routineList.get(routineList.size() - 1).getEndTime();
+                String summaryStr = routineList.size() + (routineList.size() == 1 ? " class" : " classes");
+                if (!startTime.isEmpty() && !endTime.isEmpty()) {
+                    summaryStr += " • " + startTime + " – " + endTime;
+                }
+                tvClassSummary.setText(summaryStr);
+                tvClassSummary.setVisibility(View.VISIBLE);
+            }
+        } else {
+            if (recyclerViewRoutine != null) recyclerViewRoutine.setVisibility(View.GONE);
+            if (layoutEmptyState != null) layoutEmptyState.setVisibility(View.VISIBLE);
+            if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.GONE);
+
+            if (tvEmptyStateTitle != null) {
+                tvEmptyStateTitle.setText("Nothing on " + selectedDay);
+            }
+
+            if (btnAddClassEmptyState != null) {
+                String shortDay = selectedDay.length() >= 3 ? selectedDay.substring(0, 3) : selectedDay;
+                btnAddClassEmptyState.setText("+ Add a class on " + shortDay);
+            }
+
+            if (tvClassSummary != null) {
+                tvClassSummary.setText("No classes");
+                tvClassSummary.setVisibility(View.VISIBLE);
+            }
+        }
     }
 
     private void updateHeaderGreetingAndDate() {
@@ -263,11 +298,11 @@ public class RoutineActivity extends AppCompatActivity {
         int hour = cal.get(Calendar.HOUR_OF_DAY);
 
         String quote;
-        if (hour >= 0 && hour < 5) {
+        if (hour < 5) {
             quote = "Burning the midnight oil";
-        } else if (hour >= 5 && hour < 12) {
+        } else if (hour < 12) {
             quote = "Rise and shine";
-        } else if (hour >= 12 && hour < 17) {
+        } else if (hour < 17) {
             quote = "Afternoon hustle";
         } else {
             quote = "Winding down for the day";
@@ -357,6 +392,7 @@ public class RoutineActivity extends AppCompatActivity {
         layout.addView(tvNum);
 
         layout.setOnClickListener(v -> {
+            HapticUtils.lightClick(v);
             selectedDay = dayName;
             highlightSelectedDay(dayName);
             loadRoutineForDay(dayName);
@@ -389,30 +425,25 @@ public class RoutineActivity extends AppCompatActivity {
                 }
             }
         }
-        tvDailyRoutineTitle.setText(String.format("%s Classes", activeDay));
+        if (tvDailyRoutineTitle != null) {
+            tvDailyRoutineTitle.setText(String.format("%s Classes", activeDay));
+        }
     }
 
     private boolean matchesSelectedDay(String classDay, String targetDay) {
         if (classDay == null || targetDay == null) return false;
-        String c = classDay.trim().toLowerCase();
-        String t = targetDay.trim().toLowerCase();
-
-        // Exact match
-        if (c.equals(t)) return true;
-
-        // Prefix match (first 3 letters, e.g. "tue" matches "tuesday")
-        if (c.length() >= 3 && t.length() >= 3) {
-            if (c.substring(0, 3).equals(t.substring(0, 3))) {
-                return true;
-            }
+        String c = normalizeDayName(classDay);
+        String t = normalizeDayName(targetDay);
+        if (c != null && t != null) {
+            return c.equalsIgnoreCase(t);
         }
-
-        // Thursday variations (thu, thr, thurs, thursday)
-        if ((c.startsWith("th") || c.startsWith("thr")) && (t.startsWith("th") || t.startsWith("thr"))) {
-            return true;
+        String cTrim = classDay.trim();
+        String tTrim = targetDay.trim();
+        if (cTrim.equalsIgnoreCase(tTrim)) return true;
+        if (cTrim.length() >= 3 && tTrim.length() >= 3) {
+            return cTrim.substring(0, 3).equalsIgnoreCase(tTrim.substring(0, 3));
         }
-
-        return c.contains(t) || t.contains(c);
+        return false;
     }
 
     private String getSanitizedKey(String val) {
@@ -420,13 +451,47 @@ public class RoutineActivity extends AppCompatActivity {
         return val.replace(".", "_").replace("/", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_").trim();
     }
 
+    public void refreshDashboard() {
+        runOnUiThread(() -> {
+            try {
+                if (isFinishing() || isDestroyed()) return;
+                setupDayPicker();
+                loadRoutineForDay(selectedDay);
+                updateUpNextBanner();
+            } catch (Exception e) {
+                Log.e("RoutineActivity", "Error in refreshDashboard", e);
+            }
+        });
+    }
+
+    private List<RoutineClassItem> filterClassesForDay(List<RoutineClassItem> allItems, String targetDay) {
+        List<RoutineClassItem> dayClasses = new ArrayList<>();
+        if (allItems == null || targetDay == null) return dayClasses;
+
+        for (RoutineClassItem item : allItems) {
+            if (item == null || item.day == null) continue;
+
+            String code = item.getDisplayCourseCode();
+            if (code != null && (code.toLowerCase().contains("scanned notice") || code.toLowerCase().contains("notice:"))) {
+                continue;
+            }
+
+            String norm = normalizeDayName(item.day);
+            if (norm != null && matchesSelectedDay(norm, targetDay)) {
+                dayClasses.add(item);
+            }
+        }
+        return dayClasses;
+    }
+
     private void loadRoutineForDay(String day) {
         selectedDay = day;
+        highlightSelectedDay(day);
+
         String dept = getSanitizedKey(sessionManager.getUserDept());
         String intake = getSanitizedKey(sessionManager.getUserIntake());
         String section = getSanitizedKey(sessionManager.getUserSection());
 
-        // 1. Safely remove existing listener before attaching a new one
         if (routineListenerRegistration != null) {
             routineListenerRegistration.remove();
             routineListenerRegistration = null;
@@ -438,42 +503,41 @@ public class RoutineActivity extends AppCompatActivity {
                 .document(section)
                 .collection("schedule")
                 .addSnapshotListener((querySnapshot, error) -> {
-                    // Ignore errors or null snapshots
-                    if (error != null || querySnapshot == null) {
-                        return;
-                    }
+                    List<RoutineClassItem> allItems = new ArrayList<>();
 
-                    // 2. Parse and filter classes with robust day matching and doc.getString("day") fallback
-                    List<RoutineClassItem> dayClasses = new ArrayList<>();
-                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                        RoutineClassItem item = doc.toObject(RoutineClassItem.class);
-                        if (item != null) {
-                            item.id = doc.getId();
-
-                            // Null-safe day extraction with fallback to doc.getString("day")
-                            String itemDay = doc.getString("day");
-                            if (itemDay == null || itemDay.trim().isEmpty()) {
-                                itemDay = item.getDay();
-                            }
-                            if (itemDay == null || itemDay.trim().isEmpty()) {
-                                itemDay = item.day;
-                            }
-                            if (itemDay != null && !itemDay.trim().isEmpty()) {
-                                item.day = itemDay.trim();
-                            }
-
-                            // Flexible day matching (full names & 3-letter abbreviations like TUE / Tuesday)
-                            if (item.day != null && matchesSelectedDay(item.day, day)) {
-                                dayClasses.add(item);
+                    if (error == null && querySnapshot != null && !querySnapshot.isEmpty()) {
+                        for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                            RoutineClassItem item = doc.toObject(RoutineClassItem.class);
+                            if (item != null) {
+                                item.id = doc.getId();
+                                String itemDay = doc.getString("day");
+                                if (itemDay == null || itemDay.trim().isEmpty()) {
+                                    itemDay = item.getDay();
+                                }
+                                if (itemDay != null && !itemDay.trim().isEmpty()) {
+                                    item.day = itemDay.trim();
+                                }
+                                allItems.add(item);
                             }
                         }
                     }
 
-                    // 3. Deduplicate by day + timeSlot + courseCode
+                    // Fallback to local cache if Firestore is empty or offline
+                    if (allItems.isEmpty()) {
+                        List<RoutineClassItem> cached = RoutineLocalCache.loadRoutineLocally(this);
+                        if (cached != null) {
+                            allItems.addAll(cached);
+                        }
+                    }
+
+                    // Strict day filtering
+                    List<RoutineClassItem> dayClasses = filterClassesForDay(allItems, day);
+
+                    // Deduplicate by timeSlot + courseCode
                     List<RoutineClassItem> uniqueClasses = new ArrayList<>();
                     Set<String> seenKeys = new HashSet<>();
                     for (RoutineClassItem item : dayClasses) {
-                        String key = (item.day + "_" + item.timeSlot + "_" + item.getDisplayCourseCode()).toLowerCase();
+                        String key = ((item.day != null ? item.day : "") + "_" + (item.timeSlot != null ? item.timeSlot : "") + "_" + item.getDisplayCourseCode()).toLowerCase();
                         if (!seenKeys.contains(key)) {
                             seenKeys.add(key);
                             uniqueClasses.add(item);
@@ -481,43 +545,22 @@ public class RoutineActivity extends AppCompatActivity {
                     }
                     dayClasses = uniqueClasses;
 
-                    // 4. Sort chronologically by start time
-                    Collections.sort(dayClasses, (a, b) -> {
-                        String timeA = a.startTime != null ? a.startTime : (a.timeSlot != null ? a.timeSlot : "");
-                        String timeB = b.startTime != null ? b.startTime : (b.timeSlot != null ? b.timeSlot : "");
-                        return timeA.compareTo(timeB);
-                    });
+                    // Sort chronologically
+                    sortClassesChronologically(dayClasses);
 
-                    // 5. Protect against transient empty snapshots clearing locally loaded OCR items
-                    if (dayClasses.isEmpty() && !routineList.isEmpty()) {
-                        if (querySnapshot.getMetadata().isFromCache() || querySnapshot.getMetadata().hasPendingWrites()) {
-                            // Transient cache read or in-flight write; keep existing UI items intact
-                            return;
-                        }
-                    }
-
-                    // Update adapter list
+                    // Update routineList
                     routineList.clear();
                     routineList.addAll(dayClasses);
                     if (routineAdapter != null) {
                         routineAdapter.notifyDataSetChanged();
                     }
 
-                    // 6. Correct UI visibility toggling
-                    if (!routineList.isEmpty()) {
-                        if (cardUpNext != null) cardUpNext.setVisibility(View.VISIBLE);
-                        if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.GONE);
-                        if (recyclerViewRoutine != null) recyclerViewRoutine.setVisibility(View.VISIBLE);
-                    } else {
-                        if (cardUpNext != null) cardUpNext.setVisibility(View.GONE);
-                        if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.VISIBLE);
-                        if (recyclerViewRoutine != null) recyclerViewRoutine.setVisibility(View.GONE);
-                    }
+                    updateUiVisibilityAndSummary();
+                    updateUpNextBannerWithItems(allItems);
                 });
     }
 
     private void updateUpNextBanner() {
-        String today = getTodayDayName();
         String dept = getSanitizedKey(sessionManager.getUserDept());
         String intake = getSanitizedKey(sessionManager.getUserIntake());
         String section = getSanitizedKey(sessionManager.getUserSection());
@@ -546,136 +589,204 @@ public class RoutineActivity extends AppCompatActivity {
                             }
                         }
                     }
-
-                    if (allItems.isEmpty()) {
-                        if (cardUpNext != null) cardUpNext.setVisibility(View.GONE);
-                        return;
-                    }
-
-                    // Filter today's classes
-                    List<RoutineClassItem> todayList = new ArrayList<>();
-                    for (RoutineClassItem item : allItems) {
-                        if (item.day != null && matchesSelectedDay(item.day, today)) {
-                            todayList.add(item);
-                        }
-                    }
-
-                    // Sort today's classes chronologically by start time
-                    SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
-                    Calendar nowCal = Calendar.getInstance();
-                    long nowMillis = nowCal.getTimeInMillis();
-
-                    Collections.sort(todayList, (a, b) -> {
-                        try {
-                            Date dateA = sdf.parse(a.getStartTime());
-                            Date dateB = sdf.parse(b.getStartTime());
-                            if (dateA != null && dateB != null) return dateA.compareTo(dateB);
-                        } catch (Exception ignored) {}
-                        return 0;
-                    });
-
-                    RoutineClassItem upcomingClass = null;
-                    boolean isToday = true;
-
-                    // Find closest upcoming future class or ongoing class for today
-                    for (RoutineClassItem item : todayList) {
-                        try {
-                            Date startTime = sdf.parse(item.getStartTime());
-                            Date endTime = sdf.parse(item.getEndTime());
-                            if (startTime != null) {
-                                Calendar classStartCal = Calendar.getInstance();
-                                classStartCal.setTime(startTime);
-                                Calendar startCal = Calendar.getInstance();
-                                startCal.set(Calendar.HOUR_OF_DAY, classStartCal.get(Calendar.HOUR_OF_DAY));
-                                startCal.set(Calendar.MINUTE, classStartCal.get(Calendar.MINUTE));
-                                startCal.set(Calendar.SECOND, 0);
-
-                                Calendar endCal = Calendar.getInstance();
-                                if (endTime != null) {
-                                    Calendar classEndCal = Calendar.getInstance();
-                                    classEndCal.setTime(endTime);
-                                    endCal.set(Calendar.HOUR_OF_DAY, classEndCal.get(Calendar.HOUR_OF_DAY));
-                                    endCal.set(Calendar.MINUTE, classEndCal.get(Calendar.MINUTE));
-                                    endCal.set(Calendar.SECOND, 0);
-                                } else {
-                                    endCal.setTimeInMillis(startCal.getTimeInMillis() + 90 * 60 * 1000);
-                                }
-
-                                // If class has not ended yet, pick it as UP NEXT
-                                if (endCal.getTimeInMillis() >= nowMillis) {
-                                    upcomingClass = item;
-                                    break;
-                                }
-                            }
-                        } catch (Exception ignored) {}
-                    }
-
-                    // If all classes for today have finished, pick the first class of the schedule (tomorrow/next)
-                    if (upcomingClass == null && !allItems.isEmpty()) {
-                        isToday = false;
-                        upcomingClass = allItems.get(0);
-                    }
-
-                    if (upcomingClass != null) {
-                        if (tvUpNextSubject != null) tvUpNextSubject.setText(upcomingClass.getCourseCode());
-                        if (tvUpNextTime != null) tvUpNextTime.setText(upcomingClass.getStartTime() + " - " + upcomingClass.getEndTime());
-                        if (tvUpNextRoom != null) tvUpNextRoom.setText(upcomingClass.getRoomNumber());
-                        if (tvUpNextCountdown != null) {
-                            if (isToday) {
-                                tvUpNextCountdown.setText("Starts in " + calculateRemainingTime(upcomingClass.getStartTime()));
-                            } else {
-                                tvUpNextCountdown.setText("Next (" + (upcomingClass.day != null ? upcomingClass.day : "Upcoming") + ")");
-                            }
-                        }
-                        if (cardUpNext != null) cardUpNext.setVisibility(View.VISIBLE);
-                    } else {
-                        if (cardUpNext != null) cardUpNext.setVisibility(View.GONE);
-                    }
+                    updateUpNextBannerWithItems(allItems);
                 })
-                .addOnFailureListener(e -> {
-                    if (cardUpNext != null) cardUpNext.setVisibility(View.GONE);
-                });
+                .addOnFailureListener(e -> updateUpNextBannerWithItems(new ArrayList<>()));
     }
 
-    private String calculateRemainingTime(String startTimeStr) {
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
-            Date classTime = sdf.parse(startTimeStr);
-            if (classTime == null) return "Upcoming";
+    private int parseTimeToMinutes(String timeStr) {
+        if (timeStr == null || timeStr.trim().isEmpty()) return -1;
+        String cleaned = timeStr.trim().toUpperCase();
+        if (cleaned.contains("-")) {
+            cleaned = cleaned.split("-")[0].trim();
+        }
 
-            Calendar nowCal = Calendar.getInstance();
-            Calendar classCal = Calendar.getInstance();
-            classCal.setTime(classTime);
-            classCal.set(Calendar.YEAR, nowCal.get(Calendar.YEAR));
-            classCal.set(Calendar.MONTH, nowCal.get(Calendar.MONTH));
-            classCal.set(Calendar.DAY_OF_MONTH, nowCal.get(Calendar.DAY_OF_MONTH));
+        String[] formats = new String[]{"hh:mm a", "h:mm a", "HH:mm", "H:mm"};
+        for (String fmt : formats) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat(fmt, Locale.US);
+                Date date = sdf.parse(cleaned);
+                if (date != null) {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(date);
+                    return cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
+                }
+            } catch (Exception ignored) {}
+        }
+        return -1;
+    }
 
-            long diffMs = classCal.getTimeInMillis() - nowCal.getTimeInMillis();
-            if (diffMs < 0) {
-                classCal.add(Calendar.DAY_OF_MONTH, 1);
-                diffMs = classCal.getTimeInMillis() - nowCal.getTimeInMillis();
+    private void sortClassesChronologically(List<RoutineClassItem> list) {
+        if (list == null || list.isEmpty()) return;
+        Collections.sort(list, (a, b) -> {
+            int startA = parseTimeToMinutes(a.getStartTime());
+            int startB = parseTimeToMinutes(b.getStartTime());
+            if (startA != -1 && startB != -1) {
+                return Integer.compare(startA, startB);
             }
+            return 0;
+        });
+    }
 
-            long hours = diffMs / (1000 * 60 * 60);
-            long minutes = (diffMs / (1000 * 60)) % 60;
+    private void updateUpNextBannerWithItems(List<RoutineClassItem> allItems) {
+        if (cardUpNext == null) return;
 
-            if (hours > 0) {
-                return String.format(Locale.getDefault(), "%dh %dm", hours, minutes);
+        if (allItems == null || allItems.isEmpty()) {
+            allItems = RoutineLocalCache.loadRoutineLocally(this);
+        }
+
+        if (allItems == null || allItems.isEmpty()) {
+            cardUpNext.setVisibility(View.GONE);
+            return;
+        }
+
+        // Filter out notice/corrupted OCR strings from Up Next calculation
+        List<RoutineClassItem> validScheduleItems = new ArrayList<>();
+        for (RoutineClassItem item : allItems) {
+            if (item == null) continue;
+            String code = item.getDisplayCourseCode();
+            if (code != null && (code.toLowerCase().contains("scanned notice") || code.toLowerCase().contains("notice:"))) {
+                continue;
+            }
+            validScheduleItems.add(item);
+        }
+        allItems = validScheduleItems;
+
+        if (allItems.isEmpty()) {
+            cardUpNext.setVisibility(View.GONE);
+            return;
+        }
+
+        String todayName = getTodayDayName();
+        Calendar nowCal = Calendar.getInstance();
+        int nowMinutes = nowCal.get(Calendar.HOUR_OF_DAY) * 60 + nowCal.get(Calendar.MINUTE);
+
+        // Filter today's classes
+        List<RoutineClassItem> todayClasses = new ArrayList<>();
+        for (RoutineClassItem item : allItems) {
+            if (item != null && item.day != null && matchesSelectedDay(item.day, todayName)) {
+                todayClasses.add(item);
+            }
+        }
+        sortClassesChronologically(todayClasses);
+
+        RoutineClassItem selectedUpNext = null;
+        boolean isLiveNow = false;
+        int diffMinutes = -1;
+        int dayOffset = 0;
+
+        // Check today's classes first
+        for (RoutineClassItem item : todayClasses) {
+            int startMins = parseTimeToMinutes(item.getStartTime());
+            int endMins = parseTimeToMinutes(item.getEndTime());
+            if (startMins == -1) startMins = 8 * 60 + 15;
+            if (endMins == -1 || endMins <= startMins) endMins = startMins + 90;
+
+            if (nowMinutes < endMins) {
+                selectedUpNext = item;
+                if (nowMinutes >= startMins) {
+                    isLiveNow = true;
+                    diffMinutes = endMins - nowMinutes;
+                } else {
+                    isLiveNow = false;
+                    diffMinutes = startMins - nowMinutes;
+                }
+                break;
+            }
+        }
+
+        // If no class remains for today, find class on upcoming days
+        if (selectedUpNext == null) {
+            int todayIdx = -1;
+            for (int i = 0; i < DAYS.length; i++) {
+                if (matchesSelectedDay(DAYS[i], todayName)) {
+                    todayIdx = i;
+                    break;
+                }
+            }
+            if (todayIdx != -1) {
+                for (int offset = 1; offset < 7; offset++) {
+                    String nextDayName = DAYS[(todayIdx + offset) % 7];
+                    List<RoutineClassItem> nextDayClasses = new ArrayList<>();
+                    for (RoutineClassItem item : allItems) {
+                        if (item != null && item.day != null && matchesSelectedDay(item.day, nextDayName)) {
+                            nextDayClasses.add(item);
+                        }
+                    }
+                    if (!nextDayClasses.isEmpty()) {
+                        sortClassesChronologically(nextDayClasses);
+                        selectedUpNext = nextDayClasses.get(0);
+                        dayOffset = offset;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (selectedUpNext != null) {
+            tvUpNextSubject.setText(selectedUpNext.getDisplayCourseCode());
+            tvUpNextFaculty.setText("FC: " + selectedUpNext.getDisplayFaculty());
+
+            String startStr = selectedUpNext.getStartTime();
+            String endStr = selectedUpNext.getEndTime();
+            if (!startStr.isEmpty() && !endStr.isEmpty()) {
+                tvUpNextTime.setText(startStr + " – " + endStr);
+            } else if (selectedUpNext.timeSlot != null) {
+                tvUpNextTime.setText(selectedUpNext.timeSlot);
             } else {
-                return String.format(Locale.getDefault(), "%dm", minutes);
+                tvUpNextTime.setText("--");
             }
-        } catch (Exception e) {
-            return "Upcoming";
+
+            tvUpNextRoom.setText(selectedUpNext.getRoomNumber());
+
+            TextView tvPill = findViewById(R.id.tvUpNextStatusPill);
+
+            if (dayOffset == 0) {
+                if (isLiveNow) {
+                    if (tvPill != null) tvPill.setText("LIVE NOW");
+                    tvUpNextCountdown.setText("Ends in " + formatMinutes(diffMinutes));
+                } else {
+                    if (tvPill != null) tvPill.setText("UP NEXT");
+                    tvUpNextCountdown.setText("Starts in " + formatMinutes(diffMinutes));
+                }
+            } else if (dayOffset == 1) {
+                if (tvPill != null) tvPill.setText("UP NEXT");
+                tvUpNextCountdown.setText("Tomorrow • " + selectedUpNext.getStartTime());
+            } else {
+                if (tvPill != null) tvPill.setText("UP NEXT");
+                String dayNameDisplay = selectedUpNext.day != null ? selectedUpNext.day : "Upcoming";
+                tvUpNextCountdown.setText(dayNameDisplay + " • " + selectedUpNext.getStartTime());
+            }
+
+            cardUpNext.setVisibility(View.VISIBLE);
+        } else {
+            cardUpNext.setVisibility(View.GONE);
+        }
+    }
+
+    private String formatMinutes(int totalMins) {
+        if (totalMins <= 0) return "1m";
+        int hours = totalMins / 60;
+        int mins = totalMins % 60;
+        if (hours > 0 && mins > 0) {
+            return hours + "h " + mins + "m";
+        } else if (hours > 0) {
+            return hours + "h";
+        } else {
+            return mins + "m";
         }
     }
 
     private void startUpNextCountdownTimer() {
+        if (countdownRunnable != null) {
+            countdownHandler.removeCallbacks(countdownRunnable);
+        }
+
         countdownRunnable = new Runnable() {
             @Override
             public void run() {
-                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
-                tvUpNextCountdown.setText("Live • " + sdf.format(new Date()));
-                countdownHandler.postDelayed(this, 1000);
+                updateUpNextBanner();
+                countdownHandler.postDelayed(this, 30000);
             }
         };
         countdownHandler.post(countdownRunnable);
@@ -992,21 +1103,10 @@ public class RoutineActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 try {
                     if (isFinishing() || isDestroyed()) return;
-                    if (!activeDayParsed.isEmpty()) {
-                        routineList.clear();
-                        routineList.addAll(activeDayParsed);
-                        if (routineAdapter != null) routineAdapter.notifyDataSetChanged();
-                        if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.GONE);
-                        if (recyclerViewRoutine != null) recyclerViewRoutine.setVisibility(View.VISIBLE);
-                        if (cardUpNext != null) cardUpNext.setVisibility(View.VISIBLE);
-                    } else if (!parsedClasses.isEmpty()) {
-                        routineList.clear();
-                        routineList.addAll(parsedClasses);
-                        if (routineAdapter != null) routineAdapter.notifyDataSetChanged();
-                        if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.GONE);
-                        if (recyclerViewRoutine != null) recyclerViewRoutine.setVisibility(View.VISIBLE);
-                        if (cardUpNext != null) cardUpNext.setVisibility(View.VISIBLE);
-                    }
+                    routineList.clear();
+                    routineList.addAll(activeDayParsed);
+                    if (routineAdapter != null) routineAdapter.notifyDataSetChanged();
+                    updateUiVisibilityAndSummary();
 
                     Toast.makeText(RoutineActivity.this, "Extracted " + parsedClasses.size() + " classes via Matrix Grid Mapping!", Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
@@ -1014,11 +1114,11 @@ public class RoutineActivity extends AppCompatActivity {
                 }
             });
 
-            // Save batch to Firestore atomically, update snapshot listener, and show persistent success dialog
+            // Save batch to Firestore atomically, update snapshot listener, refresh active UI, and show success dialog
             saveRoutineClassesBatch(parsedClasses, () -> runOnUiThread(() -> {
                 try {
                     if (isFinishing() || isDestroyed()) return;
-                    loadRoutineForDay(selectedDay);
+                    refreshDashboard();
                     showScanSuccessDialog(parsedClasses);
                 } catch (Exception e) {
                     Log.e("RoutineActivity", "Error handling batch save callback", e);
@@ -1230,7 +1330,7 @@ public class RoutineActivity extends AppCompatActivity {
             }
 
             String[] lines = ocrText.split("\n");
-            String currentDay = selectedDay;
+            String currentDay = "Saturday";
             int slotIndex = 0;
 
             List<RoutineClassItem> parsedClasses = new ArrayList<>();
@@ -1311,21 +1411,10 @@ public class RoutineActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 try {
                     if (isFinishing() || isDestroyed()) return;
-                    if (!activeDayParsed.isEmpty()) {
-                        routineList.clear();
-                        routineList.addAll(activeDayParsed);
-                        if (routineAdapter != null) routineAdapter.notifyDataSetChanged();
-                        if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.GONE);
-                        if (recyclerViewRoutine != null) recyclerViewRoutine.setVisibility(View.VISIBLE);
-                        if (cardUpNext != null) cardUpNext.setVisibility(View.VISIBLE);
-                    } else if (!parsedClasses.isEmpty()) {
-                        routineList.clear();
-                        routineList.addAll(parsedClasses);
-                        if (routineAdapter != null) routineAdapter.notifyDataSetChanged();
-                        if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.GONE);
-                        if (recyclerViewRoutine != null) recyclerViewRoutine.setVisibility(View.VISIBLE);
-                        if (cardUpNext != null) cardUpNext.setVisibility(View.VISIBLE);
-                    }
+                    routineList.clear();
+                    routineList.addAll(activeDayParsed);
+                    if (routineAdapter != null) routineAdapter.notifyDataSetChanged();
+                    updateUiVisibilityAndSummary();
 
                     Toast.makeText(RoutineActivity.this, "Saving scanned routine (" + parsedClasses.size() + " classes)...", Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
@@ -1333,11 +1422,11 @@ public class RoutineActivity extends AppCompatActivity {
                 }
             });
 
-            // Save batch to Firestore atomically, update snapshot listener, and show persistent success dialog
+            // Save batch to Firestore atomically, update snapshot listener, refresh active UI, and show success dialog
             saveRoutineClassesBatch(parsedClasses, () -> runOnUiThread(() -> {
                 try {
                     if (isFinishing() || isDestroyed()) return;
-                    loadRoutineForDay(selectedDay);
+                    refreshDashboard();
                     showScanSuccessDialog(parsedClasses);
                 } catch (Exception e) {
                     Log.e("RoutineActivity", "Error in batch save callback", e);
@@ -1463,8 +1552,33 @@ public class RoutineActivity extends AppCompatActivity {
                 return;
             }
 
-            // Save locally immediately for instant persistence across app restarts
-            RoutineLocalCache.saveRoutineLocally(RoutineActivity.this, items);
+            // Sanitize & normalize items strictly (skip unparsed/invalid day items)
+            List<RoutineClassItem> cleanItems = new ArrayList<>();
+            for (RoutineClassItem item : items) {
+                if (item == null) continue;
+                String normDay = normalizeDayName(item.day);
+                if (normDay == null) continue; // Do NOT force to selectedDay!
+                item.day = normDay;
+                cleanItems.add(item);
+            }
+
+            if (cleanItems.isEmpty()) {
+                if (onComplete != null) {
+                    runOnUiThread(() -> {
+                        try {
+                            if (!isFinishing() && !isDestroyed()) {
+                                onComplete.run();
+                            }
+                        } catch (Exception e) {
+                            Log.e("RoutineActivity", "Error running onComplete", e);
+                        }
+                    });
+                }
+                return;
+            }
+
+            // Save clean list locally immediately for instant persistence across app restarts
+            RoutineLocalCache.saveRoutineLocally(RoutineActivity.this, cleanItems);
 
             String dept = sessionManager != null ? getSanitizedKey(sessionManager.getUserDept()) : "default";
             String intake = sessionManager != null ? getSanitizedKey(sessionManager.getUserIntake()) : "default";
@@ -1473,11 +1587,7 @@ public class RoutineActivity extends AppCompatActivity {
             FirebaseFirestore db = FirebaseFirestore.getInstance();
             WriteBatch batch = db.batch();
 
-            for (RoutineClassItem item : items) {
-                if (item == null) continue;
-                String validDay = normalizeDayName(item.day);
-                if (validDay == null) validDay = item.day != null ? item.day : selectedDay;
-
+            for (RoutineClassItem item : cleanItems) {
                 String startTime = item.startTime != null ? item.startTime : "08:15 AM";
                 String endTime = item.endTime != null ? item.endTime : "09:45 AM";
                 if ((item.startTime == null || item.endTime == null) && item.timeSlot != null && item.timeSlot.contains("-")) {
@@ -1487,7 +1597,7 @@ public class RoutineActivity extends AppCompatActivity {
                 }
 
                 Map<String, Object> map = new HashMap<>();
-                map.put("day", validDay);
+                map.put("day", item.day);
                 map.put("subject", item.getDisplayCourseCode());
                 map.put("courseCode", item.getDisplayCourseCode());
                 map.put("timeSlot", item.timeSlot != null ? item.timeSlot : startTime + " - " + endTime);
@@ -1688,6 +1798,7 @@ public class RoutineActivity extends AppCompatActivity {
             if (canEdit) {
                 holder.btnDelete.setVisibility(View.VISIBLE);
                 holder.btnDelete.setOnClickListener(v -> {
+                    HapticUtils.heavyClick(v);
                     String dept = activity.getSanitizedKey(activity.sessionManager.getUserDept());
                     String intake = activity.getSanitizedKey(activity.sessionManager.getUserIntake());
                     String section = activity.getSanitizedKey(activity.sessionManager.getUserSection());
@@ -1702,7 +1813,7 @@ public class RoutineActivity extends AppCompatActivity {
                                 .delete()
                                 .addOnSuccessListener(aVoid -> {
                                     Toast.makeText(activity, "Class deleted", Toast.LENGTH_SHORT).show();
-                                    activity.loadRoutineForDay(activity.selectedDay);
+                                    activity.refreshDashboard();
                                 });
                     }
                 });

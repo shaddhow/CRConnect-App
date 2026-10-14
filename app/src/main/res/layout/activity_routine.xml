@@ -358,17 +358,81 @@
                 android:layout_height="wrap_content"
                 android:nestedScrollingEnabled="false"/>
 
-            <!-- Empty view when no classes -->
-            <TextView
-                android:id="@+id/tvNoRoutineClasses"
+            <!-- Modern Empty State Container View when no classes for selected day -->
+            <LinearLayout
+                android:id="@+id/layoutEmptyState"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="No classes scheduled for this day."
-                android:textColor="#94A3B8"
-                android:textSize="14sp"
+                android:orientation="vertical"
                 android:gravity="center"
-                android:padding="40dp"
-                android:visibility="gone"/>
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="36dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <!-- Icon Container Badge -->
+                <FrameLayout
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:background="@drawable/glass_badge_bg"
+                    android:backgroundTint="#1E1B4B"
+                    android:layout_marginBottom="16dp">
+
+                    <ImageView
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_calendar"
+                        app:tint="#A78BFA"
+                        tools:ignore="ContentDescription"/>
+                </FrameLayout>
+
+                <!-- Dynamic Title: "Nothing on Friday" -->
+                <TextView
+                    android:id="@+id/tvEmptyStateTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="Nothing on Friday"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:layout_marginBottom="8dp"/>
+
+                <!-- Subtitle -->
+                <TextView
+                    android:id="@+id/tvEmptyStateSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Swipe or tap another day, or use the arrows for other weeks."
+                    android:textColor="#94A3B8"
+                    android:textSize="13sp"
+                    android:gravity="center"
+                    android:lineSpacingExtra="2dp"
+                    android:layout_marginBottom="24dp"/>
+
+                <!-- Action Button: "+ Add a class on Fri" -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddClassEmptyState"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    tools:text="+ Add a class on Fri"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="24dp"
+                    app:backgroundTint="#7C3AED"
+                    android:paddingHorizontal="24dp"
+                    app:elevation="4dp"/>
+
+                <!-- Backward compatibility hidden reference -->
+                <TextView
+                    android:id="@+id/tvNoRoutineClasses"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"/>
+
+            </LinearLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

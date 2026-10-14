@@ -5,312 +5,291 @@
     android:id="@+id/drawerLayoutStudent"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
+    android:background="@drawable/bg_glassy_dark"
     tools:context=".StudentDashboardActivity">
 
     <!-- Main Screen Content Container -->
-    <RelativeLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layoutMainContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/background">
+        android:background="@drawable/bg_glassy_dark">
 
+        <!-- Top Header Bar -->
+        <include
+            android:id="@+id/includeHeader"
+            layout="@layout/include_header"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Bottom Navigation Bar -->
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNavStudent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hapticFeedbackEnabled="true"
+            android:background="@color/surface"
+            app:itemIconTint="@color/bottom_nav_item_color"
+            app:itemTextColor="@color/bottom_nav_item_color"
+            app:itemRippleColor="@color/card_stroke"
+            app:itemActiveIndicatorStyle="@style/App.CustomActiveIndicator"
+            app:labelVisibilityMode="labeled"
+            app:itemIconSize="22dp"
+            app:elevation="12dp"
+            app:menu="@menu/bottom_nav_menu_student"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Main Body Container constrained strictly between Header and BottomNav -->
         <LinearLayout
             android:id="@+id/containerHeaderAndBody"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_above="@id/bottomNavStudent"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
             android:orientation="vertical"
-            android:paddingHorizontal="16dp">
+            android:paddingHorizontal="16dp"
+            app:layout_constraintTop_toBottomOf="@id/includeHeader"
+            app:layout_constraintBottom_toTopOf="@id/bottomNavStudent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
-            <include layout="@layout/include_header" />
-
-            <!-- Compact Profile Card -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Home Dashboard Content Container (Status, Profile, Announcements) -->
+            <LinearLayout
+                android:id="@+id/layoutHomeDashboardContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="6dp"
-                app:cardBackgroundColor="@color/surface"
-                app:strokeWidth="1.5dp"
-                app:strokeColor="@color/card_stroke"
-                android:layout_marginBottom="12dp">
+                android:orientation="vertical">
 
-                <LinearLayout
+                <!-- Compact Voting Locked Banner / Chip -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardStudentTimerStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="20dp"
-                    android:paddingVertical="16dp">
+                    android:hapticFeedbackEnabled="true"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#121622"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="#30FFFFFF"
+                    android:layout_marginBottom="12dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="10dp">
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="10dp">
+
+                        <View
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:background="@drawable/glass_badge_bg"
+                            android:backgroundTint="#A78BFA"
+                            android:layout_marginEnd="10dp"/>
 
                         <TextView
-                            android:id="@+id/tvStudentName"
+                            android:id="@+id/tvVotingStatus"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Developer Student"
-                            android:textSize="18sp"
+                            android:text="Syncing Live Data..."
+                            android:textSize="12sp"
                             android:textStyle="bold"
-                            android:textColor="#FFFFFF"
+                            android:textColor="#94A3B8"
                             android:singleLine="true"
                             android:ellipsize="end"/>
 
                         <TextView
-                            android:id="@+id/tvStudentDept"
+                            android:id="@+id/tvStudentCountdown"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="CSE"
-                            android:textSize="12sp"
-                            android:textColor="@color/secondary"
+                            android:text="--:--"
+                            android:textSize="13sp"
                             android:textStyle="bold"
-                            android:background="@color/input_bg"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="4dp"
+                            android:textColor="#FFFFFF"
                             android:layout_marginStart="8dp"/>
                     </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Compact Profile Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardStudentProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="6dp"
+                    app:cardBackgroundColor="@color/surface"
+                    app:strokeWidth="1.5dp"
+                    app:strokeColor="@color/card_stroke"
+                    android:layout_marginBottom="12dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="20dp"
+                        android:paddingVertical="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:id="@+id/tvStudentName"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Developer Student"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFF"
+                                android:singleLine="true"
+                                android:ellipsize="end"/>
+
+                            <TextView
+                                android:id="@+id/tvStudentDept"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="CSE"
+                                android:textSize="12sp"
+                                android:textColor="@color/secondary"
+                                android:textStyle="bold"
+                                android:background="@color/input_bg"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:layout_marginStart="8dp"/>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:baselineAligned="false"
+                            android:weightSum="3"
+                            android:layout_marginBottom="12dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1.2"
+                                android:orientation="vertical">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="STUDENT ID" android:textSize="11sp" android:textColor="#9CA3AF" android:textStyle="bold"/>
+                                <TextView android:id="@+id/tvStudentDetailsID" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2023-DEV-001" android:textSize="13sp" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="2dp" android:singleLine="true"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="0.9"
+                                android:orientation="vertical">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="INTAKE" android:textSize="11sp" android:textColor="#9CA3AF" android:textStyle="bold"/>
+                                <TextView android:id="@+id/tvStudentIntake" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55" android:textSize="13sp" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="2dp"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="0.9"
+                                android:orientation="vertical">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SECTION" android:textSize="11sp" android:textColor="#9CA3AF" android:textStyle="bold"/>
+                                <TextView android:id="@+id/tvStudentSection" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55/8" android:textSize="13sp" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="2dp"/>
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Verified Student Profile • Locked"
+                            android:textSize="11sp"
+                            android:textColor="#9CA3AF"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:background="@color/input_bg"
+                            android:paddingVertical="6dp"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Announcements Section Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardAnnouncementsSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hapticFeedbackEnabled="true"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="6dp"
+                    app:cardBackgroundColor="@color/surface"
+                    app:strokeWidth="1.5dp"
+                    app:strokeColor="@color/card_stroke"
+                    android:layout_marginBottom="12dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:baselineAligned="false"
-                        android:weightSum="3"
-                        android:layout_marginBottom="12dp">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1.2"
-                            android:orientation="vertical">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="STUDENT ID" android:textSize="11sp" android:textColor="#9CA3AF" android:textStyle="bold"/>
-                            <TextView android:id="@+id/tvStudentDetailsID" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2023-DEV-001" android:textSize="13sp" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="2dp" android:singleLine="true"/>
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="0.9"
-                            android:orientation="vertical">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="INTAKE" android:textSize="11sp" android:textColor="#9CA3AF" android:textStyle="bold"/>
-                            <TextView android:id="@+id/tvStudentIntake" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55" android:textSize="13sp" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="2dp"/>
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="0.9"
-                            android:orientation="vertical">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SECTION" android:textSize="11sp" android:textColor="#9CA3AF" android:textStyle="bold"/>
-                            <TextView android:id="@+id/tvStudentSection" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55/8" android:textSize="13sp" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="2dp"/>
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Verified Student Profile • Locked"
-                        android:textSize="11sp"
-                        android:textColor="#9CA3AF"
-                        android:textStyle="bold"
-                        android:gravity="center"
-                        android:background="@color/input_bg"
-                        android:paddingVertical="6dp"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Live Timer & Status Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardStudentTimerStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hapticFeedbackEnabled="true"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="6dp"
-                app:cardBackgroundColor="@color/surface"
-                app:strokeWidth="1.5dp"
-                app:strokeColor="@color/card_stroke"
-                android:layout_marginBottom="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="14dp">
-
-                    <TextView
-                        android:id="@+id/tvVotingStatus"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Syncing Live Data..."
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:textColor="#9CA3AF"
-                        android:gravity="center"/>
-
-                    <TextView
-                        android:id="@+id/tvStudentCountdown"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="--:--"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="#A78BFA"
-                        android:layout_marginTop="4dp"
-                        android:gravity="center"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Announcements Section Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardAnnouncementsSection"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hapticFeedbackEnabled="true"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="6dp"
-                app:cardBackgroundColor="@color/surface"
-                app:strokeWidth="1.5dp"
-                app:strokeColor="@color/card_stroke"
-                android:layout_marginBottom="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="14dp">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="14dp">
 
-                        <FrameLayout
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:background="@drawable/bg_icon_badge"
-                            android:layout_marginEnd="12dp">
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_announcement"
-                                app:tint="#A5B4FC"
-                                tools:ignore="ContentDescription" />
-                        </FrameLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Section Announcements"
-                            android:textSize="15sp"
-                            android:textStyle="bold"
-                            android:textColor="#FFFFFF"/>
-                    </LinearLayout>
+                            android:layout_weight="1"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnViewAnnouncements"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:text="View All"
-                        android:textColor="@color/secondary"
-                        android:textSize="12sp"
-                        android:textStyle="bold"
-                        app:strokeColor="@color/secondary"
-                        app:strokeWidth="1dp"
-                        app:backgroundTint="@android:color/transparent"
-                        app:cornerRadius="10dp"
-                        android:insetBottom="0dp"
-                        android:insetTop="0dp"
-                        android:paddingHorizontal="12dp"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_icon_badge"
+                                android:layout_marginEnd="12dp">
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_announcement"
+                                    app:tint="#A5B4FC"
+                                    tools:ignore="ContentDescription" />
+                            </FrameLayout>
 
-            <!-- Routine Shortcut Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardRoutineShortcut"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hapticFeedbackEnabled="true"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="6dp"
-                app:cardBackgroundColor="@color/surface"
-                app:strokeWidth="1.5dp"
-                app:strokeColor="@color/card_stroke"
-                android:layout_marginBottom="12dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Section Announcements"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFF"/>
+                        </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="14dp">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <FrameLayout
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:background="@drawable/bg_icon_badge"
-                            android:layout_marginEnd="12dp">
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_calendar"
-                                app:tint="#A5B4FC"
-                                tools:ignore="ContentDescription" />
-                        </FrameLayout>
-
-                        <TextView
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnViewAnnouncements"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Class Routine Schedule"
-                            android:textSize="15sp"
+                            android:layout_height="38dp"
+                            android:text="View All"
+                            android:textColor="@color/secondary"
+                            android:textSize="12sp"
                             android:textStyle="bold"
-                            android:textColor="#FFFFFF"/>
+                            app:strokeColor="@color/secondary"
+                            app:strokeWidth="1dp"
+                            app:backgroundTint="@android:color/transparent"
+                            app:cornerRadius="10dp"
+                            android:insetBottom="0dp"
+                            android:insetTop="0dp"
+                            android:paddingHorizontal="12dp"/>
                     </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnOpenRoutine"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:text="Open"
-                        android:textColor="@color/secondary"
-                        android:textSize="12sp"
-                        android:textStyle="bold"
-                        app:strokeColor="@color/secondary"
-                        app:strokeWidth="1dp"
-                        app:backgroundTint="@android:color/transparent"
-                        app:cornerRadius="10dp"
-                        android:insetBottom="0dp"
-                        android:insetTop="0dp"
-                        android:paddingHorizontal="12dp"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Candidate List Section -->
+            <!-- Candidate List Section (Renders in full height when Candidates tab is active) -->
             <LinearLayout
+                android:id="@+id/layoutCandidates"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
@@ -343,6 +322,9 @@
                 </androidx.core.widget.NestedScrollView>
             </LinearLayout>
 
+            <!-- Rich Glassmorphism Profile Layout -->
+            <include layout="@layout/layout_profile" />
+
         </LinearLayout>
 
         <!-- Floating Action Button for CR to create announcements -->
@@ -350,34 +332,17 @@
             android:id="@+id/fabCreateAnnouncement"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@id/bottomNavStudent"
-            android:layout_alignParentEnd="true"
             android:layout_marginEnd="20dp"
             android:layout_marginBottom="20dp"
             android:contentDescription="Create Announcement"
             android:src="@android:drawable/ic_input_add"
             app:backgroundTint="@color/primary"
             app:tint="#FFFFFF"
-            android:visibility="gone" />
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/bottomNavStudent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Bottom Navigation Bar -->
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/bottomNavStudent"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hapticFeedbackEnabled="true"
-            android:layout_alignParentBottom="true"
-            android:background="@color/surface"
-            app:itemIconTint="@color/bottom_nav_item_color"
-            app:itemTextColor="@color/bottom_nav_item_color"
-            app:itemRippleColor="@color/card_stroke"
-            app:itemActiveIndicatorStyle="@style/App.CustomActiveIndicator"
-            app:labelVisibilityMode="labeled"
-            app:itemIconSize="22dp"
-            app:elevation="12dp"
-            app:menu="@menu/bottom_nav_menu_student" />
-
-    </RelativeLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Sliding Navigation Drawer -->
     <com.google.android.material.navigation.NavigationView

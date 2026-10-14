@@ -28,6 +28,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,6 +47,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.GravityCompat;
 import androidx.core.view.ViewCompat;
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -144,11 +146,20 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_student_dashboard);
 
+        View includeHeader = findViewById(R.id.includeHeader);
+        if (includeHeader != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(includeHeader, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
+                v.setPadding(v.getPaddingLeft(), systemBars.top + v.getPaddingTop(), v.getPaddingRight(), v.getPaddingBottom());
+                return insets;
+            });
+        }
+
         View containerHeaderAndBody = findViewById(R.id.containerHeaderAndBody);
         if (containerHeaderAndBody != null) {
             ViewCompat.setOnApplyWindowInsetsListener(containerHeaderAndBody, (v, insets) -> {
                 Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
+                v.setPadding(systemBars.left, 0, systemBars.right, 0);
                 return insets;
             });
         }
@@ -180,6 +191,30 @@ public class StudentDashboardActivity extends AppCompatActivity {
         tvVotingStatus = findViewById(R.id.tvVotingStatus);
         tvStudentCountdown = findViewById(R.id.tvStudentCountdown);
         containerCandidates = findViewById(R.id.containerCandidates);
+        View initialLayoutCandidates = findViewById(R.id.layoutCandidates);
+        View homeDashboardContent = findViewById(R.id.layoutHomeDashboardContent);
+        if (initialLayoutCandidates != null) {
+            initialLayoutCandidates.setVisibility(View.VISIBLE);
+            LinearLayout.LayoutParams candParams = (LinearLayout.LayoutParams) initialLayoutCandidates.getLayoutParams();
+            candParams.height = 0;
+            candParams.weight = 1f;
+            initialLayoutCandidates.setLayoutParams(candParams);
+        }
+        if (homeDashboardContent != null) {
+            homeDashboardContent.setVisibility(View.GONE);
+        }
+        containerHeaderAndBody = findViewById(R.id.containerHeaderAndBody);
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (bottomNavStudent != null && bottomNavStudent.getSelectedItemId() != R.id.nav_candidates) {
+                    bottomNavStudent.setSelectedItemId(R.id.nav_candidates);
+                } else {
+                    moveTaskToBack(true);
+                }
+            }
+        });
         
         // Profile Fields
         tvStudentName = findViewById(R.id.tvStudentName);
@@ -211,15 +246,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
             HapticUtils.attachLight(btnViewAnnouncements);
         }
 
-        MaterialButton btnOpenRoutine = findViewById(R.id.btnOpenRoutine);
-        if (btnOpenRoutine != null) {
-            btnOpenRoutine.setOnClickListener(v -> {
-                Intent intent = new Intent(this, RoutineActivity.class);
-                startActivity(intent);
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-            });
-            HapticUtils.attachLight(btnOpenRoutine);
-        }
+
 
         String cachedProfileImg = sessionManager.getProfileImageUrl();
         if (cachedProfileImg != null && !cachedProfileImg.isEmpty()) {
@@ -287,28 +314,127 @@ public class StudentDashboardActivity extends AppCompatActivity {
             bottomNavStudent.setOnItemSelectedListener(item -> {
                 HapticUtils.lightClick(bottomNavStudent);
                 int id = item.getItemId();
-                if (id == R.id.nav_student_home) {
-                    View v = findViewById(R.id.scrollViewCandidates);
-                    if (v != null) v.requestFocus();
+                View layoutCandidates = findViewById(R.id.layoutCandidates);
+                View cardStatus = findViewById(R.id.cardStudentTimerStatus);
+                View cardProfile = findViewById(R.id.cardStudentProfile);
+                View cardAnnouncements = findViewById(R.id.cardAnnouncementsSection);
+                View bodyView = findViewById(R.id.containerHeaderAndBody);
+                View dashboardContent = findViewById(R.id.layoutHomeDashboardContent);
+                View profileSection = findViewById(R.id.layoutProfileSection);
+
+                if (id == R.id.nav_candidates) {
+                    if (layoutCandidates != null) {
+                        LinearLayout.LayoutParams candParams = (LinearLayout.LayoutParams) layoutCandidates.getLayoutParams();
+                        candParams.height = 0;
+                        candParams.weight = 1f;
+                        layoutCandidates.setLayoutParams(candParams);
+                        layoutCandidates.setVisibility(View.VISIBLE);
+                    }
+                    if (profileSection != null) profileSection.setVisibility(View.GONE);
+                    if (dashboardContent != null) dashboardContent.setVisibility(View.GONE);
+                    if (cardStatus != null) cardStatus.setVisibility(View.GONE);
+                    if (cardProfile != null) cardProfile.setVisibility(View.GONE);
+                    if (cardAnnouncements != null) cardAnnouncements.setVisibility(View.GONE);
+                    return true;
+                } else if (id == R.id.nav_student_routine) {
+                    if (layoutCandidates != null) {
+                        LinearLayout.LayoutParams candParams = (LinearLayout.LayoutParams) layoutCandidates.getLayoutParams();
+                        candParams.height = 0;
+                        candParams.weight = 0f;
+                        layoutCandidates.setLayoutParams(candParams);
+                        layoutCandidates.setVisibility(View.GONE);
+                    }
+                    if (profileSection != null) profileSection.setVisibility(View.GONE);
+                    if (dashboardContent != null) dashboardContent.setVisibility(View.GONE);
+                    if (cardStatus != null) cardStatus.setVisibility(View.GONE);
+                    if (cardProfile != null) cardProfile.setVisibility(View.GONE);
+                    if (cardAnnouncements != null) cardAnnouncements.setVisibility(View.GONE);
+                    Intent intent = new Intent(this, RoutineActivity.class);
+                    startActivity(intent);
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                     return true;
                 } else if (id == R.id.nav_student_status) {
-                    View v = findViewById(R.id.cardStudentTimerStatus);
-                    if (v != null) v.requestFocus();
+                    if (layoutCandidates != null) {
+                        LinearLayout.LayoutParams candParams = (LinearLayout.LayoutParams) layoutCandidates.getLayoutParams();
+                        candParams.height = 0;
+                        candParams.weight = 0f;
+                        layoutCandidates.setLayoutParams(candParams);
+                        layoutCandidates.setVisibility(View.GONE);
+                    }
+                    if (profileSection != null) profileSection.setVisibility(View.GONE);
+                    if (dashboardContent != null) dashboardContent.setVisibility(View.VISIBLE);
+                    if (cardStatus != null) {
+                        cardStatus.setVisibility(View.VISIBLE);
+                        cardStatus.requestFocus();
+                    }
+                    if (cardProfile != null) cardProfile.setVisibility(View.GONE);
+                    if (cardAnnouncements != null) cardAnnouncements.setVisibility(View.GONE);
                     return true;
                 } else if (id == R.id.nav_student_profile) {
-                    Toast.makeText(this, "Student Profile: " + sessionManager.getUserName(), Toast.LENGTH_SHORT).show();
-                    return true;
-                } else if (id == R.id.nav_student_logout) {
-                    sessionManager.logoutUser();
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                    if (layoutCandidates != null) {
+                        LinearLayout.LayoutParams candParams = (LinearLayout.LayoutParams) layoutCandidates.getLayoutParams();
+                        candParams.height = 0;
+                        candParams.weight = 0f;
+                        layoutCandidates.setLayoutParams(candParams);
+                        layoutCandidates.setVisibility(View.GONE);
+                    }
+                    if (dashboardContent != null) dashboardContent.setVisibility(View.GONE);
+                    if (cardStatus != null) cardStatus.setVisibility(View.GONE);
+                    if (cardProfile != null) cardProfile.setVisibility(View.GONE);
+                    if (cardAnnouncements != null) cardAnnouncements.setVisibility(View.GONE);
+                    if (profileSection != null) {
+                        profileSection.setVisibility(View.VISIBLE);
+                        TextView tvName = findViewById(R.id.tvProfileName);
+                        TextView tvEmail = findViewById(R.id.tvProfileEmail);
+                        TextView tvId = findViewById(R.id.tvProfileStudentID);
+                        TextView tvIntake = findViewById(R.id.tvProfileIntake);
+                        TextView tvSec = findViewById(R.id.tvProfileSection);
+                        TextView tvDept = findViewById(R.id.tvProfileDept);
+                        ImageView imgAvatar = findViewById(R.id.imgProfileAvatar);
+                        if (tvName != null) tvName.setText(sessionManager.getUserName());
+                        if (tvEmail != null) tvEmail.setText(sessionManager.getUserEmail());
+                        if (tvId != null) tvId.setText(sessionManager.getUserID());
+                        if (tvIntake != null) tvIntake.setText(sessionManager.getUserIntake());
+                        if (tvSec != null) tvSec.setText(sessionManager.getUserSection());
+                        if (tvDept != null) tvDept.setText(sessionManager.getUserDept());
+                        String cachedImg = sessionManager.getProfileImageUrl();
+                        if (imgAvatar != null && cachedImg != null && !cachedImg.isEmpty()) {
+                            Glide.with(this).load(cachedImg).circleCrop().into(imgAvatar);
+                        } else if (imgAvatar != null) {
+                            Glide.with(this).load(R.drawable.bubt_logo).circleCrop().into(imgAvatar);
+                        }
+
+                        MaterialButton btnEditProfile = findViewById(R.id.btnEditProfile);
+                        if (btnEditProfile != null) {
+                            btnEditProfile.setOnClickListener(v -> {
+                                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                                profileImagePickerLauncher.launch(intent);
+                            });
+                            HapticUtils.attachLight(btnEditProfile);
+                        }
+                        MaterialButton btnSecuritySettings = findViewById(R.id.btnSecuritySettings);
+                        if (btnSecuritySettings != null) {
+                            btnSecuritySettings.setOnClickListener(v -> Toast.makeText(this, "Security Settings: Secured with BUBT Student ID authentication.", Toast.LENGTH_LONG).show());
+                            HapticUtils.attachLight(btnSecuritySettings);
+                        }
+                        MaterialButton btnProfileLogout = findViewById(R.id.btnProfileLogout);
+                        if (btnProfileLogout != null) {
+                            btnProfileLogout.setOnClickListener(v -> {
+                                sessionManager.logoutUser();
+                                Intent intent = new Intent(this, MainActivity.class);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                startActivity(intent);
+                                finish();
+                                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                            });
+                            HapticUtils.attachHeavy(btnProfileLogout);
+                        }
+                    }
                     return true;
                 }
                 return false;
             });
+            bottomNavStudent.setSelectedItemId(R.id.nav_student_profile);
         }
 
         profileImagePickerLauncher = registerForActivityResult(
@@ -885,216 +1011,177 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
     private void addCandidateCard(String id, String name, String dept, String manifesto, int votes, int rank, int maxVotes, String imageUrl) {
         try {
-            MaterialCardView card = new MaterialCardView(this);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
-            params.setMargins(0, 0, 0, 16);
-            card.setLayoutParams(params);
-            card.setRadius(24);
-            card.setCardElevation(8);
-            card.setCardBackgroundColor(Color.parseColor("#171A29"));
-            card.setStrokeWidth(2);
-            card.setClickable(true);
-            card.setFocusable(true);
-            HapticUtils.attachLight(card);
-            card.setOnClickListener(v -> {
-                HapticUtils.lightClick(v);
-                showCandidateManifestoDialog(name, dept, manifesto);
-            });
-            
-            // Highlight Top 3 with smooth Neon Cyan and Soft Electric Purple borders
-            if (rank == 1) card.setStrokeColor(Color.parseColor("#38BDF8")); // Neon Cyan
-            else if (rank == 2) card.setStrokeColor(Color.parseColor("#8B5CF6")); // Soft Electric Purple
-            else if (rank == 3) card.setStrokeColor(Color.parseColor("#6366F1")); // Indigo
-            else card.setStrokeColor(Color.parseColor("#334155"));
+            View itemView = getLayoutInflater().inflate(R.layout.item_candidate, containerCandidates, false);
+            MaterialCardView card = itemView.findViewById(R.id.cardCandidateItem);
+            TextView tvRank = itemView.findViewById(R.id.tvCandidateRank);
+            TextView tvName = itemView.findViewById(R.id.tvCandidateName);
+            TextView tvVotes = itemView.findViewById(R.id.tvCandidateVotes);
+            TextView tvDept = itemView.findViewById(R.id.tvCandidateDept);
+            MaterialButton btnVote = itemView.findViewById(R.id.btnVoteCandidate);
+            MaterialButton btnDelete = itemView.findViewById(R.id.btnDeleteCandidate);
+            ProgressBar pbVotes = itemView.findViewById(R.id.pbCandidateVotes);
 
-            LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.VERTICAL);
-            row.setPadding(28, 24, 28, 24);
-
-            LinearLayout topRow = new LinearLayout(this);
-            topRow.setOrientation(LinearLayout.HORIZONTAL);
-            topRow.setGravity(Gravity.CENTER_VERTICAL);
-
-            ImageView imgCandidate = new ImageView(this);
-            int size = (int) (52 * getResources().getDisplayMetrics().density);
-            LinearLayout.LayoutParams imgLp = new LinearLayout.LayoutParams(size, size);
-            imgLp.setMargins(0, 0, 20, 0);
-            imgCandidate.setLayoutParams(imgLp);
-            imgCandidate.setScaleType(ImageView.ScaleType.CENTER_CROP);
-
-            loadCandidateImage(this, imageUrl, imgCandidate);
-
-            topRow.addView(imgCandidate);
-
-            LinearLayout textCol = new LinearLayout(this);
-            textCol.setOrientation(LinearLayout.VERTICAL);
-            textCol.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f));
-
-            // Rank / Badge title
-            String rankTitle = name;
-            if (rank == 1) rankTitle = "#1 - " + name;
-            else if (rank == 2) rankTitle = "#2 - " + name;
-            else if (rank == 3) rankTitle = "#3 - " + name;
-            else rankTitle = "#" + rank + " - " + name;
-
-            TextView tvName = new TextView(this);
-            tvName.setText(rankTitle);
-            tvName.setTextSize(17f);
-            tvName.setTypeface(null, Typeface.BOLD);
-            tvName.setTextColor(Color.parseColor("#F8FAFC"));
-
-            TextView tvVotes = new TextView(this);
-            tvVotes.setText("Votes: 0  •  Tap for Manifesto");
-            tvVotes.setTextSize(14f);
-            tvVotes.setTextColor(Color.parseColor("#38BDF8"));
-            tvVotes.setPadding(0, 4, 0, 8);
-
-            textCol.addView(tvName);
-            textCol.addView(tvVotes);
-
-            MaterialButton btnVote = new MaterialButton(this);
-            if (hasAlreadyVoted) {
-                btnVote.setText("Voted");
-                btnVote.setEnabled(false);
-                btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#10B981")));
-            } else if (studentIsPaused) {
-                btnVote.setText("Paused");
-                btnVote.setEnabled(false);
-                btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#2A2E3D")));
-            } else if (!studentIsGateOpen || (studentExpiryTime > 0 && studentExpiryTime <= System.currentTimeMillis())) {
-                btnVote.setText("Closed");
-                btnVote.setEnabled(false);
-                btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#2A2E3D")));
-            } else {
-                btnVote.setText("Vote");
-                btnVote.setEnabled(isVotingEnabled);
-                btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#6366F1")));
+            if (tvRank != null) {
+                tvRank.setText(String.format("%02d", rank));
+                if (rank == 1) tvRank.setTextColor(Color.parseColor("#38BDF8")); // Neon Cyan
+                else if (rank == 2) tvRank.setTextColor(Color.parseColor("#8B5CF6")); // Soft Electric Purple
+                else if (rank == 3) tvRank.setTextColor(Color.parseColor("#6366F1")); // Indigo
+                else tvRank.setTextColor(Color.parseColor("#CBD5E1"));
             }
-            btnVote.setCornerRadius(16);
-            HapticUtils.attachHeavy(btnVote);
 
-            btnVote.setOnClickListener(v -> {
-                HapticUtils.heavyClick(v);
-                try {
-                    if (isFinishing() || isDestroyed()) return;
-                    v.setPressed(true);
-                    if (hasAlreadyVoted) {
-                        Toast.makeText(this, "Security Alert: Dual voting is strictly blocked!", Toast.LENGTH_LONG).show();
-                        return;
-                    }
-                    if (studentIsPaused) {
-                        Toast.makeText(this, "Voting is temporarily paused by the admin", Toast.LENGTH_LONG).show();
-                        return;
-                    }
-                    if (!studentIsGateOpen || (studentExpiryTime > 0 && studentExpiryTime <= System.currentTimeMillis())) {
-                        Toast.makeText(this, "Voting is currently locked or closed.", Toast.LENGTH_LONG).show();
-                        return;
-                    }
+            if (card != null) {
+                // Highlight Top 3 with smooth Neon Cyan and Soft Electric Purple borders
+                if (rank == 1) card.setStrokeColor(Color.parseColor("#38BDF8"));
+                else if (rank == 2) card.setStrokeColor(Color.parseColor("#8B5CF6"));
+                else if (rank == 3) card.setStrokeColor(Color.parseColor("#6366F1"));
+                else card.setStrokeColor(Color.parseColor("#334155"));
 
-                    if (id != null && !id.isEmpty()) {
-                        String vId = (sanitizedStudentId != null && !sanitizedStudentId.isEmpty()) ? sanitizedStudentId : "guest_voter";
-                        String userDept = sessionManager.getUserDept();
-                        String deptId = getSanitizedDepartment(userDept);
-                        String sec = sessionManager.getUserSection();
-                        String secId = getSanitizedSection(sec);
+                card.setClickable(true);
+                card.setFocusable(true);
+                HapticUtils.attachLight(card);
+                card.setOnClickListener(v -> {
+                    HapticUtils.lightClick(v);
+                    showCandidateManifestoDialog(name, dept, manifesto);
+                });
+            }
 
-                        DatabaseReference voterCheckRef = !secId.equals("--") ?
-                                dbRef.child("voting_controls").child(deptId).child(secId).child("voters").child(vId) :
-                                dbRef.child("voters").child(vId);
 
-                        voterCheckRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                try {
-                                    if (isFinishing() || isDestroyed()) return;
-                                    if (snapshot.exists()) {
-                                        hasAlreadyVoted = true;
-                                        Toast.makeText(StudentDashboardActivity.this, "Security Alert: You have already cast your vote!", Toast.LENGTH_LONG).show();
-                                        refreshList();
-                                    } else {
-                                        // Also check root voters node fallback
-                                        dbRef.child("voters").child(vId).addListenerForSingleValueEvent(new ValueEventListener() {
-                                            @Override
-                                            public void onDataChange(@NonNull DataSnapshot rootVoterSnap) {
-                                                if (rootVoterSnap.exists()) {
-                                                    hasAlreadyVoted = true;
-                                                    Toast.makeText(StudentDashboardActivity.this, "Security Alert: You have already cast your vote!", Toast.LENGTH_LONG).show();
-                                                    refreshList();
-                                                } else {
-                                                    Map<String, Object> updates = new HashMap<>();
-                                                    updates.put("voters/" + vId, id);
-                                                    updates.put("candidates/" + id + "/votes", votes + 1);
 
-                                                    if (!secId.equals("--")) {
-                                                        updates.put("voting_controls/" + deptId + "/" + secId + "/voters/" + vId, id);
-                                                        updates.put("voting_controls/" + deptId + "/" + secId + "/candidates/" + id + "/votes", votes + 1);
-                                                        updates.put("voting_controls/" + deptId + "/" + secId + "/votes/" + id, votes + 1);
-                                                    }
+            if (tvName != null) {
+                tvName.setText(name);
+            }
 
-                                                    dbRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
-                                                        if (isFinishing() || isDestroyed()) return;
-                                                        hasAlreadyVoted = true;
-                                                        Toast.makeText(StudentDashboardActivity.this, "Vote successfully recorded & secured!", Toast.LENGTH_SHORT).show();
-                                                        refreshList();
-                                                    }).addOnFailureListener(e -> {
-                                                        Log.e("StudentDashboard", "Vote update failure", e);
-                                                        if (!isFinishing() && !isDestroyed()) {
-                                                            Toast.makeText(StudentDashboardActivity.this, "Transaction failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
-                                                }
-                                            }
+            if (tvVotes != null) {
+                tvVotes.setText(votes + " Votes");
+            }
 
-                                            @Override
-                                            public void onCancelled(@NonNull DatabaseError error) {
-                                                Log.e("StudentDashboard", "Root voter check cancelled: " + error.getMessage());
-                                            }
-                                        });
-                                    }
-                                } catch (Exception e) {
-                                    Log.e("StudentDashboard", "Error processing vote snapshot", e);
-                                }
-                            }
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError error) {
-                                Log.e("StudentDashboard", "Voter check cancelled: " + error.getMessage());
-                            }
-                        });
-                    }
-                } catch (Exception e) {
-                    Log.e("StudentDashboard", "Error in btnVote click listener", e);
+            if (tvDept != null) {
+                tvDept.setText(dept != null && !dept.isEmpty() ? dept : "CSE");
+            }
+
+            if (pbVotes != null) {
+                pbVotes.setMax(Math.max(1, maxVotes));
+                pbVotes.setProgress(votes);
+            }
+
+            if (btnDelete != null) {
+                btnDelete.setVisibility(View.GONE);
+            }
+
+            if (btnVote != null) {
+                if (hasAlreadyVoted) {
+                    btnVote.setText("Voted");
+                    btnVote.setEnabled(false);
+                    btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#10B981")));
+                } else if (studentIsPaused) {
+                    btnVote.setText("Paused");
+                    btnVote.setEnabled(false);
+                    btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#2A2E3D")));
+                } else if (!studentIsGateOpen || (studentExpiryTime > 0 && studentExpiryTime <= System.currentTimeMillis())) {
+                    btnVote.setText("Closed");
+                    btnVote.setEnabled(false);
+                    btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#2A2E3D")));
+                } else {
+                    btnVote.setText("Vote");
+                    btnVote.setEnabled(isVotingEnabled);
+                    btnVote.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#6366F1")));
                 }
-            });
+                HapticUtils.attachHeavy(btnVote);
+                btnVote.setOnClickListener(v -> {
+                    HapticUtils.heavyClick(v);
+                    try {
+                        if (isFinishing() || isDestroyed()) return;
+                        v.setPressed(true);
+                        if (hasAlreadyVoted) {
+                            Toast.makeText(this, "Security Alert: Dual voting is strictly blocked!", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        if (studentIsPaused) {
+                            Toast.makeText(this, "Voting is temporarily paused by the admin", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        if (!studentIsGateOpen || (studentExpiryTime > 0 && studentExpiryTime <= System.currentTimeMillis())) {
+                            Toast.makeText(this, "Voting is currently locked or closed.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
 
-            topRow.addView(textCol);
-            topRow.addView(btnVote);
-            row.addView(topRow);
+                        if (id != null && !id.isEmpty()) {
+                            String vId = (sanitizedStudentId != null && !sanitizedStudentId.isEmpty()) ? sanitizedStudentId : "guest_voter";
+                            String userDept = sessionManager.getUserDept();
+                            String deptId = getSanitizedDepartment(userDept);
+                            String sec = sessionManager.getUserSection();
+                            String secId = getSanitizedSection(sec);
 
-            // Graphical Vote Count Progress Bar with Smooth Real-time Animation
-            ProgressBar progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-            LinearLayout.LayoutParams pbParams = new LinearLayout.LayoutParams(-1, 20);
-            pbParams.setMargins(0, 12, 0, 0);
-            progressBar.setLayoutParams(pbParams);
-            progressBar.setMax(Math.max(maxVotes, 10));
-            progressBar.setProgress(0);
-            progressBar.setProgressTintList(ColorStateList.valueOf(rank == 1 ? Color.parseColor("#38BDF8") : Color.parseColor("#8B5CF6")));
-            row.addView(progressBar);
+                            DatabaseReference voterCheckRef = !secId.equals("--") ?
+                                    dbRef.child("voting_controls").child(deptId).child(secId).child("voters").child(vId) :
+                                    dbRef.child("voters").child(vId);
 
-            ObjectAnimator progressAnim = ObjectAnimator.ofInt(progressBar, "progress", 0, votes);
-            progressAnim.setDuration(800);
-            progressAnim.setInterpolator(new DecelerateInterpolator());
-            progressAnim.start();
+                            voterCheckRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    try {
+                                        if (isFinishing() || isDestroyed()) return;
+                                        if (snapshot.exists()) {
+                                            hasAlreadyVoted = true;
+                                            Toast.makeText(StudentDashboardActivity.this, "Security Alert: You have already cast your vote!", Toast.LENGTH_LONG).show();
+                                            refreshList();
+                                        } else {
+                                            // Also check root voters node fallback
+                                            dbRef.child("voters").child(vId).addListenerForSingleValueEvent(new ValueEventListener() {
+                                                @Override
+                                                public void onDataChange(@NonNull DataSnapshot rootVoterSnap) {
+                                                    if (rootVoterSnap.exists()) {
+                                                        hasAlreadyVoted = true;
+                                                        Toast.makeText(StudentDashboardActivity.this, "Security Alert: You have already cast your vote!", Toast.LENGTH_LONG).show();
+                                                        refreshList();
+                                                    } else {
+                                                        Map<String, Object> updates = new HashMap<>();
+                                                        updates.put("voters/" + vId, id);
+                                                        updates.put("candidates/" + id + "/votes", votes + 1);
 
-            ValueAnimator countAnim = ValueAnimator.ofInt(0, votes);
-            countAnim.setDuration(800);
-            countAnim.addUpdateListener(animation -> {
-                int val = (int) animation.getAnimatedValue();
-                tvVotes.setText("Votes: " + val + "  •  Tap for Manifesto");
-            });
-            countAnim.start();
+                                                        if (!secId.equals("--")) {
+                                                            updates.put("voting_controls/" + deptId + "/" + secId + "/voters/" + vId, id);
+                                                            updates.put("voting_controls/" + deptId + "/" + secId + "/candidates/" + id + "/votes", votes + 1);
+                                                            updates.put("voting_controls/" + deptId + "/" + secId + "/votes/" + id, votes + 1);
+                                                        }
 
-            card.addView(row);
-            containerCandidates.addView(card);
+                                                        dbRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
+                                                            if (isFinishing() || isDestroyed()) return;
+                                                            hasAlreadyVoted = true;
+                                                            Toast.makeText(StudentDashboardActivity.this, "Vote successfully recorded & secured!", Toast.LENGTH_SHORT).show();
+                                                            refreshList();
+                                                        }).addOnFailureListener(e -> {
+                                                            Log.e("StudentDashboard", "Vote update failure", e);
+                                                            if (!isFinishing() && !isDestroyed()) {
+                                                                Toast.makeText(StudentDashboardActivity.this, "Transaction failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                            }
+                                                        });
+                                                    }
+                                                }
+
+                                                @Override
+                                                public void onCancelled(@NonNull DatabaseError error) {
+                                                    Log.e("StudentDashboard", "Root voter check cancelled: " + error.getMessage());
+                                                }
+                                            });
+                                        }
+                                    } catch (Exception e) {
+                                        Log.e("StudentDashboard", "Error processing vote snapshot", e);
+                                    }
+                                }
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+                                    Log.e("StudentDashboard", "Voter check cancelled: " + error.getMessage());
+                                }
+                            });
+                        }
+                    } catch (Exception e) {
+                        Log.e("StudentDashboard", "Error in btnVote click listener", e);
+                    }
+                });
+            }
+
+            containerCandidates.addView(itemView);
         } catch (Exception e) {
             Log.e("StudentDashboard", "Error adding candidate card", e);
         }
