@@ -1,6 +1,6 @@
 # CRConnect Application
 
-CRConnect is a specialized, production-ready native Android application built for Bangladesh University of Business and Technology (BUBT). It digitizes university class representative (CR) elections, routines, and academic management, replacing manual paper-based processes with an automated, role-tailored platform for Students and Faculty/Admins.
+CRConnect is a specialized, production-ready native Android application built for Bangladesh University of Business and Technology (BUBT). It digitizes university class representative (CR) elections, routines, and academic management, replacing manual paper-based processes with an automated, role-tailored platform for Students and Faculty.
 
 ---
 
