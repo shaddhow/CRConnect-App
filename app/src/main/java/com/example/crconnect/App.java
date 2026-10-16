@@ -14,7 +14,11 @@ public class App extends Application {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
 
             // Enable offline persistence for Firebase Realtime Database
-            FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+            try {
+                FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").setPersistenceEnabled(true);
+            } catch (Exception e) {
+                Log.w("App", "Firebase Database persistence initialization notice: " + e.getMessage());
+            }
             // Initialize FCM notification channel
             MyFirebaseMessagingService.createNotificationChannel(this);
         } catch (Exception e) {

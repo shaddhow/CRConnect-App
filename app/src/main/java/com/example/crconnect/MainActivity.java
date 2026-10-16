@@ -1,29 +1,25 @@
 package com.example.crconnect;
 
+import android.content.Context;
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Rect;
-import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Bundle;
-import android.text.InputType;
-import android.text.SpannableString;
-import android.text.Spanned;
-import android.text.style.ForegroundColorSpan;
-import android.text.style.StyleSpan;
-import android.text.style.TypefaceSpan;
+import android.provider.Settings;
 import android.util.Log;
-import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.AnimationUtils;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
-import android.widget.ImageView;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import androidx.core.widget.NestedScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import android.os.Build;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -33,12 +29,10 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.core.widget.NestedScrollView;
 
-import android.widget.LinearLayout;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.button.MaterialButton;
 import com.example.crconnect.core.utils.HapticUtils;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -52,23 +46,23 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
-import android.provider.Settings;
 
 public class MainActivity extends AppCompatActivity {
 
     private TextInputEditText etEmail, etPassword;
-    private TextInputLayout tilEmail;
+    private TextInputLayout tilEmail, tilPassword;
     private RadioGroup radioGroupRole;
     private RadioButton rbStudent, rbTeacher;
     private Button btnLogin;
     private TextView tvRegisterLink, tvForgotPassword;
     private SessionManager sessionManager;
+    private NestedScrollView scrollViewMain;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // --- STRICT EDGE-TO-EDGE FULL SCREEN ---
+        // --- STRICT EDGE-TO-EDGE FULL SCREEN WITH LIGHT BACKGROUND STATUS BARS ---
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
@@ -77,8 +71,8 @@ public class MainActivity extends AppCompatActivity {
         }
         WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         if (insetsController != null) {
-            insetsController.setAppearanceLightStatusBars(false);
-            insetsController.setAppearanceLightNavigationBars(false);
+            insetsController.setAppearanceLightStatusBars(true);
+            insetsController.setAppearanceLightNavigationBars(true);
         }
         getWindow().setBackgroundDrawable(ContextCompat.getDrawable(this, R.drawable.bg_gradient));
 
@@ -88,12 +82,11 @@ public class MainActivity extends AppCompatActivity {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null && !currentUser.isAnonymous()) {
             currentUser.reload().addOnCompleteListener(task -> {
+                if (isFinishing() || isDestroyed()) return;
                 FirebaseUser refreshedUser = FirebaseAuth.getInstance().getCurrentUser();
-                if (refreshedUser != null && refreshedUser.isEmailVerified()) {
+                if (task.isSuccessful() && refreshedUser != null && refreshedUser.isEmailVerified()) {
                     if (sessionManager.isLoggedIn()) {
                         navigateBasedOnRole(sessionManager.getUserRole(), sessionManager.getUserEmail());
-                        finish();
-                        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                     } else {
                         FirebaseAuth.getInstance().signOut();
                         sessionManager.logoutUser();
@@ -104,15 +97,14 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         } else {
-            // Strictly require active Firebase user; clear stale local session
             FirebaseAuth.getInstance().signOut();
             sessionManager.logoutUser();
         }
 
         // Safe Area Padding
-        View scrollMain = findViewById(R.id.scrollViewMain);
-        if (scrollMain != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(scrollMain, (v, insets) -> {
+        scrollViewMain = findViewById(R.id.scrollViewMain);
+        if (scrollViewMain != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(scrollViewMain, (v, insets) -> {
                 Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                 Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
                 v.setPadding(systemBars.left, systemBars.top, systemBars.right, Math.max(systemBars.bottom, ime.bottom));
@@ -143,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         tilEmail = findViewById(R.id.tilEmail);
+        tilPassword = findViewById(R.id.tilPassword);
         radioGroupRole = findViewById(R.id.radioGroupRole);
         rbStudent = findViewById(R.id.rbStudent);
         rbTeacher = findViewById(R.id.rbTeacher);
@@ -151,27 +144,17 @@ public class MainActivity extends AppCompatActivity {
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
         TextView tvDontHaveAccount = findViewById(R.id.tvDontHaveAccount);
 
-        if (tvRegisterLink != null) {
-            tvRegisterLink.getPaint().setAntiAlias(true);
-        }
+        if (tvRegisterLink != null) tvRegisterLink.getPaint().setAntiAlias(true);
+        if (tvForgotPassword != null) tvForgotPassword.getPaint().setAntiAlias(true);
+        if (tvDontHaveAccount != null) tvDontHaveAccount.getPaint().setAntiAlias(true);
 
-        if (tvForgotPassword != null) {
-            tvForgotPassword.getPaint().setAntiAlias(true);
-        }
-
-        if (tvDontHaveAccount != null) {
-            tvDontHaveAccount.getPaint().setAntiAlias(true);
-        }
-
-        // Professional keyboard-aware scaling & auto-scroll
-        NestedScrollView scrollViewMain = findViewById(R.id.scrollViewMain);
         View layoutBranding = findViewById(R.id.layoutBranding);
         View rootView = findViewById(android.R.id.content);
 
         if (layoutBranding != null) {
             layoutBranding.post(() -> {
                 layoutBranding.setPivotX(layoutBranding.getWidth() / 2f);
-                layoutBranding.setPivotY(0f); // Scale from top downwards, centered horizontally
+                layoutBranding.setPivotY(0f);
             });
         }
 
@@ -183,47 +166,59 @@ public class MainActivity extends AppCompatActivity {
                 int keypadHeight = screenHeight - r.bottom;
 
                 boolean isKeyboardOpen = keypadHeight > screenHeight * 0.15;
+                float durationScale = Settings.Global.getFloat(getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 1.0f);
 
-                if (isKeyboardOpen) {
-                    layoutBranding.animate()
-                        .scaleX(0.8f)
-                        .scaleY(0.8f)
-                        .setDuration(200)
-                        .start();
+                if (durationScale > 0f) {
+                    if (isKeyboardOpen) {
+                        layoutBranding.animate().scaleX(0.85f).scaleY(0.85f).setDuration(200).start();
+                    } else {
+                        layoutBranding.animate().scaleX(1f).scaleY(1f).setDuration(200).start();
+                    }
                 } else {
-                    layoutBranding.animate()
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .setDuration(200)
-                        .start();
+                    float target = isKeyboardOpen ? 0.85f : 1f;
+                    layoutBranding.setScaleX(target);
+                    layoutBranding.setScaleY(target);
                 }
             });
         }
 
-        // Auto-scroll up smoothly when password field gets focus
-        etPassword.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus && scrollViewMain != null) {
-                scrollViewMain.postDelayed(() -> scrollViewMain.smoothScrollTo(0, btnLogin.getBottom()), 200);
-            }
-        });
+        // Auto-scroll up smoothly when password or email field gets focus
+        if (etPassword != null) {
+            etPassword.setOnFocusChangeListener((v, hasFocus) -> {
+                if (hasFocus && scrollViewMain != null) {
+                    scrollViewMain.postDelayed(() -> scrollViewMain.smoothScrollTo(0, btnLogin.getBottom() + 100), 150);
+                }
+            });
+        }
 
         // Role change dynamic hint logic
-        radioGroupRole.setOnCheckedChangeListener((group, checkedId) -> {
-            etEmail.setText("");
-            etPassword.setText("");
-            etEmail.setError(null);
-            etPassword.setError(null);
-            if (checkedId == R.id.rbTeacher) {
-                tilEmail.setHint("Teacher Code or Email");
-            } else {
-                tilEmail.setHint("Student ID or BUBT Email");
-            }
-        });
+        if (radioGroupRole != null) {
+            radioGroupRole.setOnCheckedChangeListener((group, checkedId) -> {
+                if (etEmail != null) {
+                    etEmail.setText("");
+                    etEmail.setError(null);
+                }
+                if (etPassword != null) {
+                    etPassword.setText("");
+                    etPassword.setError(null);
+                }
+                if (tilEmail != null) {
+                    if (checkedId == R.id.rbTeacher) {
+                        tilEmail.setHint(getString(R.string.teacher_code_or_email));
+                    } else {
+                        tilEmail.setHint(getString(R.string.student_id_or_email));
+                    }
+                }
+            });
+        }
+
+        // Button Touch Feedback (0.98 Scale on Press)
+        setupButtonTouchFeedback(btnLogin);
 
         // Login Button Click Listener
-        btnLogin.setOnClickListener(v -> performLogin());
+        if (btnLogin != null) btnLogin.setOnClickListener(v -> performLogin());
 
-        // Dev Bypass Buttons Click Listeners
+        // Dev Bypass Buttons
         MaterialButton btnDevStudent = findViewById(R.id.btnDevStudent);
         MaterialButton btnDevTeacher = findViewById(R.id.btnDevTeacher);
 
@@ -269,21 +264,69 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        // Forgot Password Click Listener
-        tvForgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
+        // Forgot Password Click Listener -> Opens Dedicated 3-Step Forgot Password Screen
+        if (tvForgotPassword != null) {
+            tvForgotPassword.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, ForgotPasswordActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
 
         // Register Link Click Listener
-        tvRegisterLink.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, RegisterActivity.class);
-            startActivity(intent);
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-        });
+        if (tvRegisterLink != null) {
+            tvRegisterLink.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, RegisterActivity.class);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
 
         setupHapticFeedback();
     }
 
+    private void setupButtonTouchFeedback(View btn) {
+        if (btn == null) return;
+        btn.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                HapticUtils.mediumClick(v);
+            }
+            float durationScale = Settings.Global.getFloat(getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 1.0f);
+            if (durationScale > 0f) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        v.animate().scaleX(0.98f).scaleY(0.98f).setDuration(100).start();
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start();
+                        break;
+                }
+            }
+            return false;
+        });
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+            View v = getCurrentFocus();
+            if (v instanceof TextInputEditText || v instanceof EditText) {
+                Rect outRect = new Rect();
+                v.getGlobalVisibleRect(outRect);
+                if (!outRect.contains((int) ev.getRawX(), (int) ev.getRawY())) {
+                    v.clearFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) {
+                        imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                    }
+                }
+            }
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
     private void setupHapticFeedback() {
-        if (btnLogin != null) HapticUtils.attachMedium(btnLogin);
         MaterialButton btnDevStudent = findViewById(R.id.btnDevStudent);
         MaterialButton btnDevTeacher = findViewById(R.id.btnDevTeacher);
         if (btnDevStudent != null) HapticUtils.attachLight(btnDevStudent);
@@ -295,159 +338,30 @@ public class MainActivity extends AppCompatActivity {
         if (tvRegisterLink != null) HapticUtils.attachLight(tvRegisterLink);
     }
 
-    private void showForgotPasswordDialog() {
-        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
-        
-        LinearLayout view = new LinearLayout(this);
-        view.setOrientation(LinearLayout.VERTICAL);
-        view.setPadding(48, 48, 48, 48);
-        view.setBackground(ContextCompat.getDrawable(this, R.drawable.glass_card_bg));
-
-        TextView tvTitle = new TextView(this);
-        tvTitle.setText("Reset Password");
-        tvTitle.setTextSize(22f);
-        tvTitle.setTypeface(null, Typeface.BOLD);
-        tvTitle.setTextColor(Color.parseColor("#F8FAFC"));
-
-        TextView tvSubtitle = new TextView(this);
-        tvSubtitle.setText("Enter your registered email address to receive a secure password reset link.");
-        tvSubtitle.setTextSize(14f);
-        tvSubtitle.setTextColor(Color.parseColor("#94A3B8"));
-        tvSubtitle.setPadding(0, 12, 0, 24);
-
-        final TextInputLayout tilResetEmail = new TextInputLayout(this, null, com.google.android.material.R.style.Widget_Material3_TextInputLayout_OutlinedBox);
-        tilResetEmail.setHint("Email Address");
-        tilResetEmail.setBoxStrokeColor(Color.parseColor("#6366F1"));
-        tilResetEmail.setHintTextColor(ColorStateList.valueOf(Color.parseColor("#6366F1")));
-
-        final TextInputEditText etResetEmail = new TextInputEditText(tilResetEmail.getContext());
-        etResetEmail.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
-        etResetEmail.setTextColor(Color.parseColor("#FFFFFF"));
-        etResetEmail.setTextSize(16f);
-
-        String currentInput = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
-        if (currentInput.contains("@")) {
-            etResetEmail.setText(currentInput);
-        }
-
-        tilResetEmail.addView(etResetEmail);
-
-        LinearLayout btnLayout = new LinearLayout(this);
-        btnLayout.setOrientation(LinearLayout.HORIZONTAL);
-        btnLayout.setGravity(Gravity.CENTER_VERTICAL);
-        LinearLayout.LayoutParams btnLayoutLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        btnLayoutLp.setMargins(0, 24, 0, 0);
-        btnLayout.setLayoutParams(btnLayoutLp);
-
-        MaterialButton btnCancel = new MaterialButton(this);
-        btnCancel.setText("Cancel");
-        btnCancel.setTextColor(Color.parseColor("#FFFFFF"));
-        btnCancel.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#334155")));
-        btnCancel.setCornerRadius(12);
-        btnCancel.setTypeface(null, Typeface.BOLD);
-        btnCancel.setAllCaps(false);
-        LinearLayout.LayoutParams lpCancel = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        lpCancel.setMargins(0, 0, 6, 0);
-        btnCancel.setLayoutParams(lpCancel);
-        btnCancel.setOnClickListener(v -> bottomSheetDialog.dismiss());
-
-        MaterialButton btnSend = new MaterialButton(this);
-        btnSend.setText("Send Reset Link");
-        btnSend.setTextColor(Color.parseColor("#FFFFFF"));
-        btnSend.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#6366F1")));
-        btnSend.setCornerRadius(12);
-        btnSend.setTypeface(null, Typeface.BOLD);
-        btnSend.setAllCaps(false);
-        LinearLayout.LayoutParams lpSend = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        lpSend.setMargins(6, 0, 0, 0);
-        btnSend.setLayoutParams(lpSend);
-
-        btnSend.setOnClickListener(v -> {
-            String email = etResetEmail.getText() != null ? etResetEmail.getText().toString().trim() : "";
-            
-            if (email.isEmpty()) {
-                Toast.makeText(MainActivity.this, "Email is required for password reset!", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            FirebaseAuth.getInstance().sendPasswordResetEmail(email)
-                .addOnSuccessListener(unused -> {
-                    bottomSheetDialog.dismiss();
-                    Toast.makeText(MainActivity.this, "Password reset link sent to your email. Please check your inbox.", Toast.LENGTH_LONG).show();
-                    showSuccessDialog(email);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("MainActivity", "Failed to send password reset email", e);
-                    String errorMsg = e.getLocalizedMessage();
-                    if (errorMsg != null && errorMsg.contains("there is no user record")) {
-                        errorMsg = "No account found matching " + email + ". Please verify your email or register a new account.";
-                    }
-                    Toast.makeText(MainActivity.this, "Error: " + errorMsg, Toast.LENGTH_LONG).show();
-                });
-        });
-
-        btnLayout.addView(btnCancel);
-        btnLayout.addView(btnSend);
-
-        view.addView(tvTitle);
-        view.addView(tvSubtitle);
-        view.addView(tilResetEmail);
-        view.addView(btnLayout);
-
-        bottomSheetDialog.setContentView(view);
-        bottomSheetDialog.show();
-    }
-
-    private void showSuccessDialog(String email) {
-        BottomSheetDialog successSheet = new BottomSheetDialog(this);
-        LinearLayout view = new LinearLayout(this);
-        view.setOrientation(LinearLayout.VERTICAL);
-        view.setPadding(48, 48, 48, 48);
-        view.setBackground(ContextCompat.getDrawable(this, R.drawable.glass_card_bg));
-
-        TextView tvTitle = new TextView(this);
-        tvTitle.setText("Reset Link Sent");
-        tvTitle.setTextSize(22f);
-        tvTitle.setTypeface(null, Typeface.BOLD);
-        tvTitle.setTextColor(Color.parseColor("#10B981"));
-
-        TextView tvMsg = new TextView(this);
-        tvMsg.setText("Password reset link sent to " + email + ". Please check your inbox and spam folder.");
-        tvMsg.setTextSize(15f);
-        tvMsg.setTextColor(Color.parseColor("#94A3B8"));
-        tvMsg.setPadding(0, 12, 0, 24);
-
-        MaterialButton btnOk = new MaterialButton(this);
-        btnOk.setText("OK");
-        btnOk.setTextColor(Color.parseColor("#FFFFFF"));
-        btnOk.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#10B981")));
-        btnOk.setCornerRadius(16);
-        btnOk.setLayoutParams(new LinearLayout.LayoutParams(-1, 56));
-        btnOk.setOnClickListener(v -> successSheet.dismiss());
-
-        view.addView(tvTitle);
-        view.addView(tvMsg);
-        view.addView(btnOk);
-
-        successSheet.setContentView(view);
-        successSheet.show();
-    }
-
     private void performLogin() {
-        String emailOrId = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
-        String password = etPassword.getText() != null ? etPassword.getText().toString().trim() : "";
+        String emailOrId = etEmail != null && etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+        String password = etPassword != null && etPassword.getText() != null ? etPassword.getText().toString().trim() : "";
 
         if (emailOrId.isEmpty()) {
-            etEmail.setError("ID/Email is required!");
-            etEmail.requestFocus();
+            if (tilEmail != null) tilEmail.setError("ID/Email is required!");
+            if (etEmail != null) {
+                etEmail.startAnimation(AnimationUtils.loadAnimation(this, R.anim.shake));
+                etEmail.requestFocus();
+            }
             return;
         }
 
         if (password.isEmpty()) {
-            etPassword.setError("Password is required!");
-            etPassword.requestFocus();
+            if (tilPassword != null) tilPassword.setError("Password is required!");
+            if (etPassword != null) {
+                etPassword.startAnimation(AnimationUtils.loadAnimation(this, R.anim.shake));
+                etPassword.requestFocus();
+            }
             return;
         }
+
+        if (tilEmail != null) tilEmail.setError(null);
+        if (tilPassword != null) tilPassword.setError(null);
 
         Toast.makeText(this, "Authenticating...", Toast.LENGTH_SHORT).show();
         btnLogin.setEnabled(false);
@@ -455,7 +369,6 @@ public class MainActivity extends AppCompatActivity {
         if (emailOrId.contains("@")) {
             authenticateWithEmail(emailOrId, password, emailOrId);
         } else {
-            // If user typed Student ID or Teacher Code, look up their registered email from Firebase Realtime Database
             String sanitizedId = emailOrId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
             DatabaseReference dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
 
@@ -466,7 +379,6 @@ public class MainActivity extends AppCompatActivity {
                     if (registeredEmail != null && !registeredEmail.isEmpty()) {
                         authenticateWithEmail(registeredEmail, password, emailOrId);
                     } else {
-                        // Fallback attempt
                         authenticateWithEmail(emailOrId, password, emailOrId);
                     }
                 }
@@ -531,7 +443,6 @@ public class MainActivity extends AppCompatActivity {
         );
         Toast.makeText(MainActivity.this, "Welcome, " + name + " (Teacher Profile Initialized)", Toast.LENGTH_SHORT).show();
         navigateBasedOnRole("Teacher/Admin", email);
-        finish();
     }
 
     private void authenticateWithEmail(String email, String password, String originalInput) {
@@ -612,10 +523,9 @@ public class MainActivity extends AppCompatActivity {
                                                                     );
                                                                     Toast.makeText(MainActivity.this, "Welcome back, " + (name != null ? name : email) + "!", Toast.LENGTH_SHORT).show();
                                                                     navigateBasedOnRole(resolvedRole, dbEmail != null ? dbEmail : email);
-                                                                    finish();
                                                                 } else {
                                                                     String userEmail = refreshedUser.getEmail();
-                                                                    if (isTeacherRole(null, userEmail) || (userEmail != null && userEmail.toLowerCase().endsWith("@bubt.edu.bd")) || rbTeacher.isChecked()) {
+                                                                    if (isTeacherRole(null, userEmail) || (userEmail != null && userEmail.toLowerCase().endsWith("@bubt.edu.bd")) || (rbTeacher != null && rbTeacher.isChecked())) {
                                                                         createDefaultTeacherAndNavigate(uid, userEmail != null ? userEmail : email, originalInput);
                                                                     } else {
                                                                         btnLogin.setEnabled(true);
@@ -627,7 +537,7 @@ public class MainActivity extends AppCompatActivity {
                                                             })
                                                             .addOnFailureListener(e -> {
                                                                 String userEmail = refreshedUser.getEmail();
-                                                                if (isTeacherRole(null, userEmail) || (userEmail != null && userEmail.toLowerCase().endsWith("@bubt.edu.bd")) || rbTeacher.isChecked()) {
+                                                                if (isTeacherRole(null, userEmail) || (userEmail != null && userEmail.toLowerCase().endsWith("@bubt.edu.bd")) || (rbTeacher != null && rbTeacher.isChecked())) {
                                                                     createDefaultTeacherAndNavigate(uid, userEmail != null ? userEmail : email, originalInput);
                                                                 } else {
                                                                     btnLogin.setEnabled(true);
@@ -713,7 +623,6 @@ public class MainActivity extends AppCompatActivity {
         sessionManager.createLoginSession(name, userEmail, id, role, section, assignedSection, intake, dept);
         Toast.makeText(MainActivity.this, "Welcome back, " + name + "!", Toast.LENGTH_SHORT).show();
         navigateBasedOnRole(role, userEmail);
-        finish();
     }
 
     private void navigateBasedOnRole(String role, String email) {

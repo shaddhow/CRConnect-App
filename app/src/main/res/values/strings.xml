@@ -1,3 +1,61 @@
 <resources>
     <string name="app_name">CRConnect</string>
+    <string name="app_subtitle">BUBT Department Network</string>
+    <string name="welcome_badge">Sign in to your class hub</string>
+
+    <string name="student">Student</string>
+    <string name="teacher">Teacher</string>
+    <string name="teacher_admin">Teacher / Admin</string>
+
+    <string name="student_id_or_email">Student ID or BUBT email</string>
+    <string name="teacher_code_or_email">Teacher code or email</string>
+
+    <string name="password">Password</string>
+    <string name="password_placeholder">Enter your password</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="sign_in">Sign in</string>
+    <string name="new_here">New here?</string>
+    <string name="create_account">Create an account</string>
+    <string name="bubt_full_name">Bangladesh University of Business &amp; Technology</string>
+
+    <string name="create_account_title">Create account</string>
+    <string name="join_network_sub">Join CRConnect Network</string>
+    <string name="scan_bubt_id">Scan BUBT ID card</string>
+    <string name="scan_id_sub">Auto-fills name, ID, intake and department</string>
+    <string name="or_enter_manually">or enter manually</string>
+
+    <string name="sect_personal">Personal</string>
+    <string name="full_name">Full name</string>
+
+    <string name="student_email">Student email</string>
+    <string name="teacher_email">Teacher email</string>
+    <string name="student_email_help">Use an email you check often</string>
+    <string name="teacher_email_help">\@bubt.edu.bd required</string>
+
+    <string name="sect_academic">Academic</string>
+    <string name="student_id">Student ID</string>
+    <string name="teacher_code">Teacher code / ID</string>
+
+    <string name="intake">Intake</string>
+    <string name="section">Section</string>
+    <string name="department">Department</string>
+    <string name="assigned_section">Assigned section</string>
+
+    <string name="sect_security">Security</string>
+    <string name="new_password">New password</string>
+    <string name="password_help">8+ characters, at least 1 number</string>
+
+    <string name="terms_consent">I agree to the Terms and Privacy Policy</string>
+    <string name="register">Register</string>
+    <string name="already_have_account">Already have an account? Sign in</string>
+
+    <string name="reset_password">Reset password</string>
+    <string name="forgot_sub">Enter your ID or BUBT email. We\'ll send a 6-digit code to reset it.</string>
+    <string name="send_code">Send code</string>
+    <string name="enter_code">Enter the code</string>
+    <string name="enter_code_sub">We sent a 6-digit code to your email.</string>
+    <string name="use_different_id">Use a different ID or email</string>
+    <string name="password_updated">Password updated</string>
+    <string name="password_updated_sub">You can now sign in with your new password.</string>
+    <string name="back_to_sign_in">Back to sign in</string>
 </resources>

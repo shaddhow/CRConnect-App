@@ -6,67 +6,91 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="@color/background"
+    android:overScrollMode="ifContentScrolls"
+    android:clipToPadding="false"
+    android:background="@drawable/bg_gradient"
     tools:context=".MainActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:gravity="center"
-        android:padding="24dp">
+        android:gravity="center_horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="28dp"
+        android:paddingBottom="24dp">
 
-        <!-- Branding Section -->
+        <!-- Brand / Header Section -->
         <LinearLayout
             android:id="@+id/layoutBranding"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
-            android:layout_marginBottom="28dp">
+            android:layout_marginBottom="24dp">
 
-            <ImageView
-                android:id="@+id/ivBubtLogo"
-                android:layout_width="90dp"
-                android:layout_height="90dp"
-                android:src="@drawable/bubt_logo"
-                android:scaleType="fitCenter"
-                android:contentDescription="BUBT Logo"
-                android:layout_marginBottom="16dp"/>
+            <FrameLayout
+                android:layout_width="96dp"
+                android:layout_height="112dp"
+                android:background="@drawable/logo_card_bg"
+                android:elevation="8dp"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:id="@+id/ivBubtLogo"
+                    android:layout_width="64dp"
+                    android:layout_height="80dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/bubt_logo"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="BUBT Logo" />
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/tvAppTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="CRConnect"
-                android:textSize="24sp"
+                android:text="@string/app_name"
+                android:textSize="28sp"
                 android:textStyle="bold"
                 android:fontFamily="sans-serif-medium"
-                android:textColor="#FFFFFF"
-                android:letterSpacing="0.05"/>
+                android:textColor="#0F172A"
+                android:letterSpacing="-0.02" />
 
             <TextView
                 android:id="@+id/tvAppSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="BUBT Department Network"
-                android:textSize="13sp"
-                android:textStyle="normal"
+                android:text="@string/app_subtitle"
+                android:textSize="14sp"
                 android:fontFamily="sans-serif"
-                android:textColor="#A0AEC0"
-                android:letterSpacing="0.05"
-                android:layout_marginTop="4dp"/>
+                android:textColor="#64748B"
+                android:layout_marginTop="2dp" />
+
+            <TextView
+                android:id="@+id/tvWelcomeBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/welcome_badge"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#0B3A9E"
+                android:background="@drawable/glass_badge_bg"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="4dp"
+                android:layout_marginTop="8dp" />
         </LinearLayout>
 
-        <!-- Login Card Container (Figma-Inspired Dark Mode Surface) -->
+        <!-- Main Card Container -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="24dp"
-            app:cardElevation="12dp"
-            app:cardBackgroundColor="@color/surface"
-            app:strokeWidth="1.5dp"
-            app:strokeColor="@color/card_stroke">
+            app:cardElevation="6dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:strokeWidth="1dp"
+            app:strokeColor="#E2E8F0">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -74,207 +98,246 @@
                 android:orientation="vertical"
                 android:padding="24dp">
 
-                <!-- Pill-Shaped Segmented Tab Toggle for Role Selection -->
+                <!-- Segmented Role Selector -->
                 <RadioGroup
                     android:id="@+id/radioGroupRole"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
+                    android:layout_height="48dp"
                     android:orientation="horizontal"
                     android:background="@drawable/segmented_bg"
                     android:padding="4dp"
-                    android:layout_marginBottom="24dp">
+                    android:layout_marginBottom="20dp">
 
                     <RadioButton
                         android:id="@+id/rbStudent"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="Student"
+                        android:text="@string/student"
                         android:checked="true"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:fontFamily="sans-serif"
-                        android:letterSpacing="0.04"
+                        android:fontFamily="sans-serif-medium"
                         android:textColor="@color/segmented_tab_text"
                         android:background="@drawable/segmented_tab_selector"
                         android:button="@null"
-                        android:gravity="center"
-                        android:elevation="2dp"/>
+                        android:gravity="center" />
 
                     <RadioButton
                         android:id="@+id/rbTeacher"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="Teacher"
+                        android:text="@string/teacher"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:fontFamily="sans-serif"
-                        android:letterSpacing="0.04"
+                        android:fontFamily="sans-serif-medium"
                         android:textColor="@color/segmented_tab_text"
                         android:background="@drawable/segmented_tab_selector"
                         android:button="@null"
-                        android:gravity="center"
-                        android:elevation="2dp"/>
+                        android:gravity="center" />
                 </RadioGroup>
 
-                <!-- Input Fields with Material OutlinedBox Styling -->
+                <!-- Input Fields with Custom Outlined Controls -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilEmail"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:hint="Student ID or BUBT Email"
-                    android:fontFamily="sans-serif"
+                    android:hint="@string/student_id_or_email"
                     app:boxCornerRadiusTopStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusBottomEnd="12dp"
-                    app:boxBackgroundColor="@color/input_bg"
+                    app:boxBackgroundColor="#FFFFFF"
                     app:boxStrokeColor="@color/input_box_stroke"
-                    app:boxStrokeWidth="1.5dp"
-                    app:boxStrokeWidthFocused="2dp"
-                    android:textColorHint="#94A3B8"
-                    app:hintTextColor="#A78BFA">
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeWidthFocused="1.5dp"
+                    app:startIconDrawable="@drawable/ic_user"
+                    app:startIconTint="#94A3B8"
+                    android:textColorHint="#64748B"
+                    app:hintTextColor="#0066FF">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etEmail"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="54dp"
                         android:inputType="textEmailAddress"
-                        android:textColor="#FFFFFF"
-                        android:textSize="14sp"
-                        android:textStyle="normal"
-                        android:fontFamily="sans-serif"/>
+                        android:imeOptions="actionNext"
+                        android:textColor="#0F172A"
+                        android:textSize="16sp"
+                        android:fontFamily="sans-serif-medium" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilPassword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
+                    android:layout_marginBottom="12dp"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:hint="Password"
-                    android:fontFamily="sans-serif"
+                    android:hint="@string/password"
                     app:boxCornerRadiusTopStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusBottomEnd="12dp"
-                    app:boxBackgroundColor="@color/input_bg"
+                    app:boxBackgroundColor="#FFFFFF"
                     app:boxStrokeColor="@color/input_box_stroke"
-                    app:boxStrokeWidth="1.5dp"
-                    app:boxStrokeWidthFocused="2dp"
-                    android:textColorHint="#94A3B8"
-                    app:hintTextColor="#A78BFA"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeWidthFocused="1.5dp"
+                    app:startIconDrawable="@drawable/ic_lock"
+                    app:startIconTint="#94A3B8"
                     app:endIconMode="password_toggle"
-                    app:endIconTint="#94A3B8">
+                    app:endIconTint="#64748B"
+                    android:textColorHint="#64748B"
+                    app:hintTextColor="#0066FF">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etPassword"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="54dp"
                         android:inputType="textPassword"
-                        android:textColor="#FFFFFF"
-                        android:textSize="14sp"
-                        android:textStyle="normal"
-                        android:fontFamily="sans-serif"/>
+                        android:imeOptions="actionDone"
+                        android:textColor="#0F172A"
+                        android:textSize="16sp"
+                        android:fontFamily="sans-serif-medium" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Primary CTA: SIGN IN Button -->
+                <!-- Forgot Password Link -->
+                <TextView
+                    android:id="@+id/tvForgotPassword"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:text="@string/forgot_password"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="#0066FF"
+                    android:paddingVertical="4dp"
+                    android:paddingHorizontal="4dp"
+                    android:layout_marginBottom="20dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
+
+                <!-- Sign In Button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnLogin"
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
-                    android:hapticFeedbackEnabled="true"
-                    android:text="SIGN IN"
-                    android:textSize="14sp"
+                    android:text="@string/sign_in"
+                    android:textSize="16sp"
                     android:textStyle="bold"
                     android:fontFamily="sans-serif-medium"
-                    android:letterSpacing="0.05"
+                    android:letterSpacing="0.02"
                     android:textColor="#FFFFFF"
-                    app:cornerRadius="16dp"
-                    android:background="@drawable/btn_gradient_glow"
+                    app:cornerRadius="12dp"
+                    android:background="@drawable/btn_primary_bg"
                     app:backgroundTint="@null"
-                    app:elevation="8dp"
-                    android:layout_marginBottom="20dp"/>
-
-                <!-- Minimalist Footer Links -->
-                <TextView
-                    android:id="@+id/tvForgotPassword"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Forgot Password?"
-                    android:textSize="13sp"
-                    android:fontFamily="sans-serif-medium"
-                    android:textColor="#A78BFA"
-                    android:gravity="center"
-                    android:padding="6dp"/>
-
-                <TextView
-                    android:id="@+id/tvDontHaveAccount"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="Don't have an account?"
-                    android:textSize="13sp"
-                    android:fontFamily="sans-serif"
-                    android:textColor="#94A3B8"
-                    android:gravity="center"
-                    android:padding="6dp"/>
-
-                <TextView
-                    android:id="@+id/tvRegisterLink"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="Register"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:fontFamily="sans-serif-medium"
-                    android:textColor="#C084FC"
-                    android:gravity="center"
-                    android:padding="6dp"
-                    android:layout_marginBottom="16dp"/>
-
-                <!-- DEV Bypass Buttons (Discreet, Borderless Text Buttons at the Bottom) -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginTop="8dp">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnDevStudent"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:hapticFeedbackEnabled="true"
-                        android:text="⚡ DEV: Student"
-                        android:textSize="11sp"
-                        android:fontFamily="sans-serif"
-                        android:textColor="#FBBF24"
-                        android:letterSpacing="0.02"
-                        app:backgroundTint="@null"
-                        android:layout_marginEnd="8dp"/>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnDevTeacher"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:hapticFeedbackEnabled="true"
-                        android:text="⚡ DEV: Teacher"
-                        android:textSize="11sp"
-                        android:fontFamily="sans-serif"
-                        android:textColor="#FBBF24"
-                        android:letterSpacing="0.02"
-                        app:backgroundTint="@null"/>
-                </LinearLayout>
+                    app:elevation="4dp" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        <!-- New Here? Divider -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="24dp">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="#CBD5E1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/new_here"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif"
+                android:textColor="#64748B"
+                android:paddingHorizontal="12dp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="#CBD5E1" />
+        </LinearLayout>
+
+        <!-- Create Account Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tvRegisterLink"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="@string/create_account"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#0066FF"
+            app:cornerRadius="12dp"
+            android:background="@drawable/btn_secondary_bg"
+            app:backgroundTint="@null"
+            android:layout_marginTop="16dp" />
+
+        <TextView
+            android:id="@+id/tvDontHaveAccount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+        <!-- Developer Bypass Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDevStudent"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="⚡ DEV: Student"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif"
+                android:textColor="#0066FF"
+                android:layout_marginEnd="8dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDevTeacher"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="⚡ DEV: Teacher"
+                android:textSize="11sp"
+                android:fontFamily="sans-serif"
+                android:textColor="#0066FF"/>
+        </LinearLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:minHeight="24dp" />
+
+        <!-- Footer -->
+        <TextView
+            android:id="@+id/tvFooter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/bubt_full_name"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif"
+            android:textColor="#0F172A"
+            android:alpha="0.6"
+            android:layout_marginTop="16dp" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

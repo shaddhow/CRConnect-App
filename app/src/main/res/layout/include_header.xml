@@ -3,20 +3,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="12dp"
+    android:paddingVertical="8dp"
     android:layout_marginBottom="16dp">
 
     <!-- Drawer Hamburger Menu Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnOpenDrawer"
         style="@style/Widget.Material3.Button.IconButton"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
         android:hapticFeedbackEnabled="true"
-        android:backgroundTint="@color/input_bg"
-        app:icon="@android:drawable/ic_menu_sort_by_size"
-        app:iconSize="22dp"
-        app:iconTint="#FFFFFF"
+        android:backgroundTint="#FFFFFF"
+        app:strokeColor="#E2E8F0"
+        app:strokeWidth="1dp"
+        app:cornerRadius="22dp"
+        app:icon="@drawable/ic_menu"
+        app:iconSize="20dp"
+        app:iconTint="#0F172A"
         app:layout_constraintTop_toTopOf="@id/imgUserProfile"
         app:layout_constraintBottom_toBottomOf="@id/imgUserProfile"
         app:layout_constraintStart_toStartOf="parent" />
@@ -24,24 +27,24 @@
     <!-- User Profile Avatar -->
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/imgUserProfile"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="12dp"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginStart="10dp"
         app:layout_constraintStart_toEndOf="@id/btnOpenDrawer"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:scaleType="centerCrop"
         android:src="@drawable/bubt_logo"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Circular"
-        app:strokeColor="@color/primary"
-        app:strokeWidth="2dp" />
+        app:strokeColor="#FFFFFF"
+        app:strokeWidth="3dp" />
 
     <!-- Title and Subtitle Container -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="8dp"
         android:orientation="vertical"
         app:layout_constraintTop_toTopOf="@id/imgUserProfile"
         app:layout_constraintBottom_toBottomOf="@id/imgUserProfile"
@@ -52,21 +55,20 @@
             android:id="@+id/tvHeaderTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
-            android:text="Dashboard"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
+            android:text="Admin Console · Sec 6"
+            android:textColor="#0F172A"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvHeaderSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="1dp"
             android:ellipsize="end"
             android:singleLine="true"
-            android:text="BUBT Network"
-            android:textColor="#94A3B8"
+            android:text="Test Teacher (Dev) · CSE"
+            android:textColor="#334155"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -76,10 +78,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Secure"
-        android:textSize="11sp"
-        android:textColor="#94A3B8"
+        android:textSize="12sp"
+        android:textColor="#166534"
         android:textStyle="bold"
-        android:background="@color/input_bg"
+        android:background="@drawable/bg_chip_ok"
         android:paddingHorizontal="10dp"
         android:paddingVertical="4dp"
         android:layout_marginEnd="8dp"
@@ -91,13 +93,16 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLogout"
         style="@style/Widget.Material3.Button.IconButton"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
         android:hapticFeedbackEnabled="true"
-        app:icon="@android:drawable/ic_lock_power_off"
-        app:iconTint="#FFFFFF"
-        app:iconSize="22dp"
-        android:backgroundTint="@color/input_bg"
+        app:icon="@drawable/ic_power"
+        app:iconTint="#0F172A"
+        app:iconSize="20dp"
+        android:backgroundTint="#FFFFFF"
+        app:strokeColor="#E2E8F0"
+        app:strokeWidth="1dp"
+        app:cornerRadius="22dp"
         app:layout_constraintTop_toTopOf="@id/imgUserProfile"
         app:layout_constraintBottom_toBottomOf="@id/imgUserProfile"
         app:layout_constraintEnd_toEndOf="parent" />

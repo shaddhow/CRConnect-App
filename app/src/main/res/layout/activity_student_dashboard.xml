@@ -254,7 +254,7 @@
                                     android:layout_height="20dp"
                                     android:layout_gravity="center"
                                     android:src="@drawable/ic_announcement"
-                                    app:tint="#A5B4FC"
+                                    app:tint="#0066FF"
                                     tools:ignore="ContentDescription" />
                             </FrameLayout>
 

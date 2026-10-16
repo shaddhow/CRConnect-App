@@ -8,26 +8,30 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
     android:hapticFeedbackEnabled="true"
-    app:cardBackgroundColor="@color/glass_card"
-    app:cardCornerRadius="18dp"
-    app:cardElevation="6dp"
-    app:strokeColor="#30FFFFFF"
-    app:strokeWidth="1dp">
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="2dp"
+    app:strokeColor="#E2E8F0"
+    app:strokeWidth="1dp"
+    android:outlineAmbientShadowColor="#14000000"
+    android:outlineSpotShadowColor="#14000000"
+    tools:ignore="UnusedAttribute">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutCandidateCardContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <!-- Left: Glassy Serial Number Badge -->
+        <!-- Left: Serial Number Badge -->
         <TextView
             android:id="@+id/tvCandidateRank"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="@drawable/glass_badge_bg"
+            android:background="@drawable/bg_icon_badge"
             android:gravity="center"
             android:text="01"
-            android:textColor="#38BDF8"
+            android:textColor="#0066FF"
             android:textSize="14sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@id/pbCandidateVotes"
@@ -45,11 +49,44 @@
             android:ellipsize="end"
             android:singleLine="true"
             android:text="Candidate Name"
-            android:textColor="#FFFFFF"
+            android:textColor="#0F172A"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toStartOf="@id/btnVoteCandidate"
             app:layout_constraintStart_toEndOf="@id/tvCandidateRank"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="HardcodedText" />
+
+        <!-- Admin Sub-line (Hidden in Student mode) -->
+        <TextView
+            android:id="@+id/tvCandidateSubline"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="12dp"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:text="0 votes · Dept. of CSE"
+            android:textColor="#64748B"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@id/btnVoteCandidate"
+            app:layout_constraintStart_toEndOf="@id/tvCandidateRank"
+            app:layout_constraintTop_toBottomOf="@id/tvCandidateName"
+            tools:ignore="HardcodedText" />
+
+        <!-- Admin Percentage (Hidden in Student mode) -->
+        <TextView
+            android:id="@+id/tvCandidatePct"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0%"
+            android:textColor="#0F172A"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:ignore="HardcodedText" />
 
@@ -60,11 +97,8 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:layout_marginTop="6dp"
-            android:background="@drawable/glass_badge_bg"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="4dp"
             android:text="0 Votes"
-            android:textColor="#A78BFA"
+            android:textColor="#64748B"
             android:textSize="12sp"
             android:textStyle="bold"
             app:layout_constraintStart_toEndOf="@id/tvCandidateRank"
@@ -79,13 +113,13 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="6dp"
             android:layout_marginEnd="8dp"
-            android:background="@drawable/glass_badge_bg"
+            android:background="@drawable/bg_chip_muted"
             android:ellipsize="end"
             android:singleLine="true"
             android:paddingHorizontal="10dp"
             android:paddingVertical="4dp"
             android:text="Department of CSE, BUBT"
-            android:textColor="#38BDF8"
+            android:textColor="#64748B"
             android:textSize="11sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toStartOf="@id/btnVoteCandidate"
@@ -93,10 +127,9 @@
             app:layout_constraintTop_toBottomOf="@id/tvCandidateName"
             tools:ignore="HardcodedText" />
 
-        <!-- Right: Action / Status Button -->
+        <!-- Right: Vote Action Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnVoteCandidate"
-            style="@style/Widget.Material3.Button.ElevatedButton"
             android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:hapticFeedbackEnabled="true"
@@ -107,14 +140,14 @@
             android:textColor="#FFFFFF"
             android:textSize="12sp"
             android:textStyle="bold"
-            app:backgroundTint="#6366F1"
+            app:backgroundTint="#0066FF"
             app:cornerRadius="12dp"
             app:layout_constraintBottom_toTopOf="@id/pbCandidateVotes"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:ignore="HardcodedText" />
 
-        <!-- Hidden / Optional Delete Button -->
+        <!-- Delete Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDeleteCandidate"
             style="@style/Widget.Material3.Button.OutlinedButton"
@@ -125,16 +158,16 @@
             android:insetBottom="0dp"
             android:paddingHorizontal="12dp"
             android:text="Delete"
-            android:textColor="#EF4444"
+            android:textColor="#B91C1C"
             android:textSize="12sp"
             android:textStyle="bold"
             android:visibility="gone"
-            app:backgroundTint="@android:color/transparent"
+            app:backgroundTint="#FEF2F2"
             app:cornerRadius="12dp"
             app:layout_constraintBottom_toTopOf="@id/pbCandidateVotes"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:strokeColor="#EF4444"
+            app:strokeColor="#FECACA"
             app:strokeWidth="1dp"
             tools:ignore="HardcodedText" />
 
@@ -143,12 +176,12 @@
             android:id="@+id/pbCandidateVotes"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="0dp"
-            android:layout_height="8dp"
-            android:layout_marginTop="14dp"
-            android:backgroundTint="#222938"
+            android:layout_height="6dp"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="#E2E8F0"
             android:max="50"
             android:progress="0"
-            android:progressTint="#A78BFA"
+            android:progressTint="#0066FF"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

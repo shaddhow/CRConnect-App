@@ -425,6 +425,33 @@ public class PdfReportGenerator {
         context.startActivity(chooser);
     }
 
+    /**
+     * Open PDF file using Android FileProvider & Intent chooser.
+     */
+    public static void openPdfFile(Context context, File pdfFile) {
+        if (pdfFile == null || !pdfFile.exists()) {
+            Toast.makeText(context, "PDF File not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            Uri fileUri = FileProvider.getUriForFile(
+                    context,
+                    context.getPackageName() + ".fileprovider",
+                    pdfFile
+            );
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(fileUri, "application/pdf");
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Intent chooser = Intent.createChooser(intent, "Open Election PDF Report");
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(chooser);
+        } catch (Exception e) {
+            Log.e(TAG, "No PDF viewer app found", e);
+            Toast.makeText(context, "PDF saved to: " + pdfFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     private static void drawMetric(Canvas canvas, Paint paint, String label, String value, float x, float y, int valueColor) {
         paint.setColor(Color.parseColor("#64748B"));
         paint.setTextSize(8f);

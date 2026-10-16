@@ -1,25 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Professional Modern Dark Palette -->
-    <color name="primary">#7C3AED</color>
-    <color name="primaryVariant">#6D28D9</color>
-    <color name="secondary">#A78BFA</color>
-    <color name="background">#0A0D14</color>
-    <color name="surface">#161B26</color>
-    <color name="surface_card">#161B26</color>
-    <color name="card_stroke">#222938</color>
-    <color name="input_bg">#161B26</color>
-    <color name="glass_card">#CC161B26</color>
-    <color name="error">#7F1D1D</color>
-    <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#94A3B8</color>
-    <color name="divider">#1F2937</color>
-    <color name="accent_violet">#7C3AED</color>
-    <color name="accent_purple_glow">#2E1065</color>
-    <color name="accent_green">#10B981</color>
-    <color name="accent_amber">#F59E0B</color>
-    <color name="destructive_bg">#7F1D1D</color>
-    <color name="destructive_text">#FCA5A5</color>
+    <!-- CRConnect Redesign Solid Light Palette -->
+    <color name="primary">#0066FF</color>
+    <color name="primary_pressed">#0052CC</color>
+    <color name="tint">#E6F0FF</color>
+    <color name="tint_border">#BFD7FF</color>
+    <color name="title_text">#0F172A</color>
+    <color name="muted_text">#64748B</color>
+    <color name="border_color">#E2E8F0</color>
+    <color name="input_border">#CBD5E1</color>
+    <color name="input_bg_filled">#F1F7FF</color>
+    <color name="error_red">#DC2626</color>
+    <color name="success_green">#16A34A</color>
+    <color name="disabled_bg">#E2E8F0</color>
+    <color name="disabled_text">#94A3B8</color>
+    <color name="segmented_bg">#EEF3F9</color>
+    <color name="welcome_badge_bg">#B2FFFFFF</color> <!-- rgba(255,255,255,0.7) -->
+    <color name="welcome_badge_text">#0B3A9E</color>
+    <color name="card_bg">#FFFFFF</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+
+    <!-- Legacy compatibility mappings -->
+    <color name="primaryVariant">#0052CC</color>
+    <color name="secondary">#0066FF</color>
+    <color name="background">#E9EEF4</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="card_stroke">#E2E8F0</color>
+    <color name="input_bg">#FFFFFF</color>
+    <color name="glass_card">#FFFFFF</color>
+    <color name="error">#DC2626</color>
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="divider">#CBD5E1</color>
+    <color name="accent_violet">#0066FF</color>
+    <color name="accent_purple_glow">#E6F0FF</color>
+    <color name="accent_green">#16A34A</color>
+    <color name="accent_amber">#F59E0B</color>
+    <color name="destructive_bg">#FEE2E2</color>
+    <color name="destructive_text">#DC2626</color>
 </resources>

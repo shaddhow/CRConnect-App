@@ -2,18 +2,19 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.CRConnect" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
-        <item name="colorSecondary">@color/secondary</item>
-        <item name="android:windowBackground">@color/background</item>
-        <item name="colorSurface">@color/surface</item>
-        <item name="colorOnSurface">@color/text_primary</item>
-        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
-        <item name="colorError">@color/error</item>
-        <item name="android:fontFamily">sans-serif</item>
-        <item name="fontFamily">sans-serif</item>
+        <item name="colorSecondary">@color/primary_pressed</item>
+        <item name="android:windowBackground">@drawable/bg_gradient</item>
+        <item name="colorSurface">@color/card_bg</item>
+        <item name="elevationOverlayEnabled">false</item>
+        <item name="colorOnSurface">@color/title_text</item>
+        <item name="colorOnSurfaceVariant">@color/muted_text</item>
+        <item name="colorError">@color/error_red</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="fontFamily">sans-serif-medium</item>
         <item name="android:windowActivityTransitions">true</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
     </style>
 </resources>
