@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer 3.5dp solid #FFFFFF ring stroke -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF" />
+        </shape>
+    </item>
+    <!-- Inner blue circle #0066FF -->
+    <item
+        android:bottom="3.5dp"
+        android:left="3.5dp"
+        android:right="3.5dp"
+        android:top="3.5dp">
+        <shape android:shape="oval">
+            <solid android:color="#0066FF" />
+        </shape>
+    </item>
+</layer-list>

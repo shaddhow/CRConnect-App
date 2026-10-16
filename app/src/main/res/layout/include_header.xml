@@ -1,110 +1,128 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/layoutHeader"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="8dp"
-    android:layout_marginBottom="16dp">
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
 
-    <!-- Drawer Hamburger Menu Button -->
+    <!-- Menu Button: 42dp x 42dp, circular bg #FFFFFF, stroke 1dp #E2E8F0, icon tinted #0F172A -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnOpenDrawer"
         style="@style/Widget.Material3.Button.IconButton"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
-        android:hapticFeedbackEnabled="true"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
         android:backgroundTint="#FFFFFF"
+        android:insetLeft="0dp"
+        android:insetTop="0dp"
+        android:insetRight="0dp"
+        android:insetBottom="0dp"
+        app:cornerRadius="21dp"
         app:strokeColor="#E2E8F0"
         app:strokeWidth="1dp"
-        app:cornerRadius="22dp"
         app:icon="@drawable/ic_menu"
         app:iconSize="20dp"
         app:iconTint="#0F172A"
-        app:layout_constraintTop_toTopOf="@id/imgUserProfile"
-        app:layout_constraintBottom_toBottomOf="@id/imgUserProfile"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:contentDescription="Open menu" />
 
-    <!-- User Profile Avatar -->
-    <com.google.android.material.imageview.ShapeableImageView
-        android:id="@+id/imgUserProfile"
+    <!-- Avatar Container: 44dp x 44dp, inner #0066FF, stroke 3.5dp #FFFFFF, elevation 3dp, text "RU" 16sp bold pure white -->
+    <FrameLayout
         android:layout_width="44dp"
         android:layout_height="44dp"
-        android:layout_marginStart="10dp"
-        app:layout_constraintStart_toEndOf="@id/btnOpenDrawer"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:scaleType="centerCrop"
-        android:src="@drawable/bubt_logo"
-        app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Circular"
-        app:strokeColor="#FFFFFF"
-        app:strokeWidth="3dp" />
+        android:layout_marginStart="10dp">
 
-    <!-- Title and Subtitle Container -->
+        <TextView
+            android:id="@+id/tvAvatar"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_avatar_ring"
+            android:elevation="3dp"
+            android:gravity="center"
+            android:text="RU"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-black" />
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imgUserProfile"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Circular" />
+    </FrameLayout>
+
+    <!-- Text Block (weight="1") -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:layout_marginStart="10dp"
-        android:layout_marginEnd="8dp"
-        android:orientation="vertical"
-        app:layout_constraintTop_toTopOf="@id/imgUserProfile"
-        app:layout_constraintBottom_toBottomOf="@id/imgUserProfile"
-        app:layout_constraintStart_toEndOf="@id/imgUserProfile"
-        app:layout_constraintEnd_toStartOf="@id/tvSecureBadge">
+        android:orientation="vertical">
 
+        <!-- Title: "Election Portal", 16sp bold (#0F172A) -->
         <TextView
             android:id="@+id/tvHeaderTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Admin Console · Sec 6"
+            android:text="Election Portal"
             android:textColor="#0F172A"
             android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-black"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
+        <!-- Subtitle: "Dashboard · Department of C...", 12sp (#334155) -->
         <TextView
             android:id="@+id/tvHeaderSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
-            android:ellipsize="end"
-            android:singleLine="true"
-            android:text="Test Teacher (Dev) · CSE"
+            android:text="Dashboard · Department of CSE, BUBT"
             android:textColor="#334155"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
     </LinearLayout>
 
-    <!-- Live Secure Status Badge -->
+    <!-- "Secure" Chip: height 26dp, corner radius 999dp, bg #DCFCE7, stroke 1dp #BBF7D0, text "Secure" 12sp bold #166534, padding 10dp, marginEnd 10dp -->
     <TextView
         android:id="@+id/tvSecureBadge"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="26dp"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/bg_chip_green"
+        android:gravity="center"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
         android:text="Secure"
-        android:textSize="12sp"
         android:textColor="#166534"
-        android:textStyle="bold"
-        android:background="@drawable/bg_chip_ok"
-        android:paddingHorizontal="10dp"
-        android:paddingVertical="4dp"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintTop_toTopOf="@id/imgUserProfile"
-        app:layout_constraintBottom_toBottomOf="@id/imgUserProfile"
-        app:layout_constraintEnd_toStartOf="@id/btnLogout" />
+        android:textSize="12sp"
+        android:textStyle="bold" />
 
-    <!-- Logout Button -->
+    <!-- Power Button: 42dp x 42dp, circular bg #FFFFFF, stroke 1dp #E2E8F0, icon tinted #0F172A -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLogout"
         style="@style/Widget.Material3.Button.IconButton"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
-        android:hapticFeedbackEnabled="true"
-        app:icon="@drawable/ic_power"
-        app:iconTint="#0F172A"
-        app:iconSize="20dp"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
         android:backgroundTint="#FFFFFF"
+        android:insetLeft="0dp"
+        android:insetTop="0dp"
+        android:insetRight="0dp"
+        android:insetBottom="0dp"
+        app:cornerRadius="21dp"
         app:strokeColor="#E2E8F0"
         app:strokeWidth="1dp"
-        app:cornerRadius="22dp"
-        app:layout_constraintTop_toTopOf="@id/imgUserProfile"
-        app:layout_constraintBottom_toBottomOf="@id/imgUserProfile"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:icon="@drawable/ic_power"
+        app:iconSize="20dp"
+        app:iconTint="#0F172A"
+        android:contentDescription="Power / Sign out" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

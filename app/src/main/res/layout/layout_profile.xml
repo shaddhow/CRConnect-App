@@ -1,162 +1,331 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/layoutProfileSection"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:clipToPadding="false"
-    android:paddingBottom="24dp"
+    android:background="@drawable/bg_login_gradient"
     android:fillViewport="true"
-    android:visibility="gone">
+    android:overScrollMode="never"
+    android:scrollbars="none"
+    android:visibility="gone"
+    tools:visibility="visible">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingTop="4dp">
+        android:paddingBottom="100dp"
+        android:paddingEnd="20dp"
+        android:paddingStart="20dp"
+        android:paddingTop="12dp">
 
-        <!-- Top Profile Card: Compact & Sleek -->
+        <!-- Card 1: Profile Main Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="6dp"
-            app:cardBackgroundColor="@color/glass_card"
-            app:strokeWidth="1.5dp"
-            app:strokeColor="#30FFFFFF"
-            android:layout_marginBottom="12dp">
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="4dp"
+            app:strokeColor="#E2E8F0"
+            app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
                 android:orientation="vertical"
-                android:padding="14dp"
-                android:gravity="center_horizontal">
+                android:padding="20dp">
 
-                <!-- Compact Avatar -->
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/imgProfileAvatar"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/bubt_logo"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Circular"
-                    app:strokeColor="@color/primary"
-                    app:strokeWidth="2dp"
-                    android:layout_marginBottom="8dp"
-                    tools:ignore="ContentDescription" />
+                <!-- Big Avatar -->
+                <FrameLayout
+                    android:layout_width="88dp"
+                    android:layout_height="88dp">
 
+                    <TextView
+                        android:id="@+id/tvProfileAvatarText"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_profile_big_avatar"
+                        android:gravity="center"
+                        android:text="RU"
+                        android:textColor="#FFFFFF"
+                        android:textSize="30sp"
+                        android:textStyle="bold"
+                        tools:ignore="HardcodedText" />
+
+                    <ImageView
+                        android:id="@+id/imgProfileAvatar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:visibility="gone"
+                        tools:ignore="ContentDescription" />
+                </FrameLayout>
+
+                <!-- Name -->
                 <TextView
                     android:id="@+id/tvProfileName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Developer Student"
-                    android:textSize="18sp"
+                    android:layout_marginTop="12dp"
+                    android:text="Rahim Uddin"
+                    android:textColor="#0F172A"
+                    android:textSize="20sp"
                     android:textStyle="bold"
-                    android:textColor="#FFFFFF"
-                    android:layout_marginBottom="2dp"
                     tools:ignore="HardcodedText" />
 
+                <!-- Email -->
                 <TextView
                     android:id="@+id/tvProfileEmail"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
                     android:text="student@bubt.edu.bd"
-                    android:textSize="12sp"
-                    android:textColor="#94A3B8"
-                    android:layout_marginBottom="8dp"
+                    android:textColor="#64748B"
+                    android:textSize="14sp"
                     tools:ignore="HardcodedText" />
 
+                <!-- Dept Pill -->
                 <TextView
                     android:id="@+id/tvProfileDept"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_profile_dept_pill"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="5dp"
                     android:text="Department of CSE, BUBT"
-                    android:textSize="11sp"
-                    android:textColor="@color/secondary"
+                    android:textColor="#0066FF"
+                    android:textSize="12sp"
                     android:textStyle="bold"
-                    android:background="@drawable/glass_badge_bg"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="4dp"
-                    android:layout_marginBottom="12dp"
                     tools:ignore="HardcodedText" />
 
-                <!-- Slimmer Stat Capsules Row using Symmetric Horizontal Chain Style Spread -->
-                <androidx.constraintlayout.widget.ConstraintLayout
+                <!-- 3 Info Tiles -->
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal"
+                    android:weightSum="3">
 
+                    <!-- Tile 1 -->
                     <LinearLayout
-                        android:id="@+id/cardIdContainer"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
+                        android:layout_height="64dp"
+                        android:layout_marginEnd="4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_stat_tile"
                         android:gravity="center"
-                        android:background="@drawable/glass_card_bg"
-                        android:paddingVertical="8dp"
-                        android:paddingHorizontal="4dp"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintEnd_toStartOf="@id/cardIntakeContainer"
-                        app:layout_constraintHorizontal_chainStyle="spread">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="STUDENT ID" android:textSize="11sp" android:textColor="#9CA3AF" android:textStyle="bold" tools:ignore="HardcodedText"/>
-                        <TextView android:id="@+id/tvProfileStudentID" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2023-DEV-001" android:textSize="13sp" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="2dp" android:singleLine="true" tools:ignore="HardcodedText"/>
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Student ID"
+                            android:textColor="#64748B"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            tools:ignore="HardcodedText,SmallSp" />
+
+                        <TextView
+                            android:id="@+id/tvProfileStudentID"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:singleLine="true"
+                            android:text="2112345"
+                            android:textColor="#0F172A"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            tools:ignore="HardcodedText" />
                     </LinearLayout>
 
+                    <!-- Tile 2 -->
                     <LinearLayout
-                        android:id="@+id/cardIntakeContainer"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
+                        android:layout_height="64dp"
+                        android:layout_marginEnd="4dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_stat_tile"
                         android:gravity="center"
-                        android:background="@drawable/glass_card_bg"
-                        android:paddingVertical="8dp"
-                        android:paddingHorizontal="4dp"
-                        android:layout_marginStart="8dp"
-                        android:layout_marginEnd="8dp"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/cardIdContainer"
-                        app:layout_constraintEnd_toStartOf="@id/cardSectionContainer">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="INTAKE" android:textSize="11sp" android:textColor="#9CA3AF" android:textStyle="bold" tools:ignore="HardcodedText"/>
-                        <TextView android:id="@+id/tvProfileIntake" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55" android:textSize="13sp" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="2dp" tools:ignore="HardcodedText"/>
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Intake"
+                            android:textColor="#64748B"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            tools:ignore="HardcodedText,SmallSp" />
+
+                        <TextView
+                            android:id="@+id/tvProfileIntake"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="55"
+                            android:textColor="#0F172A"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            tools:ignore="HardcodedText" />
                     </LinearLayout>
 
+                    <!-- Tile 3 -->
                     <LinearLayout
-                        android:id="@+id/cardSectionContainer"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
+                        android:layout_height="64dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_stat_tile"
                         android:gravity="center"
-                        android:background="@drawable/glass_card_bg"
-                        android:paddingVertical="8dp"
-                        android:paddingHorizontal="4dp"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/cardIntakeContainer"
-                        app:layout_constraintEnd_toEndOf="parent">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SECTION" android:textSize="11sp" android:textColor="#9CA3AF" android:textStyle="bold" tools:ignore="HardcodedText"/>
-                        <TextView android:id="@+id/tvProfileSection" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="55/8" android:textSize="13sp" android:textColor="#FFFFFF" android:textStyle="bold" android:layout_marginTop="2dp" tools:ignore="HardcodedText"/>
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Section"
+                            android:textColor="#64748B"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            tools:ignore="HardcodedText,SmallSp" />
+
+                        <TextView
+                            android:id="@+id/tvProfileSection"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="6"
+                            android:textColor="#0F172A"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            tools:ignore="HardcodedText" />
                     </LinearLayout>
 
-                </androidx.constraintlayout.widget.ConstraintLayout>
+                </LinearLayout>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Academic Status Card -->
+        <!-- Card 2: Academic Status Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="6dp"
-            app:cardBackgroundColor="@color/glass_card"
-            app:strokeWidth="1.5dp"
-            app:strokeColor="#30FFFFFF"
-            android:layout_marginBottom="12dp">
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="4dp"
+            app:strokeColor="#E2E8F0"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <!-- Verification Status -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Verification status"
+                        android:textColor="#64748B"
+                        android:textSize="14sp"
+                        tools:ignore="HardcodedText" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Verified · Locked"
+                        android:textColor="#16A34A"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        tools:ignore="HardcodedText" />
+                </LinearLayout>
+
+                <!-- Total enrolled -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Total enrolled courses"
+                        android:textColor="#64748B"
+                        android:textSize="14sp"
+                        tools:ignore="HardcodedText" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="6"
+                        android:textColor="#0F172A"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        tools:ignore="HardcodedText" />
+                </LinearLayout>
+
+                <!-- Attendance -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Attendance overview"
+                        android:textColor="#64748B"
+                        android:textSize="14sp"
+                        tools:ignore="HardcodedText" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="92% (Excellent)"
+                        android:textColor="#0066FF"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        tools:ignore="HardcodedText" />
+                </LinearLayout>
+
+                <ProgressBar
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="6dp"
+                    android:layout_marginTop="12dp"
+                    android:max="100"
+                    android:progress="92"
+                    android:progressDrawable="@drawable/bg_profile_progress" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Card 3: Quick Action Buttons Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="4dp"
+            app:strokeColor="#E2E8F0"
+            app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -164,119 +333,59 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Academic Status"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="#FFFFFF"
-                    android:layout_marginBottom="10dp"
-                    tools:ignore="HardcodedText"/>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Verification Status" android:textColor="#94A3B8" android:textSize="13sp" tools:ignore="HardcodedText"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Verified • Locked" android:textColor="#10B981" android:textSize="12sp" android:textStyle="bold" android:background="@drawable/glass_badge_bg" android:paddingHorizontal="10dp" android:paddingVertical="4dp" tools:ignore="HardcodedText"/>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Total Enrolled Courses" android:textColor="#94A3B8" android:textSize="13sp" tools:ignore="HardcodedText"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="6 Courses" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" tools:ignore="HardcodedText"/>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Attendance Overview" android:textColor="#94A3B8" android:textSize="13sp" tools:ignore="HardcodedText"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="92% (Excellent)" android:textColor="#38BDF8" android:textSize="13sp" android:textStyle="bold" tools:ignore="HardcodedText"/>
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Quick Settings / Action Chips -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="6dp"
-            app:cardBackgroundColor="@color/glass_card"
-            app:strokeWidth="1.5dp"
-            app:strokeColor="#30FFFFFF"
-            android:layout_marginBottom="24dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Quick Actions"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="#FFFFFF"
-                    android:layout_marginBottom="10dp"
-                    android:layout_marginStart="4dp"
-                    tools:ignore="HardcodedText"/>
-
+                <!-- Edit profile picture -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnEditProfile"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:text="Edit Profile Picture"
-                    android:textColor="#38BDF8"
-                    android:textSize="13sp"
+                    android:layout_height="50dp"
+                    android:insetBottom="0dp"
+                    android:insetTop="0dp"
+                    android:text="Edit profile picture"
+                    android:textColor="#0066FF"
+                    android:textSize="14sp"
                     android:textStyle="bold"
-                    app:strokeColor="#38BDF8"
-                    app:strokeWidth="1dp"
-                    app:backgroundTint="@android:color/transparent"
+                    app:backgroundTint="#FFFFFF"
                     app:cornerRadius="12dp"
-                    android:layout_marginBottom="8dp"
-                    tools:ignore="HardcodedText"/>
+                    app:strokeColor="#0066FF"
+                    app:strokeWidth="1.5dp"
+                    tools:ignore="HardcodedText" />
 
+                <!-- Security settings -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSecuritySettings"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:text="Security Settings"
-                    android:textColor="#A78BFA"
-                    android:textSize="13sp"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:insetBottom="0dp"
+                    android:insetTop="0dp"
+                    android:text="Security settings"
+                    android:textColor="#0066FF"
+                    android:textSize="14sp"
                     android:textStyle="bold"
-                    app:strokeColor="#A78BFA"
-                    app:strokeWidth="1dp"
-                    app:backgroundTint="@android:color/transparent"
+                    app:backgroundTint="#FFFFFF"
                     app:cornerRadius="12dp"
-                    android:layout_marginBottom="8dp"
-                    tools:ignore="HardcodedText"/>
+                    app:strokeColor="#0066FF"
+                    app:strokeWidth="1.5dp"
+                    tools:ignore="HardcodedText" />
 
+                <!-- Log out -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnProfileLogout"
-                    style="@style/Widget.Material3.Button.ElevatedButton"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:text="Log Out"
-                    android:textColor="#FFFFFF"
-                    android:textSize="13sp"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:insetBottom="0dp"
+                    android:insetTop="0dp"
+                    android:text="Log out"
+                    android:textColor="#B91C1C"
+                    android:textSize="14sp"
                     android:textStyle="bold"
-                    app:backgroundTint="#EF4444"
+                    app:backgroundTint="#FEF2F2"
                     app:cornerRadius="12dp"
-                    tools:ignore="HardcodedText"/>
+                    app:strokeColor="#FECACA"
+                    app:strokeWidth="1dp"
+                    tools:ignore="HardcodedText" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

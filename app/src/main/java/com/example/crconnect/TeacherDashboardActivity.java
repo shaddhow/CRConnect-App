@@ -347,6 +347,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 return insets;
             });
         }
+        handleTargetTabFromIntent(getIntent());
 
         // Bottom nav selection follows scroll (Requirement 5)
         NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
@@ -1088,6 +1089,22 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         if (bottomNavTeacher != null) {
             HapticUtils.attachBottomNav(bottomNavTeacher);
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleTargetTabFromIntent(intent);
+    }
+
+    private void handleTargetTabFromIntent(Intent intent) {
+        if (intent != null && intent.hasExtra("EXTRA_TARGET_TAB")) {
+            int targetId = intent.getIntExtra("EXTRA_TARGET_TAB", R.id.nav_teacher_candidates);
+            if (bottomNavTeacher != null) {
+                bottomNavTeacher.setSelectedItemId(targetId);
+            }
         }
     }
 

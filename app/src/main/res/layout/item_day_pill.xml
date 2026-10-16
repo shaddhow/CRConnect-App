@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layoutDayPill"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:layout_weight="1"
+    android:layout_marginHorizontal="2dp"
+    android:background="@drawable/bg_day_pill_inactive"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:paddingVertical="6dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- Day Name (SAT, SUN, MON...) -->
+    <TextView
+        android:id="@+id/tvDayName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:textColor="#64748B"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:textAllCaps="true"
+        tools:ignore="SmallSp" />
+
+    <!-- Day Number (10, 11, 12...) -->
+    <TextView
+        android:id="@+id/tvDayNum"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#0F172A"
+        android:fontFamily="sans-serif-bold"
+        android:gravity="center"
+        android:layout_marginTop="2dp" />
+
+    <!-- Indicator Dot (5dp x 5dp) -->
+    <View
+        android:id="@+id/viewDot"
+        android:layout_width="5dp"
+        android:layout_height="5dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/bg_indicator_dot"
+        android:visibility="invisible" />
+
+</LinearLayout>

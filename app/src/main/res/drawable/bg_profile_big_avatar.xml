@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer 1dp stroke #E2E8F0 -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#E2E8F0" />
+        </shape>
+    </item>
+    <!-- 5dp solid #FFFFFF ring (total padding = 1dp stroke + 5dp white = 6dp) -->
+    <item
+        android:bottom="1dp"
+        android:left="1dp"
+        android:right="1dp"
+        android:top="1dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF" />
+        </shape>
+    </item>
+    <!-- Inner #0066FF circle -->
+    <item
+        android:bottom="6dp"
+        android:left="6dp"
+        android:right="6dp"
+        android:top="6dp">
+        <shape android:shape="oval">
+            <solid android:color="#0066FF" />
+        </shape>
+    </item>
+</layer-list>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_gradient_portal"
+    tools:context=".StudentDashboardActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        app:elevation="0dp">
+
+        <androidx.appcompat.widget.Toolbar
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="@android:color/transparent"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <!-- LEFT: Hamburger button in white circle -->
+            <ImageButton
+                android:id="@+id/btnMenu"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_circle_white"
+                android:src="@drawable/ic_menu"
+                app:tint="#0F172A"
+                android:padding="8dp"
+                android:contentDescription="Menu"/>
+
+            <!-- CENTER GROUP: avatar + title + subtitle -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- Avatar circle -->
+                <TextView
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:text="RU"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:background="@drawable/bg_avatar_blue"/>
+
+                <!-- Title + subtitle -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Election Po..."
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="#0F172A"
+                        android:maxLines="1"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Dashboard · Dep..."
+                        android:textSize="12sp"
+                        android:textColor="#64748B"
+                        android:maxLines="1"/>
+                </LinearLayout>
+
+                <!-- Secure chip -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:text="Secure"
+                    android:textSize="11sp"
+                    android:textColor="#166534"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_chip_green"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingBottom="3dp"/>
+            </LinearLayout>
+
+            <!-- RIGHT: Power button in white circle -->
+            <ImageButton
+                android:id="@+id/btnPower"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="end"
+                android:background="@drawable/bg_circle_white"
+                android:src="@drawable/ic_power"
+                app:tint="#0F172A"
+                android:padding="8dp"
+                android:contentDescription="Sign out"/>
+        </androidx.appcompat.widget.Toolbar>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Content Area Container -->
+    <FrameLayout
+        android:id="@+id/containerContent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <!-- 1dp top divider View ABOVE BottomNavigationView -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E2E8F0"/>
+
+    <!-- Bottom Navigation Bar -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:background="#FFFFFF"
+        app:elevation="0dp"
+        app:itemIconSize="26dp"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemTextColor="@color/nav_item_color"
+        app:itemTextAppearanceActive="@style/NavLabelActive"
+        app:itemTextAppearanceInactive="@style/NavLabelInactive"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_menu"/>
+
+</LinearLayout>

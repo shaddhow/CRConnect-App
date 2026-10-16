@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Outermost soft blue shadow -->
+    <item android:top="16dp" android:left="8dp" android:right="8dp" android:bottom="0dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="#050066FF" />
+        </shape>
+    </item>
+
+    <!-- Mid outer soft blue shadow -->
+    <item android:top="12dp" android:left="16dp" android:right="16dp" android:bottom="4dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="#0D0066FF" />
+        </shape>
+    </item>
+
+    <!-- Mid inner blue shadow -->
+    <item android:top="8dp" android:left="24dp" android:right="24dp" android:bottom="8dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="#1A0066FF" />
+        </shape>
+    </item>
+
+    <!-- Core intense blue spot shadow -->
+    <item android:top="4dp" android:left="32dp" android:right="32dp" android:bottom="12dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="#260066FF" />
+        </shape>
+    </item>
+
+    <!-- Very soft ambient gray shadow -->
+    <item android:top="2dp" android:bottom="16dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="#05000000" />
+        </shape>
+    </item>
+
+    <!-- Main Card Body -->
+    <item android:bottom="20dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="#FFFFFF" />
+            <stroke android:width="1dp" android:color="#E2E8F0" />
+        </shape>
+    </item>
+
+</layer-list>

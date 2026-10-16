@@ -2,6 +2,9 @@
     <string name="app_name">CRConnect</string>
     <string name="app_subtitle">BUBT Department Network</string>
     <string name="welcome_badge">Sign in to your class hub</string>
+    <string name="bubt_logo_desc">BUBT Logo</string>
+    <string name="dev_student">⚡ DEV: Student</string>
+    <string name="dev_teacher">⚡ DEV: Teacher</string>
 
     <string name="student">Student</string>
     <string name="teacher">Teacher</string>

@@ -4,15 +4,16 @@ import com.example.crconnect.core.utils.HapticUtils;
 
 import android.content.ContentValues;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,11 +32,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -76,6 +81,7 @@ public class RoutineActivity extends AppCompatActivity {
     private TextView tvDailyRoutineTitle, tvNoRoutineClasses;
     private RecyclerView recyclerViewRoutine;
     private FloatingActionButton fabAddRoutineClass;
+    private BottomNavigationView bottomNavRoutine;
     private LinearLayout containerDayPicker;
 
     private View layoutEmptyState;
@@ -110,6 +116,19 @@ public class RoutineActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        getWindow().setNavigationBarColor(Color.TRANSPARENT);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
+        WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        if (insetsController != null) {
+            insetsController.setAppearanceLightStatusBars(false);
+            insetsController.setAppearanceLightNavigationBars(false);
+        }
+
         setContentView(R.layout.activity_routine);
 
         sessionManager = new SessionManager(this);
@@ -148,11 +167,77 @@ public class RoutineActivity extends AppCompatActivity {
 
         View headerView = findViewById(R.id.layoutRoutineHeader);
         if (headerView != null) {
+            final int initialTopPadding = headerView.getPaddingTop();
             ViewCompat.setOnApplyWindowInsetsListener(headerView, (v, insets) -> {
                 Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(v.getPaddingLeft(), systemBars.top + v.getPaddingTop(), v.getPaddingRight(), v.getPaddingBottom());
+                v.setPadding(v.getPaddingLeft(), initialTopPadding + systemBars.top, v.getPaddingRight(), v.getPaddingBottom());
                 return insets;
             });
+        }
+
+        View scrollViewRoutine = findViewById(R.id.scrollViewRoutine);
+        if (scrollViewRoutine != null) {
+            final int initialBottomPadding = scrollViewRoutine.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(scrollViewRoutine, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), initialBottomPadding + systemBars.bottom);
+                return WindowInsetsCompat.CONSUMED;
+            });
+        }
+
+        if (fabAddRoutineClass != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(fabAddRoutineClass, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
+                int baseMargin = (int) (24 * getResources().getDisplayMetrics().density);
+                lp.bottomMargin = baseMargin + systemBars.bottom;
+                v.setLayoutParams(lp);
+                return insets;
+            });
+        }
+
+        bottomNavRoutine = findViewById(R.id.bottomNavRoutine);
+        if (bottomNavRoutine != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(bottomNavRoutine, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(0, 0, 0, systemBars.bottom);
+                return insets;
+            });
+
+            String userRole = sessionManager != null ? sessionManager.getUserRole() : null;
+            if (userRole != null && (userRole.toLowerCase().contains("teacher") || userRole.toLowerCase().contains("admin"))) {
+                bottomNavRoutine.getMenu().clear();
+                bottomNavRoutine.inflateMenu(R.menu.bottom_nav_menu_teacher);
+                bottomNavRoutine.setOnItemSelectedListener(item -> {
+                    int id = item.getItemId();
+                    Intent intent = new Intent(RoutineActivity.this, TeacherDashboardActivity.class);
+                    intent.putExtra("EXTRA_TARGET_TAB", id);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                    finish();
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                    return true;
+                });
+            } else {
+                bottomNavRoutine.setSelectedItemId(R.id.nav_schedule);
+                bottomNavRoutine.setOnItemSelectedListener(item -> {
+                    int id = item.getItemId();
+                    if (id == R.id.nav_schedule) {
+                        if (scrollViewRoutine instanceof NestedScrollView) {
+                            ((NestedScrollView) scrollViewRoutine).smoothScrollTo(0, 0);
+                        }
+                        return true;
+                    }
+                    Intent intent = new Intent(RoutineActivity.this, StudentDashboardActivity.class);
+                    intent.putExtra("EXTRA_TARGET_TAB", id);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                    finish();
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                    return true;
+                });
+            }
+            HapticUtils.attachBottomNav(bottomNavRoutine);
         }
 
         if (btnRoutineBack != null) {
@@ -341,7 +426,20 @@ public class RoutineActivity extends AppCompatActivity {
         }
     }
 
+    private boolean checkIfDayHasClasses(String dayName) {
+        List<RoutineClassItem> cached = RoutineLocalCache.loadRoutineLocally(this);
+        if (cached != null) {
+            for (RoutineClassItem item : cached) {
+                if (item != null && item.day != null && matchesSelectedDay(item.day, dayName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private void setupDayPicker() {
+        if (containerDayPicker == null) return;
         containerDayPicker.removeAllViews();
 
         Calendar cal = Calendar.getInstance();
@@ -363,68 +461,65 @@ public class RoutineActivity extends AppCompatActivity {
     }
 
     private View createDayPillView(String dayName, String dayNum) {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setGravity(Gravity.CENTER);
-        layout.setPadding(24, 16, 24, 16);
-        layout.setTag(dayName);
+        View pillView = getLayoutInflater().inflate(R.layout.item_day_pill, containerDayPicker, false);
+        pillView.setTag(dayName);
 
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-        );
-        params.setMarginEnd(12);
-        layout.setLayoutParams(params);
+        TextView tvDay = pillView.findViewById(R.id.tvDayName);
+        TextView tvNum = pillView.findViewById(R.id.tvDayNum);
+        View viewDot = pillView.findViewById(R.id.viewDot);
 
-        TextView tvDay = new TextView(this);
-        tvDay.setText(dayName.substring(0, 3).toUpperCase());
-        tvDay.setTextSize(11);
-        tvDay.setTypeface(null, Typeface.BOLD);
-        tvDay.setGravity(Gravity.CENTER);
+        if (tvDay != null) {
+            String shortDay = dayName.length() >= 3 ? dayName.substring(0, 3).toUpperCase() : dayName.toUpperCase();
+            tvDay.setText(shortDay);
+        }
 
-        TextView tvNum = new TextView(this);
-        tvNum.setText(dayNum);
-        tvNum.setTextSize(14);
-        tvNum.setTypeface(null, Typeface.BOLD);
-        tvNum.setGravity(Gravity.CENTER);
+        if (tvNum != null) {
+            tvNum.setText(dayNum);
+        }
 
-        layout.addView(tvDay);
-        layout.addView(tvNum);
+        boolean hasClasses = checkIfDayHasClasses(dayName);
+        if (viewDot != null) {
+            viewDot.setVisibility(hasClasses ? View.VISIBLE : View.INVISIBLE);
+        }
 
-        layout.setOnClickListener(v -> {
+        pillView.setOnClickListener(v -> {
             HapticUtils.lightClick(v);
             selectedDay = dayName;
             highlightSelectedDay(dayName);
             loadRoutineForDay(dayName);
         });
 
-        return layout;
+        return pillView;
     }
 
     private void highlightSelectedDay(String activeDay) {
+        if (containerDayPicker == null) return;
         for (int idx = 0; idx < containerDayPicker.getChildCount(); idx++) {
-            View v = containerDayPicker.getChildAt(idx);
-            if (v instanceof LinearLayout) {
-                LinearLayout pill = (LinearLayout) v;
-                Object tag = pill.getTag();
-                boolean matches = tag != null && matchesSelectedDay(tag.toString(), activeDay);
+            View pillView = containerDayPicker.getChildAt(idx);
+            Object tag = pillView.getTag();
+            boolean isSelected = tag != null && matchesSelectedDay(tag.toString(), activeDay);
 
-                TextView tvDay = (TextView) pill.getChildAt(0);
-                TextView tvNum = (TextView) pill.getChildAt(1);
+            TextView tvDay = pillView.findViewById(R.id.tvDayName);
+            TextView tvNum = pillView.findViewById(R.id.tvDayNum);
+            View viewDot = pillView.findViewById(R.id.viewDot);
 
-                if (matches) {
-                    pill.setBackground(ContextCompat.getDrawable(this, R.drawable.glass_badge_bg));
-                    pill.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.primary));
-                    tvDay.setTextColor(ContextCompat.getColor(this, R.color.white));
-                    tvNum.setTextColor(ContextCompat.getColor(this, R.color.white));
-                } else {
-                    pill.setBackground(ContextCompat.getDrawable(this, R.drawable.glass_card_bg));
-                    pill.setBackgroundTintList(null);
-                    tvDay.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
-                    tvNum.setTextColor(ContextCompat.getColor(this, R.color.white));
+            if (isSelected) {
+                pillView.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_day_pill_active));
+                if (tvDay != null) tvDay.setTextColor(Color.WHITE);
+                if (tvNum != null) tvNum.setTextColor(Color.WHITE);
+                if (viewDot != null) {
+                    viewDot.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_indicator_dot_white));
+                }
+            } else {
+                pillView.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_day_pill_inactive));
+                if (tvDay != null) tvDay.setTextColor(Color.parseColor("#64748B"));
+                if (tvNum != null) tvNum.setTextColor(Color.parseColor("#0F172A"));
+                if (viewDot != null) {
+                    viewDot.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_indicator_dot));
                 }
             }
         }
+
         if (tvDailyRoutineTitle != null) {
             tvDailyRoutineTitle.setText(String.format("%s Classes", activeDay));
         }

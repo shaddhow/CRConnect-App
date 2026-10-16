@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/nav_candidates"
+        android:id="@+id/nav_home"
         android:icon="@drawable/ic_nav_home"
-        android:title="Candidates" />
+        android:title="Home" />
     <item
-        android:id="@+id/nav_student_routine"
+        android:id="@+id/nav_schedule"
         android:icon="@drawable/ic_calendar"
-        android:title="Routine" />
+        android:title="Schedule" />
     <item
-        android:id="@+id/nav_student_status"
+        android:id="@+id/nav_vote"
         android:icon="@drawable/ic_nav_timer"
-        android:title="Status" />
+        android:title="Vote" />
     <item
-        android:id="@+id/nav_student_profile"
+        android:id="@+id/nav_profile"
         android:icon="@drawable/ic_nav_profile"
         android:title="Profile" />
 </menu>
