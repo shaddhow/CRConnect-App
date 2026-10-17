@@ -23,7 +23,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dp"
-        app:cardBackgroundColor="#8B85FE"
+        app:cardBackgroundColor="#0066FF"
         app:cardCornerRadius="18dp"
         app:cardElevation="4dp"
         app:strokeWidth="0dp">
@@ -260,7 +260,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Or add classes manually"
-        android:textColor="#A78BFA"
+        android:textColor="#0066FF"
         android:textSize="14sp"
         android:textStyle="bold"
         android:gravity="center"

@@ -22,11 +22,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.launch
 
+import androidx.compose.ui.platform.LocalContext
+import com.example.crconnect.CustomToast
+
 @Composable
 fun StudentPortalScreen(
     viewModel: StudentPortalViewModel,
     onSignOut: () -> Unit
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -34,7 +38,7 @@ fun StudentPortalScreen(
 
     LaunchedEffect(uiState.snackbarMessage) {
         uiState.snackbarMessage?.let { msg ->
-            snackbarHostState.showSnackbar(msg)
+            CustomToast.show(context, msg)
             viewModel.clearSnackbar()
         }
     }

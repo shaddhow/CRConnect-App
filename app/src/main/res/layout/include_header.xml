@@ -9,32 +9,33 @@
     android:paddingStart="20dp"
     android:paddingEnd="20dp"
     android:paddingTop="8dp"
-    android:paddingBottom="8dp">
+    android:paddingBottom="8dp"
+    android:background="@android:color/transparent">
 
-    <!-- Menu Button: 42dp x 42dp, circular bg #FFFFFF, stroke 1dp #E2E8F0, icon tinted #0F172A -->
+    <!-- 1. Hamburger Menu Button: 24dp icon, 44dp touch target -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnOpenDrawer"
         style="@style/Widget.Material3.Button.IconButton"
-        android:layout_width="42dp"
-        android:layout_height="42dp"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
         android:backgroundTint="#FFFFFF"
         android:insetLeft="0dp"
         android:insetTop="0dp"
         android:insetRight="0dp"
         android:insetBottom="0dp"
-        app:cornerRadius="21dp"
+        app:cornerRadius="22dp"
         app:strokeColor="#E2E8F0"
         app:strokeWidth="1dp"
         app:icon="@drawable/ic_menu"
-        app:iconSize="20dp"
+        app:iconSize="24dp"
         app:iconTint="#0F172A"
         android:contentDescription="Open menu" />
 
-    <!-- Avatar Container: 44dp x 44dp, inner #0066FF, stroke 3.5dp #FFFFFF, elevation 3dp, text "RU" 16sp bold pure white -->
+    <!-- 2. Avatar Circle: 44dp, filled #0066FF, white initials "TT" bold 16sp, 3dp white ring border -->
     <FrameLayout
         android:layout_width="44dp"
         android:layout_height="44dp"
-        android:layout_marginStart="10dp">
+        android:layout_marginStart="12dp">
 
         <TextView
             android:id="@+id/tvAvatar"
@@ -43,7 +44,7 @@
             android:background="@drawable/bg_avatar_ring"
             android:elevation="3dp"
             android:gravity="center"
-            android:text="RU"
+            android:text="TT"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
@@ -58,20 +59,20 @@
             app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Circular" />
     </FrameLayout>
 
-    <!-- Text Block (weight="1") -->
+    <!-- 3. Two-Line Text Column (flex/weight 1) -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:layout_marginStart="10dp"
+        android:layout_marginStart="12dp"
         android:orientation="vertical">
 
-        <!-- Title: "Election Portal", 16sp bold (#0F172A) -->
+        <!-- Line 1: "Admin Console · Sec 6" — bold 16sp, color #0F172A -->
         <TextView
             android:id="@+id/tvHeaderTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Election Portal"
+            android:text="Admin Console · Sec 6"
             android:textColor="#0F172A"
             android:textSize="16sp"
             android:textStyle="bold"
@@ -79,49 +80,52 @@
             android:maxLines="1"
             android:ellipsize="end" />
 
-        <!-- Subtitle: "Dashboard · Department of C...", 12sp (#334155) -->
+        <!-- Line 2: "Test Teacher (Dev) · CSE" — regular 12sp, color #64748B -->
         <TextView
             android:id="@+id/tvHeaderSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Dashboard · Department of CSE, BUBT"
-            android:textColor="#334155"
+            android:text="Test Teacher (Dev) · CSE"
+            android:textColor="#64748B"
             android:textSize="12sp"
             android:maxLines="1"
             android:ellipsize="end" />
     </LinearLayout>
 
-    <!-- "Secure" Chip: height 26dp, corner radius 999dp, bg #DCFCE7, stroke 1dp #BBF7D0, text "Secure" 12sp bold #166534, padding 10dp, marginEnd 10dp -->
+    <!-- 4. Chip Badge "Secure": Pill shape (radius 999dp), bg #DCFCE7, text #166534, border #BBF7D0, font 12sp bold, padding 4dp top/bottom, 10dp start/end -->
     <TextView
         android:id="@+id/tvSecureBadge"
         android:layout_width="wrap_content"
-        android:layout_height="26dp"
-        android:layout_marginEnd="10dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
         android:background="@drawable/bg_chip_green"
         android:gravity="center"
         android:paddingStart="10dp"
         android:paddingEnd="10dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
         android:text="Secure"
         android:textColor="#166534"
         android:textSize="12sp"
         android:textStyle="bold" />
 
-    <!-- Power Button: 42dp x 42dp, circular bg #FFFFFF, stroke 1dp #E2E8F0, icon tinted #0F172A -->
+    <!-- 5. Power/Logout Icon Button: 24dp icon, 44dp touch target -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLogout"
         style="@style/Widget.Material3.Button.IconButton"
-        android:layout_width="42dp"
-        android:layout_height="42dp"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginStart="12dp"
         android:backgroundTint="#FFFFFF"
         android:insetLeft="0dp"
         android:insetTop="0dp"
         android:insetRight="0dp"
         android:insetBottom="0dp"
-        app:cornerRadius="21dp"
+        app:cornerRadius="22dp"
         app:strokeColor="#E2E8F0"
         app:strokeWidth="1dp"
         app:icon="@drawable/ic_power"
-        app:iconSize="20dp"
+        app:iconSize="24dp"
         app:iconTint="#0F172A"
         android:contentDescription="Power / Sign out" />
 

@@ -183,10 +183,33 @@
             android:max="100"
             android:progress="0"
             android:progressTint="#0066FF"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvCandidateSubline" />
+
+        <!-- Admin Mode: +1 Test Vote Link Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTestVoteCandidate"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="32dp"
+            android:layout_marginTop="8dp"
+            android:paddingHorizontal="0dp"
+            android:paddingVertical="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:hapticFeedbackEnabled="true"
+            android:text="+1 test vote"
+            android:textAllCaps="false"
+            android:textColor="#0066FF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/pbCandidateVotes"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:ignore="HardcodedText" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

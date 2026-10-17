@@ -213,7 +213,6 @@ public class ForgotPasswordActivity extends AppCompatActivity {
                 send.setEnabled(true);
                 String masked = email.contains("@") ? email.replaceAll("^(.).*(@.*)$", "$1•••$2") : email;
                 sentTo.setText(getString(R.string.enter_code_sub) + " (" + masked + ")");
-                Toast.makeText(this, "Reset email sent to " + email, Toast.LENGTH_SHORT).show();
                 switchPane(p1, p2, false);
                 if (otpInputs[0] != null) otpInputs[0].requestFocus();
             })
@@ -232,7 +231,6 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         String otpCode = sb.toString();
 
         if (otpCode.length() < 6) {
-            Toast.makeText(this, "Please enter the 6-digit code", Toast.LENGTH_SHORT).show();
             return;
         }
 

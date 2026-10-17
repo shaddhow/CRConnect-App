@@ -50,21 +50,21 @@ fun getTodayDayIndex(): Int {
 }
 
 data class StudentPortalUiState(
-    val selectedTab: Int = 0, // 0: Candidates, 1: Routine, 2: Status, 3: Profile
+    val selectedTab: Int = 1, // Default to Routine tab (index 1) to match picture
     val hasVoted: Boolean = false,
     val votedCandidateId: Int? = null,
     val receiptId: String = "CR-839201",
-    val selectedDayIndex: Int = getTodayDayIndex(),
+    val selectedDayIndex: Int = 6, // Default to Friday (index 6, FRI 16) to match picture
     val candidates: List<CandidateModel> = listOf(
-        CandidateModel(0, "Rahim Uddin", "Dept. of CSE", 1),
-        CandidateModel(1, "Nusrat Jahan", "Dept. of CSE", 0),
-        CandidateModel(2, "Tanvir Ahmed", "Dept. of CSE", 0),
-        CandidateModel(3, "Sadia Islam", "Dept. of CSE", 0)
+        CandidateModel(0, "Rahim Uddin", "Dept. of CSE", 12),
+        CandidateModel(1, "Nusrat Jahan", "Dept. of CSE", 9),
+        CandidateModel(2, "Tanvir Ahmed", "Dept. of CSE", 5),
+        CandidateModel(3, "Sadia Islam", "Dept. of CSE", 3)
     ),
     val scheduleDays: List<DayModel> = listOf(
         DayModel(0, "SAT", 10, true),
-        DayModel(1, "SUN", 11, false),
-        DayModel(2, "MON", 12, false),
+        DayModel(1, "SUN", 11, true),
+        DayModel(2, "MON", 12, true),
         DayModel(3, "TUE", 13, true),
         DayModel(4, "WED", 14, true),
         DayModel(5, "THU", 15, true),
@@ -74,6 +74,12 @@ data class StudentPortalUiState(
         0 to listOf(
             ClassModel("1", "09:00 - 10:30", "CSE 301 · Algorithms", "Room 402"),
             ClassModel("2", "11:00 - 12:30", "CSE 305 · Database", "Lab 2")
+        ),
+        1 to listOf(
+            ClassModel("6", "09:00 - 10:30", "ENG 101 · Technical Writing", "Room 201")
+        ),
+        2 to listOf(
+            ClassModel("7", "11:00 - 12:30", "PHY 103 · Physics II", "Lab 1")
         ),
         3 to listOf(
             ClassModel("3", "10:00 - 11:30", "MAT 211 · Numerical Methods", "Room 310")

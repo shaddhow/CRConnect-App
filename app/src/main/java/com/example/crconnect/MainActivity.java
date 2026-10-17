@@ -79,6 +79,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         
         sessionManager = new SessionManager(this);
+        if (!sessionManager.isLoggedIn()) {
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null && !currentUser.isAnonymous()) {
             currentUser.reload().addOnCompleteListener(task -> {
@@ -90,15 +97,24 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         FirebaseAuth.getInstance().signOut();
                         sessionManager.logoutUser();
+                        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                        startActivity(intent);
+                        finish();
                     }
                 } else {
                     FirebaseAuth.getInstance().signOut();
                     sessionManager.logoutUser();
+                    Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                    startActivity(intent);
+                    finish();
                 }
             });
         } else {
             FirebaseAuth.getInstance().signOut();
             sessionManager.logoutUser();
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            startActivity(intent);
+            finish();
         }
 
         // Safe Area Padding
@@ -115,17 +131,12 @@ public class MainActivity extends AppCompatActivity {
         // Double press back to exit from login page
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             private long backPressedTime;
-            private Toast backToast;
 
             @Override
             public void handleOnBackPressed() {
                 if (backPressedTime + 2000 > System.currentTimeMillis()) {
-                    if (backToast != null) backToast.cancel();
                     finishAffinity();
                     overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                } else {
-                    backToast = Toast.makeText(MainActivity.this, "Press back again to exit", Toast.LENGTH_SHORT);
-                    backToast.show();
                 }
                 backPressedTime = System.currentTimeMillis();
             }
@@ -234,7 +245,6 @@ public class MainActivity extends AppCompatActivity {
                     "50",
                     "Department of CSE, BUBT"
                 );
-                Toast.makeText(MainActivity.this, "Bypassing to Student Dashboard...", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(MainActivity.this, StudentDashboardActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
@@ -255,7 +265,6 @@ public class MainActivity extends AppCompatActivity {
                     "--",
                     "Department of CSE, BUBT"
                 );
-                Toast.makeText(MainActivity.this, "Bypassing to Teacher Dashboard...", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(MainActivity.this, TeacherDashboardActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
@@ -363,7 +372,6 @@ public class MainActivity extends AppCompatActivity {
         if (tilEmail != null) tilEmail.setError(null);
         if (tilPassword != null) tilPassword.setError(null);
 
-        Toast.makeText(this, "Authenticating...", Toast.LENGTH_SHORT).show();
         btnLogin.setEnabled(false);
 
         if (emailOrId.contains("@")) {
@@ -441,7 +449,6 @@ public class MainActivity extends AppCompatActivity {
             "--",
             dept
         );
-        Toast.makeText(MainActivity.this, "Welcome, " + name + " (Teacher Profile Initialized)", Toast.LENGTH_SHORT).show();
         navigateBasedOnRole("Teacher/Admin", email);
     }
 
@@ -451,7 +458,6 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseUser user = authResult.getUser();
                 if (user == null) {
                     btnLogin.setEnabled(true);
-                    Toast.makeText(MainActivity.this, "Authentication failed: User session invalid", Toast.LENGTH_LONG).show();
                     return;
                 }
 
@@ -461,7 +467,6 @@ public class MainActivity extends AppCompatActivity {
                         FirebaseAuth.getInstance().signOut();
                         sessionManager.logoutUser();
                         btnLogin.setEnabled(true);
-                        Toast.makeText(MainActivity.this, "Authentication failed", Toast.LENGTH_LONG).show();
                         return;
                     }
 
@@ -469,7 +474,6 @@ public class MainActivity extends AppCompatActivity {
                         FirebaseAuth.getInstance().signOut();
                         sessionManager.logoutUser();
                         btnLogin.setEnabled(true);
-                        Toast.makeText(MainActivity.this, "Email Verification Required: Please check your inbox and verify your email address before logging in.", Toast.LENGTH_LONG).show();
                         return;
                     }
 
@@ -521,7 +525,6 @@ public class MainActivity extends AppCompatActivity {
                                                                         intake != null ? intake : "--",
                                                                         dept != null ? dept : "Department of CSE, BUBT"
                                                                     );
-                                                                    Toast.makeText(MainActivity.this, "Welcome back, " + (name != null ? name : email) + "!", Toast.LENGTH_SHORT).show();
                                                                     navigateBasedOnRole(resolvedRole, dbEmail != null ? dbEmail : email);
                                                                 } else {
                                                                     String userEmail = refreshedUser.getEmail();
@@ -531,7 +534,6 @@ public class MainActivity extends AppCompatActivity {
                                                                         btnLogin.setEnabled(true);
                                                                         FirebaseAuth.getInstance().signOut();
                                                                         sessionManager.logoutUser();
-                                                                        Toast.makeText(MainActivity.this, "User profile not found in database. Please register first.", Toast.LENGTH_LONG).show();
                                                                     }
                                                                 }
                                                             })
@@ -543,7 +545,6 @@ public class MainActivity extends AppCompatActivity {
                                                                     btnLogin.setEnabled(true);
                                                                     FirebaseAuth.getInstance().signOut();
                                                                     sessionManager.logoutUser();
-                                                                    Toast.makeText(MainActivity.this, "User profile not found. Please register first.", Toast.LENGTH_LONG).show();
                                                                 }
                                                             });
                                                     }
@@ -552,7 +553,6 @@ public class MainActivity extends AppCompatActivity {
                                                 @Override
                                                 public void onCancelled(@NonNull DatabaseError error) {
                                                     btnLogin.setEnabled(true);
-                                                    Toast.makeText(MainActivity.this, "Database error: " + error.getMessage(), Toast.LENGTH_LONG).show();
                                                 }
                                             });
                                         }
@@ -561,7 +561,6 @@ public class MainActivity extends AppCompatActivity {
                                     @Override
                                     public void onCancelled(@NonNull DatabaseError error) {
                                         btnLogin.setEnabled(true);
-                                        Toast.makeText(MainActivity.this, "Database error: " + error.getMessage(), Toast.LENGTH_LONG).show();
                                     }
                                 });
                             }
@@ -570,7 +569,6 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onCancelled(@NonNull DatabaseError error) {
                             btnLogin.setEnabled(true);
-                            Toast.makeText(MainActivity.this, "Database error: " + error.getMessage(), Toast.LENGTH_LONG).show();
                         }
                     });
                 });
@@ -578,11 +576,6 @@ public class MainActivity extends AppCompatActivity {
             .addOnFailureListener(e -> {
                 btnLogin.setEnabled(true);
                 Log.e("MainActivity", "Firebase Auth login failed", e);
-                String errorMsg = e.getLocalizedMessage();
-                if (errorMsg != null && (errorMsg.contains("no user record") || errorMsg.contains("password is invalid") || errorMsg.contains("malformed"))) {
-                    errorMsg = "Invalid email/ID or password. Please check your credentials or register.";
-                }
-                Toast.makeText(MainActivity.this, "Login Failed: " + errorMsg, Toast.LENGTH_LONG).show();
             });
     }
 
@@ -621,7 +614,6 @@ public class MainActivity extends AppCompatActivity {
         if (dept == null) dept = "Department of CSE, BUBT";
 
         sessionManager.createLoginSession(name, userEmail, id, role, section, assignedSection, intake, dept);
-        Toast.makeText(MainActivity.this, "Welcome back, " + name + "!", Toast.LENGTH_SHORT).show();
         navigateBasedOnRole(role, userEmail);
     }
 

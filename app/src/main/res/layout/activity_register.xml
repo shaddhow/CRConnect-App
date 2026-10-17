@@ -654,7 +654,7 @@
         android:paddingTop="16dp"
         android:paddingBottom="24dp">
 
-        <CheckBox
+        <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/cbTerms"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -662,7 +662,8 @@
             android:textSize="12sp"
             android:fontFamily="sans-serif"
             android:textColor="#64748B"
-            android:buttonTint="#0066FF"
+            app:buttonTint="#0066FF"
+            app:buttonIconTint="#FFFFFF"
             android:layout_marginBottom="8dp" />
 
         <com.google.android.material.button.MaterialButton
@@ -674,7 +675,7 @@
             android:textStyle="bold"
             android:fontFamily="sans-serif-medium"
             android:letterSpacing="0.02"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/btn_primary_text_color"
             app:cornerRadius="12dp"
             android:background="@drawable/btn_primary_bg"
             app:backgroundTint="@null"

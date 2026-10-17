@@ -27,7 +27,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 tools:text="11:15\nAM"
-                android:textColor="#A78BFA"
+                android:textColor="#0066FF"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:gravity="center"/>
@@ -37,7 +37,7 @@
                 android:layout_height="8dp"
                 android:layout_marginTop="6dp"
                 android:background="@drawable/glass_badge_bg"
-                android:backgroundTint="#7C3AED"/>
+                android:backgroundTint="#0066FF"/>
 
             <View
                 android:layout_width="2dp"

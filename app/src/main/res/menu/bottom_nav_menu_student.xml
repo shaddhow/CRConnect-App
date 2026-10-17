@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/nav_home"
-        android:icon="@drawable/ic_nav_home"
-        android:title="Home" />
+        android:id="@+id/nav_candidates"
+        android:icon="@drawable/ic_nav_candidates"
+        android:title="Candidates" />
     <item
-        android:id="@+id/nav_schedule"
-        android:icon="@drawable/ic_calendar"
-        android:title="Schedule" />
+        android:id="@+id/nav_routine"
+        android:icon="@drawable/ic_nav_routine"
+        android:title="Routine" />
     <item
-        android:id="@+id/nav_vote"
+        android:id="@+id/nav_status"
         android:icon="@drawable/ic_nav_timer"
-        android:title="Vote" />
+        android:title="Status" />
     <item
         android:id="@+id/nav_profile"
         android:icon="@drawable/ic_nav_profile"

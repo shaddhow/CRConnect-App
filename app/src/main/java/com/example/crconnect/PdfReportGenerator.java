@@ -335,7 +335,7 @@ public class PdfReportGenerator {
     public static void printPdfDocument(Context context, File pdfFile) {
         PrintManager printManager = (PrintManager) context.getSystemService(Context.PRINT_SERVICE);
         if (printManager == null || pdfFile == null || !pdfFile.exists()) {
-            Toast.makeText(context, "Printer service not available", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Printer service not available or PDF missing");
             return;
         }
 
@@ -403,7 +403,7 @@ public class PdfReportGenerator {
      */
     public static void sharePdfFile(Context context, File pdfFile) {
         if (pdfFile == null || !pdfFile.exists()) {
-            Toast.makeText(context, "PDF File not found", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "PDF File not found");
             return;
         }
 
@@ -430,7 +430,7 @@ public class PdfReportGenerator {
      */
     public static void openPdfFile(Context context, File pdfFile) {
         if (pdfFile == null || !pdfFile.exists()) {
-            Toast.makeText(context, "PDF File not found", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "PDF File not found");
             return;
         }
 
@@ -448,7 +448,6 @@ public class PdfReportGenerator {
             context.startActivity(chooser);
         } catch (Exception e) {
             Log.e(TAG, "No PDF viewer app found", e);
-            Toast.makeText(context, "PDF saved to: " + pdfFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
         }
     }
 

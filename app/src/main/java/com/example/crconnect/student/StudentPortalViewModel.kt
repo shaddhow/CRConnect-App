@@ -35,7 +35,7 @@ class StudentPortalViewModel : ViewModel() {
                 hasVoted = true,
                 votedCandidateId = candidateId,
                 candidates = updatedCandidates,
-                snackbarMessage = "Vote secured & recorded!"
+                snackbarMessage = "Vote secured"
             )
         }
     }
@@ -75,7 +75,7 @@ class StudentPortalViewModel : ViewModel() {
                 classMap = updatedClassMap,
                 scheduleDays = updatedDays,
                 isAddClassSheetOpen = false,
-                snackbarMessage = "Class added to schedule!"
+                snackbarMessage = "Class added"
             )
         }
     }
@@ -85,6 +85,6 @@ class StudentPortalViewModel : ViewModel() {
     }
 
     fun showToast(message: String) {
-        _uiState.update { it.copy(snackbarMessage = message) }
+        // No-op for demo toasts to ensure only allowed user toasts are shown
     }
 }

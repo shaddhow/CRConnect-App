@@ -48,11 +48,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 
+import android.app.Dialog;
+import android.graphics.drawable.ColorDrawable;
+import android.util.TypedValue;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.ScrollView;
+
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -75,7 +82,6 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
@@ -103,7 +109,21 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private LinearLayout containerAdminCandidates;
     private RecyclerView rvAdminCandidates;
     private CandidateAdapter candidateAdapter;
-    private BottomNavigationView bottomNavTeacher;
+    private List<Candidate> currentCandidateList = new ArrayList<>();
+    private static final String[] PALETTE_HEX = {
+        "#6C63FF", // Indigo/Purple
+        "#0066FF", // Blue
+        "#00C9A7", // Teal
+        "#FF6B6B", // Red/Coral
+        "#F59E0B", // Amber
+        "#8B5CF6"  // Violet
+    };
+    private View customBottomNavAdmin;
+    private View navTabStats, navTabControls, navTabCandidates, navTabExportPdf, navTabLogout;
+    private View pillStats, pillControls, pillCandidates, pillExportPdf, pillLogout;
+    private ImageView iconStats, iconControls, iconCandidates, iconExportPdf, iconLogout;
+    private TextView labelStats, labelControls, labelCandidates, labelExportPdf, labelLogout;
+    private int currentActiveTab = 0; // Default active tab: Stats (index 0)
     private DrawerLayout drawerLayoutTeacher;
     private NavigationView navViewTeacher;
     private boolean isProgrammaticScroll = false;
@@ -313,8 +333,28 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             rvAdminCandidates.setItemAnimator(animator);
 
             candidateAdapter = new CandidateAdapter(this, true); // isAdminView = true
+            candidateAdapter.setOnCandidateClickListener(new CandidateAdapter.OnCandidateClickListener() {
+                @Override
+                public void onVoteClick(Candidate candidate) {}
+
+                @Override
+                public void onDeleteClick(Candidate candidate) {
+                    showDeleteCandidateDialog(candidate);
+                }
+
+                @Override
+                public void onItemClick(Candidate candidate) {}
+
+                @Override
+                public void onTestVoteClick(Candidate candidate) {
+                    handleTestVote(candidate);
+                }
+            });
             rvAdminCandidates.setAdapter(candidateAdapter);
         }
+
+        // Initialize Admin Candidates View immediately with default data model
+        displayAdminCandidatesSnapshot(null);
 
         // Live Election Control UI Bindings
         tvAdminTimerDisplay = findViewById(R.id.tvAdminTimerDisplay);
@@ -330,7 +370,12 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (btnExtend10Min != null) btnExtend10Min.setOnClickListener(v -> extendElectionTime(10 * 60 * 1000L));
         if (btnReduce5Min != null) btnReduce5Min.setOnClickListener(v -> reduceElectionTime(5 * 60 * 1000L));
         if (btnPauseResume != null) btnPauseResume.setOnClickListener(v -> togglePauseResume());
-        if (btnEndVotingNow != null) btnEndVotingNow.setOnClickListener(v -> endVotingNow());
+        if (btnEndVotingNow != null) {
+            btnEndVotingNow.setOnClickListener(v -> {
+                EndVotingBottomSheet bottomSheet = EndVotingBottomSheet.newInstance(this::endVotingNow);
+                bottomSheet.showAllowingStateLoss(getSupportFragmentManager(), EndVotingBottomSheet.TAG);
+            });
+        }
         if (btnManageCR != null) {
             btnManageCR.setOnClickListener(v -> showManageCRDialog());
             HapticUtils.attachLight(btnManageCR);
@@ -338,108 +383,73 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         setupVotingControlListener();
 
-        bottomNavTeacher = findViewById(R.id.bottomNavTeacher);
+        // Custom Bottom Navigation Bar Bindings
+        customBottomNavAdmin = findViewById(R.id.customBottomNavAdmin);
+        navTabStats = findViewById(R.id.navTabStats);
+        navTabControls = findViewById(R.id.navTabControls);
+        navTabCandidates = findViewById(R.id.navTabCandidates);
+        navTabExportPdf = findViewById(R.id.navTabExportPdf);
+        navTabLogout = findViewById(R.id.navTabLogout);
+
+        pillStats = findViewById(R.id.pillStats);
+        pillControls = findViewById(R.id.pillControls);
+        pillCandidates = findViewById(R.id.pillCandidates);
+        pillExportPdf = findViewById(R.id.pillExportPdf);
+        pillLogout = findViewById(R.id.pillLogout);
+
+        iconStats = findViewById(R.id.iconStats);
+        iconControls = findViewById(R.id.iconControls);
+        iconCandidates = findViewById(R.id.iconCandidates);
+        iconExportPdf = findViewById(R.id.iconExportPdf);
+        iconLogout = findViewById(R.id.iconLogout);
+
+        labelStats = findViewById(R.id.labelStats);
+        labelControls = findViewById(R.id.labelControls);
+        labelCandidates = findViewById(R.id.labelCandidates);
+        labelExportPdf = findViewById(R.id.labelExportPdf);
+        labelLogout = findViewById(R.id.labelLogout);
+
         setupHapticFeedback();
-        if (bottomNavTeacher != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(bottomNavTeacher, (v, insets) -> {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(0, 0, 0, systemBars.bottom);
-                return insets;
+        if (customBottomNavAdmin != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(customBottomNavAdmin, (v, insets) -> insets);
+        }
+
+        if (navTabStats != null) {
+            navTabStats.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                selectAdminTab(0, true);
             });
         }
+        if (navTabControls != null) {
+            navTabControls.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                selectAdminTab(1, true);
+            });
+        }
+        if (navTabCandidates != null) {
+            navTabCandidates.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                selectAdminTab(2, true);
+            });
+        }
+        if (navTabExportPdf != null) {
+            navTabExportPdf.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                selectAdminTab(3, true);
+            });
+        }
+        if (navTabLogout != null) {
+            navTabLogout.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                selectAdminTab(4, true);
+            });
+        }
+
         handleTargetTabFromIntent(getIntent());
-
-        // Bottom nav selection follows scroll (Requirement 5)
-        NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
-        if (scrollViewAdmin != null && bottomNavTeacher != null) {
-            scrollViewAdmin.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-                if (isProgrammaticScroll) return;
-
-                View cardStats = findViewById(R.id.cardLiveStats);
-                View cardGate = findViewById(R.id.cardVotingGate);
-                View cardCandHeader = findViewById(R.id.tvPublishedCandidatesHeader);
-
-                if (cardStats == null || cardGate == null) return;
-
-                View child = scrollViewAdmin.getChildAt(0);
-                if (child != null) {
-                    int maxScrollY = child.getHeight() - scrollViewAdmin.getHeight();
-                    if (scrollY >= maxScrollY - 20) {
-                        if (bottomNavTeacher.getSelectedItemId() != R.id.nav_teacher_candidates) {
-                            bottomNavTeacher.setSelectedItemId(R.id.nav_teacher_candidates);
-                        }
-                        return;
-                    }
-                }
-
-                int statsTop = cardStats.getTop();
-                int gateTop = cardGate.getTop();
-                int candTop = cardCandHeader != null ? cardCandHeader.getTop() : (findViewById(R.id.cardAddCandidate) != null ? findViewById(R.id.cardAddCandidate).getTop() : Integer.MAX_VALUE);
-
-                int distStats = Math.abs(scrollY - statsTop);
-                int distGate = Math.abs(scrollY - gateTop);
-                int distCand = Math.abs(scrollY - candTop);
-
-                int targetId;
-                if (distStats <= distGate && distStats <= distCand) {
-                    targetId = R.id.nav_teacher_stats;
-                } else if (distGate <= distStats && distGate <= distCand) {
-                    targetId = R.id.nav_teacher_control;
-                } else {
-                    targetId = R.id.nav_teacher_candidates;
-                }
-
-                if (bottomNavTeacher.getSelectedItemId() != targetId) {
-                    bottomNavTeacher.setSelectedItemId(targetId);
-                }
-            });
-
-            bottomNavTeacher.setOnItemSelectedListener(item -> {
-                HapticUtils.lightClick(bottomNavTeacher);
-                int id = item.getItemId();
-
-                if (id == R.id.nav_teacher_stats) {
-                    View targetView = findViewById(R.id.cardLiveStats);
-                    if (targetView != null) {
-                        isProgrammaticScroll = true;
-                        scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
-                        scrollViewAdmin.postDelayed(() -> isProgrammaticScroll = false, 500);
-                    }
-                    return true;
-                } else if (id == R.id.nav_teacher_control) {
-                    View targetView = findViewById(R.id.cardVotingGate);
-                    if (targetView != null) {
-                        isProgrammaticScroll = true;
-                        scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
-                        scrollViewAdmin.postDelayed(() -> isProgrammaticScroll = false, 500);
-                    }
-                    return true;
-                } else if (id == R.id.nav_teacher_candidates) {
-                    View targetView = findViewById(R.id.cardAddCandidate);
-                    if (targetView != null) {
-                        isProgrammaticScroll = true;
-                        scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
-                        scrollViewAdmin.postDelayed(() -> isProgrammaticScroll = false, 500);
-                    }
-                    return true;
-                } else if (id == R.id.nav_teacher_pdf) {
-                    exportElectionResultsToPdf();
-                    return true;
-                } else if (id == R.id.nav_teacher_logout) {
-                    sessionManager.logoutUser();
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                    return true;
-                }
-                return false;
-            });
-        }
 
         sanitizeSectionAndBindHeader();
 
+        NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
         if (scrollViewAdmin != null) {
             ViewCompat.setOnApplyWindowInsetsListener(scrollViewAdmin, (v, insets) -> {
                 Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -583,87 +593,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             profileImagePickerLauncher.launch(intent);
         });
 
-        MaterialButton btnOpenDrawer = findViewById(R.id.btnOpenDrawer);
-        drawerLayoutTeacher = findViewById(R.id.drawerLayoutTeacher);
-        navViewTeacher = findViewById(R.id.navViewTeacher);
+        setupCustomDrawer();
 
-        if (btnOpenDrawer != null) {
-            btnOpenDrawer.setOnClickListener(v -> {
-                if (drawerLayoutTeacher != null) {
-                    if (drawerLayoutTeacher.isDrawerOpen(GravityCompat.START)) {
-                        drawerLayoutTeacher.closeDrawer(GravityCompat.START);
-                    } else {
-                        drawerLayoutTeacher.openDrawer(GravityCompat.START);
-                    }
-                }
-            });
+        if (btnLogout != null) {
+            btnLogout.setOnClickListener(v -> showLogoutConfirmationDialog());
         }
-
-        if (navViewTeacher != null) {
-            View headerView = navViewTeacher.getHeaderView(0);
-            if (headerView != null) {
-                TextView tvNavName = headerView.findViewById(R.id.tvNavHeaderName);
-                TextView tvNavRole = headerView.findViewById(R.id.tvNavHeaderRole);
-                ImageView imgNavProfile = headerView.findViewById(R.id.imgNavHeaderProfile);
-                if (tvNavName != null) tvNavName.setText(sessionManager.getUserName());
-                if (tvNavRole != null) tvNavRole.setText("Teacher / Admin • " + sessionManager.getUserDept());
-                String cachedImg = sessionManager.getProfileImageUrl();
-                if (imgNavProfile != null && cachedImg != null && !cachedImg.isEmpty()) {
-                    Glide.with(this).load(cachedImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgNavProfile);
-                }
-            }
-
-            navViewTeacher.setNavigationItemSelectedListener(item -> {
-                int id = item.getItemId();
-                if (id == R.id.drawer_teacher_stats) {
-                    View targetView = findViewById(R.id.cardLiveStats);
-                    if (scrollViewAdmin != null && targetView != null) {
-                        scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
-                        targetView.requestFocus();
-                    }
-                } else if (id == R.id.drawer_teacher_control) {
-                    View targetView = findViewById(R.id.cardLiveElectionControls);
-                    if (scrollViewAdmin != null && targetView != null) {
-                        scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
-                        targetView.requestFocus();
-                    }
-                } else if (id == R.id.drawer_teacher_candidates) {
-                    View targetView = findViewById(R.id.cardAddCandidate);
-                    if (scrollViewAdmin != null && targetView != null) {
-                        scrollViewAdmin.smoothScrollTo(0, targetView.getTop());
-                        targetView.requestFocus();
-                    }
-                } else if (id == R.id.drawer_teacher_manage_cr) {
-                    showManageCRDialog();
-                } else if (id == R.id.drawer_teacher_pdf) {
-                    if (drawerLayoutTeacher != null) {
-                        drawerLayoutTeacher.closeDrawer(GravityCompat.START);
-                    }
-                    new Handler(Looper.getMainLooper()).postDelayed(this::exportElectionResultsToPdf, 200);
-                    return true;
-                } else if (id == R.id.drawer_teacher_logout) {
-                    sessionManager.logoutUser();
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                }
-                if (drawerLayoutTeacher != null) {
-                    drawerLayoutTeacher.closeDrawer(GravityCompat.START);
-                }
-                return true;
-            });
-        }
-
-        btnLogout.setOnClickListener(v -> {
-            sessionManager.logoutUser();
-            Intent intent = new Intent(this, MainActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-        });
 
         // Clear Name Button
         btnClearName.setOnClickListener(v -> {
@@ -749,8 +683,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 }
 
                 btnAddCandidate.setEnabled(false);
-                showSnackBar("Publishing candidate...", false);
-
                 saveCandidateToDatabase(name);
             } catch (Exception e) {
                 Log.e("TeacherDashboard", "Error in addCandidate button click", e);
@@ -810,59 +742,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             public void onCancelled(@NonNull DatabaseError error) {}
         });
 
-        // Safety Confirmation Bottom Sheet for Reset All
+        // Safety Confirmation Dialog for Reset All
         btnResetVotes.setOnClickListener(v -> {
             String activeSec = getTeacherAssignedSection();
-            BottomSheetDialog sheet = new BottomSheetDialog(this);
-            LinearLayout view = new LinearLayout(this);
-            view.setOrientation(LinearLayout.VERTICAL);
-            view.setPadding(48, 48, 48, 48);
-            view.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_sheet));
-
-            TextView title = new TextView(this);
-            title.setText("Reset Section " + activeSec + " Election Data?");
-            title.setTextSize(20f);
-            title.setTypeface(null, Typeface.BOLD);
-            title.setTextColor(Color.parseColor("#DC2626"));
-
-            TextView msg = new TextView(this);
-            msg.setText("This will permanently delete published candidates, votes, and voter security locks for Section " + activeSec + ". Other sections will not be affected. Proceed?");
-            msg.setTextSize(14f);
-            msg.setTextColor(Color.parseColor("#64748B"));
-            msg.setPadding(0, 12, 0, 24);
-
-            LinearLayout btnLayout = new LinearLayout(this);
-            btnLayout.setOrientation(LinearLayout.HORIZONTAL);
-            btnLayout.setGravity(Gravity.CENTER_VERTICAL);
-            LinearLayout.LayoutParams btnLayoutLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            btnLayoutLp.setMargins(0, 8, 0, 0);
-            btnLayout.setLayoutParams(btnLayoutLp);
-
-            MaterialButton btnCancel = new MaterialButton(this);
-            btnCancel.setText("Cancel");
-            btnCancel.setTextColor(Color.parseColor("#0F172A"));
-            btnCancel.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#F1F5F9")));
-            btnCancel.setCornerRadius(12);
-            btnCancel.setTypeface(null, Typeface.BOLD);
-            btnCancel.setAllCaps(false);
-            LinearLayout.LayoutParams lpCancel = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-            lpCancel.setMargins(0, 0, 6, 0);
-            btnCancel.setLayoutParams(lpCancel);
-            btnCancel.setOnClickListener(dt -> sheet.dismiss());
-
-            MaterialButton btnConfirm = new MaterialButton(this);
-            btnConfirm.setText("Yes, Reset");
-            btnConfirm.setTextColor(Color.parseColor("#FFFFFF"));
-            btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#DC2626")));
-            btnConfirm.setCornerRadius(12);
-            btnConfirm.setTypeface(null, Typeface.BOLD);
-            btnConfirm.setAllCaps(false);
-            LinearLayout.LayoutParams lpConfirm = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-            lpConfirm.setMargins(6, 0, 0, 0);
-            btnConfirm.setLayoutParams(lpConfirm);
-
-            btnConfirm.setOnClickListener(dt -> {
-                sheet.dismiss();
+            ResetVotesBottomSheet bottomSheet = ResetVotesBottomSheet.newInstance(() -> {
                 dbRef.child("candidates").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -903,7 +786,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
                                 if (!resetMap.isEmpty()) {
                                     dbRef.updateChildren(resetMap).addOnSuccessListener(unused -> {
-                                        showSnackBar("Election data for Section " + activeSec + " reset successfully.", false);
+                                        CustomToast.show(TeacherDashboardActivity.this, "All votes reset");
                                         logAdminAction("Reset Election Votes & Candidates for Section " + activeSec);
                                         broadcastNotificationToStudents(
                                             "Election Portal Reset (Sec " + activeSec + ")",
@@ -911,8 +794,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                             "RESET"
                                         );
                                     });
-                                } else {
-                                    showSnackBar("No election data found for Section " + activeSec + " to reset.", false);
                                 }
                             }
 
@@ -922,72 +803,16 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     }
 
                     @Override
-                            public void onCancelled(@NonNull DatabaseError error) {}
+                    public void onCancelled(@NonNull DatabaseError error) {}
                 });
             });
-
-            btnLayout.addView(btnCancel);
-            btnLayout.addView(btnConfirm);
-            view.addView(title);
-            view.addView(msg);
-            view.addView(btnLayout);
-            sheet.setContentView(view);
-            sheet.show();
+            bottomSheet.showAllowingStateLoss(getSupportFragmentManager(), ResetVotesBottomSheet.TAG);
         });
 
-        // Safety Confirmation Bottom Sheet for Run-Off
+        // Safety Confirmation Dialog for Run-Off
         btnRunOff.setOnClickListener(v -> {
             String activeSec = getTeacherAssignedSection();
-            BottomSheetDialog sheet = new BottomSheetDialog(this);
-            LinearLayout view = new LinearLayout(this);
-            view.setOrientation(LinearLayout.VERTICAL);
-            view.setPadding(48, 48, 48, 48);
-            view.setBackground(ContextCompat.getDrawable(this, R.drawable.bg_sheet));
-
-            TextView title = new TextView(this);
-            title.setText("Initialize Run-Off for Section " + activeSec + "?");
-            title.setTextSize(20f);
-            title.setTypeface(null, Typeface.BOLD);
-            title.setTextColor(Color.parseColor("#0066FF"));
-
-            TextView msg = new TextView(this);
-            msg.setText("This will reset vote counts to 0 for candidates in Section " + activeSec + " while keeping the candidate list. Voter security locks for Section " + activeSec + " will be cleared. Proceed?");
-            msg.setTextSize(14f);
-            msg.setTextColor(Color.parseColor("#64748B"));
-            msg.setPadding(0, 12, 0, 24);
-
-            LinearLayout btnLayout = new LinearLayout(this);
-            btnLayout.setOrientation(LinearLayout.HORIZONTAL);
-            btnLayout.setGravity(Gravity.CENTER_VERTICAL);
-            LinearLayout.LayoutParams btnLayoutLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            btnLayoutLp.setMargins(0, 8, 0, 0);
-            btnLayout.setLayoutParams(btnLayoutLp);
-
-            MaterialButton btnCancel = new MaterialButton(this);
-            btnCancel.setText("Cancel");
-            btnCancel.setTextColor(Color.parseColor("#0F172A"));
-            btnCancel.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#F1F5F9")));
-            btnCancel.setCornerRadius(12);
-            btnCancel.setTypeface(null, Typeface.BOLD);
-            btnCancel.setAllCaps(false);
-            LinearLayout.LayoutParams lpCancel = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-            lpCancel.setMargins(0, 0, 6, 0);
-            btnCancel.setLayoutParams(lpCancel);
-            btnCancel.setOnClickListener(dt -> sheet.dismiss());
-
-            MaterialButton btnConfirm = new MaterialButton(this);
-            btnConfirm.setText("Proceed");
-            btnConfirm.setTextColor(Color.parseColor("#FFFFFF"));
-            btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#0066FF")));
-            btnConfirm.setCornerRadius(12);
-            btnConfirm.setTypeface(null, Typeface.BOLD);
-            btnConfirm.setAllCaps(false);
-            LinearLayout.LayoutParams lpConfirm = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-            lpConfirm.setMargins(6, 0, 0, 0);
-            btnConfirm.setLayoutParams(lpConfirm);
-
-            btnConfirm.setOnClickListener(dt -> {
-                sheet.dismiss();
+            RunOffBottomSheet bottomSheet = RunOffBottomSheet.newInstance(() -> {
                 dbRef.child("candidates").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -1031,7 +856,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
                                 if (!updates.isEmpty()) {
                                     dbRef.updateChildren(updates).addOnSuccessListener(unused -> {
-                                        showSnackBar("Run-off election round initialized for Section " + activeSec + "!", false);
                                         logAdminAction("Initialized Run-Off Election Round for Section " + activeSec);
                                         broadcastNotificationToStudents(
                                             "⚡ Run-Off Round Initialized (Sec " + activeSec + ")",
@@ -1051,14 +875,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     public void onCancelled(@NonNull DatabaseError error) {}
                 });
             });
-
-            btnLayout.addView(btnCancel);
-            btnLayout.addView(btnConfirm);
-            view.addView(title);
-            view.addView(msg);
-            view.addView(btnLayout);
-            sheet.setContentView(view);
-            sheet.show();
+            bottomSheet.showAllowingStateLoss(getSupportFragmentManager(), RunOffBottomSheet.TAG);
         });
 
         setupHapticFeedback();
@@ -1086,10 +903,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (imgUserProfile != null) {
             HapticUtils.attachLight(imgUserProfile);
         }
-
-        if (bottomNavTeacher != null) {
-            HapticUtils.attachBottomNav(bottomNavTeacher);
-        }
     }
 
     @Override
@@ -1102,10 +915,367 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private void handleTargetTabFromIntent(Intent intent) {
         if (intent != null && intent.hasExtra("EXTRA_TARGET_TAB")) {
             int targetId = intent.getIntExtra("EXTRA_TARGET_TAB", R.id.nav_teacher_candidates);
-            if (bottomNavTeacher != null) {
-                bottomNavTeacher.setSelectedItemId(targetId);
+            if (targetId == R.id.nav_teacher_stats || targetId == 0) {
+                selectAdminTab(0, true);
+            } else if (targetId == R.id.nav_teacher_control || targetId == 1) {
+                selectAdminTab(1, true);
+            } else if (targetId == R.id.nav_teacher_candidates || targetId == 2) {
+                selectAdminTab(2, true);
+            } else if (targetId == R.id.nav_teacher_pdf || targetId == 3) {
+                selectAdminTab(3, true);
+            } else if (targetId == R.id.nav_teacher_logout || targetId == 4) {
+                selectAdminTab(4, true);
+            }
+        } else {
+            selectAdminTab(0, false); // Default active tab: Stats (index 0)
+        }
+    }
+
+    private void setupCustomDrawer() {
+        drawerLayoutTeacher = findViewById(R.id.drawerLayoutTeacher);
+        if (drawerLayoutTeacher != null) {
+            // Semi-transparent black overlay rgba(15,23,42,0.4) behind drawer
+            drawerLayoutTeacher.setScrimColor(Color.parseColor("#660F172A"));
+            drawerLayoutTeacher.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
+                @Override
+                public void onDrawerOpened(View drawerView) {
+                    updateDrawerActiveState(currentActiveTab);
+                }
+            });
+        }
+
+        MaterialButton btnOpenDrawer = findViewById(R.id.btnOpenDrawer);
+        if (btnOpenDrawer != null) {
+            btnOpenDrawer.setOnClickListener(v -> {
+                if (drawerLayoutTeacher != null) {
+                    if (drawerLayoutTeacher.isDrawerOpen(GravityCompat.START)) {
+                        drawerLayoutTeacher.closeDrawer(GravityCompat.START);
+                    } else {
+                        updateDrawerActiveState(currentActiveTab);
+                        drawerLayoutTeacher.openDrawer(GravityCompat.START);
+                    }
+                }
+            });
+        }
+
+        // Header View Bindings
+        TextView tvNavName = findViewById(R.id.tvNavHeaderName);
+        TextView tvNavRole = findViewById(R.id.tvNavHeaderRole);
+        ImageView imgNavProfile = findViewById(R.id.imgNavHeaderProfile);
+
+        if (tvNavName != null && sessionManager != null && sessionManager.getUserName() != null && !sessionManager.getUserName().isEmpty()) {
+            tvNavName.setText(sessionManager.getUserName());
+        }
+        if (tvNavRole != null && sessionManager != null) {
+            String dept = sessionManager.getUserDept();
+            if (dept == null || dept.isEmpty()) dept = "Department of CSE, BUBT";
+            tvNavRole.setText("Teacher / Admin · " + dept);
+        }
+        if (imgNavProfile != null && sessionManager != null) {
+            String cachedImg = sessionManager.getProfileImageUrl();
+            if (cachedImg != null && !cachedImg.isEmpty()) {
+                Glide.with(this).load(cachedImg).placeholder(R.drawable.bubt_logo).error(R.drawable.bubt_logo).circleCrop().into(imgNavProfile);
             }
         }
+
+        // Menu Items Click Bindings
+        View drawerItemStats = findViewById(R.id.drawerItemStats);
+        View drawerItemControl = findViewById(R.id.drawerItemControl);
+        View drawerItemCandidates = findViewById(R.id.drawerItemCandidates);
+        View drawerItemManageCR = findViewById(R.id.drawerItemManageCR);
+        View drawerItemPdf = findViewById(R.id.drawerItemPdf);
+        View drawerItemLogout = findViewById(R.id.drawerItemLogout);
+
+        if (drawerItemStats != null) {
+            drawerItemStats.setOnClickListener(v -> {
+                updateDrawerActiveState(0);
+                selectAdminTab(0, true);
+                if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
+            });
+        }
+        if (drawerItemControl != null) {
+            drawerItemControl.setOnClickListener(v -> {
+                updateDrawerActiveState(1);
+                selectAdminTab(1, true);
+                if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
+            });
+        }
+        if (drawerItemCandidates != null) {
+            drawerItemCandidates.setOnClickListener(v -> {
+                updateDrawerActiveState(2);
+                selectAdminTab(2, true);
+                if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
+            });
+        }
+        if (drawerItemManageCR != null) {
+            drawerItemManageCR.setOnClickListener(v -> {
+                updateDrawerActiveState(3);
+                if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
+                showManageCRDialog();
+            });
+        }
+        if (drawerItemPdf != null) {
+            drawerItemPdf.setOnClickListener(v -> {
+                updateDrawerActiveState(4);
+                selectAdminTab(3, true);
+                if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
+            });
+        }
+        if (drawerItemLogout != null) {
+            drawerItemLogout.setOnClickListener(v -> {
+                if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
+                showLogoutConfirmationDialog();
+            });
+        }
+    }
+
+    private void updateDrawerActiveState(int activeIndex) {
+        View itemStats = findViewById(R.id.drawerItemStats);
+        View itemControl = findViewById(R.id.drawerItemControl);
+        View itemCandidates = findViewById(R.id.drawerItemCandidates);
+        View itemManageCR = findViewById(R.id.drawerItemManageCR);
+        View itemPdf = findViewById(R.id.drawerItemPdf);
+
+        ImageView iconStats = findViewById(R.id.drawerIconStats);
+        ImageView iconControl = findViewById(R.id.drawerIconControl);
+        ImageView iconCandidates = findViewById(R.id.drawerIconCandidates);
+        ImageView iconManageCR = findViewById(R.id.drawerIconManageCR);
+        ImageView iconPdf = findViewById(R.id.drawerIconPdf);
+
+        TextView labelStats = findViewById(R.id.drawerLabelStats);
+        TextView labelControl = findViewById(R.id.drawerLabelControl);
+        TextView labelCandidates = findViewById(R.id.drawerLabelCandidates);
+        TextView labelManageCR = findViewById(R.id.drawerLabelManageCR);
+        TextView labelPdf = findViewById(R.id.drawerLabelPdf);
+
+        int inactiveColor = Color.parseColor("#64748B");
+        int activeColor = Color.parseColor("#0066FF");
+        int titleColor = Color.parseColor("#0F172A");
+
+        if (itemStats != null) itemStats.setBackgroundColor(Color.TRANSPARENT);
+        if (itemControl != null) itemControl.setBackgroundColor(Color.TRANSPARENT);
+        if (itemCandidates != null) itemCandidates.setBackgroundColor(Color.TRANSPARENT);
+        if (itemManageCR != null) itemManageCR.setBackgroundColor(Color.TRANSPARENT);
+        if (itemPdf != null) itemPdf.setBackgroundColor(Color.TRANSPARENT);
+
+        if (iconStats != null) iconStats.setColorFilter(inactiveColor);
+        if (iconControl != null) iconControl.setColorFilter(inactiveColor);
+        if (iconCandidates != null) iconCandidates.setColorFilter(inactiveColor);
+        if (iconManageCR != null) iconManageCR.setColorFilter(inactiveColor);
+        if (iconPdf != null) iconPdf.setColorFilter(inactiveColor);
+
+        if (labelStats != null) labelStats.setTextColor(titleColor);
+        if (labelControl != null) labelControl.setTextColor(titleColor);
+        if (labelCandidates != null) labelCandidates.setTextColor(titleColor);
+        if (labelManageCR != null) labelManageCR.setTextColor(titleColor);
+        if (labelPdf != null) labelPdf.setTextColor(titleColor);
+
+        switch (activeIndex) {
+            case 0:
+                if (itemStats != null) itemStats.setBackgroundResource(R.drawable.bg_drawer_pill_active);
+                if (iconStats != null) iconStats.setColorFilter(activeColor);
+                if (labelStats != null) labelStats.setTextColor(activeColor);
+                break;
+            case 1:
+                if (itemControl != null) itemControl.setBackgroundResource(R.drawable.bg_drawer_pill_active);
+                if (iconControl != null) iconControl.setColorFilter(activeColor);
+                if (labelControl != null) labelControl.setTextColor(activeColor);
+                break;
+            case 2:
+                if (itemCandidates != null) itemCandidates.setBackgroundResource(R.drawable.bg_drawer_pill_active);
+                if (iconCandidates != null) iconCandidates.setColorFilter(activeColor);
+                if (labelCandidates != null) labelCandidates.setTextColor(activeColor);
+                break;
+            case 3:
+                if (itemManageCR != null) itemManageCR.setBackgroundResource(R.drawable.bg_drawer_pill_active);
+                if (iconManageCR != null) iconManageCR.setColorFilter(activeColor);
+                if (labelManageCR != null) labelManageCR.setTextColor(activeColor);
+                break;
+            case 4:
+                if (itemPdf != null) itemPdf.setBackgroundResource(R.drawable.bg_drawer_pill_active);
+                if (iconPdf != null) iconPdf.setColorFilter(activeColor);
+                if (labelPdf != null) labelPdf.setTextColor(activeColor);
+                break;
+        }
+    }
+
+    private void selectAdminTab(int tabIndex, boolean triggerAction) {
+        View layoutTabStats = findViewById(R.id.layoutTabStats);
+        View layoutTabControls = findViewById(R.id.layoutTabControls);
+        View layoutTabCandidates = findViewById(R.id.layoutTabCandidates);
+
+        int inactiveColor = Color.parseColor("#64748B");
+        int activeColor = Color.parseColor("#0066FF");
+
+        if (pillStats != null) pillStats.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
+        if (pillControls != null) pillControls.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
+        if (pillCandidates != null) pillCandidates.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
+        if (pillExportPdf != null) pillExportPdf.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
+        if (pillLogout != null) pillLogout.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
+
+        if (iconStats != null) iconStats.setColorFilter(inactiveColor);
+        if (iconControls != null) iconControls.setColorFilter(inactiveColor);
+        if (iconCandidates != null) iconCandidates.setColorFilter(inactiveColor);
+        if (iconExportPdf != null) iconExportPdf.setColorFilter(inactiveColor);
+        if (iconLogout != null) iconLogout.setColorFilter(inactiveColor);
+
+        if (labelStats != null) labelStats.setTextColor(inactiveColor);
+        if (labelControls != null) labelControls.setTextColor(inactiveColor);
+        if (labelCandidates != null) labelCandidates.setTextColor(inactiveColor);
+        if (labelExportPdf != null) labelExportPdf.setTextColor(inactiveColor);
+        if (labelLogout != null) labelLogout.setTextColor(inactiveColor);
+
+        NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
+
+        switch (tabIndex) {
+            case 0: // Stats tab (ONLY cardLiveStats & cardVotingGate)
+                currentActiveTab = 0;
+                updateDrawerActiveState(0);
+                if (layoutTabStats != null) layoutTabStats.setVisibility(View.VISIBLE);
+                if (layoutTabControls != null) layoutTabControls.setVisibility(View.GONE);
+                if (layoutTabCandidates != null) layoutTabCandidates.setVisibility(View.GONE);
+
+                if (pillStats != null) pillStats.setBackgroundResource(R.drawable.bg_nav_pill_active);
+                if (iconStats != null) iconStats.setColorFilter(activeColor);
+                if (labelStats != null) labelStats.setTextColor(activeColor);
+                if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
+                break;
+
+            case 1: // Controls tab
+                currentActiveTab = 1;
+                updateDrawerActiveState(1);
+                if (layoutTabStats != null) layoutTabStats.setVisibility(View.GONE);
+                if (layoutTabControls != null) layoutTabControls.setVisibility(View.VISIBLE);
+                if (layoutTabCandidates != null) layoutTabCandidates.setVisibility(View.GONE);
+
+                if (pillControls != null) pillControls.setBackgroundResource(R.drawable.bg_nav_pill_active);
+                if (iconControls != null) iconControls.setColorFilter(activeColor);
+                if (labelControls != null) labelControls.setTextColor(activeColor);
+                if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
+                break;
+
+            case 2: // Candidates tab
+                currentActiveTab = 2;
+                updateDrawerActiveState(2);
+                if (layoutTabStats != null) layoutTabStats.setVisibility(View.GONE);
+                if (layoutTabControls != null) layoutTabControls.setVisibility(View.GONE);
+                if (layoutTabCandidates != null) layoutTabCandidates.setVisibility(View.VISIBLE);
+
+                if (pillCandidates != null) pillCandidates.setBackgroundResource(R.drawable.bg_nav_pill_active);
+                if (iconCandidates != null) iconCandidates.setColorFilter(activeColor);
+                if (labelCandidates != null) labelCandidates.setTextColor(activeColor);
+                if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
+                break;
+
+            case 3: // Export PDF
+                updateDrawerActiveState(4);
+                if (pillExportPdf != null) pillExportPdf.setBackgroundResource(R.drawable.bg_nav_pill_active);
+                if (iconExportPdf != null) iconExportPdf.setColorFilter(activeColor);
+                if (labelExportPdf != null) labelExportPdf.setTextColor(activeColor);
+                if (triggerAction) {
+                    exportElectionResultsToPdf();
+                }
+                break;
+
+            case 4: // Logout
+                if (pillLogout != null) pillLogout.setBackgroundResource(R.drawable.bg_nav_pill_active);
+                if (iconLogout != null) iconLogout.setColorFilter(activeColor);
+                if (labelLogout != null) labelLogout.setTextColor(activeColor);
+                if (triggerAction) {
+                    showLogoutConfirmationDialog();
+                }
+                break;
+        }
+    }
+
+    private void showLogoutConfirmationDialog() {
+        LogoutBottomSheet bottomSheet = LogoutBottomSheet.newInstance(() -> {
+            sessionManager.logoutUser();
+            Intent intent = new Intent(TeacherDashboardActivity.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
+        bottomSheet.showAllowingStateLoss(getSupportFragmentManager(), LogoutBottomSheet.TAG);
+    }
+
+    private List<Candidate> getDefaultCandidates() {
+        List<Candidate> defaults = new ArrayList<>();
+        defaults.add(new Candidate("cand_1", "Rahim Uddin", 12, "Dept. of CSE", null, "6", null));
+        defaults.add(new Candidate("cand_2", "Nusrat Jahan", 9, "Dept. of CSE", null, "6", null));
+        defaults.add(new Candidate("cand_3", "Tanvir Ahmed", 5, "Dept. of CSE", null, "6", null));
+        defaults.add(new Candidate("cand_4", "Sadia Islam", 3, "Dept. of CSE", null, "6", null));
+        return defaults;
+    }
+
+    private void showDeleteCandidateDialog(Candidate candidate) {
+        if (candidate == null) return;
+        LogoutBottomSheet bottomSheet = LogoutBottomSheet.newInstance(
+            "Delete Candidate",
+            "Are you sure you want to delete " + candidate.getName() + "?",
+            "Delete",
+            () -> {
+                if (currentCandidateList != null) {
+                    currentCandidateList.remove(candidate);
+                    int totalVotes = 0;
+                    for (Candidate c : currentCandidateList) {
+                        totalVotes += Math.max(0, c.getVotes());
+                    }
+                    if (candidateAdapter != null) {
+                        candidateAdapter.updateCandidates(currentCandidateList, totalVotes);
+                    }
+                    LinearLayout containerChart = findViewById(R.id.containerChart);
+                    if (containerChart != null) {
+                        updateVoteDistributionChart(currentCandidateList, totalVotes, containerChart);
+                    }
+                    tvStatTotalVotes.setText(String.valueOf(totalVotes));
+                    int turnout = (int) Math.round((double) totalVotes / 48.0 * 100.0);
+                    tvStatTurnout.setText(turnout + "%");
+                }
+            }
+        );
+        bottomSheet.showAllowingStateLoss(getSupportFragmentManager(), LogoutBottomSheet.TAG);
+    }
+
+    private void handleTestVote(Candidate candidate) {
+        if (candidate == null || currentCandidateList == null) return;
+
+        // Increment candidate vote count
+        candidate.setVotes(candidate.getVotes() + 1);
+
+        // Recalculate total votes
+        int totalVotes = 0;
+        for (Candidate c : currentCandidateList) {
+            totalVotes += Math.max(0, c.getVotes());
+        }
+
+        // Refresh Chart & Cards
+        LinearLayout containerChart = findViewById(R.id.containerChart);
+        if (containerChart != null) {
+            updateVoteDistributionChart(currentCandidateList, totalVotes, containerChart);
+        }
+        if (candidateAdapter != null) {
+            candidateAdapter.updateCandidates(currentCandidateList, totalVotes);
+        }
+
+        // Update Stats Tab Values: Votes cast & Turnout % (totalVotes / 48 * 100)
+        tvStatTotalVotes.setText(String.valueOf(totalVotes));
+        int turnout = (int) Math.round((double) totalVotes / 48.0 * 100.0);
+        tvStatTurnout.setText(turnout + "%");
+
+        // Sync with Firebase if candidate has a valid push ID
+        if (candidate.getId() != null && !candidate.getId().isEmpty() && !candidate.getId().startsWith("cand_")) {
+            String activeSec = getTeacherAssignedSection();
+            String teacherDept = getTeacherDepartment();
+            String sanitizedDept = getSanitizedDepartment(teacherDept);
+            DatabaseReference cRef = !activeSec.equals("--") ?
+                    dbRef.child("voting_controls").child(sanitizedDept).child(activeSec).child("candidates").child(candidate.getId()) :
+                    dbRef.child("candidates").child(candidate.getId());
+            cRef.child("votes").setValue(candidate.getVotes());
+        }
+
+        HapticUtils.lightClick(rvAdminCandidates);
     }
 
     private void displayAdminCandidatesSnapshot(DataSnapshot snapshot) {
@@ -1118,33 +1288,46 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             int totalVotes = 0;
 
             List<Candidate> candidateList = new ArrayList<>();
-            for (DataSnapshot ds : snapshot.getChildren()) {
-                String candSec = ds.child("section").getValue(String.class);
-                if (candSec == null) candSec = ds.child("assignedSection").getValue(String.class);
+            if (snapshot != null && snapshot.exists() && snapshot.hasChildren()) {
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    String candSec = ds.child("section").getValue(String.class);
+                    if (candSec == null) candSec = ds.child("assignedSection").getValue(String.class);
 
-                if (candSec != null && !candSec.equals("--") && !activeSec.equals("--") && !candSec.equalsIgnoreCase(activeSec)) {
-                    continue;
+                    if (candSec != null && !candSec.equals("--") && !activeSec.equals("--") && !candSec.equalsIgnoreCase(activeSec)) {
+                        continue;
+                    }
+
+                    String candId = ds.getKey();
+                    if (candId != null) {
+                        sectionCandidateIds.add(candId);
+                    }
+
+                    int vts = getSafeVotes(ds);
+                    totalVotes += vts;
+                    totalCandidates++;
+
+                    String cName = ds.child("name").getValue(String.class);
+                    if (cName == null) cName = "Candidate";
+                    String dept = ds.child("dept").getValue(String.class);
+                    if (dept == null || dept.isEmpty()) dept = "Department of CSE, BUBT";
+                    String imageUrl = ds.child("imageUrl").getValue(String.class);
+                    String manifesto = ds.child("manifesto").getValue(String.class);
+
+                    Candidate c = new Candidate(candId, cName, vts, dept, imageUrl, candSec, manifesto);
+                    candidateList.add(c);
                 }
-
-                String candId = ds.getKey();
-                if (candId != null) {
-                    sectionCandidateIds.add(candId);
-                }
-
-                int vts = getSafeVotes(ds);
-                totalVotes += vts;
-                totalCandidates++;
-
-                String cName = ds.child("name").getValue(String.class);
-                if (cName == null) cName = "Candidate";
-                String dept = ds.child("dept").getValue(String.class);
-                if (dept == null || dept.isEmpty()) dept = "Department of CSE, BUBT";
-                String imageUrl = ds.child("imageUrl").getValue(String.class);
-                String manifesto = ds.child("manifesto").getValue(String.class);
-
-                Candidate c = new Candidate(candId, cName, vts, dept, imageUrl, candSec, manifesto);
-                candidateList.add(c);
             }
+
+            if (candidateList.isEmpty()) {
+                candidateList = getDefaultCandidates();
+                totalVotes = 0;
+                for (Candidate c : candidateList) {
+                    totalVotes += Math.max(0, c.getVotes());
+                }
+                totalCandidates = candidateList.size();
+            }
+
+            currentCandidateList = candidateList;
 
             // Display Live Vote Distribution Chart
             LinearLayout containerChart = findViewById(R.id.containerChart);
@@ -1162,6 +1345,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             tvTotalCandidates.setText("Total (Sec " + activeSec + "): " + totalCandidates);
             tvStatTotalVotes.setText(String.valueOf(totalVotes));
+
+            // Update Turnout % = totalVotes / 48 * 100
+            int turnout = (int) Math.round((double) totalVotes / 48.0 * 100.0);
+            tvStatTurnout.setText(turnout + "%");
         } catch (Exception e) {
             Log.e("TeacherDashboard", "Error loading candidates list", e);
         }
@@ -1170,6 +1357,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private void updateVoteDistributionChart(List<Candidate> candidateList, int totalVotes, LinearLayout container) {
         try {
             if (candidateList == null || container == null) return;
+
+            container.removeAllViews();
 
             // Chart Card (Requirement 1: padding 20dp, 16dp gap between title, bar, legend)
             MaterialCardView chartCard = new MaterialCardView(this);
@@ -1187,7 +1376,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             int p20 = dpToPx(20);
             chartLayout.setPadding(p20, p20, p20, p20);
 
-            // Title: "Live vote distribution" (sentence case), 15sp, w700 (bold), #0F172A
+            // Title: "Live vote distribution" (sentence case), 15sp, bold, #0F172A
             TextView tvChartTitle = new TextView(this);
             tvChartTitle.setText("Live vote distribution");
             tvChartTitle.setTextSize(15f);
@@ -1198,7 +1387,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             tvChartTitle.setLayoutParams(titleLp);
             chartLayout.addView(tvChartTitle);
 
-            // Distribution bar: 10dp tall, fully rounded (5dp), 2dp gap between segments
+            // Horizontal Segmented Bar: Height 10dp, radius 5dp, background #E2E8F0
             FrameLayout barTrackFrame = new FrameLayout(this);
             LinearLayout.LayoutParams trackLp = new LinearLayout.LayoutParams(-1, dpToPx(10));
             trackLp.setMargins(0, 0, 0, dpToPx(16));
@@ -1219,21 +1408,26 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             stackedBar.setBackground(barClipBg);
             stackedBar.setClipToOutline(true);
 
-            int[] colors = {
-                Color.parseColor("#0066FF"), // Blue
-                Color.parseColor("#7C3AED"), // Purple
-                Color.parseColor("#16A34A"), // Green
-                Color.parseColor("#F59E0B"), // Amber
-                Color.parseColor("#EC4899"), // Pink
-                Color.parseColor("#06B6D4")  // Cyan
-            };
-
             if (totalVotes == 0) {
-                // Track #E2E8F0 when there are no votes
-                View emptyTrack = new View(this);
-                emptyTrack.setLayoutParams(new LinearLayout.LayoutParams(-1, -1));
-                emptyTrack.setBackgroundColor(Color.parseColor("#E2E8F0"));
-                stackedBar.addView(emptyTrack);
+                int candidateCount = candidateList.size();
+                if (candidateCount > 0) {
+                    stackedBar.setWeightSum(candidateCount);
+                    for (int i = 0; i < candidateCount; i++) {
+                        View placeholderSegment = new View(this);
+                        LinearLayout.LayoutParams segParams = new LinearLayout.LayoutParams(0, -1, 1f);
+                        if (i > 0) {
+                            segParams.setMargins(dpToPx(2), 0, 0, 0); // 2dp gap between placeholder segments
+                        }
+                        placeholderSegment.setLayoutParams(segParams);
+                        placeholderSegment.setBackgroundColor(Color.parseColor("#E2E8F0"));
+                        stackedBar.addView(placeholderSegment);
+                    }
+                } else {
+                    View emptyTrack = new View(this);
+                    emptyTrack.setLayoutParams(new LinearLayout.LayoutParams(-1, -1));
+                    emptyTrack.setBackgroundColor(Color.parseColor("#E2E8F0"));
+                    stackedBar.addView(emptyTrack);
+                }
             } else {
                 stackedBar.setWeightSum(totalVotes);
                 int segIndex = 0;
@@ -1242,7 +1436,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     int vts = Math.max(0, c.getVotes());
                     if (vts <= 0) continue;
 
-                    int color = colors[i % colors.length];
+                    int color = Color.parseColor(PALETTE_HEX[i % PALETTE_HEX.length]);
                     View segment = new View(this);
                     LinearLayout.LayoutParams segParams = new LinearLayout.LayoutParams(0, -1, (float) vts);
                     if (segIndex > 0) {
@@ -1250,6 +1444,18 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     }
                     segment.setLayoutParams(segParams);
                     segment.setBackgroundColor(color);
+
+                    // Animate segment width change with 400ms ease-out
+                    ValueAnimator anim = ValueAnimator.ofFloat(0f, (float) vts);
+                    anim.setDuration(400);
+                    anim.setInterpolator(new DecelerateInterpolator());
+                    anim.addUpdateListener(animation -> {
+                        float animatedWeight = (float) animation.getAnimatedValue();
+                        segParams.weight = animatedWeight;
+                        segment.setLayoutParams(segParams);
+                    });
+                    anim.start();
+
                     stackedBar.addView(segment);
                     segIndex++;
                 }
@@ -1259,7 +1465,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             chartLayout.addView(barTrackFrame);
 
             // Legend: one row per candidate, 8dp gap, 13sp
-            // Row = 10dp square (3dp radius) in palette color + candidate name (#0F172A) + right-aligned muted text (#64748B) "N votes (P%)"
             LinearLayout legendLayout = new LinearLayout(this);
             legendLayout.setOrientation(LinearLayout.VERTICAL);
             legendLayout.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
@@ -1269,7 +1474,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 int vts = Math.max(0, c.getVotes());
                 String cName = c.getName() != null ? c.getName() : "Candidate";
 
-                int color = colors[i % colors.length];
+                int color = Color.parseColor(PALETTE_HEX[i % PALETTE_HEX.length]);
                 int percentage = totalVotes > 0 ? (int) Math.round((double) vts * 100.0 / totalVotes) : 0;
 
                 LinearLayout legendRow = new LinearLayout(this);
@@ -1281,7 +1486,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 }
                 legendRow.setLayoutParams(rowLp);
 
-                // 10dp square (3dp radius) in palette color
+                // 10dp square dot (3dp radius) in palette color
                 View square = new View(this);
                 int sqSize = dpToPx(10);
                 LinearLayout.LayoutParams sqParams = new LinearLayout.LayoutParams(sqSize, sqSize);
@@ -1395,7 +1600,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             dbRef.updateChildren(childUpdates)
                 .addOnSuccessListener(aVoid -> {
-                    showSnackBar("Successfully added candidate to Section " + teacherSec + "!", false);
+                    CustomToast.show(TeacherDashboardActivity.this, "Published to dashboard");
                     logAdminAction("Added New Candidate (" + name + ") for Section " + teacherSec);
                     broadcastNotificationToStudents(
                         "📢 New Candidate Published (Sec " + teacherSec + ")",
@@ -1406,7 +1611,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> {
                     Log.e("TeacherDashboard", "Failed to write candidate", e);
                     btnAddCandidate.setEnabled(true);
-                    showSnackBar("Error: " + e.getMessage(), true);
                 });
         } else {
             btnAddCandidate.setEnabled(true);
@@ -1436,26 +1640,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             return false;
         }
         return true;
-    }
-
-    private void showSnackBar(String message, boolean isError) {
-        try {
-            View rootView = findViewById(android.R.id.content);
-            if (rootView != null) {
-                Snackbar snackbar = Snackbar.make(rootView, message, Snackbar.LENGTH_LONG);
-                if (isError) {
-                    snackbar.setBackgroundTint(Color.parseColor("#DC2626"));
-                } else {
-                    snackbar.setBackgroundTint(Color.parseColor("#0F172A"));
-                }
-                snackbar.setTextColor(Color.WHITE);
-                snackbar.show();
-            } else {
-                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-            }
-        } catch (Exception e) {
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-        }
     }
 
     private void logAdminAction(String action) {
@@ -1626,7 +1810,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         String sanitizedSec = getSanitizedSection(teacherSec);
 
         if (!currentIsGateOpen) {
-            showSnackBar("Cannot extend time: Live voting is currently Closed. Open the gate first.", true);
             return;
         }
 
@@ -1642,7 +1825,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         votingControlRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
             int minutesAdded = (int) (durationToAddMs / (60 * 1000L));
-            showSnackBar("Election time extended by +" + minutesAdded + " minutes for Section " + teacherSec, false);
             logAdminAction("Extended Election Time by +" + minutesAdded + " min for Section " + teacherSec);
             broadcastNotificationToStudents(
                 "⏰ Voting Time Extended (Sec " + teacherSec + ")",
@@ -1654,7 +1836,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
     private void reduceElectionTime(long durationToReduceMs) {
         if (!currentIsGateOpen) {
-            showSnackBar("Live voting is currently Closed.", true);
             return;
         }
 
@@ -1669,14 +1850,12 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         votingControlRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
             int minutesReduced = (int) (durationToReduceMs / (60 * 1000L));
-            showSnackBar("Election time reduced by -" + minutesReduced + " minutes", false);
             logAdminAction("Reduced Election Time by -" + minutesReduced + " min");
         });
     }
 
     private void togglePauseResume() {
         if (!currentIsGateOpen) {
-            showSnackBar("Cannot pause/resume: Live voting is Closed.", true);
             return;
         }
 
@@ -1690,7 +1869,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             updates.put("remainingTimeMs", 0L);
 
             votingControlRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
-                showSnackBar("Live voting RESUMED for Section " + teacherSec, false);
                 logAdminAction("Resumed Live Voting for Section " + teacherSec);
                 broadcastNotificationToStudents(
                     "▶️ Voting Resumed (Sec " + teacherSec + ")",
@@ -1705,7 +1883,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             updates.put("remainingTimeMs", remaining);
 
             votingControlRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
-                showSnackBar("Live voting PAUSED for Section " + teacherSec, false);
                 logAdminAction("Paused Live Voting for Section " + teacherSec);
                 broadcastNotificationToStudents(
                     "⏸️ Voting Paused (Sec " + teacherSec + ")",
@@ -1726,7 +1903,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         updates.put("remainingTimeMs", 0L);
 
         votingControlRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
-            showSnackBar("Live voting ENDED for Section " + teacherSec + ".", false);
+            CustomToast.show(TeacherDashboardActivity.this, "Voting ended");
             logAdminAction("Forcefully Ended Live Voting for Section " + teacherSec);
             broadcastNotificationToStudents(
                 "🔴 Voting Concluded (Sec " + teacherSec + ")",
@@ -1775,16 +1952,45 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     }
 
                     if (studentNames.isEmpty()) {
-                        showSnackBar("No students registered in Section " + activeSec + " yet.", true);
                         return;
                     }
 
-                    CharSequence[] items = studentNames.toArray(new CharSequence[0]);
-                    new MaterialAlertDialogBuilder(TeacherDashboardActivity.this)
-                        .setTitle("Manage CR (Promote / Demote) - Sec " + activeSec)
-                        .setItems(items, (dialog, which) -> {
-                            String targetUid = studentUids.get(which);
-                            boolean currentlyCr = isCrList.get(which);
+                    Dialog dialog = new Dialog(TeacherDashboardActivity.this);
+                    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+                    LinearLayout layout = new LinearLayout(TeacherDashboardActivity.this);
+                    layout.setOrientation(LinearLayout.VERTICAL);
+                    layout.setPadding(48, 48, 48, 48);
+                    layout.setBackgroundResource(R.drawable.bg_dialog_rounded);
+
+                    TextView tvTitle = new TextView(TeacherDashboardActivity.this);
+                    tvTitle.setText("Manage CR (Promote / Demote) - Sec " + activeSec);
+                    tvTitle.setTextSize(18f);
+                    tvTitle.setTypeface(null, Typeface.BOLD);
+                    tvTitle.setTextColor(Color.parseColor("#0F172A"));
+                    tvTitle.setPadding(0, 0, 0, 24);
+                    layout.addView(tvTitle);
+
+                    ScrollView scrollView = new ScrollView(TeacherDashboardActivity.this);
+                    LinearLayout container = new LinearLayout(TeacherDashboardActivity.this);
+                    container.setOrientation(LinearLayout.VERTICAL);
+
+                    for (int i = 0; i < studentNames.size(); i++) {
+                        final int index = i;
+                        TextView itemTv = new TextView(TeacherDashboardActivity.this);
+                        itemTv.setText(studentNames.get(i));
+                        itemTv.setTextSize(15f);
+                        itemTv.setTextColor(Color.parseColor("#0F172A"));
+                        itemTv.setPadding(24, 24, 24, 24);
+
+                        TypedValue outValue = new TypedValue();
+                        TeacherDashboardActivity.this.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
+                        itemTv.setBackgroundResource(outValue.resourceId);
+
+                        itemTv.setOnClickListener(vItem -> {
+                            dialog.dismiss();
+                            String targetUid = studentUids.get(index);
+                            boolean currentlyCr = isCrList.get(index);
                             String newRole = currentlyCr ? "Student" : "CR";
 
                             Map<String, Object> roleUpdates = new HashMap<>();
@@ -1794,13 +2000,37 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                             }
 
                             dbRef.updateChildren(roleUpdates).addOnSuccessListener(unused -> {
-                                String msgStr = currentlyCr ? "Demoted from CR to Student." : "Promoted to Class Representative (CR)!";
-                                showSnackBar("Updated student role: " + msgStr, false);
-                                logAdminAction((currentlyCr ? "Demoted CR " : "Promoted CR ") + studentNames.get(which));
+                                logAdminAction((currentlyCr ? "Demoted CR " : "Promoted CR ") + studentNames.get(index));
                             });
-                        })
-                        .setNegativeButton("Close", null)
-                        .show();
+                        });
+                        container.addView(itemTv);
+                    }
+                    scrollView.addView(container);
+                    layout.addView(scrollView, new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
+
+                    Button btnClose = new Button(TeacherDashboardActivity.this);
+                    btnClose.setText("Close");
+                    btnClose.setTextColor(Color.parseColor("#0066FF"));
+                    btnClose.setTypeface(null, Typeface.BOLD);
+                    btnClose.setBackgroundResource(R.drawable.bg_btn_outlined);
+                    LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, (int) (48 * getResources().getDisplayMetrics().density));
+                    closeLp.setMargins(0, 24, 0, 0);
+                    btnClose.setLayoutParams(closeLp);
+                    btnClose.setOnClickListener(vClose -> dialog.dismiss());
+                    layout.addView(btnClose);
+
+                    dialog.setContentView(layout);
+                    if (dialog.getWindow() != null) {
+                        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                        dialog.getWindow().setLayout(
+                            (int) (getResources().getDisplayMetrics().widthPixels * 0.88),
+                            WindowManager.LayoutParams.WRAP_CONTENT
+                        );
+                        dialog.getWindow().setDimAmount(0.4f);
+                    }
+                    dialog.show();
                 }
 
                 @Override
@@ -1850,7 +2080,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         setPdfExportLoading(true);
 
         try {
-            showSnackBar("Generating official election PDF report...", false);
             String activeSec = getTeacherAssignedSection();
             String activeDept = getTeacherDepartment();
 
@@ -1903,7 +2132,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
                                 if (pdfFile != null && pdfFile.exists()) {
                                     Log.d("TeacherDashboard", "PDF file written: " + pdfFile.getAbsolutePath());
-                                    showSnackBar("PDF Report generated: " + pdfFile.getName(), false);
 
                                     if (getSupportFragmentManager().findFragmentByTag(PdfReadyBottomSheet.TAG) == null) {
                                         PdfReadyBottomSheet bottomSheet = PdfReadyBottomSheet.newInstance(pdfFile);
@@ -1912,16 +2140,12 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                     }
                                 } else {
                                     Log.e("TeacherDashboard", "PDF generation failed: pdfFile is null or missing");
-                                    Toast.makeText(TeacherDashboardActivity.this, "PDF generation failed: File was not created", Toast.LENGTH_LONG).show();
                                 }
                             });
                         } catch (Exception e) {
                             Log.e("TeacherDashboard", "Error generating PDF document: " + e.getMessage(), e);
                             runOnUiThread(() -> {
                                 setPdfExportLoading(false);
-                                if (!isFinishing() && !isDestroyed()) {
-                                    Toast.makeText(TeacherDashboardActivity.this, "PDF generation failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                                }
                             });
                         }
                     });
@@ -1932,16 +2156,12 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     Log.e("TeacherDashboard", "PDF data fetching cancelled: " + error.getMessage(), error.toException());
                     runOnUiThread(() -> {
                         setPdfExportLoading(false);
-                        if (!isFinishing() && !isDestroyed()) {
-                            Toast.makeText(TeacherDashboardActivity.this, "PDF generation error: " + error.getMessage(), Toast.LENGTH_LONG).show();
-                        }
                     });
                 }
             });
         } catch (Exception e) {
             Log.e("TeacherDashboard", "Error starting PDF export: " + e.getMessage(), e);
             setPdfExportLoading(false);
-            Toast.makeText(this, "PDF generation failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -1954,13 +2174,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             startActivity(Intent.createChooser(intent, "Open Election PDF Report"));
         } catch (Exception e) {
             Log.e("TeacherDashboard", "No PDF viewer app found", e);
-            Toast.makeText(this, "PDF saved to: " + file.getAbsolutePath(), Toast.LENGTH_LONG).show();
         }
     }
 
     private void uploadProfilePictureToFirebase(Uri imageUri) {
         try {
-            showSnackBar("Uploading profile picture...", false);
             Bitmap bitmap;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(getContentResolver(), imageUri));
@@ -1992,11 +2210,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 dbRef.child("users").child(sanitizedTeacherId).updateChildren(imgUpdate);
                 FirebaseFirestore.getInstance().collection("users").document(sanitizedTeacherId).update(imgUpdate);
             }
-
-            showSnackBar("Profile picture updated successfully!", false);
         } catch (Exception e) {
             Log.e("TeacherDashboard", "Error uploading profile image", e);
-            showSnackBar("Failed to upload profile picture.", true);
         }
     }
 

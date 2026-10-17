@@ -294,6 +294,7 @@ public class RegisterActivity extends AppCompatActivity {
                         tilRegEmail.setHelperText(getString(R.string.student_email_help));
                     }
                 }
+                validateFormAndEnableButton();
             });
         }
 
@@ -445,7 +446,6 @@ public class RegisterActivity extends AppCompatActivity {
             .addOnSuccessListener(intentSender -> docScannerLauncher.launch(new IntentSenderRequest.Builder(intentSender).build()))
             .addOnFailureListener(e -> {
                 Log.e("RegisterActivity", "Document scanner failed to start", e);
-                Toast.makeText(this, "Failed to launch document scanner: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
             });
     }
 
@@ -458,17 +458,14 @@ public class RegisterActivity extends AppCompatActivity {
                 .addOnSuccessListener(visionText -> parseAndAutoFillIdCardText(visionText.getText()))
                 .addOnFailureListener(e -> {
                     Log.e("RegisterActivity", "ML Kit OCR scan failed", e);
-                    Toast.makeText(RegisterActivity.this, "Failed to extract text: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
                 });
         } catch (IOException e) {
             Log.e("RegisterActivity", "Failed to load document image for OCR", e);
-            Toast.makeText(this, "Error opening document image file", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void parseAndAutoFillIdCardText(String text) {
         if (text == null || text.trim().isEmpty()) {
-            Toast.makeText(this, "No text detected on the ID Card image. Please try a clearer photo.", Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -583,8 +580,6 @@ public class RegisterActivity extends AppCompatActivity {
             if (spinnerDept != null) spinnerDept.setSelection(matchIndex);
             if (spinnerTeacherDept != null) spinnerTeacherDept.setSelection(matchIndex);
         }
-
-        Toast.makeText(this, "ID Card scanned. Information auto-filled.", Toast.LENGTH_SHORT).show();
     }
 
     private boolean isDummyOrGibberish(String text) {
@@ -689,8 +684,6 @@ public class RegisterActivity extends AppCompatActivity {
                     if (alreadyClaimed) {
                         btnRegister.setEnabled(true);
                         btnRegister.setText("Register");
-                        Toast.makeText(RegisterActivity.this, "This section is already managed", Toast.LENGTH_SHORT).show();
-                        showSnackBar("This section is already managed", true);
                     } else {
                         executeFirebaseAuth(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
                     }
@@ -712,7 +705,6 @@ public class RegisterActivity extends AppCompatActivity {
                 if (user == null) {
                     btnRegister.setEnabled(true);
                     btnRegister.setText("Register");
-                    showSnackBar("Registration Failed: Account creation error", true);
                     return;
                 }
                 user.sendEmailVerification()
@@ -732,7 +724,6 @@ public class RegisterActivity extends AppCompatActivity {
                 Log.e("RegisterActivity", "FirebaseAuth error: " + e.getMessage(), e);
                 btnRegister.setEnabled(true);
                 btnRegister.setText("Register");
-                showSnackBar("Registration Failed: " + e.getMessage(), true);
             });
     }
 
@@ -768,31 +759,9 @@ public class RegisterActivity extends AppCompatActivity {
         firestore.collection("users").document(sanitizedEmail).set(userMap);
 
         runOnUiThread(() -> {
-            Toast.makeText(RegisterActivity.this, "Verification email sent. Please verify before logging in.", Toast.LENGTH_LONG).show();
-            showSnackBar("Verification email sent. Please verify before logging in.", false);
-
             if (layoutFormCard != null) layoutFormCard.setVisibility(View.GONE);
             if (layoutSuccessCard != null) layoutSuccessCard.setVisibility(View.VISIBLE);
             if (layoutStickyFooter != null) layoutStickyFooter.setVisibility(View.GONE);
         });
-    }
-
-    private void showSnackBar(String message, boolean isError) {
-        View rootView = findViewById(android.R.id.content);
-        if (rootView == null) return;
-        Snackbar snackbar = Snackbar.make(rootView, message, Snackbar.LENGTH_LONG);
-        View sbView = snackbar.getView();
-        sbView.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(isError ? "#DC2626" : "#16A34A")));
-        
-        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) sbView.getLayoutParams();
-        params.setMargins(32, 0, 32, 32);
-        sbView.setLayoutParams(params);
-        
-        TextView tv = sbView.findViewById(com.google.android.material.R.id.snackbar_text);
-        if (tv != null) {
-            tv.setTextColor(Color.parseColor("#FFFFFF"));
-            tv.setTypeface(null, Typeface.BOLD);
-        }
-        snackbar.show();
     }
 }

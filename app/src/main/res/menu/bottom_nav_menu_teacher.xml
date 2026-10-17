@@ -10,7 +10,7 @@
         android:title="Controls" />
     <item
         android:id="@+id/nav_teacher_candidates"
-        android:icon="@drawable/ic_nav_home"
+        android:icon="@drawable/ic_nav_candidates"
         android:title="Candidates" />
     <item
         android:id="@+id/nav_teacher_pdf"

@@ -11,7 +11,17 @@
     <string name="teacher_admin">Teacher / Admin</string>
 
     <string name="student_id_or_email">Student ID or BUBT email</string>
+    <string name="teacher_id_or_email">Teacher ID or BUBT email</string>
     <string name="teacher_code_or_email">Teacher code or email</string>
+    <string name="id_hint_student">e.g., 2112345</string>
+    <string name="id_hint_teacher">e.g., T-1001 or name@bubt.edu.bd</string>
+
+    <string name="error_id_empty">Please enter your Student ID or email</string>
+    <string name="error_password_empty">Please enter your password</string>
+
+    <string name="cd_user_icon">User icon</string>
+    <string name="cd_lock_icon">Lock icon</string>
+    <string name="cd_toggle_password">Toggle password visibility</string>
 
     <string name="password">Password</string>
     <string name="password_placeholder">Enter your password</string>

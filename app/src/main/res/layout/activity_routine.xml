@@ -73,7 +73,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="@drawable/glass_badge_bg"
-            android:backgroundTint="#7C3AED"
+            android:backgroundTint="#0066FF"
             android:clickable="true"
             android:focusable="true">
 
@@ -115,7 +115,7 @@
                 app:cardBackgroundColor="#121622"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="8dp"
-                app:strokeColor="#7C3AED"
+                app:strokeColor="#0066FF"
                 app:strokeWidth="1.5dp">
 
                 <LinearLayout
@@ -146,7 +146,7 @@
                                 android:layout_width="6dp"
                                 android:layout_height="6dp"
                                 android:background="@drawable/glass_badge_bg"
-                                android:backgroundTint="#A78BFA"
+                                android:backgroundTint="#0066FF"
                                 android:layout_marginEnd="6dp"/>
 
                             <TextView
@@ -380,7 +380,7 @@
                         android:layout_height="36dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_calendar"
-                        app:tint="#A78BFA"
+                        app:tint="#0066FF"
                         tools:ignore="ContentDescription"/>
                 </FrameLayout>
 
@@ -418,7 +418,7 @@
                     android:textSize="14sp"
                     android:textStyle="bold"
                     app:cornerRadius="24dp"
-                    app:backgroundTint="#7C3AED"
+                    app:backgroundTint="#0066FF"
                     android:paddingHorizontal="24dp"
                     app:elevation="4dp"/>
 
@@ -443,7 +443,7 @@
         android:layout_marginBottom="20dp"
         android:contentDescription="Add Class"
         android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="#7C3AED"
+        app:backgroundTint="#0066FF"
         app:tint="#FFFFFF"
         app:layout_constraintBottom_toTopOf="@id/bottomNavRoutine"
         app:layout_constraintEnd_toEndOf="parent"

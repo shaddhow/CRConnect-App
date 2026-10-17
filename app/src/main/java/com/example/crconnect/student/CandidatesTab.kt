@@ -31,12 +31,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 val CHART_COLORS = listOf(
-    Color(0xFF0062FF),
-    Color(0xFF7C3AED),
-    Color(0xFF16A34A),
+    Color(0xFF6C63FF),
+    Color(0xFF0066FF),
+    Color(0xFF00C9A7),
+    Color(0xFFFF6B6B),
     Color(0xFFF59E0B),
-    Color(0xFFEC4899),
-    Color(0xFF06B6D4)
+    Color(0xFF8B5CF6)
 )
 
 @Composable

@@ -73,7 +73,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:background="@drawable/glass_badge_bg"
-            android:backgroundTint="#7C3AED"
+            android:backgroundTint="#0066FF"
             android:clickable="true"
             android:focusable="true">
 
@@ -146,7 +146,7 @@
                                 android:layout_width="6dp"
                                 android:layout_height="6dp"
                                 android:background="@drawable/glass_badge_bg"
-                                android:backgroundTint="#A78BFA"
+                                android:backgroundTint="#0066FF"
                                 android:layout_marginEnd="6dp"/>
 
                             <TextView
@@ -204,7 +204,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 tools:text="11:15 AM – 12:30 PM"
-                                android:textColor="#A78BFA"
+                                android:textColor="#0066FF"
                                 android:textSize="14sp"
                                 android:textStyle="bold"
                                 android:layout_marginTop="2dp"/>
@@ -215,7 +215,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             tools:text="Room 302"
-                            android:textColor="#A78BFA"
+                            android:textColor="#0066FF"
                             android:textSize="13sp"
                             android:textStyle="bold"
                             android:background="@drawable/glass_badge_bg"
@@ -343,7 +343,7 @@
                         android:layout_height="36dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_calendar"
-                        app:tint="#A78BFA"
+                        app:tint="#0066FF"
                         tools:ignore="ContentDescription"/>
                 </FrameLayout>
 
@@ -380,7 +380,7 @@
                     android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    app:backgroundTint="#7C3AED"
+                    app:backgroundTint="#0066FF"
                     app:cornerRadius="12dp"
                     app:elevation="4dp"/>
             </LinearLayout>
@@ -403,7 +403,7 @@
         android:layout_marginBottom="20dp"
         android:contentDescription="Add Class"
         android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="#7C3AED"
+        app:backgroundTint="#0066FF"
         app:tint="#FFFFFF"
         app:layout_constraintBottom_toTopOf="@id/bottomNavRoutine"
         app:layout_constraintEnd_toEndOf="parent"/>

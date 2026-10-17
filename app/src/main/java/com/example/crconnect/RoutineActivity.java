@@ -24,10 +24,14 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.app.Dialog;
+import android.graphics.drawable.ColorDrawable;
+import android.view.Window;
+import android.view.WindowManager;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -43,7 +47,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.DocumentReference;
@@ -921,7 +924,7 @@ public class RoutineActivity extends AppCompatActivity {
             intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
             cameraLauncher.launch(intent);
         } catch (Exception e) {
-            Toast.makeText(this, "Failed to open camera: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.e("RoutineActivity", "Failed to open camera: " + e.getMessage(), e);
         }
     }
 
@@ -931,8 +934,6 @@ public class RoutineActivity extends AppCompatActivity {
             InputImage image = InputImage.fromFilePath(this, imageUri);
             TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
-            Toast.makeText(this, "Scanning routine image with ML Kit OCR...", Toast.LENGTH_SHORT).show();
-
             recognizer.process(image)
                     .addOnSuccessListener(visionText -> runOnUiThread(() -> {
                         try {
@@ -940,19 +941,18 @@ public class RoutineActivity extends AppCompatActivity {
                             parseAndSaveRoutineOcrVisionText(visionText);
                         } catch (Exception e) {
                             Log.e("RoutineActivity", "Error processing OCR result", e);
-                            Toast.makeText(RoutineActivity.this, "Error processing OCR result: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
                         }
                     }))
                     .addOnFailureListener(e -> runOnUiThread(() -> {
                         try {
                             if (isFinishing() || isDestroyed()) return;
-                            Toast.makeText(RoutineActivity.this, "OCR scan failed: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                            Log.e("RoutineActivity", "OCR scan failed: " + e.getLocalizedMessage(), e);
                         } catch (Exception ex) {
                             Log.e("RoutineActivity", "Error handling OCR failure", ex);
                         }
                     }));
         } catch (Exception e) {
-            Toast.makeText(this, "Error loading routine image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.e("RoutineActivity", "Error loading routine image: " + e.getMessage(), e);
         }
     }
 
@@ -975,7 +975,6 @@ public class RoutineActivity extends AppCompatActivity {
         try {
             if (isFinishing() || isDestroyed()) return;
             if (visionText == null || visionText.getText() == null || visionText.getText().trim().isEmpty()) {
-                runOnUiThread(() -> Toast.makeText(this, "No text detected in the routine image.", Toast.LENGTH_LONG).show());
                 return;
             }
 
@@ -1202,8 +1201,6 @@ public class RoutineActivity extends AppCompatActivity {
                     routineList.addAll(activeDayParsed);
                     if (routineAdapter != null) routineAdapter.notifyDataSetChanged();
                     updateUiVisibilityAndSummary();
-
-                    Toast.makeText(RoutineActivity.this, "Extracted " + parsedClasses.size() + " classes via Matrix Grid Mapping!", Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
                     Log.e("RoutineActivity", "Error updating UI in parseAndSaveRoutineOcrVisionText", e);
                 }
@@ -1221,13 +1218,6 @@ public class RoutineActivity extends AppCompatActivity {
             }));
         } catch (Exception e) {
             Log.e("RoutineActivity", "Error in parseAndSaveRoutineOcrVisionText", e);
-            runOnUiThread(() -> {
-                try {
-                    if (!isFinishing() && !isDestroyed()) {
-                        Toast.makeText(RoutineActivity.this, "Error parsing OCR vision text: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                } catch (Exception ignored) {}
-            });
         }
     }
 
@@ -1402,7 +1392,6 @@ public class RoutineActivity extends AppCompatActivity {
         try {
             if (isFinishing() || isDestroyed()) return;
             if (ocrText == null || ocrText.trim().isEmpty()) {
-                runOnUiThread(() -> Toast.makeText(this, "No text detected in the routine image.", Toast.LENGTH_LONG).show());
                 return;
             }
 
@@ -1510,8 +1499,6 @@ public class RoutineActivity extends AppCompatActivity {
                     routineList.addAll(activeDayParsed);
                     if (routineAdapter != null) routineAdapter.notifyDataSetChanged();
                     updateUiVisibilityAndSummary();
-
-                    Toast.makeText(RoutineActivity.this, "Saving scanned routine (" + parsedClasses.size() + " classes)...", Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
                     Log.e("RoutineActivity", "Error updating UI in parseAndSaveRoutineOcrText", e);
                 }
@@ -1529,13 +1516,6 @@ public class RoutineActivity extends AppCompatActivity {
             }));
         } catch (Exception e) {
             Log.e("RoutineActivity", "Error in parseAndSaveRoutineOcrText", e);
-            runOnUiThread(() -> {
-                try {
-                    if (!isFinishing() && !isDestroyed()) {
-                        Toast.makeText(RoutineActivity.this, "Error parsing OCR text: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                } catch (Exception ignored) {}
-            });
         }
     }
 
@@ -1725,7 +1705,6 @@ public class RoutineActivity extends AppCompatActivity {
                     .addOnFailureListener(e -> runOnUiThread(() -> {
                         try {
                             if (isFinishing() || isDestroyed()) return;
-                            Toast.makeText(RoutineActivity.this, "Failed to sync routine to cloud: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
                             if (onComplete != null) onComplete.run();
                         } catch (Exception ex) {
                             Log.e("RoutineActivity", "Error in saveRoutineClassesBatch onFailure", ex);
@@ -1795,9 +1774,17 @@ public class RoutineActivity extends AppCompatActivity {
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, DAYS);
         spinnerDay.setAdapter(spinnerAdapter);
 
-        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
-                .setView(view)
-                .create();
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(view);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(
+                (int) (getResources().getDisplayMetrics().widthPixels * 0.88),
+                WindowManager.LayoutParams.WRAP_CONTENT
+            );
+            dialog.getWindow().setDimAmount(0.4f);
+        }
 
         btnSave.setOnClickListener(v -> {
             String day = spinnerDay.getSelectedItem().toString();
@@ -1818,20 +1805,18 @@ public class RoutineActivity extends AppCompatActivity {
             }
 
             btnSave.setEnabled(false);
-            Toast.makeText(this, "Saving class...", Toast.LENGTH_SHORT).show();
 
             String validDay = normalizeDayName(day);
             if (validDay == null) validDay = day;
 
             saveRoutineClassToFirestore(validDay, subject, timeSlot, room, teacher)
                     .addOnSuccessListener(docRef -> {
-                        Toast.makeText(this, "Class added successfully!", Toast.LENGTH_SHORT).show();
+                        CustomToast.show(this, "Class added");
                         dialog.dismiss();
                         loadRoutineForDay(selectedDay);
                     })
                     .addOnFailureListener(e -> {
                         btnSave.setEnabled(true);
-                        Toast.makeText(this, "Failed to add class: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
         });
 
@@ -1907,7 +1892,6 @@ public class RoutineActivity extends AppCompatActivity {
                                 .document(item.id)
                                 .delete()
                                 .addOnSuccessListener(aVoid -> {
-                                    Toast.makeText(activity, "Class deleted", Toast.LENGTH_SHORT).show();
                                     activity.refreshDashboard();
                                 });
                     }

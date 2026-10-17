@@ -116,7 +116,7 @@
         android:textColor="#FFFFFF"
         android:textSize="15sp"
         android:textStyle="bold"
-        app:backgroundTint="#7C3AED"
+        app:backgroundTint="#0066FF"
         app:cornerRadius="14dp"/>
 
     <!-- Secondary Button: Scan Another Routine -->

@@ -30,6 +30,7 @@ public class CandidateAdapter extends RecyclerView.Adapter<CandidateAdapter.Cand
         void onVoteClick(Candidate candidate);
         void onDeleteClick(Candidate candidate);
         void onItemClick(Candidate candidate);
+        void onTestVoteClick(Candidate candidate);
     }
 
     private final Context context;
@@ -39,12 +40,12 @@ public class CandidateAdapter extends RecyclerView.Adapter<CandidateAdapter.Cand
     private OnCandidateClickListener listener;
 
     private static final String[] PALETTE_HEX = {
+        "#6C63FF", // Purple/Indigo
         "#0066FF", // Blue
-        "#7C3AED", // Purple
-        "#16A34A", // Green
+        "#00C9A7", // Teal/Green
+        "#FF6B6B", // Red/Coral
         "#F59E0B", // Amber
-        "#EC4899", // Pink
-        "#06B6D4"  // Cyan
+        "#8B5CF6"  // Violet
     };
 
     public CandidateAdapter(Context context, boolean isAdminView) {
@@ -156,6 +157,13 @@ public class CandidateAdapter extends RecyclerView.Adapter<CandidateAdapter.Cand
             if (holder.btnDelete != null) {
                 holder.btnDelete.setVisibility(View.GONE);
             }
+
+            if (holder.btnTestVote != null) {
+                holder.btnTestVote.setVisibility(View.VISIBLE);
+                holder.btnTestVote.setOnClickListener(v -> {
+                    if (listener != null) listener.onTestVoteClick(candidate);
+                });
+            }
         } else {
             // STUDENT MODE LAYOUT
             int p16 = dpToPx(16);
@@ -165,6 +173,7 @@ public class CandidateAdapter extends RecyclerView.Adapter<CandidateAdapter.Cand
 
             if (holder.tvSubline != null) holder.tvSubline.setVisibility(View.GONE);
             if (holder.tvPct != null) holder.tvPct.setVisibility(View.GONE);
+            if (holder.btnTestVote != null) holder.btnTestVote.setVisibility(View.GONE);
 
             if (holder.btnVote != null) holder.btnVote.setVisibility(View.VISIBLE);
             if (holder.tvDept != null) {
@@ -223,7 +232,7 @@ public class CandidateAdapter extends RecyclerView.Adapter<CandidateAdapter.Cand
         MaterialCardView cardItem;
         ConstraintLayout cardContentLayout;
         TextView tvRank, tvName, tvVotes, tvDept, tvSubline, tvPct;
-        MaterialButton btnVote, btnDelete;
+        MaterialButton btnVote, btnDelete, btnTestVote;
         ProgressBar pbVotes;
 
         public CandidateViewHolder(@NonNull View itemView) {
@@ -238,6 +247,7 @@ public class CandidateAdapter extends RecyclerView.Adapter<CandidateAdapter.Cand
             tvPct = itemView.findViewById(R.id.tvCandidatePct);
             btnVote = itemView.findViewById(R.id.btnVoteCandidate);
             btnDelete = itemView.findViewById(R.id.btnDeleteCandidate);
+            btnTestVote = itemView.findViewById(R.id.btnTestVoteCandidate);
             pbVotes = itemView.findViewById(R.id.pbCandidateVotes);
         }
     }

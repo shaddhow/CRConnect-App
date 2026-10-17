@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Professional Modern Dark Palette -->
-    <color name="primary">#7C3AED</color>
-    <color name="primaryVariant">#6D28D9</color>
-    <color name="secondary">#A78BFA</color>
+    <!-- Core Colors -->
+    <color name="primary">#0066FF</color>
+    <color name="primaryVariant">#0052CC</color>
+    <color name="secondary">#0066FF</color>
     <color name="background">#0A0D14</color>
     <color name="surface">#161B26</color>
     <color name="surface_card">#161B26</color>
@@ -14,8 +14,8 @@
     <color name="text_primary">#FFFFFF</color>
     <color name="text_secondary">#94A3B8</color>
     <color name="divider">#1F2937</color>
-    <color name="accent_violet">#7C3AED</color>
-    <color name="accent_purple_glow">#2E1065</color>
+    <color name="accent_violet">#0066FF</color>
+    <color name="accent_purple_glow">#E6F0FF</color>
     <color name="accent_green">#10B981</color>
     <color name="accent_amber">#F59E0B</color>
     <color name="destructive_bg">#7F1D1D</color>
@@ -30,4 +30,29 @@
     <color name="tint">#E6F0FF</color>
     <color name="nav_selected">#0066FF</color>
     <color name="nav_unselected">#94A3B8</color>
+
+    <!-- CRConnect Redesign Specification Palette -->
+    <color name="bg_gradient_start">#70D6FF</color>
+    <color name="bg_gradient_center">#C2EFFF</color>
+    <color name="bg_gradient_end">#FFFFFF</color>
+
+    <color name="brand_blue">#0066FF</color>
+    <color name="brand_blue_dark">#0B3A9E</color>
+    <color name="brand_blue_pressed">#0052CC</color>
+    <color name="brand_blue_light">#E6F0FF</color>
+
+    <color name="slate_dark">#0F172A</color>
+    <color name="slate_dark_72">#B80F172A</color>
+    <color name="slate_dark_60">#990F172A</color>
+    <color name="slate_muted">#64748B</color>
+    <color name="slate_icon">#94A3B8</color>
+    <color name="slate_border">#CBD5E1</color>
+    <color name="slate_border_light">#E2E8F0</color>
+
+    <color name="segmented_bg">#EEF3F9</color>
+    <color name="badge_bg">#B3FFFFFF</color>
+    <color name="badge_border">#E6FFFFFF</color>
+
+    <color name="btn_disabled_bg">#E2E8F0</color>
+    <color name="btn_disabled_text">#94A3B8</color>
 </resources>

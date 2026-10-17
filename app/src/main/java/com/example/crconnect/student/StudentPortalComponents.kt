@@ -54,13 +54,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.crconnect.R
+import com.example.crconnect.core.utils.HapticUtils
 
 @Composable
 fun DesignCard(
@@ -311,106 +319,81 @@ fun StudentBottomNavigation(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit
 ) {
-    val navSelectedColor = Primary
-    val navUnselectedColor = MutedText
-    val topBorderColor = BorderColor
+    val navSelectedColor = Color(0xFF0066FF)
+    val navUnselectedColor = Color(0xFF64748B)
+    val view = LocalView.current
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Color.White,
-        shadowElevation = 0.dp,
-        tonalElevation = 0.dp
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .drawBehind {
+                // Top border 1dp solid #E2E8F0
+                drawLine(
+                    color = Color(0xFFE2E8F0),
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, 0f),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .drawBehind {
-                    drawLine(
-                        color = topBorderColor,
-                        start = Offset(0f, 0f),
-                        end = Offset(size.width, 0f),
-                        strokeWidth = 1.dp.toPx()
-                    )
-                }
-                .navigationBarsPadding()
-                .padding(vertical = 8.dp, horizontal = 8.dp)
-                .height(72.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(top = 0.dp, bottom = 34.dp),
+            verticalAlignment = Alignment.Top
         ) {
             val items = listOf(
-                Triple("Candidates", Icons.Filled.People to Icons.Outlined.People, 0),
-                Triple("Routine", Icons.Filled.CalendarToday to Icons.Outlined.CalendarToday, 1),
-                Triple("Status", Icons.Filled.Timer to Icons.Outlined.Timer, 2),
-                Triple("Profile", Icons.Filled.Person to Icons.Outlined.Person, 3)
+                Triple("Candidates", R.drawable.ic_nav_candidates, 0),
+                Triple("Routine", R.drawable.ic_nav_routine, 1),
+                Triple("Status", R.drawable.ic_nav_timer, 2),
+                Triple("Profile", R.drawable.ic_nav_profile, 3)
             )
 
-            items.forEach { (label, icons, index) ->
+            items.forEach { (label, iconRes, index) ->
                 val selected = selectedTab == index
 
-                val animatedPillBg by animateColorAsState(
-                    targetValue = if (selected) TintLightBlue else Color.Transparent,
-                    animationSpec = tween(durationMillis = 300),
-                    label = "PillBg"
-                )
-
-                val animatedItemColor by animateColorAsState(
-                    targetValue = if (selected) navSelectedColor else navUnselectedColor,
-                    animationSpec = tween(durationMillis = 300),
-                    label = "ItemColor"
-                )
-
-                val animatedScale by animateFloatAsState(
-                    targetValue = if (selected) 1f else 0.88f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow
-                    ),
-                    label = "Scale"
-                )
-
-                val icon = if (selected) icons.first else icons.second
+                val pillBg = if (selected) Color(0xFFE6F0FF) else Color.Transparent
+                val itemColor = if (selected) navSelectedColor else navUnselectedColor
 
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
-                        ) { onTabSelected(index) },
+                        ) {
+                            HapticUtils.lightClick(view)
+                            onTabSelected(index)
+                        }
+                        .padding(top = 8.dp, bottom = 0.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.Top
                 ) {
-                    // Enlarged animated pill shape (width 68dp, height 36dp, shape CircleShape)
                     Box(
                         modifier = Modifier
-                            .graphicsLayer {
-                                scaleX = animatedScale
-                                scaleY = animatedScale
-                            }
-                            .width(68.dp)
-                            .height(36.dp)
-                            .clip(CircleShape)
-                            .background(animatedPillBg),
+                            .width(64.dp)
+                            .height(32.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(pillBg),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = icon,
+                            painter = painterResource(id = iconRes),
                             contentDescription = label,
-                            tint = animatedItemColor,
-                            modifier = Modifier.size(26.dp)
+                            tint = itemColor,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
 
                     Text(
                         text = label,
                         fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 13.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                        color = animatedItemColor
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight(600),
+                        color = itemColor
                     )
                 }
             }
