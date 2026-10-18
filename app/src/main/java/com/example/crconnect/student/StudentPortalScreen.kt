@@ -58,6 +58,7 @@ fun StudentPortalScreen(
     ) {
         ModalNavigationDrawer(
             drawerState = drawerState,
+            scrimColor = Color(0x660F172A),
             drawerContent = {
                 StudentPortalDrawerContent(
                     profile = uiState.profile,

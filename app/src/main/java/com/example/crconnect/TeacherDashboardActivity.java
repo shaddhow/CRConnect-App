@@ -974,7 +974,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (imgNavProfile != null && sessionManager != null) {
             String cachedImg = sessionManager.getProfileImageUrl();
             if (cachedImg != null && !cachedImg.isEmpty()) {
-                Glide.with(this).load(cachedImg).placeholder(R.drawable.bubt_logo).error(R.drawable.bubt_logo).circleCrop().into(imgNavProfile);
+                Glide.with(this).load(cachedImg).placeholder(R.drawable.ic_crconnect_logo).error(R.drawable.ic_crconnect_logo).circleCrop().into(imgNavProfile);
             }
         }
 

@@ -13,6 +13,10 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -60,7 +64,10 @@ public class EndVotingBottomSheet extends BottomSheetDialogFragment {
 
         Window window = dialog.getWindow();
         if (window != null) {
+            WindowCompat.setDecorFitsSystemWindows(window, false);
             window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setNavigationBarColor(Color.TRANSPARENT);
             window.setDimAmount(0.45f);
             window.setWindowAnimations(com.google.android.material.R.style.Animation_Design_BottomSheetDialog);
         }
@@ -77,6 +84,13 @@ public class EndVotingBottomSheet extends BottomSheetDialogFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        final int basePaddingBottom = view.getPaddingBottom();
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            Insets navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), basePaddingBottom + navBars.bottom);
+            return insets;
+        });
 
         MaterialButton btnCancel = view.findViewById(R.id.btnCancelEndVoting);
         MaterialButton btnConfirm = view.findViewById(R.id.btnConfirmEndVoting);

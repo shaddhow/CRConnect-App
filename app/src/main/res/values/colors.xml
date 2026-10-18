@@ -32,6 +32,7 @@
     <color name="nav_unselected">#94A3B8</color>
 
     <!-- CRConnect Redesign Specification Palette -->
+    <color name="splashBackground">#70D6FF</color>
     <color name="bg_gradient_start">#70D6FF</color>
     <color name="bg_gradient_center">#C2EFFF</color>
     <color name="bg_gradient_end">#FFFFFF</color>

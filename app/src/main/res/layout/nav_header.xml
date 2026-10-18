@@ -12,7 +12,7 @@
         android:id="@+id/imgNavHeaderProfile"
         android:layout_width="64dp"
         android:layout_height="64dp"
-        android:src="@drawable/bubt_logo"
+        android:src="@drawable/ic_crconnect_logo"
         android:scaleType="centerCrop"
         android:background="#FFFFFF"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium"

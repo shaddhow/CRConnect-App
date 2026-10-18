@@ -892,8 +892,22 @@ public class RoutineActivity extends AppCompatActivity {
 
     private void showScanOptionsBottomSheet() {
         View view = getLayoutInflater().inflate(R.layout.dialog_scan_routine_options, null);
-        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this, R.style.CustomBottomSheetDialogTheme);
         bottomSheetDialog.setContentView(view);
+
+        Window window = bottomSheetDialog.getWindow();
+        if (window != null) {
+            WindowCompat.setDecorFitsSystemWindows(window, false);
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setDimAmount(0.45f);
+        }
+
+        final int basePaddingBottom = view.getPaddingBottom();
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            Insets navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), basePaddingBottom + navBars.bottom);
+            return insets;
+        });
 
         view.findViewById(R.id.btnScanCamera).setOnClickListener(v -> {
             bottomSheetDialog.dismiss();
@@ -1577,10 +1591,24 @@ public class RoutineActivity extends AppCompatActivity {
                 }
             }
 
-            BottomSheetDialog dialog = new BottomSheetDialog(this);
+            BottomSheetDialog dialog = new BottomSheetDialog(this, R.style.CustomBottomSheetDialogTheme);
             dialog.setContentView(dialogView);
             dialog.setCancelable(true);
             dialog.setCanceledOnTouchOutside(true);
+
+            Window window = dialog.getWindow();
+            if (window != null) {
+                WindowCompat.setDecorFitsSystemWindows(window, false);
+                window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                window.setDimAmount(0.45f);
+            }
+
+            final int basePaddingBottom = dialogView.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(dialogView, (v, insets) -> {
+                Insets navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+                v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), basePaddingBottom + navBars.bottom);
+                return insets;
+            });
 
             if (btnViewSchedule != null) {
                 btnViewSchedule.setOnClickListener(v -> {

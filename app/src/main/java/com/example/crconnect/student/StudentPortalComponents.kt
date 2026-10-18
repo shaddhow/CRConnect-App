@@ -203,37 +203,39 @@ fun TopHeader(
         modifier = modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .height(56.dp)
-            .padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 1. Menu Button (.rbtn)
+        // 1. Menu Button: 44dp x 44dp, 24dp ic_menu icon, 1dp #E2E8F0 stroke
         Surface(
-            modifier = Modifier.size(42.dp),
+            modifier = Modifier.size(44.dp),
             shape = CircleShape,
             color = Color.White,
-            border = BorderStroke(1.dp, BorderColor),
-            shadowElevation = 2.dp,
+            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+            shadowElevation = 0.dp,
             onClick = onMenuClick
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
-                    imageVector = Icons.Default.Menu,
+                    painter = painterResource(id = R.drawable.ic_menu),
                     contentDescription = "Open menu",
-                    tint = TitleText,
-                    modifier = Modifier.size(20.dp)
+                    tint = Color(0xFF0F172A),
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
 
-        // 2. Avatar (.av)
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // 2. Avatar Circle: 44dp x 44dp, filled #0066FF with 3dp white ring
         Box(
             modifier = Modifier
-                .size(42.dp)
+                .size(44.dp)
                 .clip(CircleShape)
-                .background(Primary)
-                .border(3.dp, Color.White.copy(alpha = 0.7f), CircleShape)
+                .background(Color.White)
+                .padding(3.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF0066FF))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
@@ -244,24 +246,23 @@ fun TopHeader(
                 text = initials,
                 color = Color.White,
                 fontFamily = PlusJakartaSansFontFamily,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 15.sp
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
             )
         }
 
-        // 3. Title & Subtitle (.who)
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // 3. Title & Subtitle Column
         Column(
-            modifier = Modifier
-                .weight(1f, fill = false)
-                .padding(horizontal = 2.dp)
+            modifier = Modifier.weight(1f)
         ) {
             Text(
                 text = "Election Portal",
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 16.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = (-0.3).sp,
-                color = TitleText,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF0F172A),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -269,19 +270,21 @@ fun TopHeader(
                 text = "Dashboard · Department of CSE, BUBT",
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF334155),
+                fontWeight = FontWeight.Normal,
+                color = Color(0xFF64748B),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
 
-        // 4. Secure Chip (.chip.ok)
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // 4. Secure Chip
         Box(
             modifier = Modifier
                 .clip(CircleShape)
-                .background(SuccessTint)
-                .border(1.dp, SuccessBorder, CircleShape)
+                .background(Color(0xFFDCFCE7))
+                .border(1.dp, Color(0xFFBBF7D0), CircleShape)
                 .padding(horizontal = 10.dp, vertical = 4.dp)
         ) {
             Text(
@@ -289,25 +292,27 @@ fun TopHeader(
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = SuccessText
+                color = Color(0xFF166534)
             )
         }
 
-        // 5. Power Button (.rbtn)
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // 5. Power / Sign Out Button: 44dp x 44dp, 24dp ic_power icon, 1dp #E2E8F0 stroke
         Surface(
-            modifier = Modifier.size(42.dp),
+            modifier = Modifier.size(44.dp),
             shape = CircleShape,
             color = Color.White,
-            border = BorderStroke(1.dp, BorderColor),
-            shadowElevation = 2.dp,
+            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+            shadowElevation = 0.dp,
             onClick = onSignOutClick
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
-                    imageVector = Icons.Default.PowerSettingsNew,
+                    painter = painterResource(id = R.drawable.ic_power),
                     contentDescription = "Sign out",
-                    tint = TitleText,
-                    modifier = Modifier.size(20.dp)
+                    tint = Color(0xFF0F172A),
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }

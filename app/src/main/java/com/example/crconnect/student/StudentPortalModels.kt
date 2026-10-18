@@ -50,7 +50,7 @@ fun getTodayDayIndex(): Int {
 }
 
 data class StudentPortalUiState(
-    val selectedTab: Int = 1, // Default to Routine tab (index 1) to match picture
+    val selectedTab: Int = 0, // Default to Candidates tab (index 0)
     val hasVoted: Boolean = false,
     val votedCandidateId: Int? = null,
     val receiptId: String = "CR-839201",

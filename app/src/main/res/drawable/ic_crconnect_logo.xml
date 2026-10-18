@@ -1,0 +1,135 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+
+    <!-- Soft bg -->
+    <path
+        android:fillColor="#EFF6FF"
+        android:pathData="M36,2a34,34 0 1,0 0,68a34,34 0 1,0 0,-68Z" />
+
+    <!-- Left student head -->
+    <path
+        android:fillColor="#0066FF"
+        android:fillAlpha="0.28"
+        android:pathData="M13,23a5,5 0 1,0 0,10a5,5 0 1,0 0,-10Z" />
+
+    <!-- Left student body arc -->
+    <path
+        android:pathData="M5,48 C5,41 8.5,38 13,38 C17.5,38 21,41 21,48"
+        android:strokeColor="#0066FF"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeAlpha="0.28" />
+
+    <!-- Right student head -->
+    <path
+        android:fillColor="#0066FF"
+        android:fillAlpha="0.28"
+        android:pathData="M59,23a5,5 0 1,0 0,10a5,5 0 1,0 0,-10Z" />
+
+    <!-- Right student body arc -->
+    <path
+        android:pathData="M51,48 C51,41 54.5,38 59,38 C63.5,38 67,41 67,48"
+        android:strokeColor="#0066FF"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeAlpha="0.28" />
+
+    <!-- Connection arc from CR to left student -->
+    <path
+        android:pathData="M24,26 Q18,20 18,28"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeAlpha="0.55">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="72"
+                android:endY="72"
+                android:type="linear">
+                <item
+                    android:offset="0.0"
+                    android:color="#0066FF" />
+                <item
+                    android:offset="1.0"
+                    android:color="#38BDF8" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Connection arc from CR to right student -->
+    <path
+        android:pathData="M48,26 Q54,20 54,28"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeAlpha="0.55">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="72"
+                android:endY="72"
+                android:type="linear">
+                <item
+                    android:offset="0.0"
+                    android:color="#0066FF" />
+                <item
+                    android:offset="1.0"
+                    android:color="#38BDF8" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Centre CR head -->
+    <path
+        android:pathData="M36,15a9,9 0 1,0 0,18a9,9 0 1,0 0,-18Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="72"
+                android:endY="72"
+                android:type="linear">
+                <item
+                    android:offset="0.0"
+                    android:color="#0B3A9E" />
+                <item
+                    android:offset="0.6"
+                    android:color="#0066FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Centre CR body arc -->
+    <path
+        android:pathData="M20,52 C20,42 27,37.5 36,37.5 C45,37.5 52,42 52,52"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="72"
+                android:endY="72"
+                android:type="linear">
+                <item
+                    android:offset="0.0"
+                    android:color="#0B3A9E" />
+                <item
+                    android:offset="0.6"
+                    android:color="#0066FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Small star badge on CR -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.9"
+        android:pathData="M36,14 L37.2,17.6 L41,17.6 L38.1,19.8 L39.2,23.4 L36,21.2 L32.8,23.4 L33.9,19.8 L31,17.6 L34.8,17.6 Z" />
+
+</vector>
