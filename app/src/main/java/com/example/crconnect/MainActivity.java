@@ -32,6 +32,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.core.widget.NestedScrollView;
 
 import com.example.crconnect.core.utils.HapticUtils;
+import com.example.crconnect.core.utils.KeyboardUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -120,12 +121,7 @@ public class MainActivity extends AppCompatActivity {
         // Safe Area Padding
         scrollViewMain = findViewById(R.id.scrollViewMain);
         if (scrollViewMain != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(scrollViewMain, (v, insets) -> {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, Math.max(systemBars.bottom, ime.bottom));
-                return WindowInsetsCompat.CONSUMED;
-            });
+            KeyboardUtils.setupSmoothKeyboardHandling(this, scrollViewMain);
         }
 
         // Double press back to exit from login page
@@ -352,7 +348,16 @@ public class MainActivity extends AppCompatActivity {
         String password = etPassword != null && etPassword.getText() != null ? etPassword.getText().toString().trim() : "";
 
         if (emailOrId.isEmpty()) {
-            if (tilEmail != null) tilEmail.setError("ID/Email is required!");
+            if (tilEmail != null) tilEmail.setError("Email is required!");
+            if (etEmail != null) {
+                etEmail.startAnimation(AnimationUtils.loadAnimation(this, R.anim.shake));
+                etEmail.requestFocus();
+            }
+            return;
+        }
+
+        if (rbTeacher != null && rbTeacher.isChecked() && emailOrId.contains("@") && !emailOrId.toLowerCase().endsWith("@bubt.edu.bd")) {
+            if (tilEmail != null) tilEmail.setError("Teacher email must end with @bubt.edu.bd");
             if (etEmail != null) {
                 etEmail.startAnimation(AnimationUtils.loadAnimation(this, R.anim.shake));
                 etEmail.requestFocus();
@@ -514,7 +519,7 @@ public class MainActivity extends AppCompatActivity {
                                                                     String intake = doc.getString("intake");
                                                                     String dept = doc.getString("dept");
 
-                                                                    String resolvedRole = role != null ? role : ((dbEmail != null && dbEmail.toLowerCase().endsWith("@bubt.edu.bd")) ? "Teacher" : "Student");
+                                                                    String resolvedRole = role != null ? role : ((rbTeacher != null && rbTeacher.isChecked()) ? "Teacher" : "Student");
                                                                     sessionManager.createLoginSession(
                                                                         name != null ? name : email,
                                                                         dbEmail != null ? dbEmail : email,
@@ -528,23 +533,41 @@ public class MainActivity extends AppCompatActivity {
                                                                     navigateBasedOnRole(resolvedRole, dbEmail != null ? dbEmail : email);
                                                                 } else {
                                                                     String userEmail = refreshedUser.getEmail();
-                                                                    if (isTeacherRole(null, userEmail) || (userEmail != null && userEmail.toLowerCase().endsWith("@bubt.edu.bd")) || (rbTeacher != null && rbTeacher.isChecked())) {
+                                                                    if (rbTeacher != null && rbTeacher.isChecked()) {
                                                                         createDefaultTeacherAndNavigate(uid, userEmail != null ? userEmail : email, originalInput);
                                                                     } else {
-                                                                        btnLogin.setEnabled(true);
-                                                                        FirebaseAuth.getInstance().signOut();
-                                                                        sessionManager.logoutUser();
+                                                                        String studentName = (userEmail != null && userEmail.contains("@")) ? userEmail.split("@")[0] : "Student";
+                                                                        sessionManager.createLoginSession(
+                                                                            studentName,
+                                                                            userEmail != null ? userEmail : email,
+                                                                            originalInput,
+                                                                            "Student",
+                                                                            "--",
+                                                                            "--",
+                                                                            "--",
+                                                                            "Department of CSE, BUBT"
+                                                                        );
+                                                                        navigateBasedOnRole("Student", userEmail != null ? userEmail : email);
                                                                     }
                                                                 }
                                                             })
                                                             .addOnFailureListener(e -> {
                                                                 String userEmail = refreshedUser.getEmail();
-                                                                if (isTeacherRole(null, userEmail) || (userEmail != null && userEmail.toLowerCase().endsWith("@bubt.edu.bd")) || (rbTeacher != null && rbTeacher.isChecked())) {
+                                                                if (rbTeacher != null && rbTeacher.isChecked()) {
                                                                     createDefaultTeacherAndNavigate(uid, userEmail != null ? userEmail : email, originalInput);
                                                                 } else {
-                                                                    btnLogin.setEnabled(true);
-                                                                    FirebaseAuth.getInstance().signOut();
-                                                                    sessionManager.logoutUser();
+                                                                    String studentName = (userEmail != null && userEmail.contains("@")) ? userEmail.split("@")[0] : "Student";
+                                                                    sessionManager.createLoginSession(
+                                                                        studentName,
+                                                                        userEmail != null ? userEmail : email,
+                                                                        originalInput,
+                                                                        "Student",
+                                                                        "--",
+                                                                        "--",
+                                                                        "--",
+                                                                        "Department of CSE, BUBT"
+                                                                    );
+                                                                    navigateBasedOnRole("Student", userEmail != null ? userEmail : email);
                                                                 }
                                                             });
                                                     }
@@ -580,16 +603,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isTeacherRole(String role, String email) {
-        if (role != null) {
+        if (role != null && !role.trim().isEmpty()) {
             String lowerRole = role.toLowerCase();
+            if (lowerRole.contains("student")) {
+                return false;
+            }
             if (lowerRole.contains("teacher") || lowerRole.contains("admin")) {
                 return true;
             }
         }
-        if (email != null && email.toLowerCase().endsWith("@bubt.edu.bd")) {
+        if (email != null && email.toLowerCase().contains("teacher")) {
             return true;
         }
-        return false;
+        return rbTeacher != null && rbTeacher.isChecked();
     }
 
     private void saveSessionAndNavigate(DataSnapshot snapshot) {
@@ -605,7 +631,7 @@ public class MainActivity extends AppCompatActivity {
         if (name == null) name = "User";
         if (userEmail == null) userEmail = "";
         if (role == null || role.trim().isEmpty()) {
-            role = isTeacherRole(null, userEmail) ? "Teacher" : "Student";
+            role = (rbTeacher != null && rbTeacher.isChecked()) ? "Teacher" : "Student";
         }
         if (id == null) id = "";
         if (section == null) section = "--";

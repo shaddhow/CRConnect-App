@@ -64,7 +64,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.crconnect.R
@@ -74,6 +76,7 @@ import com.example.crconnect.core.utils.HapticUtils
 fun DesignCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    padding: Dp = 20.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
@@ -98,7 +101,7 @@ fun DesignCard(
         border = BorderStroke(1.dp, BorderColor)
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(padding)
         ) {
             content()
         }
@@ -113,6 +116,7 @@ fun PrimaryButton(
     enabled: Boolean = true,
     icon: ImageVector? = null
 ) {
+    val contentColor = if (enabled) Color.White else DisabledText
     Button(
         onClick = onClick,
         enabled = enabled,
@@ -124,8 +128,8 @@ fun PrimaryButton(
                     Modifier.shadow(
                         elevation = 4.dp,
                         shape = RoundedCornerShape(12.dp),
-                        ambientColor = Primary,
-                        spotColor = Primary
+                        ambientColor = Color(0x660066FF),
+                        spotColor = Color(0x660066FF)
                     )
                 } else Modifier
             ),
@@ -145,6 +149,7 @@ fun PrimaryButton(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
+                    tint = contentColor,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -153,8 +158,9 @@ fun PrimaryButton(
                 text = text,
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 16.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = (-0.2).sp
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.2.sp,
+                color = contentColor
             )
         }
     }
@@ -165,30 +171,87 @@ fun SecondaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: ImageVector? = null,
     isDanger: Boolean = false
 ) {
+    val contentColor = when {
+        !enabled -> DisabledText
+        isDanger -> ErrorColor
+        else -> Primary
+    }
     OutlinedButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
             .height(52.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = if (isDanger) DangerTint else Color.White,
-            contentColor = if (isDanger) ErrorColor else Primary
+            contentColor = contentColor,
+            disabledContainerColor = DisabledBg,
+            disabledContentColor = DisabledText
         ),
         border = BorderStroke(
             width = 1.5.dp,
-            color = if (isDanger) DangerBorder else Primary
+            color = when {
+                !enabled -> DisabledBg
+                isDanger -> DangerBorder
+                else -> Primary
+            }
         )
     ) {
-        Text(
-            text = text,
-            fontFamily = PlusJakartaSansFontFamily,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text(
+                text = text,
+                fontFamily = PlusJakartaSansFontFamily,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.2.sp,
+                color = contentColor
+            )
+        }
     }
+}
+
+@Composable
+fun TextLink(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    color: Color = Primary
+) {
+    Text(
+        text = text,
+        fontFamily = PlusJakartaSansFontFamily,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = if (enabled) color else DisabledText,
+        textAlign = TextAlign.Center,
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(
+                enabled = enabled,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(vertical = 8.dp, horizontal = 4.dp)
+    )
 }
 
 @Composable

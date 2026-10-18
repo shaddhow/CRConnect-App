@@ -9,8 +9,8 @@
         <item name="colorOnSurface">@color/title_text</item>
         <item name="colorOnSurfaceVariant">@color/muted_text</item>
         <item name="colorError">@color/error_red</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">@font/plus_jakarta_sans</item>
+        <item name="fontFamily">@font/plus_jakarta_sans</item>
         <item name="android:windowActivityTransitions">true</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:statusBarColor">@android:color/transparent</item>

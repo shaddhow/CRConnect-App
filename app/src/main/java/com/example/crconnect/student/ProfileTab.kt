@@ -1,5 +1,10 @@
 package com.example.crconnect.student
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import android.graphics.BlurMaskFilter
+import android.graphics.Paint
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -18,14 +23,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -39,79 +49,123 @@ fun ProfileTab(
     onSignOut: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+    val portalGradient = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF70D6FF), // Top (0%)
+            Color(0xFFC2EFFF), // Middle (50%)
+            Color(0xFFFFFFFF)  // Bottom (100%)
+        )
+    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(brush = portalGradient)
             .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 16.dp)
     ) {
         // Card 1: User Main Info & Avatar (.card.c)
-        DesignCard {
+        DesignCard(padding = 24.dp) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Large Avatar Circle (.pav)
+                // Large Avatar Box with shadow layers and rings
                 Box(
                     modifier = Modifier
-                        .size(88.dp)
-                        .shadow(elevation = 8.dp, shape = CircleShape, ambientColor = Primary, spotColor = Primary)
-                        .clip(CircleShape)
-                        .background(Primary)
-                        .border(4.dp, Color.White, CircleShape),
+                        .size(98.dp)
+                        .drawBehind {
+                            val paint = Paint().apply {
+                                isAntiAlias = true
+                                color = android.graphics.Color.argb((0.25f * 255).toInt(), 0, 102, 255)
+                                maskFilter = BlurMaskFilter(28.dp.toPx(), BlurMaskFilter.Blur.NORMAL)
+                            }
+                            drawIntoCanvas { canvas ->
+                                canvas.nativeCanvas.save()
+                                canvas.nativeCanvas.translate(0f, 12.dp.toPx())
+                                canvas.nativeCanvas.drawCircle(
+                                    center.x,
+                                    center.y,
+                                    44.dp.toPx(),
+                                    paint
+                                )
+                                canvas.nativeCanvas.restore()
+                            }
+
+                            drawCircle(
+                                color = Color.White,
+                                radius = 49.dp.toPx()
+                            )
+
+                            drawCircle(
+                                color = Color(0xFFE2E8F0),
+                                radius = 46.5.dp.toPx()
+                            )
+                        },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = profile.initials,
-                        color = Color.White,
-                        fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(88.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF0066FF)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = profile.initials,
+                            color = Color.White,
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = profile.name,
-                    fontFamily = PlusJakartaSansFontFamily,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = TitleText
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = profile.email,
-                    fontFamily = PlusJakartaSansFontFamily,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MutedText
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Department Chip (.chip)
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(TintLightBlue)
-                        .border(1.dp, TintLightBlueBorder, RoundedCornerShape(999.dp))
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                // Below avatar, center aligned: Name, Email, Department chip
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = "Department of CSE, BUBT",
+                        text = profile.name,
                         fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 12.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Primary
+                        color = Color(0xFF0F172A)
                     )
-                }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                    Text(
+                        text = profile.email,
+                        fontFamily = PlusJakartaSansFontFamily,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF64748B)
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Surface(
+                        modifier = Modifier.padding(top = 2.dp),
+                        shape = RoundedCornerShape(999.dp),
+                        color = Color(0xFFE6F0FF),
+                        border = BorderStroke(1.dp, Color(0xFFBFD7FF))
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Department of CSE, BUBT",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0066FF)
+                            )
+                        }
+                    }
+                }
 
                 // Info Tiles Row (.tiles)
                 Row(
@@ -137,42 +191,56 @@ fun ProfileTab(
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Card 2: Overview & Progress (.card.c)
-        DesignCard {
-            KeyValueRow(key = "Verification status", value = "Verified · Locked", valueColor = SuccessText)
-            Spacer(modifier = Modifier.height(12.dp))
-            KeyValueRow(key = "Total enrolled courses", value = "6", valueColor = TitleText)
-            Spacer(modifier = Modifier.height(12.dp))
-            KeyValueRow(key = "Attendance overview", value = "${profile.attendancePct}% (Excellent)", valueColor = Primary)
+        DesignCard(padding = 20.dp) {
+            val progress = profile.attendancePct / 100f
+            val animatedProgress by animateFloatAsState(
+                targetValue = progress,
+                animationSpec = tween(durationMillis = 600)
+            )
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Attendance Progress Bar (.bar2)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(BorderColor)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .weight(profile.attendancePct.toFloat())
-                        .fillMaxSize()
-                        .background(Primary)
+                KeyValueRow(
+                    key = "Verification status",
+                    value = "Verified · Locked",
+                    valueColor = Color(0xFF16A34A)
                 )
-                if (100 - profile.attendancePct > 0) {
-                    Box(
+                KeyValueRow(
+                    key = "Total enrolled courses",
+                    value = "6",
+                    valueColor = TitleText
+                )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    KeyValueRow(
+                        key = "Attendance overview",
+                        value = "${profile.attendancePct}% (Excellent)",
+                        valueColor = Color(0xFF0066FF)
+                    )
+                    LinearProgressIndicator(
+                        progress = { animatedProgress },
                         modifier = Modifier
-                            .weight((100 - profile.attendancePct).toFloat())
-                            .fillMaxSize()
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = Color(0xFF0066FF),
+                        trackColor = Color(0xFFE2E8F0)
                     )
                 }
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Card 3: Action Buttons (.card.c)
-        DesignCard {
+        DesignCard(padding = 20.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SecondaryButton(
                     text = "Edit profile picture",
@@ -192,10 +260,10 @@ fun ProfileTab(
                         .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = DangerTint,
-                        contentColor = ErrorColor
+                        containerColor = Color(0xFFFEF2F2),
+                        contentColor = Color(0xFFB91C1C)
                     ),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(brush = SolidColor(DangerBorder))
+                    border = BorderStroke(1.5.dp, Color(0xFFFECACA))
                 ) {
                     Text(
                         text = "Log out",
@@ -206,8 +274,6 @@ fun ProfileTab(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 

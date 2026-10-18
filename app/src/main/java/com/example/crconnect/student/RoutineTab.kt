@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -127,7 +128,7 @@ fun RoutineTab(
                     text = greeting,
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.Bold,
                     color = TitleText
                 )
                 Text(
@@ -135,7 +136,7 @@ fun RoutineTab(
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF334155)
+                    color = MutedText
                 )
             }
 
@@ -143,7 +144,7 @@ fun RoutineTab(
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .shadow(elevation = 4.dp, shape = CircleShape, ambientColor = Primary, spotColor = Primary)
+                    .shadow(elevation = 4.dp, shape = CircleShape, ambientColor = Color(0x660066FF), spotColor = Color(0x660066FF))
                     .clip(CircleShape)
                     .background(Primary)
                     .clickable(
@@ -162,7 +163,7 @@ fun RoutineTab(
         }
 
         // Week Card (.card.c)
-        DesignCard {
+        DesignCard(padding = 24.dp) {
             // Header Row: "This week · 10–16 Oct" + square buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -222,7 +223,7 @@ fun RoutineTab(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Day Selector Pills (.days) - Equally spaced 7-day strip across screen width (SAT-FRI)
             Row(
@@ -312,7 +313,7 @@ fun RoutineTab(
                         text = "Nothing on ${getDayFullName(selectedDay.shortName)}",
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.Bold,
                         color = TitleText
                     )
 
@@ -344,7 +345,16 @@ fun RoutineTab(
             sheetState = sheetState,
             containerColor = Color.White,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            windowInsets = WindowInsets(0, 0, 0, 0)
+            windowInsets = WindowInsets(0, 0, 0, 0),
+            dragHandle = {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 12.dp, bottom = 4.dp)
+                        .size(width = 40.dp, height = 4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color(0xFFCBD5E1))
+                )
+            }
         ) {
             AddClassBottomSheetContent(
                 selectedDayName = getDayFullName(selectedDay.shortName),
@@ -387,7 +397,7 @@ private fun DayPill(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = "${day.dateNumber}",
+                text = day.dateNumber.toString(),
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
@@ -478,8 +488,8 @@ private fun AddClassBottomSheetContent(
             .fillMaxWidth()
             .verticalScroll(sheetScrollState)
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         if (!isManualMode) {
             // Scan Mode (.shero)
@@ -501,9 +511,10 @@ private fun AddClassBottomSheetContent(
                 Text(
                     text = "Point at your printed routine or pick a screenshot. Reads on your phone. Nothing is uploaded.",
                     fontFamily = PlusJakartaSansFontFamily,
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color.White.copy(alpha = 0.9f)
+                    color = Color.White.copy(alpha = 0.92f),
+                    lineHeight = 20.sp
                 )
             }
 
@@ -515,7 +526,8 @@ private fun AddClassBottomSheetContent(
 
             SecondaryButton(
                 text = "Choose from gallery",
-                onClick = { }
+                onClick = { },
+                icon = Icons.Default.Image
             )
 
             Text(
@@ -527,36 +539,28 @@ private fun AddClassBottomSheetContent(
             )
 
             // Tips 2x2 grid (.tips)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                TipChip("Good light", Icons.Default.WbSunny, Modifier.weight(1f))
-                TipChip("Fit whole routine", Icons.Default.Crop, Modifier.weight(1f))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TipChip("Good light", Icons.Default.WbSunny, Modifier.weight(1f))
+                    TipChip("Fit whole routine", Icons.Default.Crop, Modifier.weight(1f))
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TipChip("Screenshots from PDFs", Icons.Default.Description, Modifier.weight(1f))
+                    TipChip("Review before added", Icons.Default.RemoveRedEye, Modifier.weight(1f))
+                }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                TipChip("Screenshots from PDFs", Icons.Default.Description, Modifier.weight(1f))
-                TipChip("Review before added", Icons.Default.RemoveRedEye, Modifier.weight(1f))
-            }
-
-            Text(
+            TextLink(
                 text = "Or add classes manually",
-                fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Primary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { isManualMode = true }
-                    .padding(vertical = 8.dp)
+                onClick = { isManualMode = true },
+                modifier = Modifier.fillMaxWidth()
             )
         } else {
             // Manual Entry Mode
@@ -623,20 +627,11 @@ private fun AddClassBottomSheetContent(
                 }
             )
 
-            Text(
+            TextLink(
                 text = "Back",
-                fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
+                onClick = { isManualMode = false },
                 color = MutedText,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { isManualMode = false }
-                    .padding(vertical = 4.dp)
+                modifier = Modifier.fillMaxWidth()
             )
         }
 

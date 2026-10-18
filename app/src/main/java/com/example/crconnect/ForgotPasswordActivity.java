@@ -29,8 +29,10 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.core.widget.NestedScrollView;
 
 import com.example.crconnect.core.utils.HapticUtils;
+import com.example.crconnect.core.utils.KeyboardUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -75,13 +77,8 @@ public class ForgotPasswordActivity extends AppCompatActivity {
 
         // Safe Area Padding
         View scrollForgot = findViewById(R.id.scrollViewForgot);
-        if (scrollForgot != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(scrollForgot, (v, insets) -> {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, Math.max(systemBars.bottom, ime.bottom));
-                return WindowInsetsCompat.CONSUMED;
-            });
+        if (scrollForgot instanceof NestedScrollView) {
+            KeyboardUtils.setupSmoothKeyboardHandling(this, (NestedScrollView) scrollForgot);
         }
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -175,7 +172,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     private void handleSendCode() {
         String input = fid.getText() != null ? fid.getText().toString().trim() : "";
         if (input.isEmpty()) {
-            showFieldError(fId, "Enter your ID or email");
+            showFieldError(fId, "Enter your email");
             return;
         }
 

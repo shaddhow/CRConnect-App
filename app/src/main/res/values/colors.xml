@@ -56,4 +56,26 @@
 
     <color name="btn_disabled_bg">#E2E8F0</color>
     <color name="btn_disabled_text">#94A3B8</color>
+
+    <!-- Teacher Profile Palette -->
+    <color name="tp_hero_bg_start">#FFFFFF</color>
+    <color name="tp_hero_bg_end">#F4F9FF</color>
+    <color name="tp_avatar_start">#0066FF</color>
+    <color name="tp_avatar_end">#4F9BFF</color>
+    <color name="tp_avatar_ring">#E6F0FF</color>
+    <color name="tp_asg_start">#0066FF</color>
+    <color name="tp_asg_end">#0052CC</color>
+    <color name="tp_asg_badge_bg">#33FFFFFF</color>
+    <color name="tp_asg_sw_unselected_bg">#26FFFFFF</color>
+    <color name="tp_asg_sw_unselected_stroke">#73FFFFFF</color>
+    <color name="tp_asg_stat_bg">#29FFFFFF</color>
+    <color name="tp_chip_verified_bg">#DCFCE7</color>
+    <color name="tp_chip_verified_border">#BBF7D0</color>
+    <color name="tp_chip_verified_text">#166534</color>
+    <color name="tp_chip_dept_bg">#E6F0FF</color>
+    <color name="tp_chip_dept_border">#BFD7FF</color>
+    <color name="tp_chip_dept_text">#0066FF</color>
+    <color name="btn_danger_bg_color">#FEF2F2</color>
+    <color name="btn_danger_stroke_color">#FECACA</color>
+    <color name="btn_danger_text_color">#B91C1C</color>
 </resources>

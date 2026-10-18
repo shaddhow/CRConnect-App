@@ -802,6 +802,554 @@
 
                 </LinearLayout>
 
+                <!-- TAB 3: Teacher Profile Section -->
+                <LinearLayout
+                    android:id="@+id/layoutTabProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:paddingBottom="24dp">
+
+                    <!-- Profile Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        app:cardBackgroundColor="#FFFFFF"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="2dp"
+                        app:strokeColor="#E2E8F0"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            android:padding="24dp">
+
+                            <!-- Circular Avatar with Initials -->
+                            <TextView
+                                android:id="@+id/tvTpAvatar"
+                                android:layout_width="84dp"
+                                android:layout_height="84dp"
+                                android:background="@drawable/bg_tp_avatar"
+                                android:gravity="center"
+                                android:text="TT"
+                                android:textColor="#FFFFFF"
+                                android:textSize="28sp"
+                                android:textStyle="bold" />
+
+                            <!-- Name -->
+                            <TextView
+                                android:id="@+id/tvTpName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:text="Test Teacher (Dev)"
+                                android:textColor="#0F172A"
+                                android:textSize="20sp"
+                                android:textStyle="bold" />
+
+                            <!-- Email -->
+                            <TextView
+                                android:id="@+id/tvTpEmail"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="teacher@bubt.edu.bd"
+                                android:textColor="#64748B"
+                                android:textSize="14sp" />
+
+                            <!-- Two Chips Container -->
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="6dp"
+                                    android:background="@drawable/bg_tp_chip_verified"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="4dp"
+                                    android:text="Verified teacher"
+                                    android:textColor="@color/tp_chip_verified_text"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_tp_chip_dept"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="4dp"
+                                    android:text="Department of CSE, BUBT"
+                                    android:textColor="@color/tp_chip_dept_text"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- "Assigned Section" Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        app:cardBackgroundColor="@android:color/transparent"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="4dp"
+                        app:strokeWidth="0dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_tp_asg_card"
+                            android:orientation="vertical"
+                            android:padding="20dp">
+
+                            <!-- Label & Badge -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:letterSpacing="0.08"
+                                    android:text="ASSIGNED SECTION"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_tp_stat_box"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="3dp"
+                                    android:text="3 sections"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Big Section Number & Info -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/tvTpBigSecNumber"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:includeFontPadding="false"
+                                    android:text="6"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="56sp"
+                                    android:textStyle="bold" />
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="16dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Currently managing"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="13sp"
+                                        android:alpha="0.85" />
+
+                                    <TextView
+                                        android:id="@+id/tvTpSecName"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:text="Section 6 · Intake 55"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Section Toggle Buttons -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:orientation="horizontal"
+                                android:weightSum="3">
+
+                                <Button
+                                    android:id="@+id/btnSec4"
+                                    android:layout_width="0dp"
+                                    android:layout_height="40dp"
+                                    android:layout_weight="1"
+                                    android:layout_marginEnd="4dp"
+                                    android:backgroundTint="@android:color/transparent"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:text="Sec 4"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    app:cornerRadius="12dp"
+                                    app:strokeColor="@color/tp_asg_sw_unselected_stroke"
+                                    app:strokeWidth="1.5dp" />
+
+                                <Button
+                                    android:id="@+id/btnSec6"
+                                    android:layout_width="0dp"
+                                    android:layout_height="40dp"
+                                    android:layout_weight="1"
+                                    android:layout_marginHorizontal="2dp"
+                                    android:backgroundTint="#FFFFFF"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:text="Sec 6"
+                                    android:textColor="#0066FF"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    app:cornerRadius="12dp"
+                                    app:strokeColor="#FFFFFF"
+                                    app:strokeWidth="1.5dp" />
+
+                                <Button
+                                    android:id="@+id/btnSec7"
+                                    android:layout_width="0dp"
+                                    android:layout_height="40dp"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="4dp"
+                                    android:backgroundTint="@android:color/transparent"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:text="Sec 7"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    app:cornerRadius="12dp"
+                                    app:strokeColor="@color/tp_asg_sw_unselected_stroke"
+                                    app:strokeWidth="1.5dp" />
+                            </LinearLayout>
+
+                            <!-- Stats Boxes -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:orientation="horizontal"
+                                android:weightSum="3">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginEnd="4dp"
+                                    android:background="@drawable/bg_tp_stat_box"
+                                    android:gravity="center"
+                                    android:orientation="vertical"
+                                    android:paddingVertical="10dp">
+
+                                    <TextView
+                                        android:id="@+id/tvTpStudents"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="48"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Students"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="11sp"
+                                        android:alpha="0.85" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginHorizontal="2dp"
+                                    android:background="@drawable/bg_tp_stat_box"
+                                    android:gravity="center"
+                                    android:orientation="vertical"
+                                    android:paddingVertical="10dp">
+
+                                    <TextView
+                                        android:id="@+id/tvTpVotes"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="1"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Votes cast"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="11sp"
+                                        android:alpha="0.85" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="4dp"
+                                    android:background="@drawable/bg_tp_stat_box"
+                                    android:gravity="center"
+                                    android:orientation="vertical"
+                                    android:paddingVertical="10dp">
+
+                                    <TextView
+                                        android:id="@+id/tvTpTurnout"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="2%"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Turnout"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="11sp"
+                                        android:alpha="0.85" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Teacher Details Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        app:cardBackgroundColor="#FFFFFF"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="2dp"
+                        app:strokeColor="#E2E8F0"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="20dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="14dp"
+                                android:text="Teacher details"
+                                android:textColor="#0F172A"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <!-- Teacher Code -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="10dp"
+                                android:orientation="horizontal">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Teacher code"
+                                    android:textColor="#64748B"
+                                    android:textSize="14sp" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="T-0142"
+                                    android:textColor="#0F172A"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Role -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="10dp"
+                                android:orientation="horizontal">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Role"
+                                    android:textColor="#64748B"
+                                    android:textSize="14sp" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Teacher / Admin"
+                                    android:textColor="#0F172A"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Department -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="10dp"
+                                android:orientation="horizontal">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Department"
+                                    android:textColor="#64748B"
+                                    android:textSize="14sp" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="CSE"
+                                    android:textColor="#0F172A"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Election Status -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="10dp"
+                                android:orientation="horizontal">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Election status"
+                                    android:textColor="#64748B"
+                                    android:textSize="14sp" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Closed"
+                                    android:textColor="#0F172A"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Account Status -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Account"
+                                    android:textColor="#64748B"
+                                    android:textSize="14sp" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Verified · Secure"
+                                    android:textColor="#16A34A"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Buttons Card (Edit profile, Security settings, Log out in red) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="#FFFFFF"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="2dp"
+                        app:strokeColor="#E2E8F0"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="20dp">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnTpEditProfile"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:text="Edit profile"
+                                android:textColor="#0066FF"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                app:backgroundTint="#FFFFFF"
+                                app:cornerRadius="12dp"
+                                app:strokeColor="#0066FF"
+                                app:strokeWidth="1.5dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnTpSecurity"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:layout_marginTop="10dp"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:text="Security settings"
+                                android:textColor="#0066FF"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                app:backgroundTint="#FFFFFF"
+                                app:cornerRadius="12dp"
+                                app:strokeColor="#0066FF"
+                                app:strokeWidth="1.5dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnTpLogout"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:layout_marginTop="10dp"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:text="Log out"
+                                android:textColor="@color/btn_danger_text_color"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                app:backgroundTint="@color/btn_danger_bg_color"
+                                app:cornerRadius="12dp"
+                                app:strokeColor="@color/btn_danger_stroke_color"
+                                app:strokeWidth="1dp" />
+
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+
             </LinearLayout>
 
         </androidx.core.widget.NestedScrollView>
@@ -822,18 +1370,22 @@
 
         <!-- Drawer Header -->
         <LinearLayout
+            android:id="@+id/drawerHeaderContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="20dp"
-            android:paddingBottom="16dp">
+            android:paddingBottom="16dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
 
             <!-- Logo (64dp x 64dp) -->
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/imgNavHeaderProfile"
                 android:layout_width="64dp"
                 android:layout_height="64dp"
-                android:src="@drawable/ic_crconnect_logo"
+                android:src="@drawable/bubt_logo"
                 android:scaleType="centerCrop"
                 android:background="#FFFFFF"
                 app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
@@ -877,6 +1429,39 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="12dp">
+
+            <!-- Item 0: My profile & assigned section -->
+            <LinearLayout
+                android:id="@+id/drawerItemProfile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="52dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:layout_marginBottom="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/drawerIconProfile"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_user"
+                    app:tint="#64748B"
+                    tools:ignore="ContentDescription" />
+
+                <TextView
+                    android:id="@+id/drawerLabelProfile"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:text="My profile &amp; assigned section"
+                    android:textColor="#0F172A"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <!-- Item 1: Live statistics -->
             <LinearLayout

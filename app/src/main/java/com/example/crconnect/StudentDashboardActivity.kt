@@ -32,6 +32,8 @@ class StudentDashboardActivity : FragmentActivity() {
         )
         super.onCreate(savedInstanceState)
 
+        viewModel.initSession(this)
+
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.TRANSPARENT

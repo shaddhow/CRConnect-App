@@ -128,6 +128,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private NavigationView navViewTeacher;
     private boolean isProgrammaticScroll = false;
 
+    private Button btnSec4, btnSec6, btnSec7;
+    private TextView tvTpBigSecNumber, tvTpSecName, tvTpStudents, tvTpVotes, tvTpTurnout;
+    private MaterialButton btnTpEditProfile, btnTpSecurity, btnTpLogout;
+
     // Live Election Control Views & State
     private TextView tvAdminTimerDisplay, tvAdminTimerStatus;
     private MaterialButton btnExtend5Min, btnExtend10Min, btnReduce5Min, btnPauseResume, btnEndVotingNow, btnManageCR;
@@ -588,10 +592,47 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             }
         );
 
-        imgUserProfile.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            profileImagePickerLauncher.launch(intent);
-        });
+        btnSec4 = findViewById(R.id.btnSec4);
+        btnSec6 = findViewById(R.id.btnSec6);
+        btnSec7 = findViewById(R.id.btnSec7);
+        tvTpBigSecNumber = findViewById(R.id.tvTpBigSecNumber);
+        tvTpSecName = findViewById(R.id.tvTpSecName);
+        tvTpStudents = findViewById(R.id.tvTpStudents);
+        tvTpVotes = findViewById(R.id.tvTpVotes);
+        tvTpTurnout = findViewById(R.id.tvTpTurnout);
+        btnTpEditProfile = findViewById(R.id.btnTpEditProfile);
+        btnTpSecurity = findViewById(R.id.btnTpSecurity);
+        btnTpLogout = findViewById(R.id.btnTpLogout);
+
+        if (btnSec4 != null) btnSec4.setOnClickListener(v -> switchSection("4"));
+        if (btnSec6 != null) btnSec6.setOnClickListener(v -> switchSection("6"));
+        if (btnSec7 != null) btnSec7.setOnClickListener(v -> switchSection("7"));
+
+        if (btnTpEditProfile != null) {
+            btnTpEditProfile.setOnClickListener(v -> {
+                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                profileImagePickerLauncher.launch(intent);
+            });
+        }
+        if (btnTpSecurity != null) {
+            btnTpSecurity.setOnClickListener(v -> CustomToast.show(this, "Security settings (Secured by Firebase Auth & Admin Role)"));
+        }
+        if (btnTpLogout != null) {
+            btnTpLogout.setOnClickListener(v -> showLogoutConfirmationDialog());
+        }
+
+        if (includeHeader != null) {
+            includeHeader.setOnClickListener(v -> showProfileTab());
+        }
+        if (imgUserProfile != null) {
+            imgUserProfile.setOnClickListener(v -> showProfileTab());
+        }
+        if (tvHeaderTitle != null) {
+            tvHeaderTitle.setOnClickListener(v -> showProfileTab());
+        }
+        if (tvHeaderSubtitle != null) {
+            tvHeaderSubtitle.setOnClickListener(v -> showProfileTab());
+        }
 
         setupCustomDrawer();
 
@@ -979,6 +1020,20 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         }
 
         // Menu Items Click Bindings
+        View drawerItemProfile = findViewById(R.id.drawerItemProfile);
+        View drawerHeaderContainer = findViewById(R.id.drawerHeaderContainer);
+
+        View.OnClickListener profileClickListener = v -> {
+            showProfileTab();
+            if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
+        };
+
+        if (drawerItemProfile != null) drawerItemProfile.setOnClickListener(profileClickListener);
+        if (drawerHeaderContainer != null) drawerHeaderContainer.setOnClickListener(profileClickListener);
+        if (imgNavProfile != null) imgNavProfile.setOnClickListener(profileClickListener);
+        if (tvNavName != null) tvNavName.setOnClickListener(profileClickListener);
+        if (tvNavRole != null) tvNavRole.setOnClickListener(profileClickListener);
+
         View drawerItemStats = findViewById(R.id.drawerItemStats);
         View drawerItemControl = findViewById(R.id.drawerItemControl);
         View drawerItemCandidates = findViewById(R.id.drawerItemCandidates);
@@ -1030,18 +1085,21 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     }
 
     private void updateDrawerActiveState(int activeIndex) {
+        View itemProfile = findViewById(R.id.drawerItemProfile);
         View itemStats = findViewById(R.id.drawerItemStats);
         View itemControl = findViewById(R.id.drawerItemControl);
         View itemCandidates = findViewById(R.id.drawerItemCandidates);
         View itemManageCR = findViewById(R.id.drawerItemManageCR);
         View itemPdf = findViewById(R.id.drawerItemPdf);
 
+        ImageView iconProfile = findViewById(R.id.drawerIconProfile);
         ImageView iconStats = findViewById(R.id.drawerIconStats);
         ImageView iconControl = findViewById(R.id.drawerIconControl);
         ImageView iconCandidates = findViewById(R.id.drawerIconCandidates);
         ImageView iconManageCR = findViewById(R.id.drawerIconManageCR);
         ImageView iconPdf = findViewById(R.id.drawerIconPdf);
 
+        TextView labelProfile = findViewById(R.id.drawerLabelProfile);
         TextView labelStats = findViewById(R.id.drawerLabelStats);
         TextView labelControl = findViewById(R.id.drawerLabelControl);
         TextView labelCandidates = findViewById(R.id.drawerLabelCandidates);
@@ -1052,18 +1110,21 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         int activeColor = Color.parseColor("#0066FF");
         int titleColor = Color.parseColor("#0F172A");
 
+        if (itemProfile != null) itemProfile.setBackgroundColor(Color.TRANSPARENT);
         if (itemStats != null) itemStats.setBackgroundColor(Color.TRANSPARENT);
         if (itemControl != null) itemControl.setBackgroundColor(Color.TRANSPARENT);
         if (itemCandidates != null) itemCandidates.setBackgroundColor(Color.TRANSPARENT);
         if (itemManageCR != null) itemManageCR.setBackgroundColor(Color.TRANSPARENT);
         if (itemPdf != null) itemPdf.setBackgroundColor(Color.TRANSPARENT);
 
+        if (iconProfile != null) iconProfile.setColorFilter(inactiveColor);
         if (iconStats != null) iconStats.setColorFilter(inactiveColor);
         if (iconControl != null) iconControl.setColorFilter(inactiveColor);
         if (iconCandidates != null) iconCandidates.setColorFilter(inactiveColor);
         if (iconManageCR != null) iconManageCR.setColorFilter(inactiveColor);
         if (iconPdf != null) iconPdf.setColorFilter(inactiveColor);
 
+        if (labelProfile != null) labelProfile.setTextColor(titleColor);
         if (labelStats != null) labelStats.setTextColor(titleColor);
         if (labelControl != null) labelControl.setTextColor(titleColor);
         if (labelCandidates != null) labelCandidates.setTextColor(titleColor);
@@ -1071,6 +1132,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (labelPdf != null) labelPdf.setTextColor(titleColor);
 
         switch (activeIndex) {
+            case 5:
+                if (itemProfile != null) itemProfile.setBackgroundResource(R.drawable.bg_drawer_pill_active);
+                if (iconProfile != null) iconProfile.setColorFilter(activeColor);
+                if (labelProfile != null) labelProfile.setTextColor(activeColor);
+                break;
             case 0:
                 if (itemStats != null) itemStats.setBackgroundResource(R.drawable.bg_drawer_pill_active);
                 if (iconStats != null) iconStats.setColorFilter(activeColor);
@@ -1103,6 +1169,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         View layoutTabStats = findViewById(R.id.layoutTabStats);
         View layoutTabControls = findViewById(R.id.layoutTabControls);
         View layoutTabCandidates = findViewById(R.id.layoutTabCandidates);
+        View layoutTabProfile = findViewById(R.id.layoutTabProfile);
+        if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.GONE);
 
         int inactiveColor = Color.parseColor("#64748B");
         int activeColor = Color.parseColor("#0066FF");
@@ -2115,6 +2183,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                 TeacherDashboardActivity.this,
                                 sessionManager != null ? sessionManager.getUserName() : "Teacher Admin",
                                 activeDept,
+                                activeSec,
                                 finalTotalVotes,
                                 50,
                                 ((int) Math.min(100, (finalTotalVotes * 100) / 50)) + "%",
@@ -2229,6 +2298,121 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e("TeacherDashboard", "Error decoding profile image", e);
         }
+    }
+
+    private void showProfileTab() {
+        View layoutTabStats = findViewById(R.id.layoutTabStats);
+        View layoutTabControls = findViewById(R.id.layoutTabControls);
+        View layoutTabCandidates = findViewById(R.id.layoutTabCandidates);
+        View layoutTabProfile = findViewById(R.id.layoutTabProfile);
+
+        if (layoutTabStats != null) layoutTabStats.setVisibility(View.GONE);
+        if (layoutTabControls != null) layoutTabControls.setVisibility(View.GONE);
+        if (layoutTabCandidates != null) layoutTabCandidates.setVisibility(View.GONE);
+        if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.VISIBLE);
+
+        int inactiveColor = Color.parseColor("#64748B");
+        if (pillStats != null) pillStats.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
+        if (pillControls != null) pillControls.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
+        if (pillCandidates != null) pillCandidates.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
+        if (pillExportPdf != null) pillExportPdf.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
+        if (pillLogout != null) pillLogout.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
+
+        if (iconStats != null) iconStats.setColorFilter(inactiveColor);
+        if (iconControls != null) iconControls.setColorFilter(inactiveColor);
+        if (iconCandidates != null) iconCandidates.setColorFilter(inactiveColor);
+        if (iconExportPdf != null) iconExportPdf.setColorFilter(inactiveColor);
+        if (iconLogout != null) iconLogout.setColorFilter(inactiveColor);
+
+        if (labelStats != null) labelStats.setTextColor(inactiveColor);
+        if (labelControls != null) labelControls.setTextColor(inactiveColor);
+        if (labelCandidates != null) labelCandidates.setTextColor(inactiveColor);
+        if (labelExportPdf != null) labelExportPdf.setTextColor(inactiveColor);
+        if (labelLogout != null) labelLogout.setTextColor(inactiveColor);
+
+        updateDrawerActiveState(5);
+
+        NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
+        if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
+    }
+
+    private void switchSection(String sec) {
+        // TODO: Load section data from Firebase / real data source
+        String name;
+        String students;
+        String votes;
+        String turnout;
+
+        switch (sec) {
+            case "4":
+                name = "Section 4 · Intake 54";
+                students = "45";
+                votes = "3";
+                turnout = "7%";
+                break;
+            case "7":
+                name = "Section 7 · Intake 55";
+                students = "50";
+                votes = "12";
+                turnout = "24%";
+                break;
+            case "6":
+            default:
+                name = "Section 6 · Intake 55";
+                students = "48";
+                votes = "1";
+                turnout = "2%";
+                break;
+        }
+
+        if (tvTpBigSecNumber != null) tvTpBigSecNumber.setText(sec);
+        if (tvTpSecName != null) tvTpSecName.setText(name);
+        if (tvTpStudents != null) tvTpStudents.setText(students);
+        if (tvTpVotes != null) tvTpVotes.setText(votes);
+        if (tvTpTurnout != null) tvTpTurnout.setText(turnout);
+
+        if (tvHeaderTitle != null) {
+            tvHeaderTitle.setText("Admin Console · Sec " + sec);
+        }
+
+        if (sessionManager != null) {
+            sessionManager.setAssignedSection(sec);
+        }
+
+        int selectedBg = Color.WHITE;
+        int selectedText = Color.parseColor("#0066FF");
+        int unselectedBg = Color.TRANSPARENT;
+        int unselectedText = Color.WHITE;
+
+        if (btnSec4 != null) {
+            btnSec4.setBackgroundTintList(ColorStateList.valueOf(sec.equals("4") ? selectedBg : unselectedBg));
+            btnSec4.setTextColor(sec.equals("4") ? selectedText : unselectedText);
+        }
+        if (btnSec6 != null) {
+            btnSec6.setBackgroundTintList(ColorStateList.valueOf(sec.equals("6") ? selectedBg : unselectedBg));
+            btnSec6.setTextColor(sec.equals("6") ? selectedText : unselectedText);
+        }
+        if (btnSec7 != null) {
+            btnSec7.setBackgroundTintList(ColorStateList.valueOf(sec.equals("7") ? selectedBg : unselectedBg));
+            btnSec7.setTextColor(sec.equals("7") ? selectedText : unselectedText);
+        }
+    }
+
+    private void showTeacherProfileBottomSheet() {
+        if (getSupportFragmentManager().findFragmentByTag(TeacherProfileBottomSheet.TAG) != null) {
+            return;
+        }
+        TeacherProfileBottomSheet bottomSheet = TeacherProfileBottomSheet.newInstance(
+            () -> {
+                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                profileImagePickerLauncher.launch(intent);
+            },
+            () -> {
+                CustomToast.show(this, "Security settings (Secured by Firebase Auth & Admin Role)");
+            },
+            this::showLogoutConfirmationDialog
+        );
+        bottomSheet.showAllowingStateLoss(getSupportFragmentManager(), TeacherProfileBottomSheet.TAG);
     }
 
     @Override

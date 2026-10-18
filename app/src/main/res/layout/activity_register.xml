@@ -448,25 +448,10 @@
                             android:layout_width="match_parent"
                             android:layout_height="54dp"
                             android:background="@drawable/edit_text_bg"
-                            android:layout_marginBottom="16dp">
-
-                            <Spinner
-                                android:id="@+id/spinnerTeacherDept"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:background="@null"
-                                android:spinnerMode="dropdown"
-                                android:popupBackground="@drawable/spinner_popup_bg" />
-                        </FrameLayout>
-
-                        <FrameLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="54dp"
-                            android:background="@drawable/edit_text_bg"
                             android:layout_marginBottom="20dp">
 
                             <Spinner
-                                android:id="@+id/spinnerAssignedSection"
+                                android:id="@+id/spinnerTeacherDept"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:background="@null"

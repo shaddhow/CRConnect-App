@@ -45,6 +45,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.core.widget.NestedScrollView;
 
 import com.example.crconnect.core.utils.HapticUtils;
+import com.example.crconnect.core.utils.KeyboardUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.snackbar.Snackbar;
@@ -78,7 +79,7 @@ public class RegisterActivity extends AppCompatActivity {
     private RadioGroup radioGroupRole;
     private View layoutStudentFields, layoutTeacherFields;
     private RadioButton rbTeacher, rbStudent;
-    private Spinner spinnerAssignedSection, spinnerStudentSection, spinnerDept, spinnerTeacherDept;
+    private Spinner spinnerStudentSection, spinnerDept, spinnerTeacherDept;
     private Button btnRegister, btnSuccessBackToLogin;
     private ImageButton btnBackToLogin;
     private MaterialButton btnScanIdCard;
@@ -98,6 +99,7 @@ public class RegisterActivity extends AppCompatActivity {
 
     private static final String[] DEPARTMENTS = {
         "Computer Science & Engineering (CSE)",
+        "Bachelor of Business Administration (BBA)",
         "Electrical & Electronic Engineering (EEE)",
         "English (ENG)",
         "Law & Justice (L&J)",
@@ -154,7 +156,6 @@ public class RegisterActivity extends AppCompatActivity {
         btnSuccessBackToLogin = findViewById(R.id.btnSuccessBackToLogin);
         layoutFormCard = findViewById(R.id.layoutFormCard);
         layoutSuccessCard = findViewById(R.id.layoutSuccessCard);
-        spinnerAssignedSection = findViewById(R.id.spinnerAssignedSection);
         spinnerStudentSection = findViewById(R.id.spinnerStudentSection);
         spinnerDept = findViewById(R.id.spinnerDept);
         spinnerTeacherDept = findViewById(R.id.spinnerTeacherDept);
@@ -167,22 +168,8 @@ public class RegisterActivity extends AppCompatActivity {
 
         // Safe Area Padding & Sticky Footer Keyboard Adjustment
         View scrollReg = findViewById(R.id.scrollViewRegister);
-        if (layoutStickyFooter != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(layoutStickyFooter, (v, insets) -> {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-                int bottomPadding = Math.max(systemBars.bottom, ime.bottom);
-                v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), bottomPadding + 16);
-                return WindowInsetsCompat.CONSUMED;
-            });
-        }
-
-        if (scrollReg != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(scrollReg, (v, insets) -> {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(v.getPaddingLeft(), systemBars.top, v.getPaddingRight(), v.getPaddingBottom());
-                return WindowInsetsCompat.CONSUMED;
-            });
+        if (scrollReg instanceof NestedScrollView) {
+            KeyboardUtils.setupSmoothKeyboardHandling(this, (NestedScrollView) scrollReg, layoutStickyFooter);
         }
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -195,7 +182,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         ArrayAdapter<String> sectionAdapter = new ArrayAdapter<>(this, R.layout.spinner_item, SECTIONS);
         sectionAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-        if (spinnerAssignedSection != null) spinnerAssignedSection.setAdapter(sectionAdapter);
         if (spinnerStudentSection != null) spinnerStudentSection.setAdapter(sectionAdapter);
 
         ArrayAdapter<String> deptAdapter = new ArrayAdapter<>(this, R.layout.spinner_item, DEPARTMENTS);
@@ -271,7 +257,6 @@ public class RegisterActivity extends AppCompatActivity {
                     etRegPassword.setError(null);
                 }
                 if (spinnerStudentSection != null) spinnerStudentSection.setSelection(0);
-                if (spinnerAssignedSection != null) spinnerAssignedSection.setSelection(0);
                 if (etIntake != null) {
                     etIntake.setText("");
                     etIntake.setError(null);
@@ -404,9 +389,12 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void validateFormAndEnableButton() {
         boolean nameOk = etFullName != null && etFullName.getText() != null && etFullName.getText().toString().trim().length() >= 3;
-        boolean emailOk = etRegEmail != null && etRegEmail.getText() != null && Patterns.EMAIL_ADDRESS.matcher(etRegEmail.getText().toString().trim()).matches();
         boolean isStudent = rbStudent != null && rbStudent.isChecked();
-        
+
+        String emailStr = etRegEmail != null && etRegEmail.getText() != null ? etRegEmail.getText().toString().trim() : "";
+        boolean emailFormatOk = Patterns.EMAIL_ADDRESS.matcher(emailStr).matches();
+        boolean emailOk = isStudent ? emailFormatOk : (emailFormatOk && emailStr.toLowerCase().endsWith("@bubt.edu.bd"));
+
         boolean idOk = isStudent ? 
             (etStudentId != null && etStudentId.getText() != null && etStudentId.getText().toString().trim().length() >= 6) :
             (etTeacherCode != null && etTeacherCode.getText() != null && etTeacherCode.getText().toString().trim().length() >= 3);
@@ -503,6 +491,8 @@ public class RegisterActivity extends AppCompatActivity {
                 String lowerLine = line.toLowerCase();
                 if (lowerLine.contains("cse") || lowerLine.contains("computer science")) {
                     extractedDept = "Computer Science & Engineering (CSE)";
+                } else if (lowerLine.contains("bba") || lowerLine.contains("business administration") || lowerLine.contains("bachelor of business")) {
+                    extractedDept = "Bachelor of Business Administration (BBA)";
                 } else if (lowerLine.contains("eee") || lowerLine.contains("electrical")) {
                     extractedDept = "Electrical & Electronic Engineering (EEE)";
                 } else if (lowerLine.contains("eng") || lowerLine.contains("english")) {
@@ -607,7 +597,7 @@ public class RegisterActivity extends AppCompatActivity {
         String password = etRegPassword != null && etRegPassword.getText() != null ? etRegPassword.getText().toString().trim() : "";
         String section = isStudent ? 
             (spinnerStudentSection != null && spinnerStudentSection.getSelectedItem() != null ? spinnerStudentSection.getSelectedItem().toString() : "1") :
-            (spinnerAssignedSection != null && spinnerAssignedSection.getSelectedItem() != null ? spinnerAssignedSection.getSelectedItem().toString() : "1");
+            "6";
         String intake = (isStudent && etIntake != null && etIntake.getText() != null) ? etIntake.getText().toString().trim() : "";
         String dept = isStudent ?
             (spinnerDept != null && spinnerDept.getSelectedItem() != null ? spinnerDept.getSelectedItem().toString() : DEPARTMENTS[0]) :
@@ -663,38 +653,12 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         String role = isStudent ? "Student" : "Teacher";
-        String assignedSection = isStudent ? section : (spinnerAssignedSection != null && spinnerAssignedSection.getSelectedItem() != null ? spinnerAssignedSection.getSelectedItem().toString() : "1");
+        String assignedSection = isStudent ? section : "6";
 
         btnRegister.setEnabled(false);
         btnRegister.setText("Creating Account...");
 
-        if (!isStudent) {
-            FirebaseFirestore.getInstance().collection("users")
-                .whereEqualTo("assignedSection", assignedSection)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    boolean alreadyClaimed = false;
-                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        String userRole = doc.getString("role");
-                        if (userRole != null && (userRole.equalsIgnoreCase("Teacher") || userRole.equalsIgnoreCase("Teacher/Admin"))) {
-                            alreadyClaimed = true;
-                            break;
-                        }
-                    }
-                    if (alreadyClaimed) {
-                        btnRegister.setEnabled(true);
-                        btnRegister.setText("Register");
-                    } else {
-                        executeFirebaseAuth(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("RegisterActivity", "Failed to check assigned section availability in Firestore", e);
-                    executeFirebaseAuth(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
-                });
-        } else {
-            executeFirebaseAuth(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
-        }
+        executeFirebaseAuth(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
     }
 
     private void executeFirebaseAuth(String email, String password, String name, String id, String role, boolean isStudent, String section, String assignedSection, String intake, String dept) {
@@ -741,7 +705,7 @@ public class RegisterActivity extends AppCompatActivity {
         userMap.put("section", isStudent ? section : "--");
         userMap.put("assignedSection", assignedSection);
         userMap.put("intake", isStudent ? intake : "--");
-        userMap.put("dept", isStudent ? dept : "Department of CSE, BUBT");
+        userMap.put("dept", (dept != null && !dept.isEmpty()) ? dept : "Department of CSE, BUBT");
         userMap.put("deviceId", Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID));
         userMap.put("registeredAt", System.currentTimeMillis());
 

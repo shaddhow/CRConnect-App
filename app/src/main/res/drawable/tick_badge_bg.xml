@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <solid android:color="#16A34A" />
-    <stroke android:width="4dp" android:color="#3316A34A" />
-</shape>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer light green halo ring -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#1F16A34A" />
+        </shape>
+    </item>
+    <!-- Inner green tick badge -->
+    <item
+        android:left="4dp"
+        android:top="4dp"
+        android:right="4dp"
+        android:bottom="4dp">
+        <shape android:shape="oval">
+            <solid android:color="#16A34A" />
+        </shape>
+    </item>
+</layer-list>

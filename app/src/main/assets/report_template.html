@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CRConnect – Election Report PDF Design</title>
+<style>
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('fonts/PlusJakartaSans-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('fonts/PlusJakartaSans-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('fonts/PlusJakartaSans-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('fonts/PlusJakartaSans-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#CBD5E1;font-family:'Plus Jakarta Sans',sans-serif;display:flex;justify-content:center;padding:40px 20px;min-height:100vh}
+
+/* A4 page */
+.page{
+  width:794px;min-height:1123px;background:#fff;
+  box-shadow:0 24px 80px rgba(0,0,0,.18);
+  display:flex;flex-direction:column;
+  position:relative;overflow:hidden;
+}
+
+/* ── TOP ACCENT BAR ── */
+.accent-bar{
+  height:6px;
+  background:linear-gradient(90deg,#0066FF 0%,#38BDF8 60%,#0B3A9E 100%);
+}
+
+/* ── HEADER ── */
+.header{
+  padding:28px 40px 24px;
+  display:flex;align-items:flex-start;justify-content:space-between;
+  border-bottom:1px solid #E2E8F0;
+  background:linear-gradient(135deg,#F8FAFF 0%,#EFF6FF 100%);
+}
+.header-left{display:flex;align-items:center;gap:18px}
+.logo-box{
+  width:56px;height:56px;border-radius:16px;
+  background:linear-gradient(135deg,#0066FF,#38BDF8);
+  display:flex;align-items:center;justify-content:center;
+  flex:none;
+  box-shadow:0 8px 20px -6px rgba(0,102,255,.5);
+}
+.logo-box img{width:70px;height:70px;object-fit:contain;mix-blend-mode:multiply}
+.header-text{}
+.univ-name{font-size:13px;font-weight:800;color:#0B3A9E;letter-spacing:.3px;text-transform:uppercase}
+.univ-sub{font-size:11px;font-weight:500;color:#64748B;margin-top:1px}
+.report-type{
+  margin-top:6px;display:inline-flex;align-items:center;gap:6px;
+  background:#E6F0FF;border:1px solid #BFD7FF;border-radius:999px;
+  padding:3px 10px;font-size:11px;font-weight:700;color:#0066FF;
+}
+.header-right{text-align:right}
+.header-right .doc-id{font-size:11px;font-weight:700;color:#64748B;letter-spacing:.5px}
+.header-right .secure{
+  margin-top:6px;display:inline-flex;align-items:center;gap:5px;
+  background:#DCFCE7;border:1px solid #BBF7D0;border-radius:999px;
+  padding:3px 10px;font-size:11px;font-weight:700;color:#166534;
+}
+.secure-dot{width:6px;height:6px;border-radius:50%;background:#16A34A}
+
+/* ── REPORT TITLE SECTION ── */
+.title-section{padding:28px 40px 20px}
+.report-label{font-size:11px;font-weight:700;color:#94A3B8;letter-spacing:1px;margin-bottom:6px}
+.report-title{font-size:22px;font-weight:800;color:#0F172A;line-height:1.25}
+.report-meta{margin-top:12px;display:flex;gap:24px;flex-wrap:wrap}
+.meta-item{display:flex;flex-direction:column;gap:2px}
+.meta-label{font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.8px}
+.meta-value{font-size:12px;font-weight:600;color:#0F172A}
+
+/* status badge */
+.status-row{margin-top:14px;display:flex;align-items:center;gap:8px}
+.status-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;
+}
+.status-badge.locked{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C}
+.status-badge.live{background:#DCFCE7;border:1px solid #BBF7D0;color:#166534}
+.status-dot{width:7px;height:7px;border-radius:50%}
+.locked .status-dot{background:#DC2626}
+.live .status-dot{background:#16A34A}
+
+/* ── METRICS ── */
+.metrics{
+  margin:0 40px 24px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+}
+.metric-card{
+  border:1px solid #E2E8F0;border-radius:16px;padding:16px 14px;
+  background:#F8FAFC;position:relative;overflow:hidden;
+}
+.metric-card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  border-radius:3px 3px 0 0;
+}
+.metric-card.blue::before{background:#0066FF}
+.metric-card.green::before{background:#16A34A}
+.metric-card.amber::before{background:#D97706}
+.metric-card.sky::before{background:#0EA5E9}
+.metric-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.metric-card.blue .metric-icon{background:#E6F0FF}
+.metric-card.green .metric-icon{background:#DCFCE7}
+.metric-card.amber .metric-icon{background:#FEF3C7}
+.metric-card.sky .metric-icon{background:#E0F2FE}
+.metric-icon svg{width:16px;height:16px;fill:none;stroke-width:2;stroke-linecap:round}
+.metric-card.blue .metric-icon svg{stroke:#0066FF}
+.metric-card.green .metric-icon svg{stroke:#16A34A}
+.metric-card.amber .metric-icon svg{stroke:#D97706}
+.metric-card.sky .metric-icon svg{stroke:#0EA5E9}
+.metric-num{font-size:28px;font-weight:800;color:#0F172A;line-height:1}
+.metric-card.blue .metric-num{color:#0066FF}
+.metric-card.green .metric-num{color:#16A34A}
+.metric-card.amber .metric-num{color:#D97706}
+.metric-card.sky .metric-num{color:#0EA5E9}
+.metric-label{font-size:11px;font-weight:600;color:#64748B;margin-top:4px}
+
+/* ── SECTION HEADING ── */
+.section-heading{
+  padding:0 40px;margin-bottom:12px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-heading h2{font-size:13px;font-weight:800;color:#0F172A;letter-spacing:.2px}
+.section-line{flex:1;height:1px;background:#E2E8F0}
+
+/* ── TABLE ── */
+.table-wrap{padding:0 40px;margin-bottom:28px}
+table{width:100%;border-collapse:collapse}
+thead tr{background:linear-gradient(90deg,#0066FF,#0052CC)}
+thead th{
+  padding:11px 12px;font-size:11px;font-weight:700;color:#fff;
+  text-align:left;letter-spacing:.4px;
+}
+thead th:first-child{border-radius:12px 0 0 0}
+thead th:last-child{border-radius:0 12px 0 0;text-align:right}
+tbody tr{border-bottom:1px solid #F1F5F9;transition:background .1s;page-break-inside:avoid;}
+tbody tr:last-child{border-bottom:none}
+tbody tr.winner{background:linear-gradient(90deg,#FFFBEB,#FFF)}
+tbody tr.runner{background:#F8FAFC}
+tbody td{padding:12px 12px;font-size:12px;font-weight:500;color:#0F172A;vertical-align:middle}
+tbody td:last-child{text-align:right}
+
+.rank-badge{
+  width:28px;height:28px;border-radius:8px;display:inline-flex;
+  align-items:center;justify-content:center;font-size:12px;font-weight:800;
+}
+.rank-1{background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;box-shadow:0 3px 8px -2px rgba(217,119,6,.5)}
+.rank-2{background:#E2E8F0;color:#475569}
+.rank-3{background:#E2E8F0;color:#475569}
+
+.status-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;
+}
+.pill-winner{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.pill-runner{background:#F1F5F9;color:#475569;border:1px solid #E2E8F0}
+
+.votes-cell{font-size:14px;font-weight:800;color:#0F172A}
+.pct-cell{
+  display:inline-block;padding:3px 8px;border-radius:6px;
+  font-size:11px;font-weight:700;background:#E6F0FF;color:#0066FF;
+}
+
+/* vote bar inside table */
+.bar-wrap{width:80px;height:5px;background:#E2E8F0;border-radius:3px;margin-top:4px;display:inline-block}
+.bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#0066FF,#38BDF8)}
+
+/* ── DIVIDER ── */
+.divider{margin:0 40px 24px;height:1px;background:#E2E8F0}
+
+/* ── FOOTER ── */
+.footer{
+  margin-top:auto;padding:16px 40px;
+  background:linear-gradient(90deg,#F8FAFF,#EFF6FF);
+  border-top:1px solid #E2E8F0;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.footer-left{font-size:10px;font-weight:600;color:#64748B}
+.footer-left b{color:#0066FF}
+.footer-right{font-size:10px;font-weight:600;color:#94A3B8}
+.bottom-bar{height:4px;background:linear-gradient(90deg,#0066FF,#38BDF8,#0B3A9E)}
+
+@media print {
+  body { background: transparent; padding: 0; }
+  .page { box-shadow: none; width: 100%; min-height: 100vh; }
+}
+* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="accent-bar"></div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-box">
+        <img src="bubt_logo.png" alt="BUBT Logo">
+      </div>
+      <div class="header-text">
+        <div class="univ-name">Bangladesh University of Business and Technology</div>
+        <div class="univ-sub">Department of Computer Science and Engineering</div>
+        <div class="report-type">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          Official Election Report · CRConnect System
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="doc-id">{{DOC_ID}}</div>
+      <div class="secure">
+        <div class="secure-dot"></div>
+        Digitally Verified
+      </div>
+    </div>
+  </div>
+
+  <!-- TITLE -->
+  <div class="title-section">
+    <div class="report-label">Election Report</div>
+    <div class="report-title">Official Class Representative<br>Election Results — Section {{SECTION}}</div>
+    <div class="report-meta">
+      <div class="meta-item">
+        <div class="meta-label">Generated</div>
+        <div class="meta-value">{{GENERATED}}</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Certified By</div>
+        <div class="meta-value">{{CERTIFIED_BY}}</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Academic Year</div>
+        <div class="meta-value">{{ACADEMIC_YEAR}}</div>
+      </div>
+    </div>
+    <div class="status-row">
+      <div class="status-badge {{STATUS_CLASS}}">
+        <div class="status-dot"></div>
+        {{STATUS_TEXT}}
+      </div>
+    </div>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics">
+    <div class="metric-card blue">
+      <div class="metric-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="metric-num">{{CANDIDATES}}</div>
+      <div class="metric-label">Candidates</div>
+    </div>
+    <div class="metric-card green">
+      <div class="metric-icon">
+        <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9S3 16.97 3 12 7.03 3 12 3s9 4.03 9 9z"/></svg>
+      </div>
+      <div class="metric-num">{{VOTES_CAST}}</div>
+      <div class="metric-label">Votes Cast</div>
+    </div>
+    <div class="metric-card sky">
+      <div class="metric-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      </div>
+      <div class="metric-num">{{REGISTERED}}</div>
+      <div class="metric-label">Registered Voters</div>
+    </div>
+    <div class="metric-card amber">
+      <div class="metric-icon">
+        <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      </div>
+      <div class="metric-num">{{TURNOUT}}</div>
+      <div class="metric-label">Turnout Rate</div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="section-heading">
+    <h2>Candidate Rankings &amp; Vote Distribution</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Status</th>
+          <th>Candidate Name</th>
+          <th>Department</th>
+          <th>Votes</th>
+          <th>Share %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ROWS}}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">Certified electronically via <b>CRConnect</b> · BUBT Department Network · Secure Key: BUBT-CR-VERIFIED</div>
+    <div class="footer-right">Page 1 of 1</div>
+  </div>
+  <div class="bottom-bar"></div>
+</div>
+</body>
+</html>

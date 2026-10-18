@@ -26,6 +26,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.crconnect.core.utils.HapticUtils
+import com.example.crconnect.core.utils.KeyboardUtils
 import com.example.crconnect.databinding.ActivityLoginBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -96,17 +97,7 @@ class LoginActivity : AppCompatActivity() {
         insetsController?.isAppearanceLightStatusBars = true
         insetsController?.isAppearanceLightNavigationBars = true
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.scrollViewLogin) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            v.setPadding(
-                systemBars.left,
-                systemBars.top,
-                systemBars.right,
-                maxOf(systemBars.bottom, ime.bottom)
-            )
-            WindowInsetsCompat.CONSUMED
-        }
+        KeyboardUtils.setupSmoothKeyboardHandling(this, binding.scrollViewLogin)
     }
 
     private fun setupGradientBackground() {
@@ -368,6 +359,9 @@ class LoginActivity : AppCompatActivity() {
                     getString(R.string.error_id_empty)
             )
             isValid = false
+        } else if (selectedRole == "Teacher" && idOrEmail.contains("@") && !idOrEmail.lowercase().endsWith("@bubt.edu.bd")) {
+            showIdError("Teacher email must end with @bubt.edu.bd")
+            isValid = false
         }
 
         if (password.isEmpty()) {
@@ -535,7 +529,7 @@ class LoginActivity : AppCompatActivity() {
                     val intake = doc.getString("intake")
                     val dept = doc.getString("dept")
 
-                    val resolvedRole = role ?: if (dbEmail?.lowercase()?.endsWith("@bubt.edu.bd") == true) "Teacher" else "Student"
+                    val resolvedRole = role ?: if (selectedRole == "Teacher") "Teacher" else "Student"
                     sessionManager.createLoginSession(
                         name ?: email,
                         dbEmail ?: email,
@@ -549,23 +543,41 @@ class LoginActivity : AppCompatActivity() {
                     navigateBasedOnRole(resolvedRole, dbEmail ?: email)
                 } else {
                     val userEmail = refreshedUser.email
-                    if (isTeacherRole(null, userEmail) || userEmail?.lowercase()?.endsWith("@bubt.edu.bd") == true || selectedRole == "Teacher") {
+                    if (selectedRole == "Teacher") {
                         createDefaultTeacherAndNavigate(uid, userEmail ?: email, originalInput)
                     } else {
-                        binding.btnSignIn.isEnabled = true
-                        FirebaseAuth.getInstance().signOut()
-                        sessionManager.logoutUser()
+                        val studentName = if (!userEmail.isNullOrEmpty() && userEmail.contains("@")) userEmail.split("@")[0] else "Student"
+                        sessionManager.createLoginSession(
+                            studentName,
+                            userEmail ?: email,
+                            originalInput,
+                            "Student",
+                            "--",
+                            "--",
+                            "--",
+                            "Department of CSE, BUBT"
+                        )
+                        navigateBasedOnRole("Student", userEmail ?: email)
                     }
                 }
             }
             .addOnFailureListener {
                 val userEmail = refreshedUser.email
-                if (isTeacherRole(null, userEmail) || userEmail?.lowercase()?.endsWith("@bubt.edu.bd") == true || selectedRole == "Teacher") {
+                if (selectedRole == "Teacher") {
                     createDefaultTeacherAndNavigate(uid, userEmail ?: email, originalInput)
                 } else {
-                    binding.btnSignIn.isEnabled = true
-                    FirebaseAuth.getInstance().signOut()
-                    sessionManager.logoutUser()
+                    val studentName = if (!userEmail.isNullOrEmpty() && userEmail.contains("@")) userEmail.split("@")[0] else "Student"
+                    sessionManager.createLoginSession(
+                        studentName,
+                        userEmail ?: email,
+                        originalInput,
+                        "Student",
+                        "--",
+                        "--",
+                        "--",
+                        "Department of CSE, BUBT"
+                    )
+                    navigateBasedOnRole("Student", userEmail ?: email)
                 }
             }
     }
@@ -647,11 +659,20 @@ class LoginActivity : AppCompatActivity() {
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
     }
 
-    private fun isTeacherRole(role: String?, email: String?): Boolean {
-        if (!role.isNullOrEmpty() && (role.contains("Teacher", ignoreCase = true) || role.contains("Admin", ignoreCase = true))) {
+    private fun isTeacherRole(role: String?, email: String? = null): Boolean {
+        if (!role.isNullOrEmpty()) {
+            val lowerRole = role.lowercase()
+            if (lowerRole.contains("student")) {
+                return false
+            }
+            if (lowerRole.contains("teacher") || lowerRole.contains("admin")) {
+                return true
+            }
+        }
+        if (!email.isNullOrEmpty() && email.lowercase().endsWith("@bubt.edu.bd")) {
             return true
         }
-        return !email.isNullOrEmpty() && email.lowercase().endsWith("@bubt.edu.bd")
+        return selectedRole == "Teacher"
     }
 
     private fun sanitizeKey(key: String): String {

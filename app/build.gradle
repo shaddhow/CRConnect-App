@@ -68,3 +68,65 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
+
+tasks.register('downloadFonts') {
+    def fontDir = layout.projectDirectory.dir("src/main/res/font").asFile
+    outputs.dir(fontDir)
+    doLast {
+        if (!fontDir.exists()) {
+            fontDir.mkdirs()
+        }
+        def fonts = [
+            'PlusJakartaSans-Medium.ttf': 'plus_jakarta_sans_medium.ttf',
+            'PlusJakartaSans-SemiBold.ttf': 'plus_jakarta_sans_semibold.ttf',
+            'PlusJakartaSans-Bold.ttf': 'plus_jakarta_sans_bold.ttf',
+            'PlusJakartaSans-ExtraBold.ttf': 'plus_jakarta_sans_extrabold.ttf'
+        ]
+        def baseUrl = "https://github.com/google/fonts/raw/main/ofl/plusjakartasans/static/"
+        fonts.each { remoteName, localName ->
+            def targetFile = new File(fontDir, localName)
+            if (!targetFile.exists() || targetFile.length() == 0) {
+                println "Downloading $remoteName to $localName..."
+                def process = new ProcessBuilder("curl.exe", "-L", baseUrl + remoteName, "-o", targetFile.absolutePath).redirectErrorStream(true).start()
+                int exitCode = process.waitFor()
+                if (exitCode != 0) {
+                    throw new GradleException("Failed to download $remoteName, exit code $exitCode")
+                }
+                println "Successfully downloaded $localName"
+            } else {
+                println "$localName already exists."
+            }
+        }
+    }
+}
+
+tasks.register('preparePdfAssets') {
+    def projDir = projectDir
+    doLast {
+        def assetsDir = new File(projDir, 'src/main/assets')
+        def fontsDir = new File(projDir, 'src/main/assets/fonts')
+        assetsDir.mkdirs()
+        fontsDir.mkdirs()
+
+        def logoFile = new File(projDir, 'src/main/res/drawable/bubt_logo.png')
+        if (logoFile.exists()) {
+            ant.copy(file: logoFile, tofile: new File(assetsDir, 'bubt_logo.png'))
+        }
+
+        [
+            'plus_jakarta_sans_medium.ttf': 'PlusJakartaSans-Medium.ttf',
+            'plus_jakarta_sans_semibold.ttf': 'PlusJakartaSans-SemiBold.ttf',
+            'plus_jakarta_sans_bold.ttf': 'PlusJakartaSans-Bold.ttf',
+            'plus_jakarta_sans_extrabold.ttf': 'PlusJakartaSans-ExtraBold.ttf'
+        ].each { srcName, destName ->
+            def srcFile = new File(projDir, "src/main/res/font/${srcName}")
+            if (srcFile.exists()) {
+                ant.copy(file: srcFile, tofile: new File(fontsDir, destName))
+            }
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn('downloadFonts', 'preparePdfAssets')
+}

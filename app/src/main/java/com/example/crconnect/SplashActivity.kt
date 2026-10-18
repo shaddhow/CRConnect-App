@@ -14,22 +14,18 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
 import android.view.View
-import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.view.animation.PathInterpolator
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 
 class SplashActivity : AppCompatActivity() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var logoAnimator: ObjectAnimator? = null
-    private var pulseAnimator1: ObjectAnimator? = null
-    private var pulseAnimator2: ObjectAnimator? = null
     private var titleAnimator: ObjectAnimator? = null
     private var taglineAnimator: ObjectAnimator? = null
     private var progressAnimator: ObjectAnimator? = null
@@ -65,9 +61,7 @@ class SplashActivity : AppCompatActivity() {
         setContentView(R.layout.activity_splash)
 
         val logoCard = findViewById<View>(R.id.cardSplashLogo)
-        logoCard?.let { ViewCompat.setElevation(it, 0f) }
-        val pulseView1 = findViewById<View>(R.id.viewPulse1)
-        val pulseView2 = findViewById<View>(R.id.viewPulse2)
+
         val tvSplashTitle = findViewById<TextView>(R.id.tvSplashTitle)
         val tvSplashTagline = findViewById<TextView>(R.id.tvSplashTagline)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
@@ -79,8 +73,6 @@ class SplashActivity : AppCompatActivity() {
         if (isAnimatorDurationScaleZero()) {
             skipAnimationsToEndState(
                 logoCard = logoCard,
-                pulseView1 = pulseView1,
-                pulseView2 = pulseView2,
                 tvTitle = tvSplashTitle,
                 tvTagline = tvSplashTagline,
                 progressBar = progressBar,
@@ -88,12 +80,11 @@ class SplashActivity : AppCompatActivity() {
             )
         } else {
             setupLogoAnimation(logoCard)
-            setupPulseAnimations(pulseView1, pulseView2)
             setupTitleAndTaglineAnimations(tvSplashTitle, tvSplashTagline)
             setupProgressBarAndFooterAnimations(progressBar, tvSplashFooter)
 
-            // Navigate to MainActivity after progress animation completes
-            handler.postDelayed(navigateRunnable, 2800)
+            // Navigate to MainActivity after progress bar animation completes (1000ms delay + 2600ms duration)
+            handler.postDelayed(navigateRunnable, 3600)
         }
     }
 
@@ -117,8 +108,6 @@ class SplashActivity : AppCompatActivity() {
 
     private fun skipAnimationsToEndState(
         logoCard: View?,
-        pulseView1: View?,
-        pulseView2: View?,
         tvTitle: TextView?,
         tvTagline: TextView?,
         progressBar: ProgressBar?,
@@ -130,8 +119,6 @@ class SplashActivity : AppCompatActivity() {
             alpha = 1.0f
             translationY = 0f
         }
-        pulseView1?.alpha = 0f
-        pulseView2?.alpha = 0f
 
         tvTitle?.apply {
             alpha = 1.0f
@@ -181,49 +168,26 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun setupLogoAnimation(logoCard: View?) {
-        logoCard ?: return
+        if (logoCard == null) return
+
+        val slideDistancePx = 32f * resources.displayMetrics.density
+        val cubicInterpolator = OvershootInterpolator(1.1f)
 
         logoCard.scaleX = 0.45f
         logoCard.scaleY = 0.45f
         logoCard.alpha = 0.0f
+        logoCard.translationY = slideDistancePx
 
         val pvhScaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 0.45f, 1.0f)
         val pvhScaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.45f, 1.0f)
         val pvhAlpha = PropertyValuesHolder.ofFloat(View.ALPHA, 0.0f, 1.0f)
+        val pvhTransY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, slideDistancePx, 0.0f)
 
-        logoAnimator = ObjectAnimator.ofPropertyValuesHolder(logoCard, pvhScaleX, pvhScaleY, pvhAlpha).apply {
-            duration = 900
+        logoAnimator = ObjectAnimator.ofPropertyValuesHolder(logoCard, pvhScaleX, pvhScaleY, pvhAlpha, pvhTransY).apply {
+            duration = 1000
             startDelay = 100
-            interpolator = OvershootInterpolator(1.2f)
+            interpolator = cubicInterpolator
             start()
-        }
-    }
-
-    private fun setupPulseAnimations(view1: View?, view2: View?) {
-        if (view1 != null) {
-            pulseAnimator1 = createPulseAnimator(view1, startDelayMs = 0)
-            pulseAnimator1?.start()
-        }
-        if (view2 != null) {
-            pulseAnimator2 = createPulseAnimator(view2, startDelayMs = 1400)
-            pulseAnimator2?.start()
-        }
-    }
-
-    private fun createPulseAnimator(view: View, startDelayMs: Long): ObjectAnimator {
-        view.alpha = 0f
-        view.scaleX = 1.0f
-        view.scaleY = 1.0f
-
-        val pvhScaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0f, 1.9f)
-        val pvhScaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.0f, 1.9f)
-        val pvhAlpha = PropertyValuesHolder.ofFloat(View.ALPHA, 0.65f, 0.0f)
-
-        return ObjectAnimator.ofPropertyValuesHolder(view, pvhScaleX, pvhScaleY, pvhAlpha).apply {
-            duration = 2600
-            repeatCount = ValueAnimator.INFINITE
-            interpolator = DecelerateInterpolator()
-            startDelay = startDelayMs
         }
     }
 
@@ -264,14 +228,28 @@ class SplashActivity : AppCompatActivity() {
 
     private fun setupProgressBarAndFooterAnimations(progressBar: ProgressBar?, tvFooter: TextView?) {
         val cubicBezierInterpolator = PathInterpolator(0.4f, 0f, 0.2f, 1f)
+        val slideDistancePx = 16f * resources.displayMetrics.density
 
         if (progressBar != null) {
+            progressBar.alpha = 0.0f
+            progressBar.translationY = slideDistancePx
             progressBar.max = 100
             progressBar.progress = 0
 
+            // Fade-in and slide-up animation for progress bar container
+            val pvhAlpha = PropertyValuesHolder.ofFloat(View.ALPHA, 0.0f, 1.0f)
+            val pvhTransY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, slideDistancePx, 0.0f)
+            ObjectAnimator.ofPropertyValuesHolder(progressBar, pvhAlpha, pvhTransY).apply {
+                duration = 600
+                startDelay = 1000
+                interpolator = PathInterpolator(0.16f, 1.0f, 0.3f, 1.0f)
+                start()
+            }
+
+            // Fill animation for progress bar
             progressAnimator = ObjectAnimator.ofInt(progressBar, "progress", 0, 100).apply {
-                duration = 2400 // 2.4 seconds
-                startDelay = 200 // starts shortly after launch
+                duration = 2600
+                startDelay = 1000
                 interpolator = cubicBezierInterpolator
                 start()
             }
@@ -279,15 +257,14 @@ class SplashActivity : AppCompatActivity() {
 
         if (tvFooter != null) {
             tvFooter.alpha = 0.0f
-            val slideDistancePx = 12f * resources.displayMetrics.density
             tvFooter.translationY = slideDistancePx
 
             val pvhAlpha = PropertyValuesHolder.ofFloat(View.ALPHA, 0.0f, 1.0f)
             val pvhTransY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, slideDistancePx, 0.0f)
 
             footerAnimator = ObjectAnimator.ofPropertyValuesHolder(tvFooter, pvhAlpha, pvhTransY).apply {
-                duration = 600
-                startDelay = 800 // Fades in 600ms after the progress bar starts (200ms + 600ms)
+                duration = 500
+                startDelay = 1600
                 interpolator = PathInterpolator(0.16f, 1.0f, 0.3f, 1.0f)
                 start()
             }
@@ -298,8 +275,6 @@ class SplashActivity : AppCompatActivity() {
         super.onDestroy()
         handler.removeCallbacks(navigateRunnable)
         logoAnimator?.cancel()
-        pulseAnimator1?.cancel()
-        pulseAnimator2?.cancel()
         titleAnimator?.cancel()
         taglineAnimator?.cancel()
         progressAnimator?.cancel()
