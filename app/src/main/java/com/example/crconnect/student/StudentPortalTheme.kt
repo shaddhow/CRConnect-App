@@ -47,6 +47,7 @@ private val LightColorScheme = lightColorScheme(
     onBackground = TitleText,
     surface = Color.White,
     onSurface = TitleText,
+    surfaceTint = Color.Transparent,
     outline = BorderColor,
     error = ErrorColor
 )

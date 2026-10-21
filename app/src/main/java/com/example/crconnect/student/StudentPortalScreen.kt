@@ -1,5 +1,7 @@
 package com.example.crconnect.student
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,11 +21,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
-import kotlinx.coroutines.launch
-
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.crconnect.CustomToast
+import kotlinx.coroutines.launch
 
 @Composable
 fun StudentPortalScreen(
@@ -64,12 +65,16 @@ fun StudentPortalScreen(
                     profile = uiState.profile,
                     selectedTab = uiState.selectedTab,
                     onTabSelected = { tab ->
-                        viewModel.selectTab(tab)
-                        coroutineScope.launch { drawerState.close() }
+                        coroutineScope.launch {
+                            drawerState.close()
+                            viewModel.selectTab(tab)
+                        }
                     },
                     onSignOut = {
-                        coroutineScope.launch { drawerState.close() }
-                        onSignOut()
+                        coroutineScope.launch {
+                            drawerState.close()
+                            onSignOut()
+                        }
                     }
                 )
             }
@@ -103,31 +108,37 @@ fun StudentPortalScreen(
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
-                    when (uiState.selectedTab) {
-                        0 -> CandidatesTab(
-                            uiState = uiState,
-                            onCastVote = { candidateId -> viewModel.castVote(candidateId) }
-                        )
-                        1 -> RoutineTab(
-                            uiState = uiState,
-                            onDaySelected = { day -> viewModel.selectScheduleDay(day) },
-                            onOpenAddClass = { viewModel.openAddClassSheet() },
-                            onCloseAddClass = { viewModel.closeAddClassSheet() },
-                            onAddClass = { course, time, room ->
-                                viewModel.addClass(course, time, room)
-                            },
-                            onShowToast = { msg -> viewModel.showToast(msg) }
-                        )
-                        2 -> StatusTab(
-                            uiState = uiState,
-                            onGoToCandidates = { viewModel.selectTab(0) }
-                        )
-                        3 -> ProfileTab(
-                            profile = uiState.profile,
-                            onEditProfilePicture = { viewModel.showToast("Edit profile picture (demo)") },
-                            onSecuritySettings = { viewModel.showToast("Security settings (demo)") },
-                            onSignOut = onSignOut
-                        )
+                    Crossfade(
+                        targetState = uiState.selectedTab,
+                        animationSpec = tween(durationMillis = 200),
+                        label = "StudentPortalTabTransition"
+                    ) { tab ->
+                        when (tab) {
+                            0 -> CandidatesTab(
+                                uiState = uiState,
+                                onCastVote = { candidateId -> viewModel.castVote(candidateId) }
+                            )
+                            1 -> RoutineTab(
+                                uiState = uiState,
+                                onDaySelected = { day -> viewModel.selectScheduleDay(day) },
+                                onOpenAddClass = { viewModel.openAddClassSheet() },
+                                onCloseAddClass = { viewModel.closeAddClassSheet() },
+                                onAddClass = { course, time, room ->
+                                    viewModel.addClass(course, time, room)
+                                },
+                                onShowToast = { msg -> viewModel.showToast(msg) }
+                            )
+                            2 -> StatusTab(
+                                uiState = uiState,
+                                onGoToCandidates = { viewModel.selectTab(0) }
+                            )
+                            3 -> ProfileTab(
+                                profile = uiState.profile,
+                                onEditProfilePicture = { viewModel.showToast("Edit profile picture (demo)") },
+                                onSecuritySettings = { viewModel.showToast("Security settings (demo)") },
+                                onSignOut = onSignOut
+                            )
+                        }
                     }
                 }
             }

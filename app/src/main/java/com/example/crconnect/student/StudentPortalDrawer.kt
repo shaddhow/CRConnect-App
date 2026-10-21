@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,10 +24,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,9 +51,12 @@ fun StudentPortalDrawerContent(
     onSignOut: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+    var localSelectedTab by remember(selectedTab) { mutableIntStateOf(selectedTab) }
+    val haptic = LocalHapticFeedback.current
 
     ModalDrawerSheet(
         drawerContainerColor = Color.White,
+        drawerTonalElevation = 0.dp,
         drawerShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
         modifier = Modifier
             .width(300.dp)
@@ -61,13 +72,18 @@ fun StudentPortalDrawerContent(
                 .verticalScroll(scrollState)
                 .statusBarsPadding()
         ) {
-            // Drawer Header
+            // Drawer Header - Clickable like Teacher Portal to navigate to Profile
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        localSelectedTab = 3
+                        onTabSelected(3)
+                    }
                     .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 16.dp)
             ) {
-                // Circular BUBT logo / avatar (64dp x 64dp)
+                // Circular BUBT logo / avatar (64dp x 64dp) matching Teacher Portal
                 Box(
                     modifier = Modifier
                         .size(64.dp)
@@ -77,9 +93,10 @@ fun StudentPortalDrawerContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_crconnect_logo),
-                        contentDescription = "CRConnect Logo",
-                        modifier = Modifier.size(44.dp)
+                        painter = painterResource(id = R.drawable.bubt_logo),
+                        contentDescription = "BUBT Logo",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
 
@@ -95,8 +112,14 @@ fun StudentPortalDrawerContent(
                     overflow = TextOverflow.Ellipsis
                 )
 
+                val deptText = if (profile.department.contains("CSE", ignoreCase = true)) {
+                    "Department of CSE, BUBT"
+                } else {
+                    profile.department
+                }
+
                 Text(
-                    text = "Student · Department of CSE, BUBT",
+                    text = "Student · $deptText",
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Normal,
@@ -126,8 +149,12 @@ fun StudentPortalDrawerContent(
                 DrawerNavItem(
                     label = "Candidates",
                     iconRes = R.drawable.ic_people,
-                    isSelected = selectedTab == 0,
-                    onClick = { onTabSelected(0) }
+                    isSelected = localSelectedTab == 0,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        localSelectedTab = 0
+                        onTabSelected(0)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(2.dp))
@@ -135,8 +162,12 @@ fun StudentPortalDrawerContent(
                 DrawerNavItem(
                     label = "Class routine",
                     iconRes = R.drawable.ic_nav_routine,
-                    isSelected = selectedTab == 1,
-                    onClick = { onTabSelected(1) }
+                    isSelected = localSelectedTab == 1,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        localSelectedTab = 1
+                        onTabSelected(1)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(2.dp))
@@ -144,8 +175,12 @@ fun StudentPortalDrawerContent(
                 DrawerNavItem(
                     label = "Vote status",
                     iconRes = R.drawable.ic_nav_timer,
-                    isSelected = selectedTab == 2,
-                    onClick = { onTabSelected(2) }
+                    isSelected = localSelectedTab == 2,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        localSelectedTab = 2
+                        onTabSelected(2)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(2.dp))
@@ -153,8 +188,12 @@ fun StudentPortalDrawerContent(
                 DrawerNavItem(
                     label = "My profile",
                     iconRes = R.drawable.ic_nav_profile,
-                    isSelected = selectedTab == 3,
-                    onClick = { onTabSelected(3) }
+                    isSelected = localSelectedTab == 3,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        localSelectedTab = 3
+                        onTabSelected(3)
+                    }
                 )
 
                 // Menu Items Divider Line (1dp #E2E8F0)
@@ -171,7 +210,10 @@ fun StudentPortalDrawerContent(
                     iconRes = R.drawable.ic_power_settings,
                     isSelected = false,
                     isDanger = true,
-                    onClick = onSignOut
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onSignOut()
+                    }
                 )
             }
 
