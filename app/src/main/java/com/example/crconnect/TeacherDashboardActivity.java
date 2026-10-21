@@ -1158,7 +1158,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 if (labelManageCR != null) labelManageCR.setTextColor(activeColor);
                 break;
             case 4:
-                if (itemPdf != null) itemPdf.setBackgroundResource(R.drawable.bg_drawer_pill_active);
+                if (itemPdf != null) itemPdf.setBackgroundResource( R.drawable.bg_drawer_pill_active);
                 if (iconPdf != null) iconPdf.setColorFilter(activeColor);
                 if (labelPdf != null) labelPdf.setTextColor(activeColor);
                 break;

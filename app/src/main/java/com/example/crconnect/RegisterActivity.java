@@ -42,19 +42,34 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.annotation.NonNull;
 import androidx.core.widget.NestedScrollView;
 
 import com.example.crconnect.core.utils.HapticUtils;
 import com.example.crconnect.core.utils.KeyboardUtils;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.mlkit.vision.common.InputImage;
@@ -75,12 +90,13 @@ import java.util.regex.Pattern;
 public class RegisterActivity extends AppCompatActivity {
 
     private TextInputEditText etFullName, etRegEmail, etStudentId, etTeacherCode, etRegPassword, etIntake;
-    private TextInputLayout tilRegEmail;
+    private TextInputLayout tilRegEmail, tilStudentId, tilTeacherCode;
     private RadioGroup radioGroupRole;
     private View layoutStudentFields, layoutTeacherFields;
     private RadioButton rbTeacher, rbStudent;
     private Spinner spinnerStudentSection, spinnerDept, spinnerTeacherDept;
-    private Button btnRegister, btnSuccessBackToLogin;
+    private Button btnRegister, btnSuccessBackToLogin, btnResendVerificationEmail;
+    private MaterialButton btnGoogleRegister;
     private ImageButton btnBackToLogin;
     private MaterialButton btnScanIdCard;
     private View btnScanIdCardContainer;
@@ -89,6 +105,11 @@ public class RegisterActivity extends AppCompatActivity {
     private MaterialCardView layoutFormCard, layoutSuccessCard;
     private View meterBar1, meterBar2, meterBar3, meterBar4;
     private LinearLayout layoutStickyFooter;
+
+    private FirebaseUser lastCreatedUser;
+    private GoogleSignInClient googleSignInClient;
+    private GoogleSignInAccount googleAccount;
+    private ActivityResultLauncher<Intent> googleSignInLauncher;
 
     private ActivityResultLauncher<IntentSenderRequest> docScannerLauncher;
     private GmsDocumentScanner documentScanner;
@@ -139,7 +160,9 @@ public class RegisterActivity extends AppCompatActivity {
         etRegEmail = findViewById(R.id.etRegEmail);
         tilRegEmail = findViewById(R.id.tilRegEmail);
         etStudentId = findViewById(R.id.etStudentId);
+        tilStudentId = findViewById(R.id.tilStudentId);
         etTeacherCode = findViewById(R.id.etTeacherCode);
+        tilTeacherCode = findViewById(R.id.tilTeacherCode);
         etRegPassword = findViewById(R.id.etRegPassword);
         etIntake = findViewById(R.id.etIntake);
         layoutStudentFields = findViewById(R.id.layoutStudentFields);
@@ -160,6 +183,7 @@ public class RegisterActivity extends AppCompatActivity {
         spinnerDept = findViewById(R.id.spinnerDept);
         spinnerTeacherDept = findViewById(R.id.spinnerTeacherDept);
         layoutStickyFooter = findViewById(R.id.layoutStickyFooter);
+        btnGoogleRegister = findViewById(R.id.btnGoogleRegister);
 
         meterBar1 = findViewById(R.id.meterBar1);
         meterBar2 = findViewById(R.id.meterBar2);
@@ -226,10 +250,73 @@ public class RegisterActivity extends AppCompatActivity {
             });
         }
 
+        btnResendVerificationEmail = findViewById(R.id.btnResendVerificationEmail);
+
         if (btnSuccessBackToLogin != null) {
             btnSuccessBackToLogin.setOnClickListener(v -> {
                 finish();
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+
+        if (btnResendVerificationEmail != null) {
+            btnResendVerificationEmail.setOnClickListener(v -> {
+                if (lastCreatedUser != null) {
+                    btnResendVerificationEmail.setEnabled(false);
+                    lastCreatedUser.sendEmailVerification()
+                        .addOnCompleteListener(task -> {
+                            btnResendVerificationEmail.setEnabled(true);
+                            if (task.isSuccessful()) {
+                                Toast.makeText(RegisterActivity.this, "Verification email resent to " + lastCreatedUser.getEmail() + "!", Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(RegisterActivity.this, "Failed to resend email: " + (task.getException() != null ? task.getException().getMessage() : "Unknown error"), Toast.LENGTH_LONG).show();
+                            }
+                        });
+                } else {
+                    Toast.makeText(RegisterActivity.this, "Verification email resent! Please check your inbox.", Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        GoogleSignInOptions.Builder gsoBuilder = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail();
+        try {
+            int resId = getResources().getIdentifier("default_web_client_id", "string", getPackageName());
+            if (resId != 0) {
+                gsoBuilder.requestIdToken(getString(resId));
+            }
+        } catch (Exception ignored) {}
+
+        googleSignInClient = GoogleSignIn.getClient(this, gsoBuilder.build());
+
+        googleSignInLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                    try {
+                        GoogleSignInAccount account = task.getResult(ApiException.class);
+                        if (account != null) {
+                            handleGoogleRegistrationSuccess(account);
+                        } else {
+                            Toast.makeText(RegisterActivity.this, "Google Sign-In failed.", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (ApiException e) {
+                        Log.e("RegisterActivity", "Google Sign-In Exception", e);
+                        Toast.makeText(RegisterActivity.this, "Google Sign-In failed: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                    }
+                }
+            }
+        );
+
+        if (btnGoogleRegister != null) {
+            btnGoogleRegister.setOnClickListener(v -> {
+                if (googleSignInClient != null) {
+                    googleSignInClient.signOut().addOnCompleteListener(task -> {
+                        Intent signInIntent = googleSignInClient.getSignInIntent();
+                        googleSignInLauncher.launch(signInIntent);
+                    });
+                }
             });
         }
 
@@ -247,10 +334,20 @@ public class RegisterActivity extends AppCompatActivity {
                 if (etStudentId != null) {
                     etStudentId.setText("");
                     etStudentId.setError(null);
+                    etStudentId.setFocusable(true);
+                    etStudentId.setFocusableInTouchMode(true);
+                }
+                if (tilStudentId != null) {
+                    tilStudentId.setHelperText(null);
                 }
                 if (etTeacherCode != null) {
                     etTeacherCode.setText("");
                     etTeacherCode.setError(null);
+                    etTeacherCode.setFocusable(true);
+                    etTeacherCode.setFocusableInTouchMode(true);
+                }
+                if (tilTeacherCode != null) {
+                    tilTeacherCode.setHelperText(null);
                 }
                 if (etRegPassword != null) {
                     etRegPassword.setText("");
@@ -545,14 +642,30 @@ public class RegisterActivity extends AppCompatActivity {
 
         if (extractedName != null && !extractedName.isEmpty() && etFullName != null) {
             etFullName.setText(extractedName);
+            etFullName.setFocusable(true);
+            etFullName.setFocusableInTouchMode(true);
+            etFullName.setEnabled(true);
         }
 
         if (extractedId != null && !extractedId.isEmpty()) {
             if (rbStudent != null && rbStudent.isChecked() && etStudentId != null) {
                 etStudentId.setText(extractedId);
+                etStudentId.setFocusable(false);
+                etStudentId.setFocusableInTouchMode(false);
+                if (tilStudentId != null) {
+                    tilStudentId.setHelperText("🔒 Verified via ID Card Scan (Read-Only)");
+                    tilStudentId.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#059669")));
+                }
             } else if (etTeacherCode != null) {
                 etTeacherCode.setText(extractedId);
+                etTeacherCode.setFocusable(false);
+                etTeacherCode.setFocusableInTouchMode(false);
+                if (tilTeacherCode != null) {
+                    tilTeacherCode.setHelperText("🔒 Verified via ID Card Scan (Read-Only)");
+                    tilTeacherCode.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#059669")));
+                }
             }
+            Toast.makeText(RegisterActivity.this, "ID Card scanned! Student ID locked for security.", Toast.LENGTH_LONG).show();
         }
 
         if (extractedIntake != null && etIntake != null) {
@@ -656,21 +769,82 @@ public class RegisterActivity extends AppCompatActivity {
         String assignedSection = isStudent ? section : "6";
 
         btnRegister.setEnabled(false);
-        btnRegister.setText("Creating Account...");
+        btnRegister.setText("Checking ID Availability...");
 
-        executeFirebaseAuth(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
+        checkDuplicateAndRegister(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
+    }
+
+    private void checkDuplicateAndRegister(String email, String password, String name, String id, String role, boolean isStudent, String section, String assignedSection, String intake, String dept) {
+        String sanitizedId = id.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+        DatabaseReference dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
+
+        dbRef.child("users").child(sanitizedId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    btnRegister.setEnabled(true);
+                    btnRegister.setText("Register");
+                    String idLabel = isStudent ? "Student ID" : "Teacher Code";
+                    Toast.makeText(RegisterActivity.this, idLabel + " (" + id + ") is already registered!", Toast.LENGTH_LONG).show();
+                    if (isStudent && etStudentId != null) {
+                        etStudentId.setError(idLabel + " already registered");
+                        etStudentId.startAnimation(AnimationUtils.loadAnimation(RegisterActivity.this, R.anim.shake));
+                        etStudentId.requestFocus();
+                    } else if (!isStudent && etTeacherCode != null) {
+                        etTeacherCode.setError(idLabel + " already registered");
+                        etTeacherCode.startAnimation(AnimationUtils.loadAnimation(RegisterActivity.this, R.anim.shake));
+                        etTeacherCode.requestFocus();
+                    }
+                } else {
+                    btnRegister.setText("Creating Account...");
+                    executeFirebaseAuth(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                btnRegister.setText("Creating Account...");
+                executeFirebaseAuth(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
+            }
+        });
     }
 
     private void executeFirebaseAuth(String email, String password, String name, String id, String role, boolean isStudent, String section, String assignedSection, String intake, String dept) {
         FirebaseAuth auth = FirebaseAuth.getInstance();
+
+        if (googleAccount != null && googleAccount.getIdToken() != null && !googleAccount.getIdToken().isEmpty()) {
+            AuthCredential credential = GoogleAuthProvider.getCredential(googleAccount.getIdToken(), null);
+            auth.signInWithCredential(credential)
+                .addOnSuccessListener(authResult -> {
+                    FirebaseUser user = authResult.getUser();
+                    if (user == null) {
+                        btnRegister.setEnabled(true);
+                        btnRegister.setText("Register");
+                        Toast.makeText(RegisterActivity.this, "Failed to connect Google account. Please try again.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    lastCreatedUser = user;
+                    saveUserDataAndFinish(user.getUid(), name, email, id, role, isStudent, section, assignedSection, intake, dept);
+                })
+                .addOnFailureListener(e -> {
+                    executeEmailPasswordAuth(auth, email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
+                });
+        } else {
+            executeEmailPasswordAuth(auth, email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
+        }
+    }
+
+    private void executeEmailPasswordAuth(FirebaseAuth auth, String email, String password, String name, String id, String role, boolean isStudent, String section, String assignedSection, String intake, String dept) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener(authResult -> {
                 FirebaseUser user = authResult.getUser();
                 if (user == null) {
                     btnRegister.setEnabled(true);
                     btnRegister.setText("Register");
+                    Toast.makeText(RegisterActivity.this, "Failed to create user account. Please try again.", Toast.LENGTH_SHORT).show();
                     return;
                 }
+                lastCreatedUser = user;
                 user.sendEmailVerification()
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
@@ -688,6 +862,18 @@ public class RegisterActivity extends AppCompatActivity {
                 Log.e("RegisterActivity", "FirebaseAuth error: " + e.getMessage(), e);
                 btnRegister.setEnabled(true);
                 btnRegister.setText("Register");
+
+                String errorMessage = "Registration failed. Please try again.";
+                if (e instanceof FirebaseAuthUserCollisionException) {
+                    errorMessage = "An account with this email address already exists.";
+                } else if (e instanceof FirebaseAuthWeakPasswordException) {
+                    errorMessage = "Password is too weak. Please use a stronger password.";
+                } else if (e instanceof FirebaseAuthInvalidCredentialsException) {
+                    errorMessage = "Invalid email format or credentials.";
+                } else if (e.getMessage() != null && !e.getMessage().isEmpty()) {
+                    errorMessage = e.getMessage();
+                }
+                Toast.makeText(RegisterActivity.this, errorMessage, Toast.LENGTH_LONG).show();
             });
     }
 
@@ -713,19 +899,49 @@ public class RegisterActivity extends AppCompatActivity {
             dbRef.child("users").child(uid).setValue(userMap);
         }
         dbRef.child("users").child(sanitizedId).setValue(userMap);
-        dbRef.child("users").child(sanitizedEmail).setValue(userMap);
+        dbRef.child("users").child(sanitizedEmail).setValue(userMap)
+            .addOnSuccessListener(aVoid -> Log.d("RegisterActivity", "RTDB user profile saved successfully"))
+            .addOnFailureListener(e -> Log.e("RegisterActivity", "Failed to save user profile to RTDB", e));
 
         FirebaseFirestore firestore = FirebaseFirestore.getInstance();
         if (uid != null && !uid.isEmpty()) {
             firestore.collection("users").document(uid).set(userMap);
         }
         firestore.collection("users").document(sanitizedId).set(userMap);
-        firestore.collection("users").document(sanitizedEmail).set(userMap);
+        firestore.collection("users").document(sanitizedEmail).set(userMap)
+            .addOnSuccessListener(aVoid -> Log.d("RegisterActivity", "Firestore user profile saved successfully"))
+            .addOnFailureListener(e -> Log.e("RegisterActivity", "Failed to save user profile to Firestore", e));
 
         runOnUiThread(() -> {
             if (layoutFormCard != null) layoutFormCard.setVisibility(View.GONE);
             if (layoutSuccessCard != null) layoutSuccessCard.setVisibility(View.VISIBLE);
             if (layoutStickyFooter != null) layoutStickyFooter.setVisibility(View.GONE);
         });
+    }
+
+    private void handleGoogleRegistrationSuccess(GoogleSignInAccount account) {
+        if (account == null) return;
+        googleAccount = account;
+
+        String email = account.getEmail();
+        String name = account.getDisplayName();
+
+        if (etFullName != null && name != null && !name.trim().isEmpty()) {
+            etFullName.setText(name);
+        }
+
+        if (etRegEmail != null && email != null && !email.trim().isEmpty()) {
+            etRegEmail.setText(email);
+        }
+
+        Toast.makeText(RegisterActivity.this, "Google account connected! Please enter your Student ID, Intake, and Password to complete registration.", Toast.LENGTH_LONG).show();
+
+        if (rbStudent != null && rbStudent.isChecked() && etStudentId != null) {
+            etStudentId.requestFocus();
+        } else if (etTeacherCode != null) {
+            etTeacherCode.requestFocus();
+        }
+
+        validateFormAndEnableButton();
     }
 }

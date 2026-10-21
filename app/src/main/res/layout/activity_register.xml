@@ -307,6 +307,7 @@
                         android:orientation="vertical">
 
                         <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/tilStudentId"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="16dp"
@@ -415,6 +416,7 @@
                         android:visibility="gone">
 
                         <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/tilTeacherCode"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="16dp"
@@ -553,6 +555,33 @@
                         android:fontFamily="sans-serif"
                         android:textColor="#64748B" />
 
+                    <View
+                        android:id="@+id/dividerGoogle"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#E2E8F0"
+                        android:layout_marginTop="20dp"
+                        android:layout_marginBottom="16dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGoogleRegister"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:text="Sign up with Google"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="#334155"
+                        android:textAllCaps="false"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#CBD5E1"
+                        app:strokeWidth="1.5dp"
+                        app:icon="@drawable/ic_google"
+                        app:iconGravity="textStart"
+                        app:iconPadding="10dp"
+                        app:iconTint="@null"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -618,6 +647,20 @@
                         app:cornerRadius="12dp"
                         android:background="@drawable/btn_primary_bg"
                         app:backgroundTint="@null" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnResendVerificationEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:text="Resend Verification Link"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="#0B3A9E"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#0B3A9E"
+                        app:strokeWidth="1.5dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_marginTop="12dp" />
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

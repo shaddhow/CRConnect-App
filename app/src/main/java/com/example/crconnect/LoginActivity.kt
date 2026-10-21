@@ -25,9 +25,18 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import android.util.Log
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.crconnect.core.utils.HapticUtils
 import com.example.crconnect.core.utils.KeyboardUtils
 import com.example.crconnect.databinding.ActivityLoginBinding
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
@@ -40,12 +49,32 @@ class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private lateinit var sessionManager: SessionManager
+    private lateinit var googleSignInClient: GoogleSignInClient
 
     private var selectedRole = "Student" // "Student" or "Teacher"
     private var isPasswordVisible = false
 
     private var isIdErrorState = false
     private var isPasswordErrorState = false
+
+    private val googleSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                if (account != null) {
+                    handleGoogleSignInSuccess(account)
+                } else {
+                    Toast.makeText(this, "Google Sign-In failed.", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("LoginActivity", "Google Sign-In Exception", e)
+                Toast.makeText(this, "Google Sign-In failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +83,18 @@ class LoginActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         sessionManager = SessionManager(this)
+
+        val gsoBuilder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+        
+        try {
+            val webClientId = getString(resources.getIdentifier("default_web_client_id", "string", packageName))
+            if (webClientId.isNotEmpty()) {
+                gsoBuilder.requestIdToken(webClientId)
+            }
+        } catch (_: Exception) {}
+
+        googleSignInClient = GoogleSignIn.getClient(this, gsoBuilder.build())
 
         // 1. Full-screen Edge-to-Edge and Light Status/Navigation Bars
         setupWindowDecorations()
@@ -284,6 +325,15 @@ class LoginActivity : AppCompatActivity() {
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
 
+        // Google Sign In button touch feedback & click
+        setupButtonScaleTouchFeedback(binding.btnGoogleSignIn)
+        binding.btnGoogleSignIn.setOnClickListener {
+            googleSignInClient.signOut().addOnCompleteListener {
+                val signInIntent = googleSignInClient.signInIntent
+                googleSignInLauncher.launch(signInIntent)
+            }
+        }
+
         // Create account button touch feedback & click
         setupButtonScaleTouchFeedback(binding.btnCreateAccount)
         binding.btnCreateAccount.setOnClickListener {
@@ -459,6 +509,18 @@ class LoginActivity : AppCompatActivity() {
                     }
 
                     if (!refreshedUser.isEmailVerified) {
+                        val userEmail = refreshedUser.email ?: email
+                        Snackbar.make(binding.root, "Email not verified ($userEmail)", Snackbar.LENGTH_INDEFINITE)
+                            .setAction("Resend Link") {
+                                refreshedUser.sendEmailVerification().addOnCompleteListener { resendTask ->
+                                    if (resendTask.isSuccessful) {
+                                        Toast.makeText(this@LoginActivity, "Verification email resent to $userEmail!", Toast.LENGTH_LONG).show()
+                                    } else {
+                                        Toast.makeText(this@LoginActivity, "Failed to resend link. Please try again.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                            .show()
                         FirebaseAuth.getInstance().signOut()
                         sessionManager.logoutUser()
                         binding.btnSignIn.isEnabled = true
@@ -645,6 +707,91 @@ class LoginActivity : AppCompatActivity() {
             dept
         )
         navigateBasedOnRole("Teacher/Admin", email)
+    }
+
+    private fun handleGoogleSignInSuccess(account: GoogleSignInAccount) {
+        val email = account.email ?: ""
+        val name = account.displayName ?: if (email.contains("@")) email.split("@")[0] else "Student"
+        val idToken = account.idToken
+
+        if (!idToken.isNullOrEmpty()) {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            FirebaseAuth.getInstance().signInWithCredential(credential)
+                .addOnSuccessListener { authResult ->
+                    val user = authResult.user
+                    val uid = user?.uid ?: ""
+                    checkExistingProfileOrCreateStudent(uid, email, name)
+                }
+                .addOnFailureListener {
+                    checkExistingProfileOrCreateStudent("", email, name)
+                }
+        } else {
+            checkExistingProfileOrCreateStudent("", email, name)
+        }
+    }
+
+    private fun checkExistingProfileOrCreateStudent(uid: String, email: String, name: String) {
+        val sanitizedEmail = sanitizeKey(email)
+        val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+
+        dbRef.child("users").child(sanitizedEmail).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    saveSessionAndNavigate(snapshot)
+                } else {
+                    val studentId = if (email.contains("@")) email.split("@")[0] else "G" + (System.currentTimeMillis() % 1000000)
+                    val userMap = HashMap<String, Any>()
+                    userMap["name"] = name
+                    userMap["email"] = email
+                    userMap["id"] = studentId
+                    userMap["role"] = "Student"
+                    userMap["section"] = "1"
+                    userMap["assignedSection"] = "1"
+                    userMap["intake"] = "50"
+                    userMap["dept"] = "Department of CSE, BUBT"
+                    userMap["deviceId"] = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID) ?: ""
+                    userMap["registeredAt"] = System.currentTimeMillis()
+
+                    if (uid.isNotEmpty()) {
+                        dbRef.child("users").child(uid).setValue(userMap)
+                    }
+                    dbRef.child("users").child(sanitizedEmail).setValue(userMap)
+                    dbRef.child("users").child(studentId).setValue(userMap)
+
+                    val firestore = FirebaseFirestore.getInstance()
+                    if (uid.isNotEmpty()) {
+                        firestore.collection("users").document(uid).set(userMap)
+                    }
+                    firestore.collection("users").document(sanitizedEmail).set(userMap)
+
+                    sessionManager.createLoginSession(
+                        name,
+                        email,
+                        studentId,
+                        "Student",
+                        "1",
+                        "1",
+                        "50",
+                        "Department of CSE, BUBT"
+                    )
+                    navigateBasedOnRole("Student", email)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                sessionManager.createLoginSession(
+                    name,
+                    email,
+                    if (email.contains("@")) email.split("@")[0] else "G1001",
+                    "Student",
+                    "1",
+                    "1",
+                    "50",
+                    "Department of CSE, BUBT"
+                )
+                navigateBasedOnRole("Student", email)
+            }
+        })
     }
 
     private fun navigateBasedOnRole(role: String?, email: String?) {
