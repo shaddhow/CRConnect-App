@@ -173,7 +173,7 @@ public class RegisterActivity extends AppCompatActivity {
             });
         }
         if (tilStudentId != null) {
-            tilStudentId.setHelperText("📷 Tap \"Scan BUBT ID card\" above to verify Student ID");
+            tilStudentId.setHelperText("Tap 'Scan BUBT ID card' above to verify Student ID");
             tilStudentId.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#0284C7")));
         }
 
@@ -186,7 +186,7 @@ public class RegisterActivity extends AppCompatActivity {
             });
         }
         if (tilTeacherCode != null) {
-            tilTeacherCode.setHelperText("📷 Tap \"Scan BUBT ID card\" above to verify Teacher Code");
+            tilTeacherCode.setHelperText("Tap 'Scan BUBT ID card' above to verify Teacher Code");
             tilTeacherCode.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#0284C7")));
         }
         etRegPassword = findViewById(R.id.etRegPassword);
@@ -364,7 +364,7 @@ public class RegisterActivity extends AppCompatActivity {
                     etStudentId.setFocusableInTouchMode(false);
                 }
                 if (tilStudentId != null) {
-                    tilStudentId.setHelperText("📷 Tap \"Scan BUBT ID card\" above to verify Student ID");
+                    tilStudentId.setHelperText("Tap 'Scan BUBT ID card' above to verify Student ID");
                     tilStudentId.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#0284C7")));
                 }
                 if (etTeacherCode != null) {
@@ -374,7 +374,7 @@ public class RegisterActivity extends AppCompatActivity {
                     etTeacherCode.setFocusableInTouchMode(false);
                 }
                 if (tilTeacherCode != null) {
-                    tilTeacherCode.setHelperText("📷 Tap \"Scan BUBT ID card\" above to verify Teacher Code");
+                    tilTeacherCode.setHelperText("Tap 'Scan BUBT ID card' above to verify Teacher Code");
                     tilTeacherCode.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#0284C7")));
                 }
                 if (etRegPassword != null) {
@@ -681,7 +681,7 @@ public class RegisterActivity extends AppCompatActivity {
                 etStudentId.setFocusable(false);
                 etStudentId.setFocusableInTouchMode(false);
                 if (tilStudentId != null) {
-                    tilStudentId.setHelperText("🔒 Verified via ID Card Scan (Read-Only)");
+                    tilStudentId.setHelperText("Verified via BUBT ID Card Scan (Read-Only)");
                     tilStudentId.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#059669")));
                 }
             } else if (etTeacherCode != null) {
@@ -689,7 +689,7 @@ public class RegisterActivity extends AppCompatActivity {
                 etTeacherCode.setFocusable(false);
                 etTeacherCode.setFocusableInTouchMode(false);
                 if (tilTeacherCode != null) {
-                    tilTeacherCode.setHelperText("🔒 Verified via ID Card Scan (Read-Only)");
+                    tilTeacherCode.setHelperText("Verified via BUBT ID Card Scan (Read-Only)");
                     tilTeacherCode.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#059669")));
                 }
             }
