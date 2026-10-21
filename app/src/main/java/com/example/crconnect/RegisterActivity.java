@@ -782,18 +782,24 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
-                    btnRegister.setEnabled(true);
-                    btnRegister.setText("Register");
-                    String idLabel = isStudent ? "Student ID" : "Teacher Code";
-                    Toast.makeText(RegisterActivity.this, idLabel + " (" + id + ") is already registered!", Toast.LENGTH_LONG).show();
-                    if (isStudent && etStudentId != null) {
-                        etStudentId.setError(idLabel + " already registered");
-                        etStudentId.startAnimation(AnimationUtils.loadAnimation(RegisterActivity.this, R.anim.shake));
-                        etStudentId.requestFocus();
-                    } else if (!isStudent && etTeacherCode != null) {
-                        etTeacherCode.setError(idLabel + " already registered");
-                        etTeacherCode.startAnimation(AnimationUtils.loadAnimation(RegisterActivity.this, R.anim.shake));
-                        etTeacherCode.requestFocus();
+                    String existingEmail = snapshot.child("email").getValue(String.class);
+                    if (existingEmail != null && existingEmail.equalsIgnoreCase(email)) {
+                        btnRegister.setText("Creating Account...");
+                        executeFirebaseAuth(email, password, name, id, role, isStudent, section, assignedSection, intake, dept);
+                    } else {
+                        btnRegister.setEnabled(true);
+                        btnRegister.setText("Register");
+                        String idLabel = isStudent ? "Student ID" : "Teacher Code";
+                        Toast.makeText(RegisterActivity.this, idLabel + " (" + id + ") is already registered to another email address!", Toast.LENGTH_LONG).show();
+                        if (isStudent && etStudentId != null) {
+                            etStudentId.setError(idLabel + " already registered");
+                            etStudentId.startAnimation(AnimationUtils.loadAnimation(RegisterActivity.this, R.anim.shake));
+                            etStudentId.requestFocus();
+                        } else if (!isStudent && etTeacherCode != null) {
+                            etTeacherCode.setError(idLabel + " already registered");
+                            etTeacherCode.startAnimation(AnimationUtils.loadAnimation(RegisterActivity.this, R.anim.shake));
+                            etTeacherCode.requestFocus();
+                        }
                     }
                 } else {
                     btnRegister.setText("Creating Account...");
