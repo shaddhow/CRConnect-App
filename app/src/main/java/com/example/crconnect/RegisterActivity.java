@@ -163,6 +163,32 @@ public class RegisterActivity extends AppCompatActivity {
         tilStudentId = findViewById(R.id.tilStudentId);
         etTeacherCode = findViewById(R.id.etTeacherCode);
         tilTeacherCode = findViewById(R.id.tilTeacherCode);
+
+        if (etStudentId != null) {
+            etStudentId.setFocusable(false);
+            etStudentId.setFocusableInTouchMode(false);
+            etStudentId.setOnClickListener(v -> {
+                Toast.makeText(RegisterActivity.this, "Please tap 'Scan BUBT ID card' above to set your Student ID.", Toast.LENGTH_SHORT).show();
+                launchDocumentScanner();
+            });
+        }
+        if (tilStudentId != null) {
+            tilStudentId.setHelperText("📷 Tap \"Scan BUBT ID card\" above to verify Student ID");
+            tilStudentId.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#0284C7")));
+        }
+
+        if (etTeacherCode != null) {
+            etTeacherCode.setFocusable(false);
+            etTeacherCode.setFocusableInTouchMode(false);
+            etTeacherCode.setOnClickListener(v -> {
+                Toast.makeText(RegisterActivity.this, "Please tap 'Scan BUBT ID card' above to set your Teacher Code.", Toast.LENGTH_SHORT).show();
+                launchDocumentScanner();
+            });
+        }
+        if (tilTeacherCode != null) {
+            tilTeacherCode.setHelperText("📷 Tap \"Scan BUBT ID card\" above to verify Teacher Code");
+            tilTeacherCode.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#0284C7")));
+        }
         etRegPassword = findViewById(R.id.etRegPassword);
         etIntake = findViewById(R.id.etIntake);
         layoutStudentFields = findViewById(R.id.layoutStudentFields);
@@ -334,20 +360,22 @@ public class RegisterActivity extends AppCompatActivity {
                 if (etStudentId != null) {
                     etStudentId.setText("");
                     etStudentId.setError(null);
-                    etStudentId.setFocusable(true);
-                    etStudentId.setFocusableInTouchMode(true);
+                    etStudentId.setFocusable(false);
+                    etStudentId.setFocusableInTouchMode(false);
                 }
                 if (tilStudentId != null) {
-                    tilStudentId.setHelperText(null);
+                    tilStudentId.setHelperText("📷 Tap \"Scan BUBT ID card\" above to verify Student ID");
+                    tilStudentId.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#0284C7")));
                 }
                 if (etTeacherCode != null) {
                     etTeacherCode.setText("");
                     etTeacherCode.setError(null);
-                    etTeacherCode.setFocusable(true);
-                    etTeacherCode.setFocusableInTouchMode(true);
+                    etTeacherCode.setFocusable(false);
+                    etTeacherCode.setFocusableInTouchMode(false);
                 }
                 if (tilTeacherCode != null) {
-                    tilTeacherCode.setHelperText(null);
+                    tilTeacherCode.setHelperText("📷 Tap \"Scan BUBT ID card\" above to verify Teacher Code");
+                    tilTeacherCode.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#0284C7")));
                 }
                 if (etRegPassword != null) {
                     etRegPassword.setText("");
@@ -744,15 +772,14 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         if (id.isEmpty() || isDummyOrGibberish(id)) {
-            if (isStudent && etStudentId != null) {
-                etStudentId.setError("Enter a valid Student ID");
-                etStudentId.startAnimation(AnimationUtils.loadAnimation(this, R.anim.shake));
-                etStudentId.requestFocus();
-            } else if (etTeacherCode != null) {
-                etTeacherCode.setError("Enter a valid Teacher Code");
-                etTeacherCode.startAnimation(AnimationUtils.loadAnimation(this, R.anim.shake));
-                etTeacherCode.requestFocus();
+            String idLabel = isStudent ? "Student ID" : "Teacher Code";
+            Toast.makeText(this, "Please tap 'Scan BUBT ID card' above to verify your " + idLabel, Toast.LENGTH_LONG).show();
+            if (btnScanIdCardContainer != null) {
+                btnScanIdCardContainer.startAnimation(AnimationUtils.loadAnimation(this, R.anim.shake));
+            } else if (btnScanIdCard != null) {
+                btnScanIdCard.startAnimation(AnimationUtils.loadAnimation(this, R.anim.shake));
             }
+            launchDocumentScanner();
             return;
         }
 
