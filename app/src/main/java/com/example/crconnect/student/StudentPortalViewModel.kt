@@ -463,6 +463,66 @@ class StudentPortalViewModel : ViewModel() {
         }
     }
 
+    fun saveScannedEntries(entries: List<ClassEntry>, context: Context? = null) {
+        val repo = RoutineRepository(context ?: FirebaseDatabase.getInstance().app.applicationContext)
+        repo.saveClassEntries(entries)
+
+        val daysList = listOf("SAT", "SUN", "MON", "TUE", "WED", "THR", "FRI")
+        val updatedMap = _uiState.value.classMap.toMutableMap()
+
+        for (entry in entries) {
+            val dayIdx = daysList.indexOfFirst { it.equals(entry.day, ignoreCase = true) }
+            val targetIdx = if (dayIdx != -1) dayIdx else _uiState.value.selectedDayIndex
+            val timeSlot = "${entry.startTime} - ${entry.endTime}"
+            val classModel = ClassModel(
+                id = "${entry.day}_${entry.course}_${entry.startTime}",
+                timeSlot = timeSlot,
+                courseName = "${entry.course} (${entry.faculty})",
+                room = if (entry.room.startsWith("Room")) entry.room else "Room ${entry.room}"
+            )
+            val currentList = updatedMap[targetIdx] ?: emptyList()
+            updatedMap[targetIdx] = (currentList + classModel).distinctBy { "${it.courseName}_${it.timeSlot}" }
+        }
+
+        val updatedDays = _uiState.value.scheduleDays.map { day ->
+            val hasClasses = (updatedMap[day.dayIndex]?.isNotEmpty() == true)
+            day.copy(hasClasses = hasClasses)
+        }
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                classMap = updatedMap,
+                scheduleDays = updatedDays,
+                isAddClassSheetOpen = false,
+                snackbarMessage = "Scanned routine processed (${entries.size} classes saved)"
+            )
+        }
+    }
+
+    private fun saveScannedClassesToFirestore(classList: List<ClassModel>) {
+        try {
+            val db = FirebaseFirestore.getInstance()
+            val daysList = listOf("Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+
+            for (item in classList) {
+                val docData = hashMapOf(
+                    "courseCode" to item.courseName,
+                    "subject" to item.courseName,
+                    "timeSlot" to item.timeSlot,
+                    "room" to item.room,
+                    "dept" to rawDept,
+                    "department" to rawDept,
+                    "section" to rawSec,
+                    "sec" to rawSec,
+                    "day" to daysList[_uiState.value.selectedDayIndex]
+                )
+                db.collection("routines").add(docData)
+            }
+        } catch (e: Exception) {
+            Log.e("StudentPortalViewModel", "Error saving scanned classes to Firestore", e)
+        }
+    }
+
     fun clearSnackbar() {
         _uiState.update { it.copy(snackbarMessage = null) }
     }

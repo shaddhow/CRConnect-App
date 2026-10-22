@@ -2,8 +2,10 @@ package com.example.crconnect;
 
 import com.example.crconnect.core.utils.HapticUtils;
 
+import android.Manifest;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Typeface;
@@ -33,6 +35,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -301,7 +304,14 @@ public class RoutineActivity extends AppCompatActivity {
         });
 
         cameraLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-            if (result.getResultCode() == RESULT_OK && photoUri != null) {
+            if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                String uriStr = result.getData().getStringExtra(RoutineCameraActivity.EXTRA_CAPTURED_URI);
+                Uri uri = uriStr != null ? Uri.parse(uriStr) : result.getData().getData();
+                if (uri == null) uri = photoUri;
+                if (uri != null) {
+                    processRoutineImageUri(uri);
+                }
+            } else if (result.getResultCode() == RESULT_OK && photoUri != null) {
                 processRoutineImageUri(photoUri);
             }
         });
@@ -929,28 +939,50 @@ public class RoutineActivity extends AppCompatActivity {
 
     private void launchCameraForRoutine() {
         try {
-            ContentValues values = new ContentValues();
-            values.put(MediaStore.Images.Media.TITLE, "Routine_Scan_" + System.currentTimeMillis());
-            values.put(MediaStore.Images.Media.DESCRIPTION, "Scanned class routine image");
-            photoUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-
-            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 101);
+                return;
+            }
+            Intent intent = new Intent(RoutineActivity.this, RoutineCameraActivity.class);
             cameraLauncher.launch(intent);
         } catch (Exception e) {
-            Log.e("RoutineActivity", "Failed to open camera: " + e.getMessage(), e);
+            Log.e("RoutineActivity", "Failed to open CameraX camera: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 101) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                launchCameraForRoutine();
+            } else {
+                Toast.makeText(this, "Camera permission is required to scan routine", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
     private void processRoutineImageUri(Uri imageUri) {
         try {
             if (imageUri == null) return;
+
+            Dialog loadingDialog = new Dialog(this);
+            loadingDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            loadingDialog.setCancelable(false);
+            View dialogView = getLayoutInflater().inflate(R.layout.dialog_ocr_loading, null);
+            loadingDialog.setContentView(dialogView);
+            if (loadingDialog.getWindow() != null) {
+                loadingDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            }
+            loadingDialog.show();
+
             InputImage image = InputImage.fromFilePath(this, imageUri);
             TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
             recognizer.process(image)
                     .addOnSuccessListener(visionText -> runOnUiThread(() -> {
                         try {
+                            if (loadingDialog.isShowing()) loadingDialog.dismiss();
                             if (isFinishing() || isDestroyed()) return;
                             parseAndSaveRoutineOcrVisionText(visionText);
                         } catch (Exception e) {
@@ -959,7 +991,9 @@ public class RoutineActivity extends AppCompatActivity {
                     }))
                     .addOnFailureListener(e -> runOnUiThread(() -> {
                         try {
+                            if (loadingDialog.isShowing()) loadingDialog.dismiss();
                             if (isFinishing() || isDestroyed()) return;
+                            Toast.makeText(RoutineActivity.this, "OCR scan failed: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
                             Log.e("RoutineActivity", "OCR scan failed: " + e.getLocalizedMessage(), e);
                         } catch (Exception ex) {
                             Log.e("RoutineActivity", "Error handling OCR failure", ex);
@@ -1030,28 +1064,24 @@ public class RoutineActivity extends AppCompatActivity {
                 return;
             }
 
-            // 3. ROW DETECTION: Find Day Header Anchors (Y-coordinates)
+            // 3. Collect Day Anchors and Time Anchors
             List<DayAnchor> dayAnchors = new ArrayList<>();
             Map<String, DayAnchor> dayMap = new HashMap<>();
 
             for (TextLineItem lineItem : allLines) {
                 String normDay = normalizeDayName(lineItem.text);
                 if (normDay != null && !dayMap.containsKey(normDay)) {
-                    DayAnchor anchor = new DayAnchor(normDay, lineItem.centerY, lineItem.box);
+                    DayAnchor anchor = new DayAnchor(normDay, lineItem.centerX, lineItem.centerY, lineItem.box);
                     dayAnchors.add(anchor);
                     dayMap.put(normDay, anchor);
                 }
             }
-
-            // Sort Day Anchors top to bottom by Y-coordinate
-            Collections.sort(dayAnchors, (a, b) -> Integer.compare(a.centerY, b.centerY));
 
             if (dayAnchors.isEmpty()) {
                 parseAndSaveRoutineOcrText(fullText);
                 return;
             }
 
-            // 4. COLUMN DETECTION: Find Time Slot Headers (X-coordinates)
             List<TimeAnchor> timeAnchors = new ArrayList<>();
             for (TextLineItem lineItem : allLines) {
                 String txt = lineItem.text;
@@ -1059,124 +1089,87 @@ public class RoutineActivity extends AppCompatActivity {
                     String slotHeader = BUBT_TIME_SLOTS[i];
                     String startPart = slotHeader.split("-")[0].trim().substring(0, 5);
                     if (txt.contains(startPart)) {
-                        timeAnchors.add(new TimeAnchor(i, lineItem.centerX, lineItem.box));
+                        timeAnchors.add(new TimeAnchor(i, lineItem.centerX, lineItem.centerY, lineItem.box));
                         break;
                     }
                 }
             }
-            Collections.sort(timeAnchors, (a, b) -> Integer.compare(a.centerX, b.centerX));
 
-            // 5. MATRIX INTERSECTION MAPPING (Row x Column 2D Grid)
-            int numRows = dayAnchors.size();
-            int numCols = BUBT_TIME_SLOTS.length;
-
-            int[] rowYMin = new int[numRows];
-            int[] rowYMax = new int[numRows];
-
-            for (int i = 0; i < numRows; i++) {
-                DayAnchor cur = dayAnchors.get(i);
-                if (i == 0) {
-                    int dist = (numRows > 1) ? (dayAnchors.get(1).centerY - cur.centerY) : 160;
-                    rowYMin[i] = cur.centerY - (dist / 2);
-                } else {
-                    rowYMin[i] = (cur.centerY + dayAnchors.get(i - 1).centerY) / 2;
-                }
-
-                if (i == numRows - 1) {
-                    int dist = (numRows > 1) ? (cur.centerY - dayAnchors.get(i - 1).centerY) : 160;
-                    rowYMax[i] = cur.centerY + (dist / 2);
-                } else {
-                    rowYMax[i] = (cur.centerY + dayAnchors.get(i + 1).centerY) / 2;
-                }
+            // Determine Grid Orientation (Days as Columns vs Days as Rows)
+            int minDayX = Integer.MAX_VALUE, maxDayX = Integer.MIN_VALUE;
+            int minDayY = Integer.MAX_VALUE, maxDayY = Integer.MIN_VALUE;
+            for (DayAnchor da : dayAnchors) {
+                if (da.centerX < minDayX) minDayX = da.centerX;
+                if (da.centerX > maxDayX) maxDayX = da.centerX;
+                if (da.centerY < minDayY) minDayY = da.centerY;
+                if (da.centerY > maxDayY) maxDayY = da.centerY;
             }
-
-            int[] colXMin = new int[numCols];
-            int[] colXMax = new int[numCols];
-
-            if (timeAnchors.size() >= 2) {
-                for (int j = 0; j < numCols; j++) {
-                    int colCenter = -1;
-                    for (TimeAnchor ta : timeAnchors) {
-                        if (ta.slotIndex == j) {
-                            colCenter = ta.centerX;
-                            break;
-                        }
-                    }
-                    if (colCenter == -1) {
-                        int firstX = timeAnchors.get(0).centerX;
-                        int lastX = timeAnchors.get(timeAnchors.size() - 1).centerX;
-                        int spanSlots = Math.max(1, timeAnchors.get(timeAnchors.size() - 1).slotIndex - timeAnchors.get(0).slotIndex);
-                        int stepX = (lastX - firstX) / spanSlots;
-                        colCenter = firstX + (j - timeAnchors.get(0).slotIndex) * stepX;
-                    }
-
-                    int halfWidth = 110;
-                    colXMin[j] = colCenter - halfWidth;
-                    colXMax[j] = colCenter + halfWidth;
-                }
-            } else {
-                int minX = Integer.MAX_VALUE;
-                int maxX = Integer.MIN_VALUE;
-
-                for (TextLineItem li : allLines) {
-                    if (normalizeDayName(li.text) == null) {
-                        if (li.box.left < minX) minX = li.box.left;
-                        if (li.box.right > maxX) maxX = li.box.right;
-                    }
-                }
-
-                if (minX >= maxX) {
-                    minX = 100;
-                    maxX = 1000;
-                }
-
-                double colWidth = (maxX - minX) / (double) numCols;
-                for (int j = 0; j < numCols; j++) {
-                    colXMin[j] = (int) (minX + j * colWidth);
-                    colXMax[j] = (int) (minX + (j + 1) * colWidth);
-                }
-            }
+            int dayXSpan = maxDayX - minDayX;
+            int dayYSpan = maxDayY - minDayY;
+            boolean isDaysAsColumns = dayXSpan > dayYSpan;
 
             List<RoutineClassItem> parsedClasses = new ArrayList<>();
+            Set<String> seenKeys = new HashSet<>();
 
-            // Intersect each 2D Cell Matrix[Row i][Col j]
-            for (int i = 0; i < numRows; i++) {
-                DayAnchor dayAnchor = dayAnchors.get(i);
-                int yMin = rowYMin[i];
-                int yMax = rowYMax[i];
-
-                for (int j = 0; j < numCols; j++) {
-                    int xMin = colXMin[j];
-                    int xMax = colXMax[j];
-
-                    List<TextLineItem> cellLines = new ArrayList<>();
-                    for (TextLineItem li : allLines) {
-                        if (li.centerY >= yMin && li.centerY <= yMax && li.centerX >= xMin && li.centerX <= xMax) {
-                            cellLines.add(li);
+            for (TextLineItem li : allLines) {
+                String courseCode = extractCourseCode(li.text);
+                if (courseCode != null && containsCourseCodePattern(li.text)) {
+                    // Find closest Day Anchor
+                    DayAnchor bestDayAnchor = null;
+                    int minDayDist = Integer.MAX_VALUE;
+                    for (DayAnchor da : dayAnchors) {
+                        int dist = isDaysAsColumns ? Math.abs(da.centerX - li.centerX) : Math.abs(da.centerY - li.centerY);
+                        if (dist < minDayDist) {
+                            minDayDist = dist;
+                            bestDayAnchor = da;
                         }
                     }
 
-                    if (cellLines.isEmpty()) continue;
-
-                    StringBuilder cellTextBuilder = new StringBuilder();
-                    for (TextLineItem li : cellLines) {
-                        cellTextBuilder.append(li.text).append(" ");
+                    // Find closest Time Anchor
+                    int bestTimeSlotIndex = 0;
+                    if (!timeAnchors.isEmpty()) {
+                        TimeAnchor bestTimeAnchor = null;
+                        int minTimeDist = Integer.MAX_VALUE;
+                        for (TimeAnchor ta : timeAnchors) {
+                            int dist = isDaysAsColumns ? Math.abs(ta.centerY - li.centerY) : Math.abs(ta.centerX - li.centerX);
+                            if (dist < minTimeDist) {
+                                minTimeDist = dist;
+                                bestTimeAnchor = ta;
+                            }
+                        }
+                        if (bestTimeAnchor != null) {
+                            bestTimeSlotIndex = bestTimeAnchor.slotIndex;
+                        }
                     }
-                    String cellText = cellTextBuilder.toString().trim();
 
-                    String courseCode = extractCourseCode(cellText);
-                    if (courseCode != null && containsCourseCodePattern(cellText)) {
-                        String faculty = extractFacultyCode(cellText);
-                        if (faculty == null) faculty = "AAG";
+                    String dayName = bestDayAnchor != null ? bestDayAnchor.dayName : "Saturday";
+                    String timeSlot = BUBT_TIME_SLOTS[Math.min(bestTimeSlotIndex, BUBT_TIME_SLOTS.length - 1)];
 
-                        String rawRoom = extractRoomNumber(cellText);
-                        if (rawRoom == null) rawRoom = "2808";
+                    // Search nearby spatial lines for FC and Room
+                    String faculty = null;
+                    String rawRoom = null;
 
-                        String formattedRoom = formatRoomWithBuilding(rawRoom);
-                        String timeSlot = BUBT_TIME_SLOTS[j];
+                    for (TextLineItem near : allLines) {
+                        if (Math.abs(near.centerX - li.centerX) < 220 && Math.abs(near.centerY - li.centerY) < 140) {
+                            if (faculty == null) faculty = extractFacultyCode(near.text);
+                            if (rawRoom == null) rawRoom = extractRoomNumber(near.text);
+                        }
+                    }
+
+                    if (faculty == null) faculty = extractFacultyCode(li.text);
+                    if (faculty == null) faculty = "TBA";
+
+                    if (rawRoom == null) rawRoom = extractRoomNumber(li.text);
+                    if (rawRoom == null) rawRoom = "2808";
+
+                    String formattedRoom = formatRoomWithBuilding(rawRoom);
+                    String key = dayName + "_" + courseCode + "_" + timeSlot;
+
+                    if (!seenKeys.contains(key)) {
+                        seenKeys.add(key);
 
                         RoutineClassItem item = new RoutineClassItem();
-                        item.day = dayAnchor.dayName;
+                        item.day = dayName;
                         item.courseCode = courseCode;
                         item.subject = courseCode;
                         item.timeSlot = timeSlot;
@@ -1366,11 +1359,13 @@ public class RoutineActivity extends AppCompatActivity {
 
     private static class DayAnchor {
         String dayName;
+        int centerX;
         int centerY;
         Rect box;
 
-        DayAnchor(String dayName, int centerY, Rect box) {
+        DayAnchor(String dayName, int centerX, int centerY, Rect box) {
             this.dayName = dayName;
+            this.centerX = centerX;
             this.centerY = centerY;
             this.box = box;
         }
@@ -1379,11 +1374,13 @@ public class RoutineActivity extends AppCompatActivity {
     private static class TimeAnchor {
         int slotIndex;
         int centerX;
+        int centerY;
         Rect box;
 
-        TimeAnchor(int slotIndex, int centerX, Rect box) {
+        TimeAnchor(int slotIndex, int centerX, int centerY, Rect box) {
             this.slotIndex = slotIndex;
             this.centerX = centerX;
+            this.centerY = centerY;
             this.box = box;
         }
     }

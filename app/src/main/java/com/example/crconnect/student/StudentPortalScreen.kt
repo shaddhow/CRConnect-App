@@ -126,6 +126,9 @@ fun StudentPortalScreen(
                                 onAddClass = { course, time, room ->
                                     viewModel.addClass(course, time, room)
                                 },
+                                onScannedEntriesAdded = { entries ->
+                                    viewModel.saveScannedEntries(entries, context)
+                                },
                                 onShowToast = { msg -> viewModel.showToast(msg) }
                             )
                             2 -> StatusTab(

@@ -1,6 +1,8 @@
 package com.example.crconnect.student
 
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
 data class CandidateModel(
     val id: String,
@@ -22,7 +24,8 @@ data class ClassModel(
     val id: String,
     val timeSlot: String,
     val courseName: String,
-    val room: String
+    val room: String,
+    val attendanceState: String? = null
 )
 
 data class UserProfileModel(
@@ -51,6 +54,55 @@ fun getTodayDayIndex(): Int {
     }
 }
 
+fun calculateCurrentWeekDays(): Pair<String, List<DayModel>> {
+    val cal = Calendar.getInstance()
+    val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+    val daysFromSaturday = when (dayOfWeek) {
+        Calendar.SATURDAY -> 0
+        Calendar.SUNDAY -> 1
+        Calendar.MONDAY -> 2
+        Calendar.TUESDAY -> 3
+        Calendar.WEDNESDAY -> 4
+        Calendar.THURSDAY -> 5
+        Calendar.FRIDAY -> 6
+        else -> 0
+    }
+    cal.add(Calendar.DAY_OF_YEAR, -daysFromSaturday)
+
+    val shortNames = listOf("SAT", "SUN", "MON", "TUE", "WED", "THU", "FRI")
+    val daysList = mutableListOf<DayModel>()
+    var startDayNum = 0
+    var endDayNum = 0
+    var monthStr = ""
+
+    val dateFormat = SimpleDateFormat("MMM", Locale.US)
+
+    for (i in 0..6) {
+        val dateNum = cal.get(Calendar.DAY_OF_MONTH)
+        if (i == 0) {
+            startDayNum = dateNum
+            monthStr = dateFormat.format(cal.time)
+        }
+        if (i == 6) {
+            endDayNum = dateNum
+        }
+        daysList.add(
+            DayModel(
+                dayIndex = i,
+                shortName = shortNames[i],
+                dateNumber = dateNum,
+                hasClasses = false
+            )
+        )
+        cal.add(Calendar.DAY_OF_YEAR, 1)
+    }
+
+    val weekLabel = "This week · $startDayNum–$endDayNum $monthStr"
+    return Pair(weekLabel, daysList)
+}
+
+private val defaultWeekData = calculateCurrentWeekDays()
+
 data class StudentPortalUiState(
     val selectedTab: Int = 0, // Default to Candidates tab (index 0)
     val hasVoted: Boolean = false,
@@ -61,15 +113,8 @@ data class StudentPortalUiState(
     val isGateOpen: Boolean = false,
     val timerText: String = "00:00",
     val timerStatus: String = "Closed",
-    val scheduleDays: List<DayModel> = listOf(
-        DayModel(0, "SAT", 10, false),
-        DayModel(1, "SUN", 11, false),
-        DayModel(2, "MON", 12, false),
-        DayModel(3, "TUE", 13, false),
-        DayModel(4, "WED", 14, false),
-        DayModel(5, "THU", 15, false),
-        DayModel(6, "FRI", 16, false)
-    ),
+    val weekLabel: String = defaultWeekData.first,
+    val scheduleDays: List<DayModel> = defaultWeekData.second,
     val classMap: Map<Int, List<ClassModel>> = emptyMap(),
     val profile: UserProfileModel = UserProfileModel(),
     val isAddClassSheetOpen: Boolean = false,

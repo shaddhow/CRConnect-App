@@ -1,9 +1,17 @@
 package com.example.crconnect.student
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.text.SimpleDateFormat
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,16 +34,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -55,11 +68,15 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.core.content.ContextCompat
+import com.example.crconnect.RoutineCameraActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,12 +86,16 @@ fun RoutineTab(
     onOpenAddClass: () -> Unit,
     onCloseAddClass: () -> Unit,
     onAddClass: (courseName: String, timeSlot: String, room: String) -> Unit,
+    onScannedEntriesAdded: (List<ClassEntry>) -> Unit = { _ -> },
     onShowToast: (String) -> Unit
 ) {
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
     val selectedDay = uiState.scheduleDays.find { it.dayIndex == uiState.selectedDayIndex }
-        ?: uiState.scheduleDays.last() // Default to Friday (index 6) to match HTML
+        ?: uiState.scheduleDays.last()
     val classesForSelectedDay = uiState.classMap[uiState.selectedDayIndex] ?: emptyList()
+
+    var isOcrLoading by remember { mutableStateOf(false) }
 
     val greeting = remember {
         val hour = Calendar.getInstance()[Calendar.HOUR_OF_DAY]
@@ -87,6 +108,102 @@ fun RoutineTab(
 
     val todayDateFormatted = remember {
         SimpleDateFormat("EEEE, MMM d", Locale.getDefault()).format(Date())
+    }
+
+    fun processSelectedImage(uri: Uri) {
+        onCloseAddClass()
+        isOcrLoading = true
+        RoutineOcrParser.processOcrImage(
+            context = context,
+            imageUri = uri,
+            onSuccess = { entries ->
+                isOcrLoading = false
+                if (entries.isNotEmpty()) {
+                    onScannedEntriesAdded(entries)
+                    onShowToast("Routine processed successfully! (${entries.size} classes found)")
+                } else {
+                    onShowToast("No classes detected in image. Please try a clearer photo.")
+                }
+            },
+            onFailure = { e ->
+                isOcrLoading = false
+                onShowToast("Failed to process routine image: ${e.message}")
+            }
+        )
+    }
+
+    val cameraActivityLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val capturedUriString = result.data?.getStringExtra(RoutineCameraActivity.EXTRA_CAPTURED_URI)
+                ?: result.data?.dataString
+            if (!capturedUriString.isNullOrEmpty()) {
+                processSelectedImage(Uri.parse(capturedUriString))
+            } else {
+                val photoUri = result.data?.data
+                if (photoUri != null) {
+                    processSelectedImage(photoUri)
+                }
+            }
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val intent = Intent(context, RoutineCameraActivity::class.java)
+            cameraActivityLauncher.launch(intent)
+        } else {
+            onShowToast("Camera permission is required to scan routine")
+        }
+    }
+
+    val galleryPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            processSelectedImage(uri)
+        }
+    }
+
+    val storagePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            galleryPickerLauncher.launch("image/*")
+        } else {
+            galleryPickerLauncher.launch("image/*")
+        }
+    }
+
+    val onScanCameraClick = {
+        val permissionCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            val intent = Intent(context, RoutineCameraActivity::class.java)
+            cameraActivityLauncher.launch(intent)
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    val onChooseGalleryClick = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permissionCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES)
+            if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+                galleryPickerLauncher.launch("image/*")
+            } else {
+                storagePermissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
+            }
+        } else {
+            val permissionCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE)
+            if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+                galleryPickerLauncher.launch("image/*")
+            } else {
+                storagePermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+        }
     }
 
     Column(
@@ -164,14 +281,13 @@ fun RoutineTab(
 
         // Week Card (.card.c)
         DesignCard(padding = 24.dp) {
-            // Header Row: "This week · 10–16 Oct" + square buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "This week · 10–16 Oct",
+                    text = uiState.weekLabel,
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -179,7 +295,6 @@ fun RoutineTab(
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    // Previous Week Square Button (.rbtn.sq)
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -200,7 +315,6 @@ fun RoutineTab(
                         )
                     }
 
-                    // Next Week Square Button (.rbtn.sq)
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -225,7 +339,6 @@ fun RoutineTab(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Day Selector Pills (.days) - Equally spaced 7-day strip across screen width (SAT-FRI)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -274,7 +387,7 @@ fun RoutineTab(
             }
         }
 
-        // Class List or Empty State (scrolls smoothly with parent)
+        // Class List or Empty State
         if (classesForSelectedDay.isNotEmpty()) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -293,7 +406,6 @@ fun RoutineTab(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Circle Icon Box (.ib)
                     Box(
                         modifier = Modifier
                             .size(72.dp)
@@ -359,8 +471,42 @@ fun RoutineTab(
             AddClassBottomSheetContent(
                 selectedDayName = getDayFullName(selectedDay.shortName),
                 onAddClass = onAddClass,
+                onScanCamera = onScanCameraClick,
+                onChooseGallery = onChooseGalleryClick,
                 onShowToast = onShowToast
             )
+        }
+    }
+
+    // OCR Loading Spinner Modal Dialog ("Reading your routine...")
+    if (isOcrLoading) {
+        Dialog(onDismissRequest = { }) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.White)
+                    .padding(28.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    CircularProgressIndicator(
+                        color = Primary,
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Text(
+                        text = "Reading your routine...",
+                        fontFamily = PlusJakartaSansFontFamily,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TitleText,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
         }
     }
 }
@@ -421,14 +567,19 @@ private fun DayPill(
 }
 
 @Composable
-private fun ClassCardItem(classModel: ClassModel) {
+private fun ClassCardItem(
+    classModel: ClassModel,
+    onAttendanceChanged: (String?) -> Unit = {}
+) {
+    var attendanceState by remember(classModel.id) { mutableStateOf(classModel.attendanceState) }
+
     DesignCard {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Left Time Slot Badge (.tm)
+            // Left Time Box (.tm)
             Box(
                 modifier = Modifier
                     .width(72.dp)
@@ -438,7 +589,7 @@ private fun ClassCardItem(classModel: ClassModel) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = classModel.timeSlot.replace(" - ", "\n"),
+                    text = formatTimeSlotDisplay(classModel.timeSlot),
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
@@ -448,8 +599,12 @@ private fun ClassCardItem(classModel: ClassModel) {
                 )
             }
 
-            // Right Course Name & Room (.nm)
-            Column(modifier = Modifier.weight(1f)) {
+            // Right Course Details (.nm)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Course Title
                 Text(
                     text = classModel.courseName,
                     fontFamily = PlusJakartaSansFontFamily,
@@ -458,23 +613,178 @@ private fun ClassCardItem(classModel: ClassModel) {
                     color = TitleText,
                     lineHeight = 22.sp
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+
+                // Room Subtitle
                 Text(
-                    text = classModel.room,
+                    text = if (classModel.room.startsWith("Room ", ignoreCase = true)) classModel.room else "Room ${classModel.room}",
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = MutedText
                 )
+
+                // Pills Row (.pill-row) - Room Pill & Duration Pill
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 2.dp)
+                ) {
+                    // Room Pill
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(TintLightBlue)
+                            .border(1.dp, TintLightBlueBorder, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = null,
+                            tint = Primary,
+                            modifier = Modifier.size(11.dp)
+                        )
+                        Text(
+                            text = extractCleanRoomNumber(classModel.room),
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Primary
+                        )
+                    }
+
+                    // Duration Pill
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(TintLightBlue)
+                            .border(1.dp, TintLightBlueBorder, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccessTime,
+                            contentDescription = null,
+                            tint = Primary,
+                            modifier = Modifier.size(11.dp)
+                        )
+                        Text(
+                            text = calculateDurationText(classModel.timeSlot),
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Primary
+                        )
+                    }
+                }
+
+                // Attended / Missed Action Row (.att-row)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 6.dp)
+                ) {
+                    val isAttended = attendanceState == "att"
+                    val isMissed = attendanceState == "mis"
+
+                    // Attended Button (.att-btn.att)
+                    Row(
+                        modifier = Modifier
+                            .height(30.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isAttended) Color(0xFFDCFCE7) else Color.Transparent)
+                            .border(
+                                width = 1.5.dp,
+                                color = if (isAttended) Color(0xFF4ADE80) else Color(0xFF86EFAC),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .clickable {
+                                val newState = if (isAttended) null else "att"
+                                attendanceState = newState
+                                onAttendanceChanged(newState)
+                            }
+                            .padding(horizontal = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Attended",
+                            tint = if (isAttended) Color(0xFF166534) else Color(0xFF16A34A),
+                            modifier = Modifier.size(11.dp)
+                        )
+                        Text(
+                            text = "Attended",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isAttended) Color(0xFF166534) else Color(0xFF16A34A)
+                        )
+                    }
+
+                    // Missed Button (.att-btn.mis)
+                    Row(
+                        modifier = Modifier
+                            .height(30.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isMissed) Color(0xFFFEE2E2) else Color.Transparent)
+                            .border(
+                                width = 1.5.dp,
+                                color = if (isMissed) Color(0xFFF87171) else Color(0xFFFCA5A5),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .clickable {
+                                val newState = if (isMissed) null else "mis"
+                                attendanceState = newState
+                                onAttendanceChanged(newState)
+                            }
+                            .padding(horizontal = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Missed",
+                            tint = if (isMissed) Color(0xFF991B1B) else Color(0xFFDC2626),
+                            modifier = Modifier.size(11.dp)
+                        )
+                        Text(
+                            text = "Missed",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isMissed) Color(0xFF991B1B) else Color(0xFFDC2626)
+                        )
+                    }
+                }
             }
         }
     }
+}
+
+private fun formatTimeSlotDisplay(timeSlot: String): String {
+    if (timeSlot.contains(" - ")) return timeSlot.replace(" - ", "\n")
+    if (timeSlot.contains("–")) return timeSlot.replace("–", "\n")
+    return timeSlot
+}
+
+private fun extractCleanRoomNumber(room: String): String {
+    val clean = room.replace("Room", "", ignoreCase = true).replace("ROOM", "", ignoreCase = true).trim()
+    return clean.ifEmpty { "2810" }
+}
+
+private fun calculateDurationText(timeSlot: String): String {
+    return "1h 30m"
 }
 
 @Composable
 private fun AddClassBottomSheetContent(
     selectedDayName: String,
     onAddClass: (courseName: String, timeSlot: String, room: String) -> Unit,
+    onScanCamera: () -> Unit,
+    onChooseGallery: () -> Unit,
     onShowToast: (String) -> Unit
 ) {
     var isManualMode by remember { mutableStateOf(false) }
@@ -520,13 +830,13 @@ private fun AddClassBottomSheetContent(
 
             PrimaryButton(
                 text = "Scan with camera",
-                onClick = { },
+                onClick = onScanCamera,
                 icon = Icons.Default.CameraAlt
             )
 
             SecondaryButton(
                 text = "Choose from gallery",
-                onClick = { },
+                onClick = onChooseGallery,
                 icon = Icons.Default.Image
             )
 

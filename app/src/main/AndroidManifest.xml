@@ -2,9 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Internet, Camera, Notification & Vibrator Permissions -->
+    <!-- Internet, Camera, Storage, Notification & Vibrator Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -85,6 +88,13 @@
             android:name=".RoutineActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+
+        <!-- CameraX Routine Camera Activity -->
+        <activity
+            android:name=".RoutineCameraActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
 
         <!-- FileProvider for Sharing Generated Election PDF Reports -->
         <provider
