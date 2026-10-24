@@ -26,7 +26,17 @@ class RoutineRepository(context: Context) {
             existing.add(entryWithNormDay)
         }
 
-        val json = gson.toJson(existing)
+        val sortedList = existing.sortedBy { startMinutes(it.startTime) }
+        val json = gson.toJson(sortedList)
+        prefs.edit().putString(KEY_ENTRIES_JSON, json).apply()
+    }
+
+    fun replaceClassEntries(newEntries: List<ClassEntry>) {
+        val normalizedList = newEntries.map { newEntry ->
+            val normDay = normalizeDay(newEntry.day)
+            newEntry.copy(day = normDay)
+        }.sortedBy { startMinutes(it.startTime) }
+        val json = gson.toJson(normalizedList)
         prefs.edit().putString(KEY_ENTRIES_JSON, json).apply()
     }
 
@@ -42,7 +52,7 @@ class RoutineRepository(context: Context) {
 
     fun getEntriesForDay(day: String): List<ClassEntry> {
         val normTarget = normalizeDay(day)
-        return getClassEntries().filter { normalizeDay(it.day) == normTarget }
+        return getClassEntries().filter { normalizeDay(it.day) == normTarget }.sortedBy { startMinutes(it.startTime) }
     }
 
     fun getDaysWithClasses(): Set<String> {

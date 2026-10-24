@@ -5,7 +5,9 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.example.crconnect.RoutineLocalCache
 import com.example.crconnect.SessionManager
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -20,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.util.Calendar
 import java.util.Locale
 
 class StudentPortalViewModel : ViewModel() {
@@ -35,6 +38,7 @@ class StudentPortalViewModel : ViewModel() {
     private var sanitizedStudentId: String = "voter"
     private var rawDept: String = "Dept. of CSE"
     private var rawSec: String = "6"
+    private var rawIntake: String = "55"
 
     private var isInitialized = false
     private var isFirstAnnouncementLoad = true
@@ -54,6 +58,7 @@ class StudentPortalViewModel : ViewModel() {
 
         val session = SessionManager(context)
         rawDept = session.userDept.ifBlank { "Dept. of CSE" }
+        rawIntake = session.userIntake.ifBlank { "55" }
         val secStr = if (session.userRole.contains("Teacher", ignoreCase = true)) session.assignedSection else session.userSection
         rawSec = if (secStr.isNotBlank() && secStr != "--") secStr else "6"
         val rawId = session.userID.ifBlank { "student" }
@@ -62,14 +67,11 @@ class StudentPortalViewModel : ViewModel() {
         sanitizedSec = sanitizeSection(rawSec)
         sanitizedStudentId = rawId.replace(Regex("[^a-zA-Z0-9_]"), "_")
 
-        val initials = if (session.userName.isNotBlank()) {
-            val parts = session.userName.trim().split(" ")
-            if (parts.size >= 2) "${parts[0].first()}${parts[1].first()}".uppercase(Locale.getDefault())
-            else session.userName.take(2).uppercase(Locale.getDefault())
-        } else "ST"
+        val studentName = session.userName.ifBlank { "Student" }
+        val initials = computeInitials(studentName)
 
         val profileModel = UserProfileModel(
-            name = session.userName.ifBlank { "Student" },
+            name = studentName,
             email = session.userEmail.ifBlank { "student@bubt.edu.bd" },
             studentId = session.userID.ifBlank { "--" },
             intake = session.userIntake.ifBlank { "--" },
@@ -78,10 +80,140 @@ class StudentPortalViewModel : ViewModel() {
             initials = initials
         )
 
-        _uiState.update { it.copy(profile = profileModel) }
+        val todayIdx = getTodayDayIndex()
+        _uiState.update { it.copy(profile = profileModel, selectedDayIndex = todayIdx) }
+
+        val repo = RoutineRepository(context)
+        val savedEntries = repo.getClassEntries()
+        if (savedEntries.isNotEmpty()) {
+            loadRoutineEntriesIntoState(savedEntries)
+        } else {
+            loadFirestoreRoutineToCache(context)
+        }
 
         setupFirebaseRealtimeDatabase()
-        setupFirestoreRoutines()
+    }
+
+    fun getTodayDayIndex(): Int {
+        val cal = Calendar.getInstance()
+        return when (cal.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.SATURDAY -> 0
+            Calendar.SUNDAY -> 1
+            Calendar.MONDAY -> 2
+            Calendar.TUESDAY -> 3
+            Calendar.WEDNESDAY -> 4
+            Calendar.THURSDAY -> 5
+            Calendar.FRIDAY -> 6
+            else -> 0
+        }
+    }
+
+    private fun loadRoutineEntriesIntoState(entries: List<ClassEntry>) {
+        try {
+            if (entries.isEmpty()) return
+            val daysList = listOf("SAT", "SUN", "MON", "TUE", "WED", "THR", "FRI")
+            val loadedMap = mutableMapOf<Int, MutableList<ClassModel>>()
+
+            for (entry in entries) {
+                val dayIdx = daysList.indexOfFirst { it.equals(entry.day, ignoreCase = true) }
+                val targetIdx = if (dayIdx != -1) dayIdx else 0
+                val timeSlot = "${entry.startTime} - ${entry.endTime}"
+                val courseDisplay = if (entry.faculty.isNotBlank() && entry.faculty != "TBA" && !entry.course.contains("(")) {
+                    "${entry.course} (${entry.faculty})"
+                } else {
+                    entry.course
+                }
+                val roomDisplay = if (entry.room.startsWith("Room") || entry.room.startsWith("TBA")) entry.room else "Room ${entry.room}"
+
+                val classModel = ClassModel(
+                    id = "${entry.day}_${entry.course}_${entry.startTime}",
+                    timeSlot = timeSlot,
+                    courseName = courseDisplay,
+                    room = roomDisplay
+                )
+                val currentList = loadedMap.getOrPut(targetIdx) { mutableListOf() }
+                if (!currentList.any { it.courseName == classModel.courseName && it.timeSlot == classModel.timeSlot }) {
+                    currentList.add(classModel)
+                }
+            }
+
+            loadedMap.values.forEach { list ->
+                list.sortBy { startMinutes(it.timeSlot) }
+            }
+
+            val updatedDays = _uiState.value.scheduleDays.map { day ->
+                val hasClasses = (loadedMap[day.dayIndex]?.isNotEmpty() == true)
+                day.copy(hasClasses = hasClasses)
+            }
+
+            _uiState.update { currentState ->
+                currentState.copy(
+                    classMap = loadedMap,
+                    scheduleDays = updatedDays
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("StudentPortalViewModel", "Error updating routine entries state", e)
+        }
+    }
+
+    private fun loadFirestoreRoutineToCache(context: Context) {
+        try {
+            val session = SessionManager(context)
+            val uid = FirebaseAuth.getInstance().currentUser?.uid
+                ?: session.userID.ifBlank { return }
+
+            if (uid.isBlank()) return
+
+            val db = FirebaseFirestore.getInstance()
+            db.collection("users")
+                .document(uid)
+                .collection("routine")
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    if (snapshot != null && !snapshot.isEmpty) {
+                        val entries = mutableListOf<ClassEntry>()
+                        for (doc in snapshot.documents) {
+                            val day = doc.getString("day") ?: ""
+                            val course = doc.getString("courseCode") ?: doc.getString("subject") ?: ""
+                            val faculty = doc.getString("faculty") ?: doc.getString("teacher") ?: "TBA"
+                            val room = doc.getString("room") ?: "TBA"
+                            val startTime = doc.getString("startTime") ?: "08:15 AM"
+                            val endTime = doc.getString("endTime") ?: "09:45 AM"
+                            val intake = doc.getString("intake") ?: rawIntake
+                            val section = doc.getString("section") ?: rawSec
+                            val needsReview = doc.getBoolean("needsReview") ?: false
+
+                            if (day.isNotBlank() && course.isNotBlank()) {
+                                entries.add(
+                                    ClassEntry(
+                                        day = day,
+                                        course = course,
+                                        faculty = faculty,
+                                        room = room,
+                                        startTime = startTime,
+                                        endTime = endTime,
+                                        intake = intake,
+                                        section = section,
+                                        needsReview = needsReview
+                                    )
+                                )
+                            }
+                        }
+
+                        if (entries.isNotEmpty()) {
+                            val repo = RoutineRepository(context)
+                            repo.replaceClassEntries(entries)
+                            loadRoutineEntriesIntoState(entries)
+                        }
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("StudentPortalViewModel", "Error loading routine from Firestore backup", e)
+                }
+        } catch (e: Exception) {
+            Log.e("StudentPortalViewModel", "Error in loadFirestoreRoutineToCache", e)
+        }
     }
 
     private fun setupFirebaseRealtimeDatabase() {
@@ -301,62 +433,69 @@ class StudentPortalViewModel : ViewModel() {
     private fun setupFirestoreRoutines() {
         try {
             val db = FirebaseFirestore.getInstance()
+            val deptKey = getSanitizedKey(rawDept)
+            val intakeKey = getSanitizedKey(rawIntake)
+            val secKey = getSanitizedKey(rawSec)
+
+            firestoreRegistration?.remove()
             firestoreRegistration = db.collection("routines")
+                .document(deptKey)
+                .collection(intakeKey)
+                .document(secKey)
+                .collection("schedule")
                 .addSnapshotListener { querySnapshot, error ->
-                    if (error != null || querySnapshot == null) {
-                        Log.e("StudentPortalViewModel", "Error fetching routines", error)
+                    if (error != null || querySnapshot == null || querySnapshot.isEmpty) {
+                        Log.d("StudentPortalViewModel", "Firestore schedule empty/offline, keeping local routine")
                         return@addSnapshotListener
                     }
 
+                    val daysList = listOf("SAT", "SUN", "MON", "TUE", "WED", "THR", "FRI")
                     val classMapMutable = mutableMapOf<Int, MutableList<ClassModel>>()
 
                     for (doc in querySnapshot.documents) {
-                        val dayStr = doc.getString("day") ?: doc.getString("validDay") ?: continue
-                        val course = doc.getString("courseCode") ?: doc.getString("subject") ?: doc.getString("courseName") ?: "Course"
-                        val timeSlot = doc.getString("timeSlot") ?: "09:00 - 10:30"
-                        val room = doc.getString("room") ?: "Room TBA"
-                        val docDept = doc.getString("dept") ?: doc.getString("department") ?: ""
-                        val docSec = doc.getString("section") ?: doc.getString("sec") ?: ""
+                        val dayStr = doc.getString("day") ?: continue
+                        val courseCode = doc.getString("courseCode") ?: doc.getString("subject") ?: continue
+                        val faculty = doc.getString("faculty") ?: doc.getString("teacher") ?: "TBA"
+                        val roomStr = doc.getString("room") ?: "TBA"
+                        val timeSlot = doc.getString("timeSlot") ?: "08:15 AM - 09:45 AM"
 
-                        // Filter by department and section if provided in Firestore routine
-                        if (docDept.isNotBlank() && !docDept.equals(rawDept, ignoreCase = true) && !docDept.equals(sanitizedDept, ignoreCase = true)) {
-                            continue
-                        }
-                        if (docSec.isNotBlank() && docSec != rawSec && docSec != sanitizedSec) {
-                            continue
+                        val dayIndex = daysList.indexOfFirst { it.equals(dayStr, ignoreCase = true) }
+                        if (dayIndex == -1) continue
+
+                        val courseDisplayName = if (faculty.isNotBlank() && faculty != "TBA" && !courseCode.contains("(")) {
+                            "$courseCode ($faculty)"
+                        } else {
+                            courseCode
                         }
 
-                        val dayIndex = when (dayStr.uppercase(Locale.getDefault())) {
-                            "SAT", "SATURDAY" -> 0
-                            "SUN", "SUNDAY" -> 1
-                            "MON", "MONDAY" -> 2
-                            "TUE", "TUESDAY" -> 3
-                            "WED", "WEDNESDAY" -> 4
-                            "THU", "THURSDAY" -> 5
-                            "FRI", "FRIDAY" -> 6
-                            else -> continue
-                        }
+                        val roomDisplayName = if (roomStr.startsWith("Room") || roomStr.startsWith("TBA")) roomStr else "Room $roomStr"
 
                         val classItem = ClassModel(
                             id = doc.id,
                             timeSlot = timeSlot,
-                            courseName = course,
-                            room = room
+                            courseName = courseDisplayName,
+                            room = roomDisplayName
                         )
 
                         classMapMutable.getOrPut(dayIndex) { mutableListOf() }.add(classItem)
                     }
 
-                    val updatedDays = _uiState.value.scheduleDays.map { day ->
-                        val hasClasses = (classMapMutable[day.dayIndex]?.isNotEmpty() == true)
-                        day.copy(hasClasses = hasClasses)
-                    }
+                    if (classMapMutable.isNotEmpty()) {
+                        classMapMutable.values.forEach { list ->
+                            list.sortBy { startMinutes(it.timeSlot) }
+                        }
 
-                    _uiState.update { currentState ->
-                        currentState.copy(
-                            classMap = classMapMutable,
-                            scheduleDays = updatedDays
-                        )
+                        val updatedDays = _uiState.value.scheduleDays.map { day ->
+                            val hasClasses = (classMapMutable[day.dayIndex]?.isNotEmpty() == true)
+                            day.copy(hasClasses = hasClasses)
+                        }
+
+                        _uiState.update { currentState ->
+                            currentState.copy(
+                                classMap = classMapMutable,
+                                scheduleDays = updatedDays
+                            )
+                        }
                     }
                 }
         } catch (e: Exception) {
@@ -444,7 +583,7 @@ class StudentPortalViewModel : ViewModel() {
                 courseName = courseName,
                 room = room.ifBlank { "Room TBA" }
             )
-            val updatedClassList = currentClasses + newClass
+            val updatedClassList = (currentClasses + newClass).sortedBy { startMinutes(it.timeSlot) }
             val updatedClassMap = currentState.classMap.toMutableMap().apply {
                 put(currentDayIndex, updatedClassList)
             }
@@ -464,25 +603,43 @@ class StudentPortalViewModel : ViewModel() {
     }
 
     fun saveScannedEntries(entries: List<ClassEntry>, context: Context? = null) {
-        val repo = RoutineRepository(context ?: FirebaseDatabase.getInstance().app.applicationContext)
-        repo.saveClassEntries(entries)
+        val ctx = context ?: FirebaseDatabase.getInstance().app.applicationContext
+        val sortedEntries = entries.sortedBy { startMinutes(it.startTime) }
+        val repo = RoutineRepository(ctx)
+        // Overwrite saved routine entries permanently with newly scanned entries
+        repo.replaceClassEntries(sortedEntries)
 
         val daysList = listOf("SAT", "SUN", "MON", "TUE", "WED", "THR", "FRI")
-        val updatedMap = _uiState.value.classMap.toMutableMap()
+        val updatedMap = mutableMapOf<Int, MutableList<ClassModel>>()
 
-        for (entry in entries) {
+        for (entry in sortedEntries) {
             val dayIdx = daysList.indexOfFirst { it.equals(entry.day, ignoreCase = true) }
-            val targetIdx = if (dayIdx != -1) dayIdx else _uiState.value.selectedDayIndex
+            val targetIdx = if (dayIdx != -1) dayIdx else getTodayDayIndex()
             val timeSlot = "${entry.startTime} - ${entry.endTime}"
+            val courseDisplay = if (entry.faculty.isNotBlank() && entry.faculty != "TBA" && !entry.course.contains("(")) {
+                "${entry.course} (${entry.faculty})"
+            } else {
+                entry.course
+            }
+            val roomDisplay = if (entry.room.startsWith("Room") || entry.room.startsWith("TBA")) entry.room else "Room ${entry.room}"
+
             val classModel = ClassModel(
                 id = "${entry.day}_${entry.course}_${entry.startTime}",
                 timeSlot = timeSlot,
-                courseName = "${entry.course} (${entry.faculty})",
-                room = if (entry.room.startsWith("Room")) entry.room else "Room ${entry.room}"
+                courseName = courseDisplay,
+                room = roomDisplay
             )
-            val currentList = updatedMap[targetIdx] ?: emptyList()
-            updatedMap[targetIdx] = (currentList + classModel).distinctBy { "${it.courseName}_${it.timeSlot}" }
+            val currentList = updatedMap.getOrPut(targetIdx) { mutableListOf() }
+            if (!currentList.any { it.courseName == classModel.courseName && it.timeSlot == classModel.timeSlot }) {
+                currentList.add(classModel)
+            }
         }
+
+        updatedMap.values.forEach { list ->
+            list.sortBy { startMinutes(it.timeSlot) }
+        }
+
+        val todayIdx = getTodayDayIndex()
 
         val updatedDays = _uiState.value.scheduleDays.map { day ->
             val hasClasses = (updatedMap[day.dayIndex]?.isNotEmpty() == true)
@@ -493,34 +650,120 @@ class StudentPortalViewModel : ViewModel() {
             currentState.copy(
                 classMap = updatedMap,
                 scheduleDays = updatedDays,
+                selectedDayIndex = todayIdx, // Automatically display today's routine after scanning
                 isAddClassSheetOpen = false,
                 snackbarMessage = "Scanned routine processed (${entries.size} classes saved)"
             )
         }
+
+        // Sync to Firestore under routines/{dept}/{intake}/{section}/schedule
+        saveScannedClassesToFirestore(entries, ctx)
     }
 
-    private fun saveScannedClassesToFirestore(classList: List<ClassModel>) {
+    fun deleteCurrentRoutine(context: Context? = null) {
+        val ctx = context ?: FirebaseDatabase.getInstance().app.applicationContext
+
+        // 1. Clear local SharedPreferences repositories
+        val repo = RoutineRepository(ctx)
+        repo.clearEntries()
+        RoutineLocalCache.clearRoutineLocally(ctx)
+
+        // 2. Clear Firestore schedule for this dept/intake/section
         try {
             val db = FirebaseFirestore.getInstance()
-            val daysList = listOf("Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+            val session = SessionManager(ctx)
+            val deptKey = getSanitizedKey(session.userDept.ifBlank { rawDept })
+            val intakeKey = getSanitizedKey(session.userIntake.ifBlank { rawIntake })
+            val secKey = getSanitizedKey(session.userSection.ifBlank { rawSec })
 
-            for (item in classList) {
-                val docData = hashMapOf(
-                    "courseCode" to item.courseName,
-                    "subject" to item.courseName,
-                    "timeSlot" to item.timeSlot,
-                    "room" to item.room,
-                    "dept" to rawDept,
-                    "department" to rawDept,
-                    "section" to rawSec,
-                    "sec" to rawSec,
-                    "day" to daysList[_uiState.value.selectedDayIndex]
-                )
-                db.collection("routines").add(docData)
+            val scheduleRef = db.collection("routines")
+                .document(deptKey)
+                .collection(intakeKey)
+                .document(secKey)
+                .collection("schedule")
+
+            scheduleRef.get().addOnSuccessListener { snapshot ->
+                val batch = db.batch()
+                for (doc in snapshot.documents) {
+                    batch.delete(doc.reference)
+                }
+                batch.commit().addOnFailureListener { e ->
+                    Log.e("StudentPortalViewModel", "Error deleting routine docs from Firestore", e)
+                }
+            }.addOnFailureListener { e ->
+                Log.e("StudentPortalViewModel", "Error fetching routine docs for deletion", e)
             }
         } catch (e: Exception) {
-            Log.e("StudentPortalViewModel", "Error saving scanned classes to Firestore", e)
+            Log.e("StudentPortalViewModel", "Error in deleteCurrentRoutine", e)
         }
+
+        // 3. Reset UI state schedule days & classMap immediately
+        val updatedDays = _uiState.value.scheduleDays.map { day ->
+            day.copy(hasClasses = false)
+        }
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                classMap = emptyMap(),
+                scheduleDays = updatedDays,
+                isAddClassSheetOpen = false,
+                snackbarMessage = "Current routine deleted"
+            )
+        }
+    }
+
+    private fun saveScannedClassesToFirestore(entries: List<ClassEntry>, context: Context) {
+        try {
+            val db = FirebaseFirestore.getInstance()
+            val session = SessionManager(context)
+            val deptKey = getSanitizedKey(session.userDept.ifBlank { rawDept })
+            val intakeKey = getSanitizedKey(session.userIntake.ifBlank { rawIntake })
+            val secKey = getSanitizedKey(session.userSection.ifBlank { rawSec })
+
+            val sortedEntries = entries.sortedBy { startMinutes(it.startTime) }
+
+            val scheduleRef = db.collection("routines")
+                .document(deptKey)
+                .collection(intakeKey)
+                .document(secKey)
+                .collection("schedule")
+
+            scheduleRef.get().addOnSuccessListener { snapshot ->
+                val batch = db.batch()
+                for (doc in snapshot.documents) {
+                    batch.delete(doc.reference)
+                }
+                for (entry in sortedEntries) {
+                    val newDocRef = scheduleRef.document()
+                    val docData = hashMapOf(
+                        "courseCode" to entry.course,
+                        "subject" to entry.course,
+                        "faculty" to entry.faculty,
+                        "teacher" to entry.faculty,
+                        "timeSlot" to "${entry.startTime} - ${entry.endTime}",
+                        "room" to entry.room,
+                        "day" to entry.day,
+                        "startTime" to entry.startTime,
+                        "endTime" to entry.endTime
+                    )
+                    batch.set(newDocRef, docData)
+                }
+                batch.commit().addOnFailureListener { e ->
+                    Log.e("StudentPortalViewModel", "Error batch saving scanned classes to Firestore", e)
+                }
+            }.addOnFailureListener { e ->
+                Log.e("StudentPortalViewModel", "Error getting schedule docs for cleanup", e)
+            }
+        } catch (e: Exception) {
+            Log.e("StudentPortalViewModel", "Error in saveScannedClassesToFirestore", e)
+        }
+    }
+
+    private fun getSanitizedKey(key: String): String {
+        if (key.isBlank()) return "default"
+        return key.trim().lowercase(Locale.ROOT)
+            .replace(Regex("[^a-z0-9_]"), "_")
+            .replace(Regex("_+"), "_")
     }
 
     fun clearSnackbar() {

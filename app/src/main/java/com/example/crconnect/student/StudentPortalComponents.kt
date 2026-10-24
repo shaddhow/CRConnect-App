@@ -256,12 +256,18 @@ fun TextLink(
 
 @Composable
 fun TopHeader(
-    initials: String,
+    name: String = "Student",
+    department: String = "Dept. of CSE",
+    initials: String = "ST",
     onMenuClick: () -> Unit,
     onAvatarClick: () -> Unit,
     onSignOutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val displayName = name.ifBlank { "Student" }
+    val displayDepartment = department.ifBlank { "Dept. of CSE" }
+    val displayInitials = if (initials.isNotBlank()) initials else computeInitials(displayName)
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -306,7 +312,7 @@ fun TopHeader(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = initials,
+                text = displayInitials,
                 color = Color.White,
                 fontFamily = PlusJakartaSansFontFamily,
                 fontWeight = FontWeight.Bold,
@@ -321,7 +327,7 @@ fun TopHeader(
             modifier = Modifier.weight(1f)
         ) {
             Text(
-                text = "Election Portal",
+                text = displayName,
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
@@ -330,7 +336,7 @@ fun TopHeader(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "Dashboard · Department of CSE, BUBT",
+                text = displayDepartment,
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Normal,

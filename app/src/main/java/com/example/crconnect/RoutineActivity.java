@@ -1,6 +1,7 @@
 package com.example.crconnect;
 
 import com.example.crconnect.core.utils.HapticUtils;
+import com.example.crconnect.student.RoutineRepository;
 
 import android.Manifest;
 import android.content.ContentValues;
@@ -52,6 +53,9 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -278,17 +282,12 @@ public class RoutineActivity extends AppCompatActivity {
             });
         }
 
-        String role = sessionManager.getUserRole();
-        boolean canEdit = role != null && (role.equalsIgnoreCase("CR") || role.equalsIgnoreCase("Teacher/Admin") || role.equalsIgnoreCase("Teacher"));
-        if (canEdit) {
-            fabAddRoutineClass.setVisibility(View.VISIBLE);
-            fabAddRoutineClass.setOnClickListener(v -> {
-                HapticUtils.mediumClick(v);
-                showScanOptionsBottomSheet();
-            });
-        } else {
-            fabAddRoutineClass.setVisibility(View.GONE);
-        }
+        boolean canEdit = true;
+        fabAddRoutineClass.setVisibility(View.VISIBLE);
+        fabAddRoutineClass.setOnClickListener(v -> {
+            HapticUtils.mediumClick(v);
+            showScanOptionsBottomSheet();
+        });
 
         // Attach global haptics across all interactive views in activity layout
         HapticUtils.attachHapticsToAllInteractiveViews(findViewById(android.R.id.content));
@@ -563,6 +562,7 @@ public class RoutineActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             try {
                 if (isFinishing() || isDestroyed()) return;
+                selectedDay = getTodayDayName();
                 setupDayPicker();
                 loadRoutineForDay(selectedDay);
                 updateUpNextBanner();
@@ -592,6 +592,17 @@ public class RoutineActivity extends AppCompatActivity {
         return dayClasses;
     }
 
+    private String getUserUid() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null && currentUser.getUid() != null && !currentUser.getUid().trim().isEmpty()) {
+            return currentUser.getUid().trim();
+        }
+        if (sessionManager != null && sessionManager.getUserID() != null && !sessionManager.getUserID().trim().isEmpty()) {
+            return sessionManager.getUserID().trim();
+        }
+        return "default_user";
+    }
+
     private void loadRoutineForDay(String day) {
         selectedDay = day;
         highlightSelectedDay(day);
@@ -605,11 +616,9 @@ public class RoutineActivity extends AppCompatActivity {
             routineListenerRegistration = null;
         }
 
-        routineListenerRegistration = FirebaseFirestore.getInstance().collection("routines")
-                .document(dept)
-                .collection(intake)
-                .document(section)
-                .collection("schedule")
+        routineListenerRegistration = FirebaseFirestore.getInstance().collection("users")
+                .document(getUserUid())
+                .collection("routine")
                 .addSnapshotListener((querySnapshot, error) -> {
                     List<RoutineClassItem> allItems = new ArrayList<>();
 
@@ -669,15 +678,9 @@ public class RoutineActivity extends AppCompatActivity {
     }
 
     private void updateUpNextBanner() {
-        String dept = getSanitizedKey(sessionManager.getUserDept());
-        String intake = getSanitizedKey(sessionManager.getUserIntake());
-        String section = getSanitizedKey(sessionManager.getUserSection());
-
-        FirebaseFirestore.getInstance().collection("routines")
-                .document(dept)
-                .collection(intake)
-                .document(section)
-                .collection("schedule")
+        FirebaseFirestore.getInstance().collection("users")
+                .document(getUserUid())
+                .collection("routine")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     List<RoutineClassItem> allItems = new ArrayList<>();
@@ -929,12 +932,52 @@ public class RoutineActivity extends AppCompatActivity {
             galleryLauncher.launch("image/*");
         });
 
+        View btnDelete = view.findViewById(R.id.btnDeleteRoutine);
+        if (btnDelete != null) {
+            btnDelete.setOnClickListener(v -> {
+                bottomSheetDialog.dismiss();
+                clearCurrentRoutineJava();
+            });
+        }
+
         view.findViewById(R.id.btnAddManual).setOnClickListener(v -> {
             bottomSheetDialog.dismiss();
             showAddClassDialog();
         });
 
         bottomSheetDialog.show();
+    }
+
+    private void clearCurrentRoutineJava() {
+        try {
+            // 1. Clear local cache
+            RoutineLocalCache.clearRoutineLocally(this);
+            RoutineRepository repo = new RoutineRepository(this);
+            repo.clearEntries();
+
+            // 2. Clear Firestore
+            FirebaseFirestore.getInstance().collection("users")
+                    .document(getUserUid())
+                    .collection("routine")
+                    .get()
+                    .addOnSuccessListener(snapshot -> {
+                        WriteBatch batch = FirebaseFirestore.getInstance().batch();
+                        for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                            batch.delete(doc.getReference());
+                        }
+                        batch.commit();
+                    });
+
+            // 3. Clear UI list and refresh
+            routineList.clear();
+            if (routineAdapter != null) {
+                routineAdapter.notifyDataSetChanged();
+            }
+            updateUiVisibilityAndSummary();
+            Toast.makeText(this, "Current routine deleted", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e("RoutineActivity", "Error clearing routine", e);
+        }
     }
 
     private void launchCameraForRoutine() {
@@ -1047,14 +1090,64 @@ public class RoutineActivity extends AppCompatActivity {
                 }
             }
 
-            // 2. Collect all text lines with bounding boxes
+            // 2. Collect all text lines with bounding boxes (Decomposing multi-column lines into elements)
             List<TextLineItem> allLines = new ArrayList<>();
+            Pattern coursePattern = Pattern.compile("(?i)((?:CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV|[A-Z]{2,4})[-_ ]*[0-9]{3,4}[A-Z]?)");
+
             for (Text.TextBlock block : visionText.getTextBlocks()) {
                 for (Text.Line line : block.getLines()) {
-                    String lineText = line.getText().trim();
-                    Rect box = line.getBoundingBox();
-                    if (!lineText.isEmpty() && box != null) {
-                        allLines.add(new TextLineItem(lineText, box));
+                    List<Text.Element> elements = line.getElements();
+                    if (elements.isEmpty()) continue;
+
+                    int courseMatches = 0;
+                    Matcher matcher = coursePattern.matcher(line.getText());
+                    while (matcher.find()) {
+                        courseMatches++;
+                    }
+
+                    if (courseMatches <= 1 && elements.size() <= 3) {
+                        String lineText = line.getText().trim();
+                        Rect box = line.getBoundingBox();
+                        if (!lineText.isEmpty() && box != null) {
+                            allLines.add(new TextLineItem(lineText, box));
+                        }
+                    } else {
+                        int i = 0;
+                        while (i < elements.size()) {
+                            Text.Element elem1 = elements.get(i);
+                            String elem1Text = elem1.getText().trim();
+                            Rect elem1Box = elem1.getBoundingBox();
+
+                            if (elem1Text.isEmpty() || elem1Box == null) {
+                                i++;
+                                continue;
+                            }
+
+                            if (i + 1 < elements.size()) {
+                                Text.Element elem2 = elements.get(i + 1);
+                                String elem2Text = elem2.getText().trim();
+                                Rect elem2Box = elem2.getBoundingBox();
+
+                                if (elem2Box != null && !elem2Text.isEmpty()) {
+                                    String combined = elem1Text + " " + elem2Text;
+                                    if (coursePattern.matcher(combined).find() ||
+                                            combined.toUpperCase().contains("FC") ||
+                                            combined.toUpperCase().contains("R:") ||
+                                            combined.toUpperCase().contains("ROOM") ||
+                                            combined.toUpperCase().contains("INTAKE")) {
+
+                                        Rect unionBox = new Rect(elem1Box);
+                                        unionBox.union(elem2Box);
+                                        allLines.add(new TextLineItem(combined, unionBox));
+                                        i += 2;
+                                        continue;
+                                    }
+                                }
+                            }
+
+                            allLines.add(new TextLineItem(elem1Text, elem1Box));
+                            i++;
+                        }
                     }
                 }
             }
@@ -1082,17 +1175,34 @@ public class RoutineActivity extends AppCompatActivity {
                 return;
             }
 
-            List<TimeAnchor> timeAnchors = new ArrayList<>();
+            // 3. Collect Unique Time Column Anchors (1 Anchor per Slot Index 0..5)
+            Map<Integer, TimeAnchor> slotToAnchorMap = new HashMap<>();
+            String[][] timeKeywordsJava = {
+                    {"08:15", "8:15"},
+                    {"09:45", "9:45"},
+                    {"11:15"},
+                    {"01:15", "1:15", "13:15"},
+                    {"02:45", "2:45", "14:45"},
+                    {"04:15", "4:15", "16:15"}
+            };
+
             for (TextLineItem lineItem : allLines) {
                 String txt = lineItem.text;
-                for (int i = 0; i < BUBT_TIME_SLOTS.length; i++) {
-                    String slotHeader = BUBT_TIME_SLOTS[i];
-                    String startPart = slotHeader.split("-")[0].trim().substring(0, 5);
-                    if (txt.contains(startPart)) {
-                        timeAnchors.add(new TimeAnchor(i, lineItem.centerX, lineItem.centerY, lineItem.box));
-                        break;
+                for (int slotIdx = 0; slotIdx < timeKeywordsJava.length; slotIdx++) {
+                    if (!slotToAnchorMap.containsKey(slotIdx)) {
+                        for (String kw : timeKeywordsJava[slotIdx]) {
+                            if (txt.contains(kw)) {
+                                slotToAnchorMap.put(slotIdx, new TimeAnchor(slotIdx, lineItem.centerX, lineItem.centerY, lineItem.box));
+                                break;
+                            }
+                        }
                     }
                 }
+            }
+
+            if (dayAnchors.isEmpty() || slotToAnchorMap.isEmpty()) {
+                parseAndSaveRoutineOcrText(fullText);
+                return;
             }
 
             // Determine Grid Orientation (Days as Columns vs Days as Rows)
@@ -1108,82 +1218,121 @@ public class RoutineActivity extends AppCompatActivity {
             int dayYSpan = maxDayY - minDayY;
             boolean isDaysAsColumns = dayXSpan > dayYSpan;
 
+            // Sort Day Anchors
+            List<DayAnchor> sortedDayAnchors = new ArrayList<>(dayAnchors);
+            Collections.sort(sortedDayAnchors, (a, b) -> isDaysAsColumns ? Integer.compare(a.centerX, b.centerX) : Integer.compare(a.centerY, b.centerY));
+
+            // Sort Time Anchors
+            List<TimeAnchor> sortedTimeAnchors = new ArrayList<>(slotToAnchorMap.values());
+            Collections.sort(sortedTimeAnchors, (a, b) -> isDaysAsColumns ? Integer.compare(a.centerY, b.centerY) : Integer.compare(a.centerX, b.centerX));
+
+            // Group ALL text items into strict (DayRow, TimeColumn) Cell Buckets
+            Map<String, List<TextLineItem>> cellBuckets = new HashMap<>();
+
+            for (TextLineItem item : allLines) {
+                // Midpoint Binning for Day Anchor
+                String dayName = "Saturday";
+                int dayCoord = isDaysAsColumns ? item.centerX : item.centerY;
+                if (!sortedDayAnchors.isEmpty()) {
+                    dayName = sortedDayAnchors.get(sortedDayAnchors.size() - 1).dayName;
+                    for (int i = 0; i < sortedDayAnchors.size() - 1; i++) {
+                        DayAnchor curr = sortedDayAnchors.get(i);
+                        DayAnchor next = sortedDayAnchors.get(i + 1);
+                        int cCoord = isDaysAsColumns ? curr.centerX : curr.centerY;
+                        int nCoord = isDaysAsColumns ? next.centerX : next.centerY;
+                        int mid = (cCoord + nCoord) / 2;
+                        if (dayCoord < mid) {
+                            dayName = curr.dayName;
+                            break;
+                        }
+                    }
+                }
+
+                // Midpoint Binning for Time Anchor
+                int bestTimeSlotIndex = 0;
+                int timeCoord = isDaysAsColumns ? item.centerY : item.centerX;
+                if (!sortedTimeAnchors.isEmpty()) {
+                    bestTimeSlotIndex = sortedTimeAnchors.get(sortedTimeAnchors.size() - 1).slotIndex;
+                    for (int i = 0; i < sortedTimeAnchors.size() - 1; i++) {
+                        TimeAnchor curr = sortedTimeAnchors.get(i);
+                        TimeAnchor next = sortedTimeAnchors.get(i + 1);
+                        int cCoord = isDaysAsColumns ? curr.centerY : curr.centerX;
+                        int nCoord = isDaysAsColumns ? next.centerY : next.centerX;
+                        int mid = (cCoord + nCoord) / 2;
+                        if (timeCoord < mid) {
+                            bestTimeSlotIndex = curr.slotIndex;
+                            break;
+                        }
+                    }
+                }
+
+                String timeSlot = BUBT_TIME_SLOTS[Math.min(bestTimeSlotIndex, BUBT_TIME_SLOTS.length - 1)];
+                String cellKey = dayName + "||" + timeSlot;
+
+                if (!cellBuckets.containsKey(cellKey)) {
+                    cellBuckets.put(cellKey, new ArrayList<>());
+                }
+                cellBuckets.get(cellKey).add(item);
+            }
+
             List<RoutineClassItem> parsedClasses = new ArrayList<>();
             Set<String> seenKeys = new HashSet<>();
 
-            for (TextLineItem li : allLines) {
-                String courseCode = extractCourseCode(li.text);
-                if (courseCode != null && containsCourseCodePattern(li.text)) {
-                    // Find closest Day Anchor
-                    DayAnchor bestDayAnchor = null;
-                    int minDayDist = Integer.MAX_VALUE;
-                    for (DayAnchor da : dayAnchors) {
-                        int dist = isDaysAsColumns ? Math.abs(da.centerX - li.centerX) : Math.abs(da.centerY - li.centerY);
-                        if (dist < minDayDist) {
-                            minDayDist = dist;
-                            bestDayAnchor = da;
-                        }
-                    }
+            for (Map.Entry<String, List<TextLineItem>> entry : cellBuckets.entrySet()) {
+                String[] parts = entry.getKey().split("\\|\\|");
+                if (parts.length < 2) continue;
+                String dayName = parts[0];
+                String timeSlot = parts[1];
+                List<TextLineItem> itemsInCell = entry.getValue();
 
-                    // Find closest Time Anchor
-                    int bestTimeSlotIndex = 0;
-                    if (!timeAnchors.isEmpty()) {
-                        TimeAnchor bestTimeAnchor = null;
-                        int minTimeDist = Integer.MAX_VALUE;
-                        for (TimeAnchor ta : timeAnchors) {
-                            int dist = isDaysAsColumns ? Math.abs(ta.centerY - li.centerY) : Math.abs(ta.centerX - li.centerX);
-                            if (dist < minTimeDist) {
-                                minTimeDist = dist;
-                                bestTimeAnchor = ta;
+                for (TextLineItem li : itemsInCell) {
+                    String courseCode = extractCourseCode(li.text);
+                    if (courseCode != null && containsCourseCodePattern(li.text)) {
+                        String faculty = null;
+                        String rawRoom = null;
+
+                        for (TextLineItem cellItem : itemsInCell) {
+                            if (faculty == null) faculty = extractFacultyCode(cellItem.text);
+                            if (rawRoom == null) rawRoom = extractRoomNumber(cellItem.text);
+                        }
+
+                        if (faculty == null) {
+                            StringBuilder sb = new StringBuilder();
+                            for (TextLineItem cellItem : itemsInCell) sb.append(cellItem.text).append(" ");
+                            faculty = extractFacultyCode(sb.toString());
+                        }
+                        if (faculty == null) faculty = "TBA";
+
+                        if (rawRoom == null) {
+                            StringBuilder sb = new StringBuilder();
+                            for (TextLineItem cellItem : itemsInCell) sb.append(cellItem.text).append(" ");
+                            rawRoom = extractRoomNumber(sb.toString());
+                        }
+                        if (rawRoom == null) rawRoom = "TBA";
+
+                        String formattedRoom = formatRoomWithBuilding(rawRoom);
+                        String key = dayName + "_" + courseCode + "_" + timeSlot;
+
+                        if (!seenKeys.contains(key)) {
+                            seenKeys.add(key);
+
+                            RoutineClassItem item = new RoutineClassItem();
+                            item.day = dayName;
+                            item.courseCode = courseCode;
+                            item.subject = courseCode;
+                            item.timeSlot = timeSlot;
+                            item.room = formattedRoom;
+                            item.faculty = faculty;
+                            item.teacher = faculty;
+
+                            String[] timeParts = timeSlot.split("-");
+                            if (timeParts.length == 2) {
+                                item.startTime = timeParts[0].trim();
+                                item.endTime = timeParts[1].trim();
                             }
+
+                            parsedClasses.add(item);
                         }
-                        if (bestTimeAnchor != null) {
-                            bestTimeSlotIndex = bestTimeAnchor.slotIndex;
-                        }
-                    }
-
-                    String dayName = bestDayAnchor != null ? bestDayAnchor.dayName : "Saturday";
-                    String timeSlot = BUBT_TIME_SLOTS[Math.min(bestTimeSlotIndex, BUBT_TIME_SLOTS.length - 1)];
-
-                    // Search nearby spatial lines for FC and Room
-                    String faculty = null;
-                    String rawRoom = null;
-
-                    for (TextLineItem near : allLines) {
-                        if (Math.abs(near.centerX - li.centerX) < 220 && Math.abs(near.centerY - li.centerY) < 140) {
-                            if (faculty == null) faculty = extractFacultyCode(near.text);
-                            if (rawRoom == null) rawRoom = extractRoomNumber(near.text);
-                        }
-                    }
-
-                    if (faculty == null) faculty = extractFacultyCode(li.text);
-                    if (faculty == null) faculty = "TBA";
-
-                    if (rawRoom == null) rawRoom = extractRoomNumber(li.text);
-                    if (rawRoom == null) rawRoom = "2808";
-
-                    String formattedRoom = formatRoomWithBuilding(rawRoom);
-                    String key = dayName + "_" + courseCode + "_" + timeSlot;
-
-                    if (!seenKeys.contains(key)) {
-                        seenKeys.add(key);
-
-                        RoutineClassItem item = new RoutineClassItem();
-                        item.day = dayName;
-                        item.courseCode = courseCode;
-                        item.subject = courseCode;
-                        item.timeSlot = timeSlot;
-                        item.room = formattedRoom;
-                        item.faculty = faculty;
-                        item.teacher = faculty;
-
-                        String[] timeParts = timeSlot.split("-");
-                        if (timeParts.length == 2) {
-                            item.startTime = timeParts[0].trim();
-                            item.endTime = timeParts[1].trim();
-                        }
-
-                        parsedClasses.add(item);
                     }
                 }
             }
@@ -1193,7 +1342,9 @@ public class RoutineActivity extends AppCompatActivity {
                 return;
             }
 
-            // Direct Local List Population (Immediate UI Feedback)
+            // Automatically select today's day and show today's routine after scanning
+            selectedDay = getTodayDayName();
+
             List<RoutineClassItem> activeDayParsed = new ArrayList<>();
             for (RoutineClassItem item : parsedClasses) {
                 if (matchesSelectedDay(item.day, selectedDay)) {
@@ -1204,6 +1355,7 @@ public class RoutineActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 try {
                     if (isFinishing() || isDestroyed()) return;
+                    setupDayPicker();
                     routineList.clear();
                     routineList.addAll(activeDayParsed);
                     if (routineAdapter != null) routineAdapter.notifyDataSetChanged();
@@ -1263,10 +1415,10 @@ public class RoutineActivity extends AppCompatActivity {
     private String extractFacultyCode(String text) {
         if (text == null) return null;
         try {
-            Matcher m1 = Pattern.compile("(?i)(FC:|Faculty:|Instructor:|Teacher:)[^a-zA-Z]*([a-zA-Z]{2,5})").matcher(text);
+            Matcher m1 = Pattern.compile("(?i)(?:FC|Faculty|Instructor|Teacher)[:\\s.-]*([a-zA-Z]{2,5})\\b").matcher(text);
             if (m1.find()) {
-                String f = m1.group(2);
-                if (f != null) return f.toUpperCase();
+                String f = m1.group(1);
+                if (f != null && !isBlacklistedKeyword(f)) return f.toUpperCase();
             }
         } catch (PatternSyntaxException e) {
             Log.e("RoutineActivity", "PatternSyntaxException in extractFacultyCode m1", e);
@@ -1274,11 +1426,11 @@ public class RoutineActivity extends AppCompatActivity {
             Log.e("RoutineActivity", "Error in extractFacultyCode m1", e);
         }
         try {
-            Matcher m2 = Pattern.compile("([A-Z]{2,5})").matcher(text);
+            Matcher m2 = Pattern.compile("\\b([A-Z]{2,5})\\b").matcher(text);
             while (m2.find()) {
                 String candidate = m2.group(1);
                 if (!isBlacklistedKeyword(candidate)) {
-                    return candidate;
+                    return candidate.toUpperCase();
                 }
             }
         } catch (PatternSyntaxException e) {
@@ -1292,9 +1444,9 @@ public class RoutineActivity extends AppCompatActivity {
     private String extractRoomNumber(String text) {
         if (text == null) return null;
         try {
-            Matcher m1 = Pattern.compile("(?i)(R:|Room|R)?[^0-9]*([0-9]{3,4}|Lab[^0-9]*[0-9]+)").matcher(text);
+            Matcher m1 = Pattern.compile("(?i)(?:R|Room|Rm)[:\\s.-]*([0-9]{3,4}|Lab[^0-9]*[0-9]+)\\b").matcher(text);
             if (m1.find()) {
-                String rm = m1.group(2);
+                String rm = m1.group(1);
                 if (rm != null && !rm.isEmpty() && !rm.equalsIgnoreCase("ROOM")) {
                     return rm;
                 }
@@ -1305,9 +1457,12 @@ public class RoutineActivity extends AppCompatActivity {
             Log.e("RoutineActivity", "Error in extractRoomNumber m1", e);
         }
         try {
-            Matcher m2 = Pattern.compile("([0-9]{3,4})").matcher(text);
-            if (m2.find()) {
-                return m2.group(1);
+            Matcher m2 = Pattern.compile("\\b([0-9]{3,4})\\b").matcher(text);
+            while (m2.find()) {
+                String num = m2.group(1);
+                if (num != null && !num.startsWith("55") && !num.equals("2024") && !num.equals("2025") && !num.equals("2026")) {
+                    return num;
+                }
             }
         } catch (PatternSyntaxException e) {
             Log.e("RoutineActivity", "PatternSyntaxException in extractRoomNumber m2", e);
@@ -1318,8 +1473,9 @@ public class RoutineActivity extends AppCompatActivity {
     }
 
     private String formatRoomWithBuilding(String room) {
-        if (room == null || room.trim().isEmpty()) return "Room 808 (Bldg 2)";
+        if (room == null || room.trim().isEmpty()) return "TBA";
         String r = room.replace("Room", "").replace("ROOM", "").replace("R:", "").trim();
+        if (r.isEmpty()) return "TBA";
         try {
             if (r.matches("[0-9]{4}")) {
                 char bldg = r.charAt(0);
@@ -1347,14 +1503,19 @@ public class RoutineActivity extends AppCompatActivity {
 
     private boolean isBlacklistedKeyword(String word) {
         if (word == null) return true;
-        String w = word.toUpperCase();
-        return w.equals("CSE") || w.equals("MAT") || w.equals("ENG") || w.equals("EEE") ||
+        String w = word.trim().toUpperCase();
+        return w.equals("FC") || w.equals("FACULTY") || w.equals("TEACHER") || w.equals("INSTRUCTOR") ||
+               w.equals("R") || w.equals("RM") || w.equals("ROOM") || w.equals("LAB") ||
+               w.equals("CSE") || w.equals("MAT") || w.equals("ENG") || w.equals("EEE") ||
                w.equals("PHY") || w.equals("CHEM") || w.equals("BUS") || w.equals("STA") ||
                w.equals("ACT") || w.equals("FIN") || w.equals("LAW") || w.equals("GED") ||
                w.equals("TEX") || w.equals("CIV") || w.equals("SAT") || w.equals("SUN") ||
                w.equals("MON") || w.equals("TUE") || w.equals("WED") || w.equals("THU") ||
-               w.equals("THR") || w.equals("FRI") || w.equals("ROOM") || w.equals("LAB") ||
-               w.equals("BUBT") || w.equals("INTAKE") || w.equals("SEC") || w.equals("CLASS");
+               w.equals("THR") || w.equals("THUR") || w.equals("FRI") || w.equals("SATURDAY") ||
+               w.equals("SUNDAY") || w.equals("MONDAY") || w.equals("TUESDAY") || w.equals("WEDNESDAY") ||
+               w.equals("THURSDAY") || w.equals("FRIDAY") || w.equals("BUBT") || w.equals("INTAKE") ||
+               w.equals("SEC") || w.equals("SECTION") || w.equals("CLASS") || w.equals("DAY") ||
+               w.equals("TIME") || w.equals("BUILDING") || w.equals("BLDG");
     }
 
     private static class DayAnchor {
@@ -1495,7 +1656,9 @@ public class RoutineActivity extends AppCompatActivity {
                 parsedClasses.add(noticeItem);
             }
 
-            // Direct Local List Population (Immediate UI Feedback)
+            // Automatically select today's day and show today's routine after scanning
+            selectedDay = getTodayDayName();
+
             List<RoutineClassItem> activeDayParsed = new ArrayList<>();
             for (RoutineClassItem item : parsedClasses) {
                 if (matchesSelectedDay(item.day, selectedDay)) {
@@ -1506,6 +1669,7 @@ public class RoutineActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 try {
                     if (isFinishing() || isDestroyed()) return;
+                    setupDayPicker();
                     routineList.clear();
                     routineList.addAll(activeDayParsed);
                     if (routineAdapter != null) routineAdapter.notifyDataSetChanged();
@@ -1680,61 +1844,75 @@ public class RoutineActivity extends AppCompatActivity {
             // Save clean list locally immediately for instant persistence across app restarts
             RoutineLocalCache.saveRoutineLocally(RoutineActivity.this, cleanItems);
 
-            String dept = sessionManager != null ? getSanitizedKey(sessionManager.getUserDept()) : "default";
-            String intake = sessionManager != null ? getSanitizedKey(sessionManager.getUserIntake()) : "default";
-            String section = sessionManager != null ? getSanitizedKey(sessionManager.getUserSection()) : "default";
-
             FirebaseFirestore db = FirebaseFirestore.getInstance();
-            WriteBatch batch = db.batch();
+            CollectionReference scheduleRef = db.collection("users")
+                    .document(getUserUid())
+                    .collection("routine");
 
-            for (RoutineClassItem item : cleanItems) {
-                String startTime = item.startTime != null ? item.startTime : "08:15 AM";
-                String endTime = item.endTime != null ? item.endTime : "09:45 AM";
-                if ((item.startTime == null || item.endTime == null) && item.timeSlot != null && item.timeSlot.contains("-")) {
-                    String[] parts = item.timeSlot.split("-");
-                    startTime = parts[0].trim();
-                    endTime = parts[1].trim();
+            scheduleRef.get().addOnCompleteListener(task -> {
+                try {
+                    WriteBatch batch = db.batch();
+
+                    // Delete previous scanned documents to cleanly overwrite old routine
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        for (DocumentSnapshot doc : task.getResult().getDocuments()) {
+                            batch.delete(doc.getReference());
+                        }
+                    }
+
+                    for (RoutineClassItem item : cleanItems) {
+                        String startTime = item.startTime != null ? item.startTime : "08:15 AM";
+                        String endTime = item.endTime != null ? item.endTime : "09:45 AM";
+                        if ((item.startTime == null || item.endTime == null) && item.timeSlot != null && item.timeSlot.contains("-")) {
+                            String[] parts = item.timeSlot.split("-");
+                            startTime = parts[0].trim();
+                            endTime = parts[1].trim();
+                        }
+
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("day", item.day);
+                        map.put("subject", item.getDisplayCourseCode());
+                        map.put("courseCode", item.getDisplayCourseCode());
+                        map.put("timeSlot", item.timeSlot != null ? item.timeSlot : startTime + " - " + endTime);
+                        map.put("startTime", startTime);
+                        map.put("endTime", endTime);
+                        map.put("room", item.room != null ? item.room : "2808");
+                        map.put("teacher", item.getDisplayFaculty());
+                        map.put("faculty", item.getDisplayFaculty());
+                        map.put("timestamp", System.currentTimeMillis());
+
+                        DocumentReference docRef = scheduleRef.document();
+                        batch.set(docRef, map);
+                    }
+
+                    batch.commit()
+                            .addOnSuccessListener(aVoid -> runOnUiThread(() -> {
+                                try {
+                                    if (isFinishing() || isDestroyed()) return;
+                                    if (onComplete != null) onComplete.run();
+                                } catch (Exception e) {
+                                    Log.e("RoutineActivity", "Error in saveRoutineClassesBatch onSuccess", e);
+                                }
+                            }))
+                            .addOnFailureListener(e -> runOnUiThread(() -> {
+                                try {
+                                    if (isFinishing() || isDestroyed()) return;
+                                    if (onComplete != null) onComplete.run();
+                                } catch (Exception ex) {
+                                    Log.e("RoutineActivity", "Error in saveRoutineClassesBatch onFailure", ex);
+                                }
+                            }));
+                } catch (Exception e) {
+                    Log.e("RoutineActivity", "Error committing batch save", e);
+                    if (onComplete != null) {
+                        runOnUiThread(() -> {
+                            try {
+                                if (!isFinishing() && !isDestroyed()) onComplete.run();
+                            } catch (Exception ignored) {}
+                        });
+                    }
                 }
-
-                Map<String, Object> map = new HashMap<>();
-                map.put("day", item.day);
-                map.put("subject", item.getDisplayCourseCode());
-                map.put("courseCode", item.getDisplayCourseCode());
-                map.put("timeSlot", item.timeSlot != null ? item.timeSlot : startTime + " - " + endTime);
-                map.put("startTime", startTime);
-                map.put("endTime", endTime);
-                map.put("room", item.room != null ? item.room : "2808");
-                map.put("teacher", item.getDisplayFaculty());
-                map.put("faculty", item.getDisplayFaculty());
-                map.put("timestamp", System.currentTimeMillis());
-
-                DocumentReference docRef = db.collection("routines")
-                        .document(dept)
-                        .collection(intake)
-                        .document(section)
-                        .collection("schedule")
-                        .document();
-
-                batch.set(docRef, map);
-            }
-
-            batch.commit()
-                    .addOnSuccessListener(aVoid -> runOnUiThread(() -> {
-                        try {
-                            if (isFinishing() || isDestroyed()) return;
-                            if (onComplete != null) onComplete.run();
-                        } catch (Exception e) {
-                            Log.e("RoutineActivity", "Error in saveRoutineClassesBatch onSuccess", e);
-                        }
-                    }))
-                    .addOnFailureListener(e -> runOnUiThread(() -> {
-                        try {
-                            if (isFinishing() || isDestroyed()) return;
-                            if (onComplete != null) onComplete.run();
-                        } catch (Exception ex) {
-                            Log.e("RoutineActivity", "Error in saveRoutineClassesBatch onFailure", ex);
-                        }
-                    }));
+            });
         } catch (Exception e) {
             Log.e("RoutineActivity", "Error in saveRoutineClassesBatch", e);
             if (onComplete != null) {
@@ -1752,10 +1930,6 @@ public class RoutineActivity extends AppCompatActivity {
     }
 
     private Task<DocumentReference> saveRoutineClassToFirestore(String day, String courseCode, String timeSlot, String room, String faculty) {
-        String dept = getSanitizedKey(sessionManager.getUserDept());
-        String intake = getSanitizedKey(sessionManager.getUserIntake());
-        String section = getSanitizedKey(sessionManager.getUserSection());
-
         String validDay = normalizeDayName(day);
         if (validDay == null) validDay = selectedDay;
 
@@ -1779,11 +1953,9 @@ public class RoutineActivity extends AppCompatActivity {
         map.put("faculty", faculty);
         map.put("timestamp", System.currentTimeMillis());
 
-        return FirebaseFirestore.getInstance().collection("routines")
-                .document(dept)
-                .collection(intake)
-                .document(section)
-                .collection("schedule")
+        return FirebaseFirestore.getInstance().collection("users")
+                .document(getUserUid())
+                .collection("routine")
                 .add(map);
     }
 
@@ -1904,16 +2076,10 @@ public class RoutineActivity extends AppCompatActivity {
                 holder.btnDelete.setVisibility(View.VISIBLE);
                 holder.btnDelete.setOnClickListener(v -> {
                     HapticUtils.heavyClick(v);
-                    String dept = activity.getSanitizedKey(activity.sessionManager.getUserDept());
-                    String intake = activity.getSanitizedKey(activity.sessionManager.getUserIntake());
-                    String section = activity.getSanitizedKey(activity.sessionManager.getUserSection());
-
                     if (item.id != null && !item.id.isEmpty()) {
-                        FirebaseFirestore.getInstance().collection("routines")
-                                .document(dept)
-                                .collection(intake)
-                                .document(section)
-                                .collection("schedule")
+                        FirebaseFirestore.getInstance().collection("users")
+                                .document(activity.getUserUid())
+                                .collection("routine")
                                 .document(item.id)
                                 .delete()
                                 .addOnSuccessListener(aVoid -> {

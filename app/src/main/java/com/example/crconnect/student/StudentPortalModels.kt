@@ -34,11 +34,23 @@ data class UserProfileModel(
     val studentId: String = "--",
     val intake: String = "--",
     val section: String = "--",
-    val department: String = "Computer Science & Engineering",
+    val department: String = "Dept. of CSE",
     val attendancePct: Int = 92,
     val cgpa: String = "3.85",
     val initials: String = "ST"
 )
+
+fun computeInitials(name: String): String {
+    val cleanName = name.trim()
+    if (cleanName.isBlank()) return "ST"
+    val parts = cleanName.split("\\s+".toRegex()).filter { it.isNotBlank() }
+    return when {
+        parts.size >= 2 -> "${parts[0].first()}${parts[1].first()}".uppercase(Locale.getDefault())
+        parts.size == 1 && parts[0].length >= 2 -> parts[0].take(2).uppercase(Locale.getDefault())
+        parts.size == 1 && parts[0].length == 1 -> parts[0].uppercase(Locale.getDefault())
+        else -> "ST"
+    }
+}
 
 fun getTodayDayIndex(): Int {
     val dayOfWeek = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)

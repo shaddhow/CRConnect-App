@@ -82,6 +82,8 @@ fun StudentPortalScreen(
             Scaffold(
                 topBar = {
                     TopHeader(
+                        name = uiState.profile.name,
+                        department = uiState.profile.department,
                         initials = uiState.profile.initials,
                         onMenuClick = {
                             coroutineScope.launch { drawerState.open() }
@@ -125,6 +127,9 @@ fun StudentPortalScreen(
                                 onCloseAddClass = { viewModel.closeAddClassSheet() },
                                 onAddClass = { course, time, room ->
                                     viewModel.addClass(course, time, room)
+                                },
+                                onDeleteRoutine = {
+                                    viewModel.deleteCurrentRoutine(context)
                                 },
                                 onScannedEntriesAdded = { entries ->
                                     viewModel.saveScannedEntries(entries, context)

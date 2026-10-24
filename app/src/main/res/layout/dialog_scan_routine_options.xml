@@ -46,7 +46,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Point at your printed routine or pick a screenshot. Reads on your phone — nothing is uploaded."
+                android:text="Point at your printed routine or pick a screenshot. Read on your phone. Your routine is saved to your own account."
                 android:textColor="#F1F5F9"
                 android:textSize="13sp"
                 android:lineSpacingExtra="3dp"/>
@@ -75,7 +75,7 @@
         android:id="@+id/btnChooseGallery"
         android:layout_width="match_parent"
         android:layout_height="52dp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="10dp"
         android:text="Choose from gallery"
         android:textColor="#0066FF"
         android:textSize="16sp"
@@ -86,6 +86,25 @@
         app:cornerRadius="12dp"
         app:icon="@drawable/ic_gallery"
         app:iconTint="#0066FF"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"/>
+
+    <!-- Danger Button: Delete current routine -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDeleteRoutine"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginBottom="20dp"
+        android:text="Delete current routine"
+        android:textColor="#EF4444"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="#10EF4444"
+        app:strokeColor="#EF4444"
+        app:strokeWidth="1.5dp"
+        app:cornerRadius="12dp"
+        app:icon="@drawable/ic_delete"
+        app:iconTint="#EF4444"
         app:iconGravity="textStart"
         app:iconPadding="8dp"/>
 

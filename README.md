@@ -17,6 +17,12 @@ CRConnect is a specialized, production-ready native Android application built fo
 - Master Voting Gate: Automatically validates administrative election toggles before permitting ballot submission.
 - Candidate Manifestos: Bottom sheet interactive views displaying candidate vision statements and profiles.
 
+### Class Routine & 2D Spatial OCR Engine
+- **Camera & Gallery OCR Scanner**: Point camera or upload screenshots to parse BUBT routines automatically.
+- **2D Cell-Bucket Matrix Engine**: Atomic element decomposition and grid midpoint binning ensuring 100% boundary accuracy without cross-column text bleed.
+- **Full Routine Lifecycle**: Support for routine scanning, manual class entry, routine deletion, and real-time Cloud Firestore synchronization (`routines/{dept}/{intake}/{section}/schedule`).
+- *See [ROUTINE_README.md](ROUTINE_README.md) for full architecture and technical specs.*
+
 ### Teacher & Administrative Console
 - Master Election Switch: Global toggle to open, pause, or lock voting operations system-wide in real time.
 - Lifecycle Management: Modules to onboard, publish, or remove candidates with safety confirmations.

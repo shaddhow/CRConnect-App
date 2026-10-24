@@ -12,6 +12,7 @@ import java.util.Locale
 import java.text.SimpleDateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,15 +44,18 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Crop
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -86,6 +90,7 @@ fun RoutineTab(
     onOpenAddClass: () -> Unit,
     onCloseAddClass: () -> Unit,
     onAddClass: (courseName: String, timeSlot: String, room: String) -> Unit,
+    onDeleteRoutine: () -> Unit = {},
     onScannedEntriesAdded: (List<ClassEntry>) -> Unit = { _ -> },
     onShowToast: (String) -> Unit
 ) {
@@ -93,7 +98,8 @@ fun RoutineTab(
     val scrollState = rememberScrollState()
     val selectedDay = uiState.scheduleDays.find { it.dayIndex == uiState.selectedDayIndex }
         ?: uiState.scheduleDays.last()
-    val classesForSelectedDay = uiState.classMap[uiState.selectedDayIndex] ?: emptyList()
+    val classesForSelectedDay = (uiState.classMap[uiState.selectedDayIndex] ?: emptyList())
+        .sortedBy { startMinutes(it.timeSlot) }
 
     var isOcrLoading by remember { mutableStateOf(false) }
 
@@ -473,6 +479,10 @@ fun RoutineTab(
                 onAddClass = onAddClass,
                 onScanCamera = onScanCameraClick,
                 onChooseGallery = onChooseGalleryClick,
+                onDeleteRoutine = {
+                    onDeleteRoutine()
+                    onCloseAddClass()
+                },
                 onShowToast = onShowToast
             )
         }
@@ -772,7 +782,7 @@ private fun formatTimeSlotDisplay(timeSlot: String): String {
 
 private fun extractCleanRoomNumber(room: String): String {
     val clean = room.replace("Room", "", ignoreCase = true).replace("ROOM", "", ignoreCase = true).trim()
-    return clean.ifEmpty { "2810" }
+    return clean.ifEmpty { "TBA" }
 }
 
 private fun calculateDurationText(timeSlot: String): String {
@@ -785,6 +795,7 @@ private fun AddClassBottomSheetContent(
     onAddClass: (courseName: String, timeSlot: String, room: String) -> Unit,
     onScanCamera: () -> Unit,
     onChooseGallery: () -> Unit,
+    onDeleteRoutine: () -> Unit,
     onShowToast: (String) -> Unit
 ) {
     var isManualMode by remember { mutableStateOf(false) }
@@ -839,6 +850,34 @@ private fun AddClassBottomSheetContent(
                 onClick = onChooseGallery,
                 icon = Icons.Default.Image
             )
+
+            // Delete Current Routine Option
+            OutlinedButton(
+                onClick = onDeleteRoutine,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.5.dp, Color(0xFFEF4444)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Color(0xFFDC2626)
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete routine",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color(0xFFDC2626)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Delete current routine",
+                    fontFamily = PlusJakartaSansFontFamily,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFDC2626)
+                )
+            }
 
             Text(
                 text = "Scanning tips",
@@ -1061,5 +1100,118 @@ fun RoutineTabWithSheetPreview() {
                 onShowToast = {}
             )
         }
+    }
+}
+
+@Composable
+private fun ReviewRoutineBottomSheetContent(
+    scannedEntries: List<ClassEntry>,
+    onSaveRoutine: () -> Unit,
+    onCancel: () -> Unit
+) {
+    val sheetScrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(sheetScrollState)
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "Review Scanned Routine",
+            fontFamily = PlusJakartaSansFontFamily,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = TitleText
+        )
+        Text(
+            text = "${scannedEntries.size} classes detected. Review your schedule before saving.",
+            fontFamily = PlusJakartaSansFontFamily,
+            fontSize = 13.sp,
+            color = MutedText
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            scannedEntries.forEach { entry ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(TintLightBlue)
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Primary)
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = entry.day.uppercase(),
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                            Text(
+                                text = entry.course,
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TitleText
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${entry.startTime} - ${entry.endTime}  •  ${if (entry.room.startsWith("Room")) entry.room else "Room ${entry.room}"}  •  FC: ${entry.faculty}",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 12.sp,
+                            color = MutedText
+                        )
+                    }
+                    if (entry.needsReview) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFFFEF3C7))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "Needs Review",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFFD97706)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        PrimaryButton(
+            text = "Save routine",
+            onClick = onSaveRoutine,
+            icon = Icons.Default.Check
+        )
+
+        SecondaryButton(
+            text = "Discard",
+            onClick = onCancel
+        )
     }
 }

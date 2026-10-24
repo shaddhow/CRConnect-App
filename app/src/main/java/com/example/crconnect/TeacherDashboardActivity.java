@@ -1269,12 +1269,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     }
 
     private List<Candidate> getDefaultCandidates() {
-        List<Candidate> defaults = new ArrayList<>();
-        defaults.add(new Candidate("cand_1", "Rahim Uddin", 12, "Dept. of CSE", null, "6", null));
-        defaults.add(new Candidate("cand_2", "Nusrat Jahan", 9, "Dept. of CSE", null, "6", null));
-        defaults.add(new Candidate("cand_3", "Tanvir Ahmed", 5, "Dept. of CSE", null, "6", null));
-        defaults.add(new Candidate("cand_4", "Sadia Islam", 3, "Dept. of CSE", null, "6", null));
-        return defaults;
+        return new ArrayList<>();
     }
 
     private void showDeleteCandidateDialog(Candidate candidate) {
