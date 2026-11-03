@@ -37,11 +37,10 @@
             android:background="@drawable/bg_custom_bottom_nav"
             android:elevation="0dp"
             android:outlineProvider="none"
-            android:paddingTop="0dp"
+            android:paddingTop="8dp"
             android:paddingHorizontal="0dp"
-            android:paddingBottom="34dp"
-            android:clipToPadding="false"
-            android:weightSum="5"
+            android:paddingBottom="8dp"
+            android:weightSum="4"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
@@ -89,7 +88,7 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Tab 2: Controls -->
+            <!-- Tab 2: Election -->
             <LinearLayout
                 android:id="@+id/navTabControls"
                 android:layout_width="0dp"
@@ -126,15 +125,15 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="2dp"
-                    android:text="Controls"
+                    android:text="Election"
                     android:textColor="#64748B"
                     android:textSize="11sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Tab 3: Candidates -->
+            <!-- Tab 3: Profile -->
             <LinearLayout
-                android:id="@+id/navTabCandidates"
+                android:id="@+id/navTabProfile"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -147,78 +146,35 @@
                 android:background="?attr/selectableItemBackgroundBorderless">
 
                 <FrameLayout
-                    android:id="@+id/pillCandidates"
+                    android:id="@+id/pillProfile"
                     android:layout_width="64dp"
                     android:layout_height="32dp"
                     android:layout_gravity="center_horizontal"
                     android:background="@drawable/bg_nav_pill_inactive">
 
                     <ImageView
-                        android:id="@+id/iconCandidates"
+                        android:id="@+id/iconProfile"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:src="@drawable/ic_nav_candidates"
+                        android:src="@drawable/ic_user"
                         app:tint="#64748B"
                         tools:ignore="ContentDescription" />
                 </FrameLayout>
 
                 <TextView
-                    android:id="@+id/labelCandidates"
+                    android:id="@+id/labelProfile"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="2dp"
-                    android:text="Candidates"
+                    android:text="Profile"
                     android:textColor="#64748B"
                     android:textSize="11sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Tab 4: Export PDF -->
-            <LinearLayout
-                android:id="@+id/navTabExportPdf"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:paddingTop="8dp"
-                android:paddingBottom="0dp"
-                android:gravity="center_horizontal|top"
-                android:orientation="vertical"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless">
-
-                <FrameLayout
-                    android:id="@+id/pillExportPdf"
-                    android:layout_width="64dp"
-                    android:layout_height="32dp"
-                    android:layout_gravity="center_horizontal"
-                    android:background="@drawable/bg_nav_pill_inactive">
-
-                    <ImageView
-                        android:id="@+id/iconExportPdf"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_nav_pdf"
-                        app:tint="#64748B"
-                        tools:ignore="ContentDescription" />
-                </FrameLayout>
-
-                <TextView
-                    android:id="@+id/labelExportPdf"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="2dp"
-                    android:text="Export PDF"
-                    android:textColor="#64748B"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- Tab 5: Logout -->
+            <!-- Tab 4: Logout -->
             <LinearLayout
                 android:id="@+id/navTabLogout"
                 android:layout_width="0dp"
@@ -456,83 +412,9 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Voting Gate Control Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardVotingGate"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:hapticFeedbackEnabled="true"
-                        app:cardBackgroundColor="#FFFFFF"
-                        app:cardCornerRadius="20dp"
-                        app:cardElevation="2dp"
-                        app:strokeColor="#E2E8F0"
-                        app:strokeWidth="1dp"
-                        android:outlineAmbientShadowColor="#1A0066FF"
-                        android:outlineSpotShadowColor="#1A0066FF"
-                        tools:ignore="UnusedAttribute">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:padding="20dp">
-
-                            <!-- Icon Badge Container -->
-                            <FrameLayout
-                                android:layout_width="40dp"
-                                android:layout_height="40dp"
-                                android:background="@drawable/bg_icon_badge"
-                                android:layout_marginEnd="12dp">
-                                <ImageView
-                                    android:layout_width="20dp"
-                                    android:layout_height="20dp"
-                                    android:layout_gravity="center"
-                                    android:src="@drawable/ic_shield"
-                                    app:tint="#0066FF"
-                                    tools:ignore="ContentDescription" />
-                            </FrameLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Live voting gate"
-                                    android:textColor="#0F172A"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="Control student access instantly"
-                                    android:textColor="#64748B"
-                                    android:textSize="13sp" />
-                            </LinearLayout>
-
-                            <com.google.android.material.materialswitch.MaterialSwitch
-                                android:id="@+id/switchMasterVoting"
-                                android:layout_width="56dp"
-                                android:layout_height="32dp"
-                                android:checked="false"
-                                android:hapticFeedbackEnabled="true"
-                                app:trackTint="@color/switch_track_selector"
-                                app:thumbTint="@color/switch_thumb_selector"
-                                app:thumbIcon="@null"
-                                app:trackDecorationTint="@android:color/transparent" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
                 </LinearLayout>
 
-                <!-- TAB 1: Controls Tab Section -->
+                <!-- TAB 1: Election Tab Section -->
                 <LinearLayout
                     android:id="@+id/layoutTabControls"
                     android:layout_width="match_parent"
@@ -540,264 +422,472 @@
                     android:orientation="vertical"
                     android:visibility="gone">
 
-                    <!-- Live Election Control & Timer Card -->
-                    <include layout="@layout/teacher_dashboard_control" />
+                    <!-- Sub-Toggle Selector Bar: Timing | Candidates Manage | Export Result -->
+                    <LinearLayout
+                        android:id="@+id/containerElectionSubToggle"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginBottom="16dp"
+                        android:background="@drawable/bg_sub_toggle_container"
+                        android:orientation="horizontal"
+                        android:padding="4dp"
+                        android:weightSum="3">
 
-                    <!-- Add Candidate Section -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardAddCandidate"
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSubToggleTiming"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:padding="0dp"
+                            android:text="Timing"
+                            android:textAllCaps="false"
+                            android:textColor="#FFFFFF"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            app:backgroundTint="#0066FF"
+                            app:cornerRadius="12dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSubToggleCandidates"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:padding="0dp"
+                            android:text="Candidates"
+                            android:textAllCaps="false"
+                            android:textColor="#64748B"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            app:backgroundTint="@android:color/transparent"
+                            app:cornerRadius="12dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSubToggleExport"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:padding="0dp"
+                            android:text="Export"
+                            android:textAllCaps="false"
+                            android:textColor="#64748B"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            app:backgroundTint="@android:color/transparent"
+                            app:cornerRadius="12dp" />
+                    </LinearLayout>
+
+                    <!-- SUB-VIEW 1: Election Timing -->
+                    <LinearLayout
+                        android:id="@+id/layoutSubTiming"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:hapticFeedbackEnabled="true"
-                        app:cardBackgroundColor="#FFFFFF"
-                        app:cardCornerRadius="20dp"
-                        app:cardElevation="2dp"
-                        app:strokeColor="#E2E8F0"
-                        app:strokeWidth="1dp"
-                        android:outlineAmbientShadowColor="#14000000"
-                        android:outlineSpotShadowColor="#14000000"
-                        tools:ignore="UnusedAttribute">
+                        android:orientation="vertical"
+                        android:visibility="visible">
 
-                        <LinearLayout
+                        <!-- Voting Gate Control Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/cardVotingGate"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="20dp">
+                            android:layout_marginBottom="16dp"
+                            android:hapticFeedbackEnabled="true"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="2dp"
+                            app:strokeColor="#E2E8F0"
+                            app:strokeWidth="1dp"
+                            android:outlineAmbientShadowColor="#1A0066FF"
+                            android:outlineSpotShadowColor="#1A0066FF"
+                            tools:ignore="UnusedAttribute">
 
-                            <RelativeLayout
+                            <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginBottom="16dp">
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:padding="20dp">
+
+                                <!-- Icon Badge Container -->
+                                <FrameLayout
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:background="@drawable/bg_icon_badge"
+                                    android:layout_marginEnd="12dp">
+                                    <ImageView
+                                        android:layout_width="20dp"
+                                        android:layout_height="20dp"
+                                        android:layout_gravity="center"
+                                        android:src="@drawable/ic_shield"
+                                        app:tint="#0066FF"
+                                        tools:ignore="ContentDescription" />
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Live voting gate"
+                                        android:textColor="#0F172A"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:text="Control student access instantly"
+                                        android:textColor="#64748B"
+                                        android:textSize="13sp" />
+                                </LinearLayout>
+
+                                <com.google.android.material.materialswitch.MaterialSwitch
+                                    android:id="@+id/switchMasterVoting"
+                                    android:layout_width="56dp"
+                                    android:layout_height="32dp"
+                                    android:checked="false"
+                                    android:hapticFeedbackEnabled="true"
+                                    app:trackTint="@color/switch_track_selector"
+                                    app:thumbTint="@color/switch_thumb_selector"
+                                    app:thumbIcon="@null"
+                                    app:trackDecorationTint="@android:color/transparent" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Live Election Control & Timer Card -->
+                        <include layout="@layout/teacher_dashboard_control" />
+                    </LinearLayout>
+
+                    <!-- SUB-VIEW 2: Candidates Manage -->
+                    <LinearLayout
+                        android:id="@+id/layoutSubCandidates"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <!-- Add Candidate Section -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/cardAddCandidate"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            android:hapticFeedbackEnabled="true"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="2dp"
+                            app:strokeColor="#E2E8F0"
+                            app:strokeWidth="1dp"
+                            android:outlineAmbientShadowColor="#14000000"
+                            android:outlineSpotShadowColor="#14000000"
+                            tools:ignore="UnusedAttribute">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="20dp">
+
+                                <RelativeLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginBottom="16dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_alignParentStart="true"
+                                        android:layout_centerVertical="true"
+                                        android:text="New candidate"
+                                        android:textColor="#0F172A"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvTotalCandidates"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_alignParentEnd="true"
+                                        android:layout_centerVertical="true"
+                                        android:background="@drawable/bg_chip_muted"
+                                        android:paddingHorizontal="10dp"
+                                        android:paddingVertical="4dp"
+                                        android:text="Total (Sec 6): 0"
+                                        android:textColor="#64748B"
+                                        android:textSize="12sp"
+                                        android:textStyle="bold" />
+                                </RelativeLayout>
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_alignParentStart="true"
-                                    android:layout_centerVertical="true"
-                                    android:text="New candidate"
+                                    android:layout_marginBottom="6dp"
+                                    android:text="Full name"
+                                    android:textColor="#0F172A"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginBottom="16dp"
+                                    android:textColorHint="#64748B"
+                                    app:hintEnabled="false"
+                                    app:boxBackgroundColor="#FFFFFF"
+                                    app:boxCornerRadiusBottomEnd="12dp"
+                                    app:boxCornerRadiusBottomStart="12dp"
+                                    app:boxCornerRadiusTopEnd="12dp"
+                                    app:boxCornerRadiusTopStart="12dp"
+                                    app:boxStrokeColor="@color/input_box_stroke"
+                                    app:startIconDrawable="@drawable/ic_user"
+                                    app:startIconTint="#94A3B8">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/etCandidateName"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="52dp"
+                                        android:gravity="center_vertical"
+                                        android:hint="e.g., Rahim Uddin"
+                                        android:paddingTop="0dp"
+                                        android:paddingBottom="0dp"
+                                        android:singleLine="true"
+                                        android:textColor="#0F172A"
+                                        android:textColorHint="#64748B"
+                                        android:textSize="16sp" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnAddCandidate"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="52dp"
+                                    android:hapticFeedbackEnabled="true"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="16dp"
+                                    android:text="Publish to dashboard"
+                                    android:textAllCaps="false"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="15sp"
+                                    android:textStyle="bold"
+                                    app:backgroundTint="#0066FF"
+                                    app:cornerRadius="12dp" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnClearName"
+                                    style="@style/Widget.Material3.Button.TextButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center_horizontal"
+                                    android:layout_marginTop="4dp"
+                                    android:hapticFeedbackEnabled="true"
+                                    android:text="Reset input"
+                                    android:textAllCaps="false"
+                                    android:textColor="#0066FF"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Published Candidates Section (Moved inside Candidates Sub-Tab) -->
+                        <LinearLayout
+                            android:id="@+id/sectionPublishedCandidates"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingBottom="16dp">
+
+                            <TextView
+                                android:id="@+id/tvPublishedCandidatesHeader"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:layout_marginBottom="8dp"
+                                android:text="Published candidates"
+                                android:textColor="#0F172A"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+
+                            <!-- Live Vote Distribution Chart Container -->
+                            <LinearLayout
+                                android:id="@+id/containerChart"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical" />
+
+                            <!-- Candidate List RecyclerView -->
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/rvAdminCandidates"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:nestedScrollingEnabled="false"
+                                tools:listitem="@layout/list_item_candidate" />
+
+                            <!-- Legacy Fallback Container -->
+                            <LinearLayout
+                                android:id="@+id/containerAdminCandidates"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:visibility="gone" />
+                        </LinearLayout>
+
+                        <!-- Advanced Controls -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/cardAdvancedControls"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            android:hapticFeedbackEnabled="true"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="2dp"
+                            app:strokeColor="#E2E8F0"
+                            app:strokeWidth="1dp"
+                            android:outlineAmbientShadowColor="#14000000"
+                            android:outlineSpotShadowColor="#14000000"
+                            tools:ignore="UnusedAttribute">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="20dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginBottom="12dp"
+                                    android:text="Advanced controls"
+                                    android:textColor="#64748B"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:baselineAligned="false"
+                                    android:orientation="horizontal"
+                                    android:weightSum="2">
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btnRunOff"
+                                        style="@style/Widget.Material3.Button.OutlinedButton"
+                                        android:layout_width="0dp"
+                                        android:layout_height="48dp"
+                                        android:layout_marginEnd="6dp"
+                                        android:layout_weight="1"
+                                        android:hapticFeedbackEnabled="true"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="12dp"
+                                        android:text="Run-off"
+                                        android:textAllCaps="false"
+                                        android:textColor="#0066FF"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold"
+                                        app:backgroundTint="#FFFFFF"
+                                        app:cornerRadius="12dp"
+                                        app:strokeColor="#0066FF"
+                                        app:strokeWidth="1.5dp" />
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btnResetVotes"
+                                        android:layout_width="0dp"
+                                        android:layout_height="48dp"
+                                        android:layout_weight="1"
+                                        android:hapticFeedbackEnabled="true"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="12dp"
+                                        android:text="Reset all"
+                                        android:textAllCaps="false"
+                                        android:textColor="#B91C1C"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold"
+                                        app:backgroundTint="#FEF2F2"
+                                        app:cornerRadius="12dp"
+                                        app:strokeColor="#FECACA"
+                                        app:strokeWidth="1.5dp" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+
+                    <!-- SUB-VIEW 3: Export Result -->
+                    <LinearLayout
+                        android:id="@+id/layoutSubExport"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            app:cardBackgroundColor="#FFFFFF"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="2dp"
+                            app:strokeColor="#E2E8F0"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="20dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginBottom="12dp"
+                                    android:text="Export election report"
                                     android:textColor="#0F172A"
                                     android:textSize="16sp"
                                     android:textStyle="bold" />
 
                                 <TextView
-                                    android:id="@+id/tvTotalCandidates"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_alignParentEnd="true"
-                                    android:layout_centerVertical="true"
-                                    android:background="@drawable/bg_chip_muted"
-                                    android:paddingHorizontal="10dp"
-                                    android:paddingVertical="4dp"
-                                    android:text="Total (Sec 6): 0"
+                                    android:layout_marginBottom="16dp"
+                                    android:text="Generate an official PDF summary report containing live votes, turnout statistics, and candidate rankings."
                                     android:textColor="#64748B"
-                                    android:textSize="12sp"
-                                    android:textStyle="bold" />
-                            </RelativeLayout>
+                                    android:textSize="13sp" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="6dp"
-                                android:text="Full name"
-                                android:textColor="#0F172A"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <com.google.android.material.textfield.TextInputLayout
-                                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="16dp"
-                                android:textColorHint="#64748B"
-                                app:hintEnabled="false"
-                                app:boxBackgroundColor="#FFFFFF"
-                                app:boxCornerRadiusBottomEnd="12dp"
-                                app:boxCornerRadiusBottomStart="12dp"
-                                app:boxCornerRadiusTopEnd="12dp"
-                                app:boxCornerRadiusTopStart="12dp"
-                                app:boxStrokeColor="@color/input_box_stroke"
-                                app:startIconDrawable="@drawable/ic_user"
-                                app:startIconTint="#94A3B8">
-
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/etCandidateName"
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnExportPdfSub"
                                     android:layout_width="match_parent"
                                     android:layout_height="52dp"
-                                    android:gravity="center_vertical"
-                                    android:hint="e.g., Rahim Uddin"
-                                    android:paddingTop="0dp"
-                                    android:paddingBottom="0dp"
-                                    android:singleLine="true"
-                                    android:textColor="#0F172A"
-                                    android:textColorHint="#64748B"
-                                    android:textSize="16sp" />
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnAddCandidate"
-                                android:layout_width="match_parent"
-                                android:layout_height="52dp"
-                                android:hapticFeedbackEnabled="true"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:paddingHorizontal="16dp"
-                                android:text="Publish to dashboard"
-                                android:textAllCaps="false"
-                                android:textColor="#FFFFFF"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                app:backgroundTint="#0066FF"
-                                app:cornerRadius="12dp" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnClearName"
-                                style="@style/Widget.Material3.Button.TextButton"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="center_horizontal"
-                                android:layout_marginTop="4dp"
-                                android:hapticFeedbackEnabled="true"
-                                android:text="Reset input"
-                                android:textAllCaps="false"
-                                android:textColor="#0066FF"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Advanced Controls -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardAdvancedControls"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:hapticFeedbackEnabled="true"
-                        app:cardBackgroundColor="#FFFFFF"
-                        app:cardCornerRadius="20dp"
-                        app:cardElevation="2dp"
-                        app:strokeColor="#E2E8F0"
-                        app:strokeWidth="1dp"
-                        android:outlineAmbientShadowColor="#14000000"
-                        android:outlineSpotShadowColor="#14000000"
-                        tools:ignore="UnusedAttribute">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="20dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="12dp"
-                                android:text="Advanced controls"
-                                android:textColor="#64748B"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:baselineAligned="false"
-                                android:orientation="horizontal"
-                                android:weightSum="2">
-
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/btnRunOff"
-                                    style="@style/Widget.Material3.Button.OutlinedButton"
-                                    android:layout_width="0dp"
-                                    android:layout_height="48dp"
-                                    android:layout_marginEnd="6dp"
-                                    android:layout_weight="1"
                                     android:hapticFeedbackEnabled="true"
-                                    android:insetTop="0dp"
-                                    android:insetBottom="0dp"
-                                    android:paddingHorizontal="12dp"
-                                    android:text="Run-off"
+                                    android:paddingHorizontal="16dp"
+                                    android:text="Export results to PDF"
                                     android:textAllCaps="false"
-                                    android:textColor="#0066FF"
-                                    android:textSize="14sp"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="16sp"
                                     android:textStyle="bold"
-                                    app:backgroundTint="#FFFFFF"
+                                    app:backgroundTint="#0066FF"
                                     app:cornerRadius="12dp"
-                                    app:strokeColor="#0066FF"
-                                    app:strokeWidth="1.5dp" />
-
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/btnResetVotes"
-                                    android:layout_width="0dp"
-                                    android:layout_height="48dp"
-                                    android:layout_weight="1"
-                                    android:hapticFeedbackEnabled="true"
-                                    android:insetTop="0dp"
+                                    app:elevation="8dp"
+                                    android:outlineAmbientShadowColor="#800066FF"
+                                    android:outlineSpotShadowColor="#800066FF"
                                     android:insetBottom="0dp"
-                                    android:paddingHorizontal="12dp"
-                                    android:text="Reset all"
-                                    android:textAllCaps="false"
-                                    android:textColor="#B91C1C"
-                                    android:textSize="14sp"
-                                    android:textStyle="bold"
-                                    app:backgroundTint="#FEF2F2"
-                                    app:cornerRadius="12dp"
-                                    app:strokeColor="#FECACA"
-                                    app:strokeWidth="1.5dp" />
+                                    android:insetTop="0dp" />
                             </LinearLayout>
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                </LinearLayout>
-
-                <!-- TAB 2: Candidates Tab Section -->
-                <LinearLayout
-                    android:id="@+id/layoutTabCandidates"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
-
-                    <!-- Published Candidates Section -->
-                    <LinearLayout
-                        android:id="@+id/sectionPublishedCandidates"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:paddingBottom="24dp">
-
-                        <TextView
-                            android:id="@+id/tvPublishedCandidatesHeader"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
-                            android:layout_marginBottom="4dp"
-                            android:text="Published candidates"
-                            android:textColor="#0F172A"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-
-                        <!-- Live Vote Distribution Chart Container -->
-                        <LinearLayout
-                            android:id="@+id/containerChart"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical" />
-
-                        <!-- Candidate List RecyclerView -->
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/rvAdminCandidates"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:nestedScrollingEnabled="false"
-                            tools:listitem="@layout/list_item_candidate" />
-
-                        <!-- Legacy Fallback Container -->
-                        <LinearLayout
-                            android:id="@+id/containerAdminCandidates"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:visibility="gone" />
+                        </com.google.android.material.card.MaterialCardView>
                     </LinearLayout>
 
                 </LinearLayout>
@@ -1019,15 +1109,15 @@
                                     android:layout_height="40dp"
                                     android:layout_weight="1"
                                     android:layout_marginHorizontal="2dp"
-                                    android:backgroundTint="#FFFFFF"
+                                    android:backgroundTint="@android:color/transparent"
                                     android:insetTop="0dp"
                                     android:insetBottom="0dp"
                                     android:text="Sec 6"
-                                    android:textColor="#0066FF"
+                                    android:textColor="#FFFFFF"
                                     android:textSize="14sp"
                                     android:textStyle="bold"
                                     app:cornerRadius="12dp"
-                                    app:strokeColor="#FFFFFF"
+                                    app:strokeColor="@color/tp_asg_sw_unselected_stroke"
                                     app:strokeWidth="1.5dp" />
 
                                 <Button
@@ -1521,7 +1611,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:text="Live election gate control"
+                    android:text="Election controls &amp; gate"
                     android:textColor="#0F172A"
                     android:textSize="15sp"
                     android:textStyle="bold" />

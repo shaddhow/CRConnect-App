@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.ScrollView;
 
 import androidx.annotation.NonNull;
 import androidx.core.graphics.Insets;
@@ -29,18 +30,18 @@ public class KeyboardUtils {
     }
 
     /**
-     * Configures a NestedScrollView to handle system bars and IME (soft keyboard) insets smoothly.
+     * Configures a ScrollView or NestedScrollView to handle system bars and IME (soft keyboard) insets smoothly.
      * Also automatically attaches focus auto-scrolling to all input fields inside the scroll view.
      *
      * @param activity   The parent activity.
      * @param scrollView The scroll view containing the form or input fields.
      */
-    public static void setupSmoothKeyboardHandling(@NonNull Activity activity, @NonNull NestedScrollView scrollView) {
+    public static void setupSmoothKeyboardHandling(@NonNull Activity activity, @NonNull View scrollView) {
         setupSmoothKeyboardHandling(activity, scrollView, (View[]) null);
     }
 
     /**
-     * Configures a NestedScrollView and optional extra views (such as sticky footers or bottom navs)
+     * Configures a ScrollView / NestedScrollView and optional extra views (such as sticky footers or bottom navs)
      * to smoothly adjust padding when the soft keyboard appears or disappears.
      *
      * @param activity        The parent activity.
@@ -48,7 +49,7 @@ public class KeyboardUtils {
      * @param additionalViews Optional extra views whose bottom padding should adjust with IME insets.
      */
     public static void setupSmoothKeyboardHandling(@NonNull Activity activity,
-                                                   @NonNull NestedScrollView scrollView,
+                                                   @NonNull View scrollView,
                                                    View... additionalViews) {
         Window window = activity.getWindow();
         if (window != null) {
@@ -80,34 +81,38 @@ public class KeyboardUtils {
         if (additionalViews != null) {
             for (View extraView : additionalViews) {
                 if (extraView == null) continue;
-                final int extraInitialBottom = extraView.getPaddingBottom();
                 ViewCompat.setOnApplyWindowInsetsListener(extraView, (v, insets) -> {
                     Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                     Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-                    int bottomPadding = Math.max(systemBars.bottom, ime.bottom) + extraInitialBottom;
-                    v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), bottomPadding);
+                    int extraBottom = (int) (8 * v.getResources().getDisplayMetrics().density);
+                    int bottomPadding = Math.max(systemBars.bottom, ime.bottom) + extraBottom;
+                    int topPadding = (int) (8 * v.getResources().getDisplayMetrics().density);
+                    v.setPadding(v.getPaddingLeft(), topPadding, v.getPaddingRight(), bottomPadding);
                     return WindowInsetsCompat.CONSUMED;
                 });
             }
         }
 
-        attachAutoScrollOnFocus(scrollView, scrollView);
+        if (scrollView instanceof ViewGroup) {
+            attachAutoScrollOnFocus(scrollView, (ViewGroup) scrollView);
+        }
     }
 
     /**
      * Recursively attaches focus listeners to all EditTexts within a ViewGroup hierarchy
      * so that gaining focus triggers a smooth auto-scroll to keep the input field centered above the soft keyboard.
      *
-     * @param scrollView The parent NestedScrollView.
+     * @param scrollView The parent ScrollView or NestedScrollView.
      * @param root       The container to traverse.
      */
-    public static void attachAutoScrollOnFocus(@NonNull NestedScrollView scrollView, @NonNull ViewGroup root) {
+    public static void attachAutoScrollOnFocus(@NonNull View scrollView, @NonNull ViewGroup root) {
         for (int i = 0; i < root.getChildCount(); i++) {
             View child = root.getChildAt(i);
             if (child instanceof EditText) {
-                child.setOnFocusChangeListener((v, hasFocus) -> {
+                final View editText = child;
+                editText.setOnFocusChangeListener((v, hasFocus) -> {
                     if (hasFocus) {
-                        scrollView.postDelayed(() -> smoothScrollToFocusedView(scrollView, v), 150);
+                        scrollView.postDelayed(() -> smoothScrollToFocusedView(scrollView, editText), 150);
                     }
                 });
             } else if (child instanceof ViewGroup) {
@@ -117,20 +122,41 @@ public class KeyboardUtils {
     }
 
     /**
-     * Smoothly scrolls the NestedScrollView to bring the target focused view comfortably into view.
+     * Smoothly scrolls the ScrollView/NestedScrollView to bring the target focused view comfortably into view.
      *
-     * @param scrollView  The parent NestedScrollView.
+     * @param scrollView  The parent scroll view.
      * @param focusedView The view currently focused.
      */
-    public static void smoothScrollToFocusedView(@NonNull NestedScrollView scrollView, @NonNull View focusedView) {
+    public static void smoothScrollToFocusedView(@NonNull View scrollView, @NonNull View focusedView) {
         scrollView.post(() -> {
-            Rect rect = new Rect();
-            focusedView.getDrawingRect(rect);
-            scrollView.offsetDescendantRectToMyCoords(focusedView, rect);
+            View targetView = focusedView;
+            if (focusedView.getParent() instanceof View) {
+                View parent = (View) focusedView.getParent();
+                if (parent.getMeasuredHeight() < 300 * scrollView.getResources().getDisplayMetrics().density) {
+                    targetView = parent;
+                }
+                if (parent.getParent() instanceof View) {
+                    View grandParent = (View) parent.getParent();
+                    if (grandParent.getMeasuredHeight() < 300 * scrollView.getResources().getDisplayMetrics().density) {
+                        targetView = grandParent;
+                    }
+                }
+            }
 
-            int offset = (int) (100 * scrollView.getResources().getDisplayMetrics().density);
+            Rect rect = new Rect();
+            targetView.getDrawingRect(rect);
+            if (scrollView instanceof ViewGroup) {
+                ((ViewGroup) scrollView).offsetDescendantRectToMyCoords(targetView, rect);
+            }
+
+            int offset = (int) (120 * scrollView.getResources().getDisplayMetrics().density);
             int targetY = Math.max(0, rect.top - offset);
-            scrollView.smoothScrollTo(0, targetY);
+
+            if (scrollView instanceof NestedScrollView) {
+                ((NestedScrollView) scrollView).smoothScrollTo(0, targetY);
+            } else if (scrollView instanceof ScrollView) {
+                ((ScrollView) scrollView).smoothScrollTo(0, targetY);
+            }
         });
     }
 
@@ -154,15 +180,8 @@ public class KeyboardUtils {
             return WindowInsetsCompat.CONSUMED;
         });
 
-        if (containerView instanceof NestedScrollView) {
-            attachAutoScrollOnFocus((NestedScrollView) containerView, (ViewGroup) containerView);
-        } else if (containerView instanceof ViewGroup) {
-            for (int i = 0; i < ((ViewGroup) containerView).getChildCount(); i++) {
-                View child = ((ViewGroup) containerView).getChildAt(i);
-                if (child instanceof NestedScrollView) {
-                    attachAutoScrollOnFocus((NestedScrollView) child, (ViewGroup) child);
-                }
-            }
+        if (containerView instanceof ViewGroup) {
+            attachAutoScrollOnFocus(containerView, (ViewGroup) containerView);
         }
     }
 

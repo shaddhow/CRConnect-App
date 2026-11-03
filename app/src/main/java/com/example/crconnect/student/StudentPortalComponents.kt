@@ -397,10 +397,9 @@ fun StudentBottomNavigation(
     val navUnselectedColor = Color(0xFF64748B)
     val view = LocalView.current
 
-    Box(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
             .drawBehind {
                 // Top border 1dp solid #E2E8F0
                 drawLine(
@@ -409,13 +408,15 @@ fun StudentBottomNavigation(
                     end = Offset(size.width, 0f),
                     strokeWidth = 1.dp.toPx()
                 )
-            }
+            },
+        color = Color.White
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 0.dp, bottom = 34.dp),
-            verticalAlignment = Alignment.Top
+                .navigationBarsPadding()
+                .height(64.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             val items = listOf(
                 Triple("Candidates", R.drawable.ic_nav_candidates, 0),
@@ -439,10 +440,9 @@ fun StudentBottomNavigation(
                         ) {
                             HapticUtils.lightClick(view)
                             onTabSelected(index)
-                        }
-                        .padding(top = 8.dp, bottom = 0.dp),
+                        },
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Top
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Box(
                         modifier = Modifier

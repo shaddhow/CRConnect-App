@@ -33,6 +33,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.crconnect.core.utils.HapticUtils;
+import com.example.crconnect.core.utils.KeyboardUtils;
 import com.google.android.material.progressindicator.CircularProgressIndicatorSpec;
 import com.google.android.material.progressindicator.IndeterminateDrawable;
 
@@ -119,10 +120,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         "#8B5CF6"  // Violet
     };
     private View customBottomNavAdmin;
-    private View navTabStats, navTabControls, navTabCandidates, navTabExportPdf, navTabLogout;
-    private View pillStats, pillControls, pillCandidates, pillExportPdf, pillLogout;
-    private ImageView iconStats, iconControls, iconCandidates, iconExportPdf, iconLogout;
-    private TextView labelStats, labelControls, labelCandidates, labelExportPdf, labelLogout;
+    private View navTabStats, navTabControls, navTabProfile, navTabLogout;
+    private View pillStats, pillControls, pillProfile, pillLogout;
+    private ImageView iconStats, iconControls, iconProfile, iconLogout;
+    private TextView labelStats, labelControls, labelProfile, labelLogout;
     private int currentActiveTab = 0; // Default active tab: Stats (index 0)
     private DrawerLayout drawerLayoutTeacher;
     private NavigationView navViewTeacher;
@@ -173,6 +174,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (tvHeaderSubtitle != null && sessionManager != null) {
             tvHeaderSubtitle.setText(sessionManager.getUserName() + " (" + sessionManager.getUserDept() + " | Sec: " + currentSection + ")");
         }
+        switchSection(currentSection);
     }
 
     private String getTeacherDepartment() {
@@ -323,8 +325,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         tvStatTotalVoters = findViewById(R.id.tvStatTotalVoters);
         tvStatTurnout = findViewById(R.id.tvStatTurnout);
         btnExportPdf = findViewById(R.id.btnExportPdf);
+        MaterialButton btnExportPdfSub = findViewById(R.id.btnExportPdfSub);
 
-        btnExportPdf.setOnClickListener(v -> exportElectionResultsToPdf());
+        if (btnExportPdf != null) btnExportPdf.setOnClickListener(v -> exportElectionResultsToPdf());
+        if (btnExportPdfSub != null) btnExportPdfSub.setOnClickListener(v -> exportElectionResultsToPdf());
 
         // Candidate List RecyclerView Setup (Requirement 6)
         if (rvAdminCandidates != null) {
@@ -387,30 +391,26 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         setupVotingControlListener();
 
-        // Custom Bottom Navigation Bar Bindings
+        // Custom Bottom Navigation Bar Bindings (4 main tabs: Stats, Election, Profile, Logout)
         customBottomNavAdmin = findViewById(R.id.customBottomNavAdmin);
         navTabStats = findViewById(R.id.navTabStats);
         navTabControls = findViewById(R.id.navTabControls);
-        navTabCandidates = findViewById(R.id.navTabCandidates);
-        navTabExportPdf = findViewById(R.id.navTabExportPdf);
+        navTabProfile = findViewById(R.id.navTabProfile);
         navTabLogout = findViewById(R.id.navTabLogout);
 
         pillStats = findViewById(R.id.pillStats);
         pillControls = findViewById(R.id.pillControls);
-        pillCandidates = findViewById(R.id.pillCandidates);
-        pillExportPdf = findViewById(R.id.pillExportPdf);
+        pillProfile = findViewById(R.id.pillProfile);
         pillLogout = findViewById(R.id.pillLogout);
 
         iconStats = findViewById(R.id.iconStats);
         iconControls = findViewById(R.id.iconControls);
-        iconCandidates = findViewById(R.id.iconCandidates);
-        iconExportPdf = findViewById(R.id.iconExportPdf);
+        iconProfile = findViewById(R.id.iconProfile);
         iconLogout = findViewById(R.id.iconLogout);
 
         labelStats = findViewById(R.id.labelStats);
         labelControls = findViewById(R.id.labelControls);
-        labelCandidates = findViewById(R.id.labelCandidates);
-        labelExportPdf = findViewById(R.id.labelExportPdf);
+        labelProfile = findViewById(R.id.labelProfile);
         labelLogout = findViewById(R.id.labelLogout);
 
         setupHapticFeedback();
@@ -430,22 +430,40 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 selectAdminTab(1, true);
             });
         }
-        if (navTabCandidates != null) {
-            navTabCandidates.setOnClickListener(v -> {
+        if (navTabProfile != null) {
+            navTabProfile.setOnClickListener(v -> {
                 HapticUtils.lightClick(v);
                 selectAdminTab(2, true);
-            });
-        }
-        if (navTabExportPdf != null) {
-            navTabExportPdf.setOnClickListener(v -> {
-                HapticUtils.lightClick(v);
-                selectAdminTab(3, true);
             });
         }
         if (navTabLogout != null) {
             navTabLogout.setOnClickListener(v -> {
                 HapticUtils.lightClick(v);
-                selectAdminTab(4, true);
+                selectAdminTab(3, true);
+            });
+        }
+
+        // Sub-toggle button bindings for Election tab
+        MaterialButton btnSubToggleTiming = findViewById(R.id.btnSubToggleTiming);
+        MaterialButton btnSubToggleCandidates = findViewById(R.id.btnSubToggleCandidates);
+        MaterialButton btnSubToggleExport = findViewById(R.id.btnSubToggleExport);
+
+        if (btnSubToggleTiming != null) {
+            btnSubToggleTiming.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                selectElectionSubTab(0);
+            });
+        }
+        if (btnSubToggleCandidates != null) {
+            btnSubToggleCandidates.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                selectElectionSubTab(1);
+            });
+        }
+        if (btnSubToggleExport != null) {
+            btnSubToggleExport.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                selectElectionSubTab(2);
             });
         }
 
@@ -455,22 +473,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
         if (scrollViewAdmin != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(scrollViewAdmin, (v, insets) -> {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-                v.setPadding(systemBars.left, 0, systemBars.right, Math.max(0, ime.bottom));
-                return WindowInsetsCompat.CONSUMED;
-            });
+            KeyboardUtils.setupSmoothKeyboardHandling(this, scrollViewAdmin, customBottomNavAdmin);
         }
-
-        etCandidateName.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus && scrollViewAdmin != null) {
-                View cardAddCandidate = findViewById(R.id.cardAddCandidate);
-                if (cardAddCandidate != null) {
-                    scrollViewAdmin.postDelayed(() -> scrollViewAdmin.smoothScrollTo(0, Math.max(0, cardAddCandidate.getTop() - 150)), 200);
-                }
-            }
-        });
         
         // Dynamic Teacher Profile Loading from Firebase Realtime Database & Firestore
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -1165,43 +1169,70 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         }
     }
 
+    private void selectElectionSubTab(int subIndex) {
+        View layoutSubTiming = findViewById(R.id.layoutSubTiming);
+        View layoutSubCandidates = findViewById(R.id.layoutSubCandidates);
+        View layoutSubExport = findViewById(R.id.layoutSubExport);
+
+        MaterialButton btnSubToggleTiming = findViewById(R.id.btnSubToggleTiming);
+        MaterialButton btnSubToggleCandidates = findViewById(R.id.btnSubToggleCandidates);
+        MaterialButton btnSubToggleExport = findViewById(R.id.btnSubToggleExport);
+
+        int activeBg = Color.parseColor("#0066FF");
+        int activeText = Color.parseColor("#FFFFFF");
+        int inactiveBg = Color.TRANSPARENT;
+        int inactiveText = Color.parseColor("#64748B");
+
+        if (btnSubToggleTiming != null) {
+            btnSubToggleTiming.setBackgroundTintList(ColorStateList.valueOf(subIndex == 0 ? activeBg : inactiveBg));
+            btnSubToggleTiming.setTextColor(subIndex == 0 ? activeText : inactiveText);
+        }
+        if (btnSubToggleCandidates != null) {
+            btnSubToggleCandidates.setBackgroundTintList(ColorStateList.valueOf(subIndex == 1 ? activeBg : inactiveBg));
+            btnSubToggleCandidates.setTextColor(subIndex == 1 ? activeText : inactiveText);
+        }
+        if (btnSubToggleExport != null) {
+            btnSubToggleExport.setBackgroundTintList(ColorStateList.valueOf(subIndex == 2 ? activeBg : inactiveBg));
+            btnSubToggleExport.setTextColor(subIndex == 2 ? activeText : inactiveText);
+        }
+
+        if (layoutSubTiming != null) layoutSubTiming.setVisibility(subIndex == 0 ? View.VISIBLE : View.GONE);
+        if (layoutSubCandidates != null) layoutSubCandidates.setVisibility(subIndex == 1 ? View.VISIBLE : View.GONE);
+        if (layoutSubExport != null) layoutSubExport.setVisibility(subIndex == 2 ? View.VISIBLE : View.GONE);
+    }
+
     private void selectAdminTab(int tabIndex, boolean triggerAction) {
         View layoutTabStats = findViewById(R.id.layoutTabStats);
         View layoutTabControls = findViewById(R.id.layoutTabControls);
-        View layoutTabCandidates = findViewById(R.id.layoutTabCandidates);
         View layoutTabProfile = findViewById(R.id.layoutTabProfile);
-        if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.GONE);
 
         int inactiveColor = Color.parseColor("#64748B");
         int activeColor = Color.parseColor("#0066FF");
 
         if (pillStats != null) pillStats.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
         if (pillControls != null) pillControls.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
-        if (pillCandidates != null) pillCandidates.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
-        if (pillExportPdf != null) pillExportPdf.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
+        if (pillProfile != null) pillProfile.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
         if (pillLogout != null) pillLogout.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
 
         if (iconStats != null) iconStats.setColorFilter(inactiveColor);
         if (iconControls != null) iconControls.setColorFilter(inactiveColor);
-        if (iconCandidates != null) iconCandidates.setColorFilter(inactiveColor);
-        if (iconExportPdf != null) iconExportPdf.setColorFilter(inactiveColor);
+        if (iconProfile != null) iconProfile.setColorFilter(inactiveColor);
         if (iconLogout != null) iconLogout.setColorFilter(inactiveColor);
 
         if (labelStats != null) labelStats.setTextColor(inactiveColor);
         if (labelControls != null) labelControls.setTextColor(inactiveColor);
-        if (labelCandidates != null) labelCandidates.setTextColor(inactiveColor);
-        if (labelExportPdf != null) labelExportPdf.setTextColor(inactiveColor);
+        if (labelProfile != null) labelProfile.setTextColor(inactiveColor);
         if (labelLogout != null) labelLogout.setTextColor(inactiveColor);
 
         NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
 
         switch (tabIndex) {
-            case 0: // Stats tab (ONLY cardLiveStats & cardVotingGate)
+            case 0: // Stats tab (Live election statistics card)
                 currentActiveTab = 0;
                 updateDrawerActiveState(0);
                 if (layoutTabStats != null) layoutTabStats.setVisibility(View.VISIBLE);
                 if (layoutTabControls != null) layoutTabControls.setVisibility(View.GONE);
-                if (layoutTabCandidates != null) layoutTabCandidates.setVisibility(View.GONE);
+                if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.GONE);
 
                 if (pillStats != null) pillStats.setBackgroundResource(R.drawable.bg_nav_pill_active);
                 if (iconStats != null) iconStats.setColorFilter(activeColor);
@@ -1209,12 +1240,12 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
                 break;
 
-            case 1: // Controls tab
+            case 1: // Election tab (Sub-toggle views: Timing, Candidates, Export)
                 currentActiveTab = 1;
                 updateDrawerActiveState(1);
                 if (layoutTabStats != null) layoutTabStats.setVisibility(View.GONE);
                 if (layoutTabControls != null) layoutTabControls.setVisibility(View.VISIBLE);
-                if (layoutTabCandidates != null) layoutTabCandidates.setVisibility(View.GONE);
+                if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.GONE);
 
                 if (pillControls != null) pillControls.setBackgroundResource(R.drawable.bg_nav_pill_active);
                 if (iconControls != null) iconControls.setColorFilter(activeColor);
@@ -1222,30 +1253,21 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
                 break;
 
-            case 2: // Candidates tab
+            case 2: // Profile tab
                 currentActiveTab = 2;
-                updateDrawerActiveState(2);
+                updateDrawerActiveState(0);
                 if (layoutTabStats != null) layoutTabStats.setVisibility(View.GONE);
                 if (layoutTabControls != null) layoutTabControls.setVisibility(View.GONE);
-                if (layoutTabCandidates != null) layoutTabCandidates.setVisibility(View.VISIBLE);
+                if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.VISIBLE);
 
-                if (pillCandidates != null) pillCandidates.setBackgroundResource(R.drawable.bg_nav_pill_active);
-                if (iconCandidates != null) iconCandidates.setColorFilter(activeColor);
-                if (labelCandidates != null) labelCandidates.setTextColor(activeColor);
+                if (pillProfile != null) pillProfile.setBackgroundResource(R.drawable.bg_nav_pill_active);
+                if (iconProfile != null) iconProfile.setColorFilter(activeColor);
+                if (labelProfile != null) labelProfile.setTextColor(activeColor);
                 if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
                 break;
 
-            case 3: // Export PDF
-                updateDrawerActiveState(4);
-                if (pillExportPdf != null) pillExportPdf.setBackgroundResource(R.drawable.bg_nav_pill_active);
-                if (iconExportPdf != null) iconExportPdf.setColorFilter(activeColor);
-                if (labelExportPdf != null) labelExportPdf.setTextColor(activeColor);
-                if (triggerAction) {
-                    exportElectionResultsToPdf();
-                }
-                break;
-
-            case 4: // Logout
+            case 3: // Logout tab
+            case 4:
                 if (pillLogout != null) pillLogout.setBackgroundResource(R.drawable.bg_nav_pill_active);
                 if (iconLogout != null) iconLogout.setColorFilter(activeColor);
                 if (labelLogout != null) labelLogout.setTextColor(activeColor);
@@ -1983,125 +2005,196 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             String sanitizedDept = getSanitizedDepartment(activeDept);
             String sanitizedSec = getSanitizedSection(activeSec);
 
-            DatabaseReference studentsRef = !sanitizedSec.equals("--") ?
-                    dbRef.child("sections").child(sanitizedDept).child(sanitizedSec).child("students") :
-                    dbRef.child("users");
+            DatabaseReference candRef = !sanitizedSec.equals("--") ?
+                    dbRef.child("voting_controls").child(sanitizedDept).child(sanitizedSec).child("candidates") :
+                    dbRef.child("candidates");
 
-            studentsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            candRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    List<String> studentNames = new ArrayList<>();
-                    List<String> studentUids = new ArrayList<>();
-                    List<Boolean> isCrList = new ArrayList<>();
+                public void onDataChange(@NonNull DataSnapshot candSnapshot) {
+                    List<Candidate> candidateList = new ArrayList<>();
+                    if (candSnapshot.exists() && candSnapshot.hasChildren()) {
+                        for (DataSnapshot ds : candSnapshot.getChildren()) {
+                            String candSec = ds.child("section").getValue(String.class);
+                            if (candSec == null) candSec = ds.child("assignedSection").getValue(String.class);
 
-                    for (DataSnapshot ds : snapshot.getChildren()) {
-                        String role = ds.child("role").getValue(String.class);
-                        String sec = ds.child("section").getValue(String.class);
-                        if (sec == null) sec = ds.child("assignedSection").getValue(String.class);
+                            if (candSec != null && !candSec.equals("--") && !activeSec.equals("--") && !candSec.equalsIgnoreCase(activeSec)) {
+                                continue;
+                            }
 
-                        boolean isStudentRole = role == null || role.equalsIgnoreCase("Student") || role.equalsIgnoreCase("CR");
-                        boolean isThisSec = sec == null || sec.equals("--") || sec.equalsIgnoreCase(activeSec) || activeSec.equals("--");
-
-                        if (isStudentRole && isThisSec) {
-                            String sName = ds.child("name").getValue(String.class);
-                            String sId = ds.child("id").getValue(String.class);
-                            if (sName == null) sName = "Student";
-                            boolean isCr = "CR".equalsIgnoreCase(role);
-
-                            studentNames.add(sName + (sId != null ? " (" + sId + ")" : "") + (isCr ? " [CR]" : ""));
-                            studentUids.add(ds.getKey());
-                            isCrList.add(isCr);
+                            String candId = ds.getKey();
+                            String cName = ds.child("name").getValue(String.class);
+                            if (cName == null) cName = "Candidate";
+                            String dept = ds.child("dept").getValue(String.class);
+                            int vts = getSafeVotes(ds);
+                            Candidate c = new Candidate(candId, cName, vts, dept, null, candSec, null);
+                            candidateList.add(c);
                         }
                     }
 
-                    if (studentNames.isEmpty()) {
-                        return;
-                    }
-
-                    Dialog dialog = new Dialog(TeacherDashboardActivity.this);
-                    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-                    LinearLayout layout = new LinearLayout(TeacherDashboardActivity.this);
-                    layout.setOrientation(LinearLayout.VERTICAL);
-                    layout.setPadding(48, 48, 48, 48);
-                    layout.setBackgroundResource(R.drawable.bg_dialog_rounded);
-
-                    TextView tvTitle = new TextView(TeacherDashboardActivity.this);
-                    tvTitle.setText("Manage CR (Promote / Demote) - Sec " + activeSec);
-                    tvTitle.setTextSize(18f);
-                    tvTitle.setTypeface(null, Typeface.BOLD);
-                    tvTitle.setTextColor(Color.parseColor("#0F172A"));
-                    tvTitle.setPadding(0, 0, 0, 24);
-                    layout.addView(tvTitle);
-
-                    ScrollView scrollView = new ScrollView(TeacherDashboardActivity.this);
-                    LinearLayout container = new LinearLayout(TeacherDashboardActivity.this);
-                    container.setOrientation(LinearLayout.VERTICAL);
-
-                    for (int i = 0; i < studentNames.size(); i++) {
-                        final int index = i;
-                        TextView itemTv = new TextView(TeacherDashboardActivity.this);
-                        itemTv.setText(studentNames.get(i));
-                        itemTv.setTextSize(15f);
-                        itemTv.setTextColor(Color.parseColor("#0F172A"));
-                        itemTv.setPadding(24, 24, 24, 24);
-
-                        TypedValue outValue = new TypedValue();
-                        TeacherDashboardActivity.this.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
-                        itemTv.setBackgroundResource(outValue.resourceId);
-
-                        itemTv.setOnClickListener(vItem -> {
-                            dialog.dismiss();
-                            String targetUid = studentUids.get(index);
-                            boolean currentlyCr = isCrList.get(index);
-                            String newRole = currentlyCr ? "Student" : "CR";
-
-                            Map<String, Object> roleUpdates = new HashMap<>();
-                            roleUpdates.put("users/" + targetUid + "/role", newRole);
-                            if (!sanitizedSec.equals("--")) {
-                                roleUpdates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/students/" + targetUid + "/role", newRole);
+                    if (candidateList.isEmpty() && !sanitizedSec.equals("--")) {
+                        dbRef.child("candidates").addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot rootCandSnap) {
+                                List<Candidate> fallbackList = new ArrayList<>();
+                                for (DataSnapshot ds : rootCandSnap.getChildren()) {
+                                    String candSec = ds.child("section").getValue(String.class);
+                                    if (candSec == null) candSec = ds.child("assignedSection").getValue(String.class);
+                                    if (candSec != null && !candSec.equals("--") && !activeSec.equals("--") && !candSec.equalsIgnoreCase(activeSec)) {
+                                        continue;
+                                    }
+                                    String candId = ds.getKey();
+                                    String cName = ds.child("name").getValue(String.class);
+                                    if (cName == null) cName = "Candidate";
+                                    int vts = getSafeVotes(ds);
+                                    fallbackList.add(new Candidate(candId, cName, vts, "Department of CSE, BUBT", null, candSec, null));
+                                }
+                                buildAndShowManageCRDialogForCandidates(fallbackList, activeSec, sanitizedDept, sanitizedSec);
                             }
 
-                            dbRef.updateChildren(roleUpdates).addOnSuccessListener(unused -> {
-                                logAdminAction((currentlyCr ? "Demoted CR " : "Promoted CR ") + studentNames.get(index));
-                            });
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {
+                                CustomToast.show(TeacherDashboardActivity.this, "Error loading candidates: " + error.getMessage());
+                            }
                         });
-                        container.addView(itemTv);
+                    } else {
+                        buildAndShowManageCRDialogForCandidates(candidateList, activeSec, sanitizedDept, sanitizedSec);
                     }
-                    scrollView.addView(container);
-                    layout.addView(scrollView, new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
-
-                    Button btnClose = new Button(TeacherDashboardActivity.this);
-                    btnClose.setText("Close");
-                    btnClose.setTextColor(Color.parseColor("#0066FF"));
-                    btnClose.setTypeface(null, Typeface.BOLD);
-                    btnClose.setBackgroundResource(R.drawable.bg_btn_outlined);
-                    LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, (int) (48 * getResources().getDisplayMetrics().density));
-                    closeLp.setMargins(0, 24, 0, 0);
-                    btnClose.setLayoutParams(closeLp);
-                    btnClose.setOnClickListener(vClose -> dialog.dismiss());
-                    layout.addView(btnClose);
-
-                    dialog.setContentView(layout);
-                    if (dialog.getWindow() != null) {
-                        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-                        dialog.getWindow().setLayout(
-                            (int) (getResources().getDisplayMetrics().widthPixels * 0.88),
-                            WindowManager.LayoutParams.WRAP_CONTENT
-                        );
-                        dialog.getWindow().setDimAmount(0.4f);
-                    }
-                    dialog.show();
                 }
 
                 @Override
-                public void onCancelled(@NonNull DatabaseError error) {}
+                public void onCancelled(@NonNull DatabaseError error) {
+                    CustomToast.show(TeacherDashboardActivity.this, "Error loading candidates: " + error.getMessage());
+                }
             });
         } catch (Exception e) {
-            Log.e("TeacherDashboard", "Error showing Manage CR dialog", e);
+            Log.e("TeacherDashboard", "Error showing manage CR dialog", e);
+            CustomToast.show(TeacherDashboardActivity.this, "Error opening Manage CR: " + e.getMessage());
         }
+    }
+
+    private void buildAndShowManageCRDialogForCandidates(List<Candidate> candidateList, String activeSec, String sanitizedDept, String sanitizedSec) {
+        if (candidateList == null || candidateList.isEmpty()) {
+            CustomToast.show(TeacherDashboardActivity.this, "No candidates found for Section " + activeSec);
+            return;
+        }
+
+        dbRef.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot usersSnapshot) {
+                Map<String, String> candidateRoles = new HashMap<>();
+                Map<String, String> candidateUids = new HashMap<>();
+
+                for (DataSnapshot ds : usersSnapshot.getChildren()) {
+                    String uid = ds.getKey();
+                    String name = ds.child("name").getValue(String.class);
+                    String role = ds.child("role").getValue(String.class);
+                    String id = ds.child("id").getValue(String.class);
+
+                    if (name != null) candidateRoles.put(name.trim().toLowerCase(), role != null ? role : "Student");
+                    if (name != null) candidateUids.put(name.trim().toLowerCase(), uid);
+                    if (id != null) candidateUids.put(id.trim(), uid);
+                }
+
+                Dialog dialog = new Dialog(TeacherDashboardActivity.this);
+                dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+                LinearLayout layout = new LinearLayout(TeacherDashboardActivity.this);
+                layout.setOrientation(LinearLayout.VERTICAL);
+                layout.setPadding(48, 48, 48, 48);
+                layout.setBackgroundResource(R.drawable.bg_dialog_rounded);
+
+                TextView tvTitle = new TextView(TeacherDashboardActivity.this);
+                tvTitle.setText("Manage CR (Promote / Demote) - Sec " + activeSec);
+                tvTitle.setTextSize(18f);
+                tvTitle.setTypeface(null, Typeface.BOLD);
+                tvTitle.setTextColor(Color.parseColor("#0F172A"));
+                tvTitle.setPadding(0, 0, 0, 24);
+                layout.addView(tvTitle);
+
+                ScrollView scrollView = new ScrollView(TeacherDashboardActivity.this);
+                LinearLayout container = new LinearLayout(TeacherDashboardActivity.this);
+                container.setOrientation(LinearLayout.VERTICAL);
+
+                for (int i = 0; i < candidateList.size(); i++) {
+                    Candidate candidate = candidateList.get(i);
+                    String cName = candidate.getName();
+                    String keyName = cName != null ? cName.trim().toLowerCase() : "";
+                    String currentRole = candidateRoles.containsKey(keyName) ? candidateRoles.get(keyName) : "Student";
+                    boolean isCr = "CR".equalsIgnoreCase(currentRole);
+                    String targetUid = candidateUids.containsKey(keyName) ? candidateUids.get(keyName) : candidate.getId();
+
+                    TextView itemTv = new TextView(TeacherDashboardActivity.this);
+                    itemTv.setText((i + 1) + ". " + cName + (isCr ? " [CR]" : ""));
+                    itemTv.setTextSize(15f);
+                    itemTv.setTextColor(Color.parseColor("#0F172A"));
+                    itemTv.setPadding(24, 24, 24, 24);
+
+                    TypedValue outValue = new TypedValue();
+                    TeacherDashboardActivity.this.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
+                    itemTv.setBackgroundResource(outValue.resourceId);
+
+                    itemTv.setOnClickListener(vItem -> {
+                        dialog.dismiss();
+                        boolean currentlyCr = isCr;
+                        String newRole = currentlyCr ? "Student" : "CR";
+
+                        Map<String, Object> roleUpdates = new HashMap<>();
+                        if (targetUid != null && !targetUid.isEmpty()) {
+                            roleUpdates.put("users/" + targetUid + "/role", newRole);
+                        }
+                        if (!sanitizedSec.equals("--") && targetUid != null && !targetUid.isEmpty()) {
+                            roleUpdates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/students/" + targetUid + "/role", newRole);
+                        }
+
+                        if (!roleUpdates.isEmpty()) {
+                            dbRef.updateChildren(roleUpdates).addOnSuccessListener(unused -> {
+                                String actionText = (currentlyCr ? "Demoted " : "Promoted ") + cName + " to " + newRole;
+                                CustomToast.show(TeacherDashboardActivity.this, actionText + " successfully!");
+                                logAdminAction(actionText);
+                            }).addOnFailureListener(e -> {
+                                CustomToast.show(TeacherDashboardActivity.this, "Failed to update role: " + e.getMessage());
+                            });
+                        } else {
+                            CustomToast.show(TeacherDashboardActivity.this, "Cannot update role for candidate: UID missing");
+                        }
+                    });
+                    container.addView(itemTv);
+                }
+
+                scrollView.addView(container);
+                layout.addView(scrollView, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
+
+                Button btnClose = new Button(TeacherDashboardActivity.this);
+                btnClose.setText("Close");
+                btnClose.setTextColor(Color.parseColor("#0066FF"));
+                btnClose.setTypeface(null, Typeface.BOLD);
+                btnClose.setBackgroundResource(R.drawable.bg_btn_outlined);
+                LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, (int) (48 * getResources().getDisplayMetrics().density));
+                closeLp.setMargins(0, 24, 0, 0);
+                btnClose.setLayoutParams(closeLp);
+                btnClose.setOnClickListener(vClose -> dialog.dismiss());
+                layout.addView(btnClose);
+
+                dialog.setContentView(layout);
+                if (dialog.getWindow() != null) {
+                    dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                    dialog.getWindow().setLayout(
+                        (int) (getResources().getDisplayMetrics().widthPixels * 0.88),
+                        WindowManager.LayoutParams.WRAP_CONTENT
+                    );
+                    dialog.getWindow().setDimAmount(0.4f);
+                }
+                dialog.show();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                CustomToast.show(TeacherDashboardActivity.this, "Error: " + error.getMessage());
+            }
+        });
     }
 
     private void setPdfExportLoading(boolean loading) {
@@ -2296,39 +2389,23 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     }
 
     private void showProfileTab() {
-        View layoutTabStats = findViewById(R.id.layoutTabStats);
-        View layoutTabControls = findViewById(R.id.layoutTabControls);
-        View layoutTabCandidates = findViewById(R.id.layoutTabCandidates);
-        View layoutTabProfile = findViewById(R.id.layoutTabProfile);
+        selectAdminTab(2, false);
+    }
 
-        if (layoutTabStats != null) layoutTabStats.setVisibility(View.GONE);
-        if (layoutTabControls != null) layoutTabControls.setVisibility(View.GONE);
-        if (layoutTabCandidates != null) layoutTabCandidates.setVisibility(View.GONE);
-        if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.VISIBLE);
+    private void updateSectionButtonState(Button button, boolean isSelected) {
+        if (button == null) return;
+        int selectedBg = Color.WHITE;
+        int selectedText = Color.parseColor("#0066FF");
+        int unselectedBg = Color.TRANSPARENT;
+        int unselectedText = Color.WHITE;
+        int selectedStroke = Color.WHITE;
+        int unselectedStroke = Color.parseColor("#80FFFFFF");
 
-        int inactiveColor = Color.parseColor("#64748B");
-        if (pillStats != null) pillStats.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
-        if (pillControls != null) pillControls.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
-        if (pillCandidates != null) pillCandidates.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
-        if (pillExportPdf != null) pillExportPdf.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
-        if (pillLogout != null) pillLogout.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
-
-        if (iconStats != null) iconStats.setColorFilter(inactiveColor);
-        if (iconControls != null) iconControls.setColorFilter(inactiveColor);
-        if (iconCandidates != null) iconCandidates.setColorFilter(inactiveColor);
-        if (iconExportPdf != null) iconExportPdf.setColorFilter(inactiveColor);
-        if (iconLogout != null) iconLogout.setColorFilter(inactiveColor);
-
-        if (labelStats != null) labelStats.setTextColor(inactiveColor);
-        if (labelControls != null) labelControls.setTextColor(inactiveColor);
-        if (labelCandidates != null) labelCandidates.setTextColor(inactiveColor);
-        if (labelExportPdf != null) labelExportPdf.setTextColor(inactiveColor);
-        if (labelLogout != null) labelLogout.setTextColor(inactiveColor);
-
-        updateDrawerActiveState(5);
-
-        NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
-        if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
+        button.setBackgroundTintList(ColorStateList.valueOf(isSelected ? selectedBg : unselectedBg));
+        button.setTextColor(isSelected ? selectedText : unselectedText);
+        if (button instanceof MaterialButton) {
+            ((MaterialButton) button).setStrokeColor(ColorStateList.valueOf(isSelected ? selectedStroke : unselectedStroke));
+        }
     }
 
     private void switchSection(String sec) {
@@ -2374,23 +2451,9 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             sessionManager.setAssignedSection(sec);
         }
 
-        int selectedBg = Color.WHITE;
-        int selectedText = Color.parseColor("#0066FF");
-        int unselectedBg = Color.TRANSPARENT;
-        int unselectedText = Color.WHITE;
-
-        if (btnSec4 != null) {
-            btnSec4.setBackgroundTintList(ColorStateList.valueOf(sec.equals("4") ? selectedBg : unselectedBg));
-            btnSec4.setTextColor(sec.equals("4") ? selectedText : unselectedText);
-        }
-        if (btnSec6 != null) {
-            btnSec6.setBackgroundTintList(ColorStateList.valueOf(sec.equals("6") ? selectedBg : unselectedBg));
-            btnSec6.setTextColor(sec.equals("6") ? selectedText : unselectedText);
-        }
-        if (btnSec7 != null) {
-            btnSec7.setBackgroundTintList(ColorStateList.valueOf(sec.equals("7") ? selectedBg : unselectedBg));
-            btnSec7.setTextColor(sec.equals("7") ? selectedText : unselectedText);
-        }
+        updateSectionButtonState(btnSec4, sec.equals("4"));
+        updateSectionButtonState(btnSec6, sec.equals("6"));
+        updateSectionButtonState(btnSec7, sec.equals("7"));
     }
 
     private void showTeacherProfileBottomSheet() {
