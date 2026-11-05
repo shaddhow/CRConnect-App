@@ -147,8 +147,8 @@ fun StudentPortalDrawerContent(
                     .padding(horizontal = 12.dp)
             ) {
                 DrawerNavItem(
-                    label = "Candidates",
-                    iconRes = R.drawable.ic_people,
+                    label = "Class routine",
+                    iconRes = R.drawable.ic_nav_routine,
                     isSelected = localSelectedTab == 0,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -160,8 +160,8 @@ fun StudentPortalDrawerContent(
                 Spacer(modifier = Modifier.height(2.dp))
 
                 DrawerNavItem(
-                    label = "Class routine",
-                    iconRes = R.drawable.ic_nav_routine,
+                    label = "Candidates",
+                    iconRes = R.drawable.ic_people,
                     isSelected = localSelectedTab == 1,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)

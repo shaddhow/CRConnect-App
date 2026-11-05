@@ -228,10 +228,12 @@ class StudentPortalViewModel : ViewModel() {
                     if (snapshot.exists() && snapshot.hasChildren()) {
                         parseCandidatesSnapshot(snapshot)
                     } else {
-                        // Fallback to root candidates node
-                        dbRef?.child("candidates")?.addListenerForSingleValueEvent(object : ValueEventListener {
+                        // Fallback live listener to root candidates node
+                        dbRef?.child("candidates")?.addValueEventListener(object : ValueEventListener {
                             override fun onDataChange(rootSnap: DataSnapshot) {
-                                parseCandidatesSnapshot(rootSnap)
+                                if (_uiState.value.candidates.isEmpty() || !snapshot.exists()) {
+                                    parseCandidatesSnapshot(rootSnap)
+                                }
                             }
                             override fun onCancelled(error: DatabaseError) {}
                         })
@@ -353,7 +355,8 @@ class StudentPortalViewModel : ViewModel() {
 
     private fun sanitizeSection(sec: String): String {
         if (sec.isBlank() || sec == "--" || sec.equals("5A", ignoreCase = true)) return "6"
-        val clean = sec.trim().replace(Regex("[^a-zA-Z0-9_]"), "_")
+        val digitsOnly = sec.replace(Regex("(?i)^section\\s*|^sec\\.?\\s*"), "").trim()
+        val clean = digitsOnly.replace(Regex("[^a-zA-Z0-9_]"), "_")
         return if (clean.isBlank()) "6" else clean
     }
 
@@ -378,8 +381,11 @@ class StudentPortalViewModel : ViewModel() {
             val candSec = ds.child("section").getValue(String::class.java)
                 ?: ds.child("assignedSection").getValue(String::class.java)
 
-            if (snapshot.key == "candidates" && candSec != null && candSec.isNotBlank() && !candSec.equals("--", ignoreCase = true)) {
-                if (!candSec.equals(rawSec, ignoreCase = true) && !candSec.equals(sanitizedSec, ignoreCase = true)) {
+            if (candSec != null && candSec.isNotBlank() && !candSec.equals("--", ignoreCase = true)) {
+                val cleanCandSec = sanitizeSection(candSec)
+                if (!candSec.equals(rawSec, ignoreCase = true) &&
+                    !candSec.equals(sanitizedSec, ignoreCase = true) &&
+                    !cleanCandSec.equals(sanitizedSec, ignoreCase = true)) {
                     continue
                 }
             }

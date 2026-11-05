@@ -1063,7 +1063,7 @@ fun RoutineTabPreview() {
                 )
         ) {
             RoutineTab(
-                uiState = StudentPortalUiState(selectedTab = 1, selectedDayIndex = 6),
+                uiState = StudentPortalUiState(selectedTab = 0, selectedDayIndex = 6),
                 onDaySelected = {},
                 onOpenAddClass = {},
                 onCloseAddClass = {},
@@ -1092,7 +1092,7 @@ fun RoutineTabWithSheetPreview() {
                 )
         ) {
             RoutineTab(
-                uiState = StudentPortalUiState(selectedTab = 1, selectedDayIndex = 6, isAddClassSheetOpen = true),
+                uiState = StudentPortalUiState(selectedTab = 0, selectedDayIndex = 6, isAddClassSheetOpen = true),
                 onDaySelected = {},
                 onOpenAddClass = {},
                 onCloseAddClass = {},

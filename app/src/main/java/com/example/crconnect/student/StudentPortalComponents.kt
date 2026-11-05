@@ -419,8 +419,8 @@ fun StudentBottomNavigation(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val items = listOf(
-                Triple("Candidates", R.drawable.ic_nav_candidates, 0),
-                Triple("Routine", R.drawable.ic_nav_routine, 1),
+                Triple("Routine", R.drawable.ic_nav_routine, 0),
+                Triple("Candidates", R.drawable.ic_nav_candidates, 1),
                 Triple("Status", R.drawable.ic_nav_timer, 2),
                 Triple("Profile", R.drawable.ic_nav_profile, 3)
             )

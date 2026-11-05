@@ -116,11 +116,7 @@ fun StudentPortalScreen(
                         label = "StudentPortalTabTransition"
                     ) { tab ->
                         when (tab) {
-                            0 -> CandidatesTab(
-                                uiState = uiState,
-                                onCastVote = { candidateId -> viewModel.castVote(candidateId) }
-                            )
-                            1 -> RoutineTab(
+                            0 -> RoutineTab(
                                 uiState = uiState,
                                 onDaySelected = { day -> viewModel.selectScheduleDay(day) },
                                 onOpenAddClass = { viewModel.openAddClassSheet() },
@@ -136,9 +132,13 @@ fun StudentPortalScreen(
                                 },
                                 onShowToast = { msg -> viewModel.showToast(msg) }
                             )
+                            1 -> CandidatesTab(
+                                uiState = uiState,
+                                onCastVote = { candidateId -> viewModel.castVote(candidateId) }
+                            )
                             2 -> StatusTab(
                                 uiState = uiState,
-                                onGoToCandidates = { viewModel.selectTab(0) }
+                                onGoToCandidates = { viewModel.selectTab(1) }
                             )
                             3 -> ProfileTab(
                                 profile = uiState.profile,

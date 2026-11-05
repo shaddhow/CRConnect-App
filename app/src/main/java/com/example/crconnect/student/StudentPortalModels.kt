@@ -116,7 +116,7 @@ fun calculateCurrentWeekDays(): Pair<String, List<DayModel>> {
 private val defaultWeekData = calculateCurrentWeekDays()
 
 data class StudentPortalUiState(
-    val selectedTab: Int = 0, // Default to Candidates tab (index 0)
+    val selectedTab: Int = 0, // Default to Routine tab (index 0)
     val hasVoted: Boolean = false,
     val votedCandidateId: String? = null,
     val receiptId: String = "CR-839201",

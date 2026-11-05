@@ -25,6 +25,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -188,13 +189,31 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     }
 
     private String getSanitizedSection(String sec) {
-        if (sec == null || sec.trim().isEmpty() || sec.equals("--")) return "--";
-        return sec.trim().replace("/", "_").replace(" ", "_").replace(".", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+        if (sec == null || sec.trim().isEmpty() || sec.equals("--") || sec.equalsIgnoreCase("5A")) return "6";
+        String digitsOnly = sec.replaceAll("(?i)^section\\s*|^sec\\.?\\s*", "").trim();
+        String clean = digitsOnly.replaceAll("[^a-zA-Z0-9_]", "_");
+        return clean.isEmpty() ? "6" : clean;
     }
 
     private String getSanitizedDepartment(String dept) {
-        if (dept == null || dept.trim().isEmpty() || dept.equals("--")) return "Department_of_CSE_BUBT";
-        return dept.trim().replace("/", "_").replace(" ", "_").replace(".", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_").replace("&", "_");
+        if (dept == null || dept.trim().isEmpty() || dept.equals("--")) return "CSE";
+        String normalized = dept.trim().toUpperCase(Locale.US);
+        if (normalized.contains("CSE") || normalized.contains("COMPUTER SCIENCE")) return "CSE";
+        if (normalized.contains("EEE") || normalized.contains("ELECTRICAL")) return "EEE";
+        if (normalized.contains("BBA") || normalized.contains("BUSINESS")) return "BBA";
+        if (normalized.contains("ENG") || normalized.contains("ENGLISH")) return "ENG";
+        if (normalized.contains("LAW") || normalized.contains("JUSTICE")) return "LAW";
+        if (normalized.contains("TEXTILE") || normalized.contains("TE")) return "TE";
+        if (normalized.contains("CIVIL") || normalized.contains("CE")) return "CE";
+        if (normalized.contains("DATA SCIENCE") || normalized.contains("DSE")) return "DSE";
+        if (normalized.contains("MATH") || normalized.contains("MNS") || normalized.contains("STAT")) return "MNS";
+        if (normalized.contains("ECO") || normalized.contains("ECONOMICS")) return "ECO";
+        if (normalized.contains("ACC") || normalized.contains("ACCOUNTING")) return "ACC";
+        if (normalized.contains("FIN") || normalized.contains("FINANCE")) return "FIN";
+        if (normalized.contains("MGT") || normalized.contains("MANAGEMENT")) return "MGT";
+        if (normalized.contains("MKT") || normalized.contains("MARKETING")) return "MKT";
+        String clean = dept.trim().replaceAll("[^a-zA-Z0-9_]", "_");
+        return clean.isEmpty() ? "CSE" : clean;
     }
 
     private void createDefaultTeacherProfileAndProceed() {
@@ -351,7 +370,9 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 }
 
                 @Override
-                public void onItemClick(Candidate candidate) {}
+                public void onItemClick(Candidate candidate) {
+                    showCandidateOptionsDialog(candidate);
+                }
 
                 @Override
                 public void onTestVoteClick(Candidate candidate) {
@@ -711,7 +732,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             logAdminAction(isChecked ? "Enabled Master Voting for Section " + currentSec : "Disabled Master Voting for Section " + currentSec);
 
-            String notifTitle = isChecked ? "🟢 Live Voting is OPEN (Sec " + currentSec + ")" : "🔴 Live Voting is LOCKED (Sec " + currentSec + ")";
+            String notifTitle = isChecked ? "Live Voting is OPEN (Sec " + currentSec + ")" : "Live Voting is LOCKED (Sec " + currentSec + ")";
             String notifBody = isChecked ?
                     "Election admin " + sessionManager.getUserName() + " has opened live voting for Section " + currentSec + "! Cast your vote now." :
                     "Live voting for Section " + currentSec + " has been locked by election admin " + sessionManager.getUserName() + ".";
@@ -903,7 +924,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                     dbRef.updateChildren(updates).addOnSuccessListener(unused -> {
                                         logAdminAction("Initialized Run-Off Election Round for Section " + activeSec);
                                         broadcastNotificationToStudents(
-                                            "⚡ Run-Off Round Initialized (Sec " + activeSec + ")",
+                                            "Run-Off Round Initialized (Sec " + activeSec + ")",
                                             "A run-off election round has been initiated for Section " + activeSec + ". All vote locks are cleared!",
                                             "RUN_OFF"
                                         );
@@ -1294,30 +1315,440 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         return new ArrayList<>();
     }
 
+    private void showCandidateOptionsDialog(Candidate candidate) {
+        if (candidate == null) return;
+        try {
+            String activeSec = getTeacherAssignedSection();
+            String activeDept = getTeacherDepartment();
+            String sanitizedDept = getSanitizedDepartment(activeDept);
+            String sanitizedSec = getSanitizedSection(activeSec);
+
+            dbRef.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot usersSnapshot) {
+                    if (isFinishing() || isDestroyed()) return;
+
+                    String cName = candidate.getName() != null ? candidate.getName() : "Candidate";
+                    String keyName = cName.trim().toLowerCase(Locale.US);
+
+                    String currentRole = "Student";
+                    String targetUid = candidate.getId();
+
+                    for (DataSnapshot ds : usersSnapshot.getChildren()) {
+                        String uid = ds.getKey();
+                        String name = ds.child("name").getValue(String.class);
+                        String role = ds.child("role").getValue(String.class);
+                        String id = ds.child("id").getValue(String.class);
+
+                        if (name != null && name.trim().toLowerCase(Locale.US).equals(keyName)) {
+                            currentRole = role != null ? role : "Student";
+                            targetUid = uid;
+                            break;
+                        }
+                        if (id != null && candidate.getId() != null && id.trim().equals(candidate.getId().trim())) {
+                            currentRole = role != null ? role : "Student";
+                            targetUid = uid;
+                            break;
+                        }
+                    }
+
+                    final boolean isCr = "CR".equalsIgnoreCase(currentRole);
+                    final String finalTargetUid = targetUid;
+
+                    Dialog dialog = new Dialog(TeacherDashboardActivity.this);
+                    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+                    LinearLayout layout = new LinearLayout(TeacherDashboardActivity.this);
+                    layout.setOrientation(LinearLayout.VERTICAL);
+                    layout.setPadding(40, 40, 40, 40);
+                    layout.setBackgroundResource(R.drawable.bg_dialog_rounded);
+
+                    // Candidate Title & Badge Header Row
+                    LinearLayout headerRow = new LinearLayout(TeacherDashboardActivity.this);
+                    headerRow.setOrientation(LinearLayout.HORIZONTAL);
+                    headerRow.setGravity(Gravity.CENTER_VERTICAL);
+
+                    TextView tvTitle = new TextView(TeacherDashboardActivity.this);
+                    tvTitle.setText(cName);
+                    tvTitle.setTextSize(18f);
+                    tvTitle.setTypeface(null, Typeface.BOLD);
+                    tvTitle.setTextColor(Color.parseColor("#0F172A"));
+                    LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+                    tvTitle.setLayoutParams(titleLp);
+                    headerRow.addView(tvTitle);
+
+                    // Status Pill
+                    TextView rolePill = new TextView(TeacherDashboardActivity.this);
+                    rolePill.setText(isCr ? "CR DECLARED" : "CANDIDATE");
+                    rolePill.setTextSize(10f);
+                    rolePill.setTypeface(null, Typeface.BOLD);
+                    rolePill.setPadding(dpToPx(8), dpToPx(4), dpToPx(8), dpToPx(4));
+
+                    GradientDrawable pillBg = new GradientDrawable();
+                    pillBg.setCornerRadius(dpToPx(6));
+                    pillBg.setColor(Color.parseColor(isCr ? "#FEF3C7" : "#EFF6FF"));
+                    pillBg.setStroke(dpToPx(1), Color.parseColor(isCr ? "#FCD34D" : "#BFD7FF"));
+                    rolePill.setBackground(pillBg);
+                    rolePill.setTextColor(Color.parseColor(isCr ? "#92400E" : "#1D4ED8"));
+                    headerRow.addView(rolePill);
+
+                    layout.addView(headerRow);
+
+                    // Subtitle
+                    TextView tvSub = new TextView(TeacherDashboardActivity.this);
+                    tvSub.setText(candidate.getVotes() + " votes · " + (candidate.getDept() != null ? candidate.getDept() : activeDept));
+                    tvSub.setTextSize(12.5f);
+                    tvSub.setTextColor(Color.parseColor("#64748B"));
+                    tvSub.setPadding(0, dpToPx(4), 0, dpToPx(12));
+                    layout.addView(tvSub);
+
+                    // Divider
+                    View divider = new View(TeacherDashboardActivity.this);
+                    divider.setBackgroundColor(Color.parseColor("#E2E8F0"));
+                    layout.addView(divider, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(1)));
+
+                    // Box 1: Promote / Demote CR
+                    View boxPromote = createOptionBox(
+                            TeacherDashboardActivity.this,
+                            isCr ? "Demote from CR to Student" : "Promote to Class Representative",
+                            isCr ? "Revert candidate's role back to general student" : "Grant official CR permissions for Section " + activeSec,
+                            R.drawable.ic_users,
+                            isCr ? Color.parseColor("#B45309") : Color.parseColor("#15803D"),
+                            isCr ? Color.parseColor("#92400E") : Color.parseColor("#166534"),
+                            Color.parseColor(isCr ? "#FFFBEB" : "#F0FDF4"),
+                            Color.parseColor(isCr ? "#FDE68A" : "#BBF7D0"),
+                            Color.parseColor(isCr ? "#FEF3C7" : "#DCFCE7"),
+                            Color.parseColor(isCr ? "#D97706" : "#16A34A"),
+                            v -> {
+                                dialog.dismiss();
+                                String newRole = isCr ? "Student" : "CR";
+                                Map<String, Object> roleUpdates = new HashMap<>();
+                                if (finalTargetUid != null && !finalTargetUid.isEmpty()) {
+                                    roleUpdates.put("users/" + finalTargetUid + "/role", newRole);
+                                }
+                                if (!sanitizedSec.equals("--") && finalTargetUid != null && !finalTargetUid.isEmpty()) {
+                                    roleUpdates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/students/" + finalTargetUid + "/role", newRole);
+                                }
+
+                                if (!roleUpdates.isEmpty()) {
+                                    dbRef.updateChildren(roleUpdates).addOnSuccessListener(unused -> {
+                                        String msg = (isCr ? "Demoted " : "Promoted ") + cName + " to " + newRole + " successfully!";
+                                        CustomToast.show(TeacherDashboardActivity.this, msg);
+                                        logAdminAction(msg);
+                                    }).addOnFailureListener(e -> {
+                                        CustomToast.show(TeacherDashboardActivity.this, "Error updating role: " + e.getMessage());
+                                    });
+                                } else {
+                                    CustomToast.show(TeacherDashboardActivity.this, "Cannot update role: Student record not found");
+                                }
+                            }
+                    );
+                    layout.addView(boxPromote);
+
+                    // Box 2: Edit Candidate Name
+                    View boxEdit = createOptionBox(
+                            TeacherDashboardActivity.this,
+                            "Edit Candidate Name",
+                            "Update candidate name across all election portal records",
+                            R.drawable.ic_file_text,
+                            Color.parseColor("#1D4ED8"),
+                            Color.parseColor("#1E40AF"),
+                            Color.parseColor("#EFF6FF"),
+                            Color.parseColor("#BFD7FF"),
+                            Color.parseColor("#DBEAFE"),
+                            Color.parseColor("#2563EB"),
+                            v -> {
+                                dialog.dismiss();
+                                showEditCandidateNameDialog(candidate);
+                            }
+                    );
+                    layout.addView(boxEdit);
+
+                    // Box 3: Delete Candidate
+                    View boxDelete = createOptionBox(
+                            TeacherDashboardActivity.this,
+                            "Delete Candidate",
+                            "Remove candidate permanently from election portal",
+                            R.drawable.ic_delete,
+                            Color.parseColor("#B91C1C"),
+                            Color.parseColor("#991B1B"),
+                            Color.parseColor("#FEF2F2"),
+                            Color.parseColor("#FECACA"),
+                            Color.parseColor("#FEE2E2"),
+                            Color.parseColor("#DC2626"),
+                            v -> {
+                                dialog.dismiss();
+                                showDeleteCandidateDialog(candidate);
+                            }
+                    );
+                    layout.addView(boxDelete);
+
+                    // Cancel button
+                    Button btnClose = new Button(TeacherDashboardActivity.this);
+                    btnClose.setText("Cancel");
+                    btnClose.setTextColor(Color.parseColor("#64748B"));
+                    btnClose.setTypeface(null, Typeface.BOLD);
+                    btnClose.setBackgroundResource(R.drawable.bg_btn_outlined);
+                    LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT, (int) (44 * getResources().getDisplayMetrics().density));
+                    closeLp.setMargins(0, dpToPx(16), 0, 0);
+                    btnClose.setLayoutParams(closeLp);
+                    btnClose.setOnClickListener(vClose -> dialog.dismiss());
+                    layout.addView(btnClose);
+
+                    dialog.setContentView(layout);
+                    if (dialog.getWindow() != null) {
+                        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                        dialog.getWindow().setLayout(
+                                (int) (getResources().getDisplayMetrics().widthPixels * 0.90),
+                                WindowManager.LayoutParams.WRAP_CONTENT
+                        );
+                        dialog.getWindow().setDimAmount(0.45f);
+                    }
+                    dialog.show();
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    CustomToast.show(TeacherDashboardActivity.this, "Error loading user profile: " + error.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            Log.e("TeacherDashboard", "Error showing candidate options dialog", e);
+        }
+    }
+
+    private View createOptionBox(
+            Context context,
+            String title,
+            String subtitle,
+            int iconResId,
+            int titleColor,
+            int subtitleColor,
+            int bgColor,
+            int borderColor,
+            int iconBgColor,
+            int iconTint,
+            View.OnClickListener onClickListener
+    ) {
+        MaterialCardView card = new MaterialCardView(context);
+        card.setRadius(dpToPx(14));
+        card.setStrokeWidth(dpToPx(1));
+        card.setStrokeColor(borderColor);
+        card.setCardBackgroundColor(bgColor);
+        card.setCardElevation(0f);
+        card.setUseCompatPadding(false);
+
+        LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        cardLp.setMargins(0, dpToPx(10), 0, 0);
+        card.setLayoutParams(cardLp);
+
+        LinearLayout row = new LinearLayout(context);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dpToPx(16), dpToPx(14), dpToPx(16), dpToPx(14));
+
+        // Left Icon Container
+        FrameLayout iconBox = new FrameLayout(context);
+        GradientDrawable iconBg = new GradientDrawable();
+        iconBg.setCornerRadius(dpToPx(10));
+        iconBg.setColor(iconBgColor);
+        iconBox.setBackground(iconBg);
+
+        int sz38 = dpToPx(38);
+        LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(sz38, sz38);
+        iconLp.setMarginEnd(dpToPx(14));
+        iconBox.setLayoutParams(iconLp);
+
+        ImageView imgIcon = new ImageView(context);
+        imgIcon.setImageResource(iconResId);
+        imgIcon.setColorFilter(iconTint);
+        int sz20 = dpToPx(20);
+        FrameLayout.LayoutParams imgLp = new FrameLayout.LayoutParams(sz20, sz20, Gravity.CENTER);
+        imgIcon.setLayoutParams(imgLp);
+        iconBox.addView(imgIcon);
+
+        row.addView(iconBox);
+
+        // Text Column
+        LinearLayout textCol = new LinearLayout(context);
+        textCol.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+        textCol.setLayoutParams(textLp);
+
+        TextView tvTitle = new TextView(context);
+        tvTitle.setText(title);
+        tvTitle.setTextSize(14f);
+        tvTitle.setTypeface(null, Typeface.BOLD);
+        tvTitle.setTextColor(titleColor);
+        textCol.addView(tvTitle);
+
+        TextView tvSub = new TextView(context);
+        tvSub.setText(subtitle);
+        tvSub.setTextSize(11f);
+        tvSub.setTextColor(subtitleColor);
+        tvSub.setPadding(0, dpToPx(2), 0, 0);
+        textCol.addView(tvSub);
+
+        row.addView(textCol);
+
+        // Right Arrow
+        ImageView arrow = new ImageView(context);
+        arrow.setImageResource(R.drawable.ic_chevron_right);
+        arrow.setColorFilter(titleColor);
+        int sz16 = dpToPx(16);
+        LinearLayout.LayoutParams arrowLp = new LinearLayout.LayoutParams(sz16, sz16);
+        arrow.setLayoutParams(arrowLp);
+        row.addView(arrow);
+
+        card.addView(row);
+        card.setOnClickListener(onClickListener);
+
+        return card;
+    }
+
+    private void showEditCandidateNameDialog(Candidate candidate) {
+        if (candidate == null || candidate.getId() == null) return;
+        try {
+            Dialog dialog = new Dialog(TeacherDashboardActivity.this);
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+            LinearLayout layout = new LinearLayout(TeacherDashboardActivity.this);
+            layout.setOrientation(LinearLayout.VERTICAL);
+            layout.setPadding(48, 48, 48, 48);
+            layout.setBackgroundResource(R.drawable.bg_dialog_rounded);
+
+            TextView tvTitle = new TextView(TeacherDashboardActivity.this);
+            tvTitle.setText("Edit Candidate Name");
+            tvTitle.setTextSize(18f);
+            tvTitle.setTypeface(null, Typeface.BOLD);
+            tvTitle.setTextColor(Color.parseColor("#0F172A"));
+            tvTitle.setPadding(0, 0, 0, 16);
+            layout.addView(tvTitle);
+
+            EditText etName = new EditText(TeacherDashboardActivity.this);
+            etName.setText(candidate.getName());
+            if (candidate.getName() != null) etName.setSelection(candidate.getName().length());
+            etName.setTextSize(15f);
+            etName.setTextColor(Color.parseColor("#0F172A"));
+            etName.setPadding(24, 24, 24, 24);
+            etName.setBackgroundResource(R.drawable.edit_text_bg);
+            layout.addView(etName);
+
+            LinearLayout btnLayout = new LinearLayout(TeacherDashboardActivity.this);
+            btnLayout.setOrientation(LinearLayout.HORIZONTAL);
+            btnLayout.setPadding(0, 32, 0, 0);
+
+            Button btnCancel = new Button(TeacherDashboardActivity.this);
+            btnCancel.setText("Cancel");
+            btnCancel.setTextColor(Color.parseColor("#64748B"));
+            btnCancel.setBackgroundResource(R.drawable.bg_btn_outlined);
+            LinearLayout.LayoutParams cancelLp = new LinearLayout.LayoutParams(0, (int) (44 * getResources().getDisplayMetrics().density), 1f);
+            cancelLp.setMarginEnd(12);
+            btnCancel.setLayoutParams(cancelLp);
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+            btnLayout.addView(btnCancel);
+
+            Button btnSave = new Button(TeacherDashboardActivity.this);
+            btnSave.setText("Save");
+            btnSave.setTextColor(Color.WHITE);
+            btnSave.setBackgroundResource(R.drawable.bg_btn_primary);
+            LinearLayout.LayoutParams saveLp = new LinearLayout.LayoutParams(0, (int) (44 * getResources().getDisplayMetrics().density), 1f);
+            saveLp.setMarginStart(12);
+            btnSave.setLayoutParams(saveLp);
+
+            btnSave.setOnClickListener(v -> {
+                String newName = etName.getText() != null ? etName.getText().toString().trim() : "";
+                if (newName.isEmpty()) {
+                    etName.setError("Name cannot be empty");
+                    return;
+                }
+
+                dialog.dismiss();
+                updateCandidateNameInDatabase(candidate, newName);
+            });
+            btnLayout.addView(btnSave);
+
+            layout.addView(btnLayout);
+
+            dialog.setContentView(layout);
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                dialog.getWindow().setLayout(
+                        (int) (getResources().getDisplayMetrics().widthPixels * 0.88),
+                        WindowManager.LayoutParams.WRAP_CONTENT
+                );
+                dialog.getWindow().setDimAmount(0.4f);
+            }
+            dialog.show();
+        } catch (Exception e) {
+            Log.e("TeacherDashboard", "Error showing edit candidate dialog", e);
+        }
+    }
+
+    private void updateCandidateNameInDatabase(Candidate candidate, String newName) {
+        try {
+            String activeSec = getTeacherAssignedSection();
+            String activeDept = getTeacherDepartment();
+            String sanitizedDept = getSanitizedDepartment(activeDept);
+            String sanitizedSec = getSanitizedSection(activeSec);
+
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("candidates/" + candidate.getId() + "/name", newName);
+            if (!sanitizedSec.equals("--")) {
+                updates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + candidate.getId() + "/name", newName);
+                updates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + candidate.getId() + "/name", newName);
+            }
+
+            dbRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
+                CustomToast.show(TeacherDashboardActivity.this, "Candidate name updated to " + newName);
+                logAdminAction("Updated Candidate Name: " + candidate.getName() + " -> " + newName);
+            }).addOnFailureListener(e -> {
+                CustomToast.show(TeacherDashboardActivity.this, "Failed to update candidate name: " + e.getMessage());
+            });
+        } catch (Exception e) {
+            Log.e("TeacherDashboard", "Error updating candidate name", e);
+        }
+    }
+
+    private void deleteCandidateFromDatabase(Candidate candidate) {
+        if (candidate == null || candidate.getId() == null) return;
+        try {
+            String activeSec = getTeacherAssignedSection();
+            String activeDept = getTeacherDepartment();
+            String sanitizedDept = getSanitizedDepartment(activeDept);
+            String sanitizedSec = getSanitizedSection(activeSec);
+
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("candidates/" + candidate.getId(), null);
+            if (!sanitizedSec.equals("--")) {
+                updates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + candidate.getId(), null);
+                updates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/votes/" + candidate.getId(), null);
+                updates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + candidate.getId(), null);
+            }
+
+            dbRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
+                CustomToast.show(TeacherDashboardActivity.this, "Candidate deleted successfully");
+                logAdminAction("Deleted Candidate: " + candidate.getName());
+            }).addOnFailureListener(e -> {
+                CustomToast.show(TeacherDashboardActivity.this, "Failed to delete candidate: " + e.getMessage());
+            });
+        } catch (Exception e) {
+            Log.e("TeacherDashboard", "Error deleting candidate from database", e);
+        }
+    }
+
     private void showDeleteCandidateDialog(Candidate candidate) {
         if (candidate == null) return;
         LogoutBottomSheet bottomSheet = LogoutBottomSheet.newInstance(
             "Delete Candidate",
-            "Are you sure you want to delete " + candidate.getName() + "?",
+            "Are you sure you want to delete candidate " + candidate.getName() + "?",
             "Delete",
             () -> {
-                if (currentCandidateList != null) {
-                    currentCandidateList.remove(candidate);
-                    int totalVotes = 0;
-                    for (Candidate c : currentCandidateList) {
-                        totalVotes += Math.max(0, c.getVotes());
-                    }
-                    if (candidateAdapter != null) {
-                        candidateAdapter.updateCandidates(currentCandidateList, totalVotes);
-                    }
-                    LinearLayout containerChart = findViewById(R.id.containerChart);
-                    if (containerChart != null) {
-                        updateVoteDistributionChart(currentCandidateList, totalVotes, containerChart);
-                    }
-                    tvStatTotalVotes.setText(String.valueOf(totalVotes));
-                    int turnout = (int) Math.round((double) totalVotes / 48.0 * 100.0);
-                    tvStatTurnout.setText(turnout + "%");
-                }
+                deleteCandidateFromDatabase(candidate);
             }
         );
         bottomSheet.showAllowingStateLoss(getSupportFragmentManager(), LogoutBottomSheet.TAG);
@@ -1688,7 +2119,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     CustomToast.show(TeacherDashboardActivity.this, "Published to dashboard");
                     logAdminAction("Added New Candidate (" + name + ") for Section " + teacherSec);
                     broadcastNotificationToStudents(
-                        "📢 New Candidate Published (Sec " + teacherSec + ")",
+                        "New Candidate Published (Sec " + teacherSec + ")",
                         name + " has been added to Section " + teacherSec + " election portal. Check out their manifesto!",
                         "NEW_CANDIDATE"
                     );
@@ -1912,7 +2343,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             int minutesAdded = (int) (durationToAddMs / (60 * 1000L));
             logAdminAction("Extended Election Time by +" + minutesAdded + " min for Section " + teacherSec);
             broadcastNotificationToStudents(
-                "⏰ Voting Time Extended (Sec " + teacherSec + ")",
+                "Voting Time Extended (Sec " + teacherSec + ")",
                 "Election admin added +" + minutesAdded + " minutes of voting time for Section " + teacherSec + "!",
                 "TIMER_EXTEND"
             );
@@ -1956,7 +2387,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             votingControlRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
                 logAdminAction("Resumed Live Voting for Section " + teacherSec);
                 broadcastNotificationToStudents(
-                    "▶️ Voting Resumed (Sec " + teacherSec + ")",
+                    "Voting Resumed (Sec " + teacherSec + ")",
                     "Live voting has resumed for Section " + teacherSec + "!",
                     "TIMER_RESUME"
                 );
@@ -1970,7 +2401,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             votingControlRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
                 logAdminAction("Paused Live Voting for Section " + teacherSec);
                 broadcastNotificationToStudents(
-                    "⏸️ Voting Paused (Sec " + teacherSec + ")",
+                    "Voting Paused (Sec " + teacherSec + ")",
                     "Live voting is temporarily paused for Section " + teacherSec + " by the election admin.",
                     "TIMER_PAUSE"
                 );
@@ -1991,7 +2422,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             CustomToast.show(TeacherDashboardActivity.this, "Voting ended");
             logAdminAction("Forcefully Ended Live Voting for Section " + teacherSec);
             broadcastNotificationToStudents(
-                "🔴 Voting Concluded (Sec " + teacherSec + ")",
+                "Voting Concluded (Sec " + teacherSec + ")",
                 "Live voting for Section " + teacherSec + " has concluded! Final results are published.",
                 "TIMER_END"
             );
@@ -2244,7 +2675,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     List<PdfReportGenerator.CandidateResult> candidateResults = new ArrayList<>();
                     int totalVotes = 0;
-                    int rank = 1;
 
                     for (DataSnapshot ds : snapshot.getChildren()) {
                         String candSec = ds.child("section").getValue(String.class);
@@ -2259,9 +2689,15 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                 cName != null ? cName : "Candidate",
                                 activeDept,
                                 vts,
-                                rank++
+                                0
                             ));
                         }
+                    }
+
+                    // Sort candidate results by votes descending
+                    candidateResults.sort((c1, c2) -> Integer.compare(c2.votes, c1.votes));
+                    for (int i = 0; i < candidateResults.size(); i++) {
+                        candidateResults.get(i).rank = i + 1;
                     }
 
                     final int finalTotalVotes = totalVotes;

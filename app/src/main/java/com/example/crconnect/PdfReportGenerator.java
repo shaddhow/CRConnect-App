@@ -37,10 +37,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Ultra-Accurate, Executive-Grade PDF Document Generator for BUBT CRConnect Election Results.
+ * Pixel-perfect alignment, zero overlapping boxes, crystal clear typography.
+ */
 public class PdfReportGenerator {
 
     private static final String TAG = "PdfReportGenerator";
@@ -59,13 +64,8 @@ public class PdfReportGenerator {
         }
     }
 
-    private static float px(float v) {
-        return v * 595f / 794f;
-    }
-
     /**
-     * Generates a professionally formatted PDF file matching the exact HTML design specification (A-E)
-     * using PdfDocument Canvas rendering, and returns the real PDF File so PdfReadyBottomSheet appears.
+     * Generates a perfectly aligned, executive election results PDF document with zero overlapping boxes.
      */
     public static File generatePdfDocument(
             Context context,
@@ -78,9 +78,17 @@ public class PdfReportGenerator {
             boolean isGateOpen,
             List<CandidateResult> candidateList
     ) {
-        Log.d("PDF_DEBUG", "Generating PDF via Canvas/PdfDocument design engine");
+        Log.d(TAG, "Generating pixel-perfect election report PDF document");
 
-        // Load Plus Jakarta Sans Typefaces (500, 600, 700, 800)
+        // Sort candidates by votes descending and re-assign rank 1, 2, 3...
+        if (candidateList != null && !candidateList.isEmpty()) {
+            Collections.sort(candidateList, (c1, c2) -> Integer.compare(c2.votes, c1.votes));
+            for (int i = 0; i < candidateList.size(); i++) {
+                candidateList.get(i).rank = i + 1;
+            }
+        }
+
+        // Load Plus Jakarta Sans Typefaces
         Typeface fontMedium = null;
         Typeface fontSemiBold = null;
         Typeface fontBold = null;
@@ -99,29 +107,42 @@ public class PdfReportGenerator {
         if (fontExtraBold == null) fontExtraBold = Typeface.DEFAULT_BOLD;
 
         PdfDocument pdfDocument = new PdfDocument();
-        int pageWidth = 595;
-        int pageHeight = 842;
-        float marginX = px(40f);
+        final int pageWidth = 595;  // Standard ISO A4 width (points)
+        final int pageHeight = 842; // Standard ISO A4 height (points)
+        final float marginX = 36f;  // 0.5 inch side margins
+        final float contentWidth = pageWidth - (2 * marginX); // 523pt
 
-        // Pre-calculate page breakdown and row heights
-        float usableHeight = pageHeight - px(36f) - px(4f);
-        float fixedHeaderSectionHeight = px(6f) + px(28f) + px(56f) + px(24f) + px(1f) // accent + header
-                + px(28f) + px(8f) + px(6f) + px(55f) + px(12f) + px(17f) + px(14f) + px(22f) + px(20f) // title + meta + badge
-                + px(24f) + px(117f) + px(24f) // metrics
-                + px(45f) + px(30f) + px(28f); // section heading + table header + table wrap margin
-        float rowH = px(36f);
-        float remainingForRows = usableHeight - fixedHeaderSectionHeight;
-        int rowsOnPage1 = Math.max(1, (int)(remainingForRows / rowH));
+        final float footerHeight = 34f;
+        final float usableHeight = pageHeight - (2 * marginX);
+
+        // Explicit Section Heights for Zero Overlap
+        final float topHeaderHeight = 84f;
+        final float titleSectionHeight = 84f;
+        final float metricsHeight = 60f;
+        final float winnerSpotlightHeight = (candidateList != null && !candidateList.isEmpty()) ? 68f : 0f;
+        final float tableHeaderHeight = 26f;
+
+        final float page1FixedContent = topHeaderHeight + 10f + titleSectionHeight + 12f + metricsHeight
+                + (winnerSpotlightHeight > 0 ? (12f + winnerSpotlightHeight) : 0f) + 12f + tableHeaderHeight + 4f;
+
+        final float rowHeight = 30f;
+        final float remainingPage1 = usableHeight - page1FixedContent - footerHeight;
+        final int rowsOnPage1 = Math.max(1, (int)(remainingPage1 / rowHeight));
 
         int totalPages = 1;
         if (candidateList != null && candidateList.size() > rowsOnPage1) {
             int remainingRows = candidateList.size() - rowsOnPage1;
-            float page2RowH = usableHeight - (px(6f) + px(45f) + px(30f) + px(28f));
-            int rowsPerPageElse = Math.max(1, (int)(page2RowH / rowH));
+            float page2FixedContent = 36f + tableHeaderHeight + 4f;
+            float page2RowSpace = usableHeight - page2FixedContent - footerHeight;
+            int rowsPerPageElse = Math.max(1, (int)(page2RowSpace / rowHeight));
             totalPages = 1 + (int) Math.ceil((double) remainingRows / rowsPerPageElse);
         }
 
         int currentRowIndex = 0;
+        final CandidateResult winner = (candidateList != null && !candidateList.isEmpty()) ? candidateList.get(0) : null;
+        final String sec = sectionNo != null && !sectionNo.trim().isEmpty() ? sectionNo.trim() : "6";
+        final String shortDate = new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(new Date());
+
         for (int pageNum = 1; pageNum <= totalPages; pageNum++) {
             PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum).create();
             PdfDocument.Page page = pdfDocument.startPage(pageInfo);
@@ -129,49 +150,52 @@ public class PdfReportGenerator {
             Paint paint = new Paint();
             paint.setAntiAlias(true);
 
-            // Background
+            // Clean White Background
             canvas.drawColor(Color.WHITE);
 
-            // ==========================================
-            // TOP ACCENT BAR (6px gradient)
-            // ==========================================
-            Shader accentShader = new LinearGradient(
-                    0, 0, pageWidth, 0,
-                    new int[]{Color.parseColor("#0066FF"), Color.parseColor("#38BDF8"), Color.parseColor("#0B3A9E")},
-                    new float[]{0.0f, 0.6f, 1.0f},
-                    Shader.TileMode.CLAMP
-            );
-            paint.setShader(accentShader);
-            canvas.drawRect(0, 0, pageWidth, px(6f), paint);
-            paint.setShader(null);
+            float currentY = 0f;
 
-            float currentY = px(6f);
-
+            // =========================================================================
+            // PAGE 1 HEADER & BRANDING
+            // =========================================================================
             if (pageNum == 1) {
-                // ==========================================
-                // HEADER (padding 28/40/24, border-bottom 1 #E2E8F0, gradient 135deg #F8FAFF -> #EFF6FF)
-                // ==========================================
-                float headerTop = currentY;
-                float headerHeight = px(28f) + px(56f) + px(24f);
-                RectF headerRect = new RectF(0, headerTop, pageWidth, headerTop + headerHeight);
-
-                Shader headerBgShader = new LinearGradient(
-                        0, headerTop, pageWidth, headerTop + headerHeight,
-                        new int[]{Color.parseColor("#F8FAFF"), Color.parseColor("#EFF6FF")},
+                // Top 4pt Accent Gradient Line
+                Shader topGradient = new LinearGradient(
+                        0, 0, pageWidth, 0,
+                        new int[]{Color.parseColor("#2563EB"), Color.parseColor("#38BDF8"), Color.parseColor("#1D4ED8")},
                         null, Shader.TileMode.CLAMP
                 );
-                paint.setShader(headerBgShader);
+                paint.setShader(topGradient);
+                canvas.drawRect(0, 0, pageWidth, 4f, paint);
+                paint.setShader(null);
+
+                // Deep Navy Executive Header Card (Height: 84pt)
+                float headerTop = 4f;
+                RectF headerRect = new RectF(0, headerTop, pageWidth, headerTop + topHeaderHeight);
+                Shader headerBg = new LinearGradient(
+                        0, headerTop, pageWidth, headerTop + topHeaderHeight,
+                        new int[]{Color.parseColor("#0F172A"), Color.parseColor("#1E293B")},
+                        null, Shader.TileMode.CLAMP
+                );
+                paint.setShader(headerBg);
                 paint.setStyle(Paint.Style.FILL);
                 canvas.drawRect(headerRect, paint);
                 paint.setShader(null);
 
-                // Header Bottom Border
-                paint.setColor(Color.parseColor("#E2E8F0"));
-                paint.setStrokeWidth(px(1f));
-                canvas.drawLine(0, headerTop + headerHeight, pageWidth, headerTop + headerHeight, paint);
+                // BUBT Logo Container (Left)
+                float logoBoxSize = 46f;
+                float logoY = headerTop + 19f;
 
-                float logoY = headerTop + px(28f);
-                float logoSlotSize = px(56f);
+                RectF logoContainer = new RectF(marginX, logoY, marginX + logoBoxSize, logoY + logoBoxSize);
+                paint.setColor(Color.WHITE);
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawRoundRect(logoContainer, 10f, 10f, paint);
+
+                paint.setColor(Color.parseColor("#3B82F6"));
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(1.2f);
+                canvas.drawRoundRect(logoContainer, 10f, 10f, paint);
+                paint.setStyle(Paint.Style.FILL);
 
                 Bitmap logoBitmap = null;
                 try {
@@ -181,277 +205,284 @@ public class PdfReportGenerator {
                 }
 
                 if (logoBitmap != null) {
-                    float drawSize = px(70f);
-                    float drawX = marginX + (logoSlotSize - drawSize) / 2f;
-                    float drawY = logoY + (logoSlotSize - drawSize) / 2f;
-                    RectF logoDst = new RectF(drawX, drawY, drawX + drawSize, drawY + drawSize);
-                    canvas.drawBitmap(logoBitmap, null, logoDst, paint);
+                    float drawSize = 38f;
+                    float drawX = marginX + (logoBoxSize - drawSize) / 2f;
+                    float drawY = logoY + (logoBoxSize - drawSize) / 2f;
+                    canvas.drawBitmap(logoBitmap, null, new RectF(drawX, drawY, drawX + drawSize, drawY + drawSize), paint);
                 } else {
-                    paint.setColor(Color.parseColor("#0066FF"));
-                    canvas.drawRoundRect(new RectF(marginX, logoY, marginX + logoSlotSize, logoY + logoSlotSize), px(16f), px(16f), paint);
+                    paint.setColor(Color.parseColor("#1E40AF"));
+                    canvas.drawCircle(marginX + logoBoxSize / 2f, logoY + logoBoxSize / 2f, 15f, paint);
                 }
 
-                // Header Left Text (Starts 18 after slot)
-                float textStartX = marginX + logoSlotSize + px(18f);
+                // University Title & Subtitle (Left of logo)
+                float textX = marginX + logoBoxSize + 12f;
 
-                // University Name: 13/800 #0B3A9E, uppercase, letterSpacing .3
                 paint.setTypeface(fontExtraBold);
-                paint.setColor(Color.parseColor("#0B3A9E"));
-                paint.setTextSize(px(13f));
-                paint.setLetterSpacing(0.3f / 13f);
-                canvas.drawText("BANGLADESH UNIVERSITY OF BUSINESS AND TECHNOLOGY", textStartX, logoY + px(12f), paint);
+                paint.setColor(Color.parseColor("#F8FAFC"));
+                paint.setTextSize(10f);
+                paint.setLetterSpacing(0.03f);
+                canvas.drawText("BANGLADESH UNIVERSITY OF BUSINESS AND TECHNOLOGY", textX, logoY + 13f, paint);
                 paint.setLetterSpacing(0f);
 
-                // Subtitle: 11/500 #64748B, 1 below
                 paint.setTypeface(fontMedium);
-                paint.setColor(Color.parseColor("#64748B"));
-                paint.setTextSize(px(11f));
-                canvas.drawText("Department of Computer Science and Engineering", textStartX, logoY + px(26f), paint);
+                paint.setColor(Color.parseColor("#94A3B8"));
+                paint.setTextSize(9f);
+                canvas.drawText("Department of Computer Science and Engineering", textX, logoY + 27f, paint);
 
-                // Report chip: margin-top 6, padding 3x10, fully rounded, bg #E6F0FF, border 1 #BFD7FF, 10px icon + 6 gap + text 11/700 #0066FF
-                String chipText = "Official Election Report · CRConnect System";
                 paint.setTypeface(fontBold);
-                paint.setTextSize(px(11f));
-                float chipTextWidth = paint.measureText(chipText);
-                float chipPadH = px(10f);
-                float chipPadV = px(3f);
-                float chipH = px(11f) + (2 * chipPadV);
-                float chipW = chipTextWidth + (2 * chipPadH);
-                float chipIconSize = px(10f);
-                float chipGap = px(6f);
-                float totalChipW = chipIconSize + chipGap + chipW;
+                paint.setColor(Color.parseColor("#38BDF8"));
+                paint.setTextSize(8.5f);
+                canvas.drawText("CRConnect Realtime Election Portal · Official Audit Document", textX, logoY + 40f, paint);
 
-                RectF chipRect = new RectF(textStartX, logoY + px(35f), textStartX + totalChipW + (2 * chipPadH), logoY + px(35f) + chipH);
-                paint.setColor(Color.parseColor("#E6F0FF"));
-                paint.setStyle(Paint.Style.FILL);
-                canvas.drawRoundRect(chipRect, chipH / 2f, chipH / 2f, paint);
-
-                paint.setColor(Color.parseColor("#BFD7FF"));
-                paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth(px(1f));
-                canvas.drawRoundRect(chipRect, chipH / 2f, chipH / 2f, paint);
-
-                Drawable docIcon = ContextCompat.getDrawable(context, R.drawable.ic_doc);
-                if (docIcon != null) {
-                    float iconLeft = textStartX + chipPadH;
-                    float iconTop = chipRect.top + (chipH - chipIconSize) / 2f;
-                    docIcon.setBounds((int)iconLeft, (int)iconTop, (int)(iconLeft + chipIconSize), (int)(iconTop + chipIconSize));
-                    docIcon.draw(canvas);
-                }
-
-                paint.setStyle(Paint.Style.FILL);
-                paint.setColor(Color.parseColor("#0066FF"));
-                paint.setTypeface(fontBold);
-                paint.setTextSize(px(11f));
-                canvas.drawText(chipText, textStartX + chipPadH + chipIconSize + chipGap, chipRect.top + px(11f), paint);
-
-                // Header Right, right-aligned to pageWidth - 40
+                // Document ID & Verified Stamp (Right Side)
                 float rightX = pageWidth - marginX;
 
-                // DOC ID: 11/700 #64748B letterSpacing .5
-                String sec = sectionNo != null ? sectionNo : "6";
-                String docId = "DOC #CR-2026-SEC" + sec + "-001";
-                paint.setColor(Color.parseColor("#64748B"));
-                paint.setTypeface(fontBold);
-                paint.setTextSize(px(11f));
-                paint.setLetterSpacing(0.5f / 11f);
                 paint.setTextAlign(Paint.Align.RIGHT);
-                canvas.drawText(docId, rightX, logoY + px(12f), paint);
-                paint.setLetterSpacing(0f);
-
-                // Digitally Verified pill: margin-top 6, bg #DCFCE7, border 1 #BBF7D0, padding 3x10, 6px dot #16A34A, gap 5, text 11/700 #166534
-                String verifiedText = "Digitally Verified";
                 paint.setTypeface(fontBold);
-                paint.setTextSize(px(11f));
-                float vTextW = paint.measureText(verifiedText);
-                float vDotSize = px(6f);
-                float vGap = px(5f);
-                float vPadH = px(10f);
-                float vPadV = px(3f);
-                float vH = px(11f) + (2 * vPadV);
+                paint.setColor(Color.parseColor("#94A3B8"));
+                paint.setTextSize(8.5f);
+                canvas.drawText("OFFICIAL ELECTION AUDIT REPORT", rightX, logoY + 12f, paint);
+
+                paint.setTypeface(fontExtraBold);
+                paint.setColor(Color.parseColor("#F1F5F9"));
+                paint.setTextSize(10f);
+                canvas.drawText("DOC #CR-2026-SEC" + sec, rightX, logoY + 26f, paint);
+
+                // Live Verified Badge Pill
+                String vText = "DIGITALLY VERIFIED";
+                paint.setTypeface(fontBold);
+                paint.setTextSize(8f);
+                float vTextW = paint.measureText(vText);
+                float vDotSize = 5f;
+                float vGap = 4f;
+                float vPadH = 8f;
+                float vH = 15f;
                 float vW = vDotSize + vGap + vTextW + (2 * vPadH);
                 float vLeft = rightX - vW;
-                float vTop = logoY + px(35f);
+                float vTop = logoY + 31f;
 
-                RectF verifiedRect = new RectF(vLeft, vTop, rightX, vTop + vH);
-                paint.setColor(Color.parseColor("#DCFCE7"));
+                RectF vRect = new RectF(vLeft, vTop, rightX, vTop + vH);
+                paint.setColor(Color.parseColor("#064E3B"));
                 paint.setStyle(Paint.Style.FILL);
-                canvas.drawRoundRect(verifiedRect, vH / 2f, vH / 2f, paint);
+                canvas.drawRoundRect(vRect, vH / 2f, vH / 2f, paint);
 
-                paint.setColor(Color.parseColor("#BBF7D0"));
+                paint.setColor(Color.parseColor("#059669"));
                 paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth(px(1f));
-                canvas.drawRoundRect(verifiedRect, vH / 2f, vH / 2f, paint);
+                paint.setStrokeWidth(1f);
+                canvas.drawRoundRect(vRect, vH / 2f, vH / 2f, paint);
 
-                // Green dot
+                // Green Glowing Pulse Dot
                 paint.setStyle(Paint.Style.FILL);
-                paint.setColor(Color.parseColor("#16A34A"));
+                paint.setColor(Color.parseColor("#10B981"));
                 canvas.drawCircle(vLeft + vPadH + (vDotSize / 2f), vTop + (vH / 2f), vDotSize / 2f, paint);
 
-                // Verified text
-                paint.setColor(Color.parseColor("#166534"));
+                paint.setColor(Color.parseColor("#D1FAE5"));
                 paint.setTypeface(fontBold);
-                paint.setTextSize(px(11f));
-                canvas.drawText(verifiedText, vLeft + vPadH + vDotSize + vGap, vTop + px(11f), paint);
+                paint.setTextSize(8f);
+                canvas.drawText(vText, rightX - vPadH, vTop + 11f, paint);
 
                 paint.setTextAlign(Paint.Align.LEFT);
-                currentY += headerHeight;
+                currentY = headerTop + topHeaderHeight + 10f;
 
-                // ==========================================
-                // TITLE BLOCK (padding 28/40/20)
-                // ==========================================
-                currentY += px(28f);
-
-                // Label "Election Report" 11/700 #94A3B8 letterSpacing 1, mixed case, margin-bottom 6
-                paint.setColor(Color.parseColor("#94A3B8"));
+                // =========================================================================
+                // REPORT TITLE & METADATA SCOPE GRID
+                // =========================================================================
+                // Category Tagline
+                paint.setColor(Color.parseColor("#2563EB"));
                 paint.setTypeface(fontBold);
-                paint.setTextSize(px(11f));
-                paint.setLetterSpacing(1.0f / 11f);
-                canvas.drawText("Election Report", marginX, currentY, paint);
+                paint.setTextSize(8.5f);
+                paint.setLetterSpacing(0.06f);
+                canvas.drawText("ELECTION RESULTS SUMMARY · SEC " + sec, marginX, currentY + 8f, paint);
                 paint.setLetterSpacing(0f);
 
-                currentY += px(6f) + px(11f);
-
-                // Title 22/800 #0F172A, line-height 1.25, forced TWO lines
+                // Title
                 paint.setColor(Color.parseColor("#0F172A"));
                 paint.setTypeface(fontExtraBold);
-                paint.setTextSize(px(22f));
-                float lineH = px(22f) * 1.25f;
-                canvas.drawText("Official Class Representative", marginX, currentY, paint);
-                currentY += lineH;
-                canvas.drawText("Election Results — Section " + sec, marginX, currentY, paint);
+                paint.setTextSize(17f);
+                canvas.drawText("Class Representative Election Results", marginX, currentY + 28f, paint);
 
-                currentY += px(12f);
+                // Subtitle
+                paint.setColor(Color.parseColor("#64748B"));
+                paint.setTypeface(fontMedium);
+                paint.setTextSize(9f);
+                canvas.drawText("Certified election breakdown and live voting record for Section " + sec, marginX, currentY + 41f, paint);
 
-                // Meta row (margin-top 12): 3 items side by side with gap 24
-                String timeStamp = new SimpleDateFormat("dd MMMM yyyy, hh:mm a", Locale.getDefault()).format(new Date());
-                float metaX = marginX;
-                metaX = drawMetaItem(canvas, paint, fontBold, fontSemiBold, "GENERATED", timeStamp, metaX, currentY);
-                metaX += px(24f);
-                metaX = drawMetaItem(canvas, paint, fontBold, fontSemiBold, "CERTIFIED BY", teacherName + " · " + teacherDept, metaX, currentY);
-                metaX += px(24f);
-                drawMetaItem(canvas, paint, fontBold, fontSemiBold, "ACADEMIC YEAR", "2025–2026 · Intake 55", metaX, currentY);
+                // 3 Scope Info Cards Grid (Teacher, Academic Scope, Audit Timestamp)
+                float metaY = currentY + 48f;
+                float metaColW = (contentWidth - 16f) / 3f;
+                float metaBoxH = 32f;
 
-                currentY += px(14f) + px(22f);
+                // Meta Box 1: Teacher / Certified By
+                drawMetaCard(canvas, paint, fontBold, fontMedium, marginX, metaY, metaColW, metaBoxH,
+                        "CERTIFIED BY", teacherName + " (" + (teacherDept.contains("CSE") ? "CSE" : teacherDept) + ")");
 
-                // Status badge (margin-top 14): padding 5x12, radius 8, 12/700, 7px dot, gap 6
-                float badgeH = px(22f);
-                String statusText = isGateOpen ? "Election Status: Live Voting Gate OPEN" : "Election Status: Live Voting Gate LOCKED";
-                int sBg = isGateOpen ? Color.parseColor("#DCFCE7") : Color.parseColor("#FEF2F2");
-                int sBorder = isGateOpen ? Color.parseColor("#BBF7D0") : Color.parseColor("#FECACA");
-                int sTextCol = isGateOpen ? Color.parseColor("#166534") : Color.parseColor("#B91C1C");
-                int sDotCol = isGateOpen ? Color.parseColor("#16A34A") : Color.parseColor("#DC2626");
+                // Meta Box 2: Scope
+                drawMetaCard(canvas, paint, fontBold, fontMedium, marginX + metaColW + 8f, metaY, metaColW, metaBoxH,
+                        "ACADEMIC SCOPE", "Intake 55 · Section " + sec + " · BUBT");
 
-                paint.setTypeface(fontBold);
-                paint.setTextSize(px(12f));
-                float sTextW = paint.measureText(statusText);
-                float sDotSize = px(7f);
-                float sGap = px(6f);
-                float sPadX = px(12f);
-                float sW = (2 * sPadX) + sDotSize + sGap + sTextW;
+                // Meta Box 3: Date & Status
+                String gateStr = isGateOpen ? "GATE OPEN" : "GATE LOCKED";
+                drawMetaCard(canvas, paint, fontBold, fontMedium, marginX + (metaColW + 8f) * 2f, metaY, metaColW, metaBoxH,
+                        "AUDIT TIMESTAMP", shortDate + " · " + gateStr);
 
-                RectF statusRect = new RectF(marginX, currentY, marginX + sW, currentY + badgeH);
-                paint.setColor(sBg);
-                paint.setStyle(Paint.Style.FILL);
-                canvas.drawRoundRect(statusRect, px(8f), px(8f), paint);
+                currentY += titleSectionHeight + 12f;
 
-                paint.setColor(sBorder);
-                paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth(px(1f));
-                canvas.drawRoundRect(statusRect, px(8f), px(8f), paint);
+                // =========================================================================
+                // 4 METRIC STAT CARDS ROW
+                // =========================================================================
+                float cardGap = 10f;
+                float cardW = (contentWidth - (3 * cardGap)) / 4f; // 123.25pt
+                float cardH = metricsHeight; // 60pt
 
-                paint.setStyle(Paint.Style.FILL);
-                paint.setColor(sDotCol);
-                canvas.drawCircle(marginX + sPadX + (sDotSize / 2f), currentY + (badgeH / 2f), sDotSize / 2f, paint);
+                int cCount = candidateList != null ? candidateList.size() : 0;
+                drawMetricCard(context, canvas, paint, fontExtraBold, fontSemiBold, marginX, currentY, cardW, cardH,
+                        "#2563EB", String.valueOf(cCount), "Total Candidates", R.drawable.ic_metric_candidates, "#EFF6FF");
 
-                paint.setColor(sTextCol);
-                paint.setTypeface(fontBold);
-                paint.setTextSize(px(12f));
-                canvas.drawText(statusText, marginX + sPadX + sDotSize + sGap, currentY + px(15f), paint);
+                drawMetricCard(context, canvas, paint, fontExtraBold, fontSemiBold, marginX + cardW + cardGap, currentY, cardW, cardH,
+                        "#16A34A", String.valueOf(totalVotes), "Votes Cast", R.drawable.ic_metric_votes, "#ECFDF5");
 
-                currentY += badgeH + px(20f);
+                drawMetricCard(context, canvas, paint, fontExtraBold, fontSemiBold, marginX + (cardW + cardGap) * 2f, currentY, cardW, cardH,
+                        "#0284C7", String.valueOf(totalVoters), "Section Voters", R.drawable.ic_metric_voters, "#F0F9FF");
 
-                // ==========================================
-                // METRIC CARDS (margin 0/40/24; 4 equal columns, gap 12)
-                // ==========================================
-                float metricsY = currentY;
-                float totalUsableW = pageWidth - (2 * marginX);
-                float mGap = px(12f);
-                float cardW = (totalUsableW - (3 * mGap)) / 4f;
-                float cardH = px(78f);
+                drawMetricCard(context, canvas, paint, fontExtraBold, fontSemiBold, marginX + (cardW + cardGap) * 3f, currentY, cardW, cardH,
+                        "#D97706", turnout, "Voter Turnout", R.drawable.ic_metric_turnout, "#FFFBEB");
 
-                drawMetricCard(context, canvas, paint, fontExtraBold, fontSemiBold, marginX, metricsY, cardW, cardH, "#0066FF", String.valueOf(candidateList != null ? candidateList.size() : 0), "Candidates", R.drawable.ic_metric_candidates, "#E6F0FF");
-                drawMetricCard(context, canvas, paint, fontExtraBold, fontSemiBold, marginX + cardW + mGap, metricsY, cardW, cardH, "#16A34A", String.valueOf(totalVotes), "Votes Cast", R.drawable.ic_metric_votes, "#DCFCE7");
-                drawMetricCard(context, canvas, paint, fontExtraBold, fontSemiBold, marginX + (cardW + mGap) * 2, metricsY, cardW, cardH, "#0EA5E9", String.valueOf(totalVoters), "Registered Voters", R.drawable.ic_metric_voters, "#E0F2FE");
-                drawMetricCard(context, canvas, paint, fontExtraBold, fontSemiBold, marginX + (cardW + mGap) * 3, metricsY, cardW, cardH, "#D97706", turnout, "Turnout Rate", R.drawable.ic_metric_turnout, "#FEF3C7");
+                currentY += metricsHeight + 12f;
 
-                currentY += cardH + px(24f);
+                // =========================================================================
+                // 🏆 ELECTED CR SPOTLIGHT BANNER
+                // =========================================================================
+                if (winner != null && winnerSpotlightHeight > 0) {
+                    RectF spotlightRect = new RectF(marginX, currentY, marginX + contentWidth, currentY + winnerSpotlightHeight);
+
+                    // Soft Gold Card Background
+                    paint.setColor(Color.parseColor("#FFFBEB"));
+                    paint.setStyle(Paint.Style.FILL);
+                    canvas.drawRoundRect(spotlightRect, 10f, 10f, paint);
+
+                    // Gold Border Accent
+                    paint.setColor(Color.parseColor("#FCD34D"));
+                    paint.setStyle(Paint.Style.STROKE);
+                    paint.setStrokeWidth(1.2f);
+                    canvas.drawRoundRect(spotlightRect, 10f, 10f, paint);
+                    paint.setStyle(Paint.Style.FILL);
+
+                    // Left Winner Badge
+                    float badgeSize = 36f;
+                    float badgeX = marginX + 12f;
+                    float badgeY = currentY + (winnerSpotlightHeight - badgeSize) / 2f;
+
+                    Shader goldGrad = new LinearGradient(
+                            badgeX, badgeY, badgeX + badgeSize, badgeY + badgeSize,
+                            new int[]{Color.parseColor("#F59E0B"), Color.parseColor("#D97706")},
+                            null, Shader.TileMode.CLAMP
+                    );
+                    paint.setShader(goldGrad);
+                    canvas.drawCircle(badgeX + badgeSize / 2f, badgeY + badgeSize / 2f, badgeSize / 2f, paint);
+                    paint.setShader(null);
+
+                    // "#1 CR" Text inside badge
+                    paint.setColor(Color.WHITE);
+                    paint.setTypeface(fontExtraBold);
+                    paint.setTextSize(11f);
+                    paint.setTextAlign(Paint.Align.CENTER);
+                    canvas.drawText("#1 CR", badgeX + badgeSize / 2f, badgeY + 22f, paint);
+                    paint.setTextAlign(Paint.Align.LEFT);
+
+                    // Winner Title & Name Details
+                    float winTextX = badgeX + badgeSize + 12f;
+                    float winTextY = currentY + 18f;
+
+                    paint.setColor(Color.parseColor("#B45309"));
+                    paint.setTypeface(fontBold);
+                    paint.setTextSize(8f);
+                    paint.setLetterSpacing(0.05f);
+                    canvas.drawText("ELECTED CLASS REPRESENTATIVE", winTextX, winTextY, paint);
+                    paint.setLetterSpacing(0f);
+
+                    paint.setColor(Color.parseColor("#0F172A"));
+                    paint.setTypeface(fontExtraBold);
+                    paint.setTextSize(14f);
+                    canvas.drawText(truncateText(winner.name, paint, 230f), winTextX, winTextY + 17f, paint);
+
+                    paint.setColor(Color.parseColor("#475569"));
+                    paint.setTypeface(fontMedium);
+                    paint.setTextSize(9f);
+                    canvas.drawText("Section " + sec + " · " + winner.dept + " · Officially Declared", winTextX, winTextY + 31f, paint);
+
+                    // Right Winner Vote Badge Box
+                    double winnerShare = totalVotes > 0 ? ((double) winner.votes * 100.0 / totalVotes) : 0;
+                    String winnerShareStr = String.format(Locale.getDefault(), "%.1f%% Share", winnerShare);
+                    String winnerVoteStr = winner.votes + " Votes";
+
+                    float boxW = 105f;
+                    float boxH = 38f;
+                    float boxX = pageWidth - marginX - boxW - 12f;
+                    float boxY = currentY + (winnerSpotlightHeight - boxH) / 2f;
+
+                    RectF voteBoxRect = new RectF(boxX, boxY, boxX + boxW, boxY + boxH);
+                    Shader vBoxGrad = new LinearGradient(
+                            boxX, boxY, boxX + boxW, boxY + boxH,
+                            new int[]{Color.parseColor("#F59E0B"), Color.parseColor("#B45309")},
+                            null, Shader.TileMode.CLAMP
+                    );
+                    paint.setShader(vBoxGrad);
+                    canvas.drawRoundRect(voteBoxRect, 8f, 8f, paint);
+                    paint.setShader(null);
+
+                    paint.setColor(Color.WHITE);
+                    paint.setTypeface(fontExtraBold);
+                    paint.setTextSize(12f);
+                    paint.setTextAlign(Paint.Align.CENTER);
+                    canvas.drawText(winnerVoteStr, boxX + boxW / 2f, boxY + 16f, paint);
+
+                    paint.setTypeface(fontBold);
+                    paint.setTextSize(9f);
+                    paint.setColor(Color.parseColor("#FEF3C7"));
+                    canvas.drawText(winnerShareStr, boxX + boxW / 2f, boxY + 29f, paint);
+                    paint.setTextAlign(Paint.Align.LEFT);
+
+                    currentY += winnerSpotlightHeight + 12f;
+                }
             } else {
-                currentY += px(24f);
+                currentY = 36f;
             }
 
-            // ==========================================
-            // SECTION HEADING + TABLE
-            // ==========================================
-            float headingY = currentY;
-            paint.setColor(Color.parseColor("#0F172A"));
-            paint.setTypeface(fontExtraBold);
-            paint.setTextSize(px(13f));
-            paint.setLetterSpacing(0.2f / 13f);
-            canvas.drawText("Candidate Rankings & Vote Distribution", marginX, headingY + px(10f), paint);
-            paint.setLetterSpacing(0f);
-
-            paint.setColor(Color.parseColor("#E2E8F0"));
-            paint.setStrokeWidth(px(1f));
-            float hTextW = paint.measureText("Candidate Rankings & Vote Distribution");
-            canvas.drawLine(marginX + hTextW + px(10f), headingY + px(7f), pageWidth - marginX, headingY + px(7f), paint);
-
-            currentY += px(24f);
-
-            // Table Header Row
-            float tableHeaderH = px(30f);
-            RectF tableHeaderRect = new RectF(marginX, currentY, pageWidth - marginX, currentY + tableHeaderH);
-
-            Shader thShader = new LinearGradient(
-                    marginX, currentY, pageWidth - marginX, currentY,
-                    new int[]{Color.parseColor("#0066FF"), Color.parseColor("#0052CC")},
-                    null, Shader.TileMode.CLAMP
-            );
-            paint.setShader(thShader);
+            // =========================================================================
+            // CANDIDATE RANKINGS & VOTE AUDIT TABLE
+            // =========================================================================
+            // Table Header Row (Height: 26pt)
+            RectF thRect = new RectF(marginX, currentY, marginX + contentWidth, currentY + tableHeaderHeight);
+            paint.setColor(Color.parseColor("#1E293B")); // Deep Slate Navy
             paint.setStyle(Paint.Style.FILL);
-            Path thPath = new Path();
-            thPath.addRoundRect(tableHeaderRect, px(12f), px(12f), Path.Direction.CW);
-            canvas.drawPath(thPath, paint);
-            canvas.drawRect(new RectF(marginX, currentY + px(12f), pageWidth - marginX, currentY + tableHeaderH), paint);
-            paint.setShader(null);
+            canvas.drawRoundRect(thRect, 6f, 6f, paint);
 
-            float cRankX = marginX + px(12f);
-            float cStatusX = marginX + px(54f);
-            float cNameX = marginX + px(130f);
-            float cDeptX = marginX + px(270f);
-            float cVotesX = marginX + px(400f);
-            float cShareX = pageWidth - marginX - px(12f);
+            // Perfectly Calculated Column Coordinates
+            float colRankX = marginX + 8f;        // X: 44
+            float colStatusX = marginX + 42f;      // X: 78
+            float colNameX = marginX + 110f;      // X: 146
+            float colDeptX = marginX + 248f;      // X: 284
+            float colVotesX = marginX + 350f;     // X: 386
+            float colShareX = pageWidth - marginX - 10f; // X: 549 (Right Aligned)
 
             paint.setColor(Color.WHITE);
             paint.setTypeface(fontBold);
-            paint.setTextSize(px(11f));
-            paint.setLetterSpacing(0.4f / 11f);
+            paint.setTextSize(9f);
 
-            float thTextY = currentY + px(19f);
-            canvas.drawText("Rank", cRankX, thTextY, paint);
-            canvas.drawText("Status", cStatusX, thTextY, paint);
-            canvas.drawText("Candidate Name", cNameX, thTextY, paint);
-            canvas.drawText("Department", cDeptX, thTextY, paint);
-            canvas.drawText("Votes", cVotesX, thTextY, paint);
+            float thTextY = currentY + 17f;
+            canvas.drawText("Rank", colRankX, thTextY, paint);
+            canvas.drawText("Status", colStatusX, thTextY, paint);
+            canvas.drawText("Candidate Name", colNameX, thTextY, paint);
+            canvas.drawText("Department", colDeptX, thTextY, paint);
+            canvas.drawText("Votes & Progress", colVotesX, thTextY, paint);
 
             paint.setTextAlign(Paint.Align.RIGHT);
-            canvas.drawText("Share %", cShareX, thTextY, paint);
+            canvas.drawText("Share %", colShareX, thTextY, paint);
             paint.setTextAlign(Paint.Align.LEFT);
-            paint.setLetterSpacing(0f);
 
-            currentY += tableHeaderH;
+            currentY += tableHeaderHeight + 4f;
 
-            // Render Table Rows for this page
+            // Render Table Rows for Current Page
             int maxVotes = 1;
             if (candidateList != null) {
                 for (CandidateResult c : candidateList) {
@@ -460,25 +491,25 @@ public class PdfReportGenerator {
             }
 
             int rowsDrawnOnThisPage = 0;
-            int maxRowsThisPage = (pageNum == 1) ? rowsOnPage1 : (int)((usableHeight - currentY - px(40f)) / rowH);
-            if (maxRowsThisPage < 1) maxRowsThisPage = 1;
+            float remainingSpace = pageHeight - marginX - footerHeight - currentY;
+            int maxRowsThisPage = Math.max(1, (int)(remainingSpace / rowHeight));
 
             if (candidateList != null) {
                 while (currentRowIndex < candidateList.size() && rowsDrawnOnThisPage < maxRowsThisPage) {
                     CandidateResult c = candidateList.get(currentRowIndex);
                     boolean isWinner = (c.rank == 1);
-                    RectF rowRect = new RectF(marginX, currentY, pageWidth - marginX, currentY + rowH);
+                    RectF rowRect = new RectF(marginX, currentY, marginX + contentWidth, currentY + rowHeight);
 
+                    // Row Background Fill
                     if (isWinner) {
-                        Shader rowBgShader = new LinearGradient(
-                                marginX, currentY, pageWidth - marginX, currentY,
-                                new int[]{Color.parseColor("#FFFBEB"), Color.WHITE},
-                                null, Shader.TileMode.CLAMP
-                        );
-                        paint.setShader(rowBgShader);
-                        canvas.drawRect(rowRect, paint);
-                        paint.setShader(null);
-                    } else if (currentRowIndex % 2 == 0) {
+                        paint.setColor(Color.parseColor("#FFFBEB"));
+                        canvas.drawRoundRect(rowRect, 5f, 5f, paint);
+                        paint.setColor(Color.parseColor("#FDE68A"));
+                        paint.setStyle(Paint.Style.STROKE);
+                        paint.setStrokeWidth(1f);
+                        canvas.drawRoundRect(rowRect, 5f, 5f, paint);
+                        paint.setStyle(Paint.Style.FILL);
+                    } else if (currentRowIndex % 2 == 1) {
                         paint.setColor(Color.parseColor("#F8FAFC"));
                         canvas.drawRect(rowRect, paint);
                     } else {
@@ -486,192 +517,182 @@ public class PdfReportGenerator {
                         canvas.drawRect(rowRect, paint);
                     }
 
-                    if (currentRowIndex < candidateList.size() - 1) {
+                    // Bottom Row Divider Line
+                    if (!isWinner && currentRowIndex < candidateList.size() - 1) {
                         paint.setColor(Color.parseColor("#F1F5F9"));
-                        paint.setStrokeWidth(px(1f));
-                        canvas.drawLine(marginX, currentY + rowH, pageWidth - marginX, currentY + rowH, paint);
+                        paint.setStrokeWidth(1f);
+                        canvas.drawLine(marginX, currentY + rowHeight, marginX + contentWidth, currentY + rowHeight, paint);
                     }
 
                     // 1. Rank Badge
-                    float badgeSize = px(28f);
-                    RectF rBadgeRect = new RectF(cRankX, currentY + px(4f), cRankX + badgeSize, currentY + px(4f) + badgeSize);
-                    if (c.rank == 1) {
-                        Shader badgeShader = new LinearGradient(
-                                cRankX, currentY + px(4f), cRankX + badgeSize, currentY + px(4f) + badgeSize,
-                                new int[]{Color.parseColor("#F59E0B"), Color.parseColor("#D97706")},
-                                null, Shader.TileMode.CLAMP
-                        );
-                        paint.setShader(badgeShader);
-                        canvas.drawRoundRect(rBadgeRect, px(8f), px(8f), paint);
-                        paint.setShader(null);
+                    float badgeRadius = 9f;
+                    float badgeCenterX = colRankX + 9f;
+                    float badgeCenterY = currentY + (rowHeight / 2f);
+
+                    if (isWinner) {
+                        paint.setColor(Color.parseColor("#F59E0B"));
+                        canvas.drawCircle(badgeCenterX, badgeCenterY, badgeRadius, paint);
                         paint.setColor(Color.WHITE);
                     } else {
                         paint.setColor(Color.parseColor("#E2E8F0"));
-                        canvas.drawRoundRect(rBadgeRect, px(8f), px(8f), paint);
+                        canvas.drawCircle(badgeCenterX, badgeCenterY, badgeRadius, paint);
                         paint.setColor(Color.parseColor("#475569"));
                     }
                     paint.setTypeface(fontExtraBold);
-                    paint.setTextSize(px(12f));
-                    canvas.drawText(String.valueOf(c.rank), cRankX + px(9f), currentY + px(22f), paint);
+                    paint.setTextSize(9f);
+                    paint.setTextAlign(Paint.Align.CENTER);
+                    canvas.drawText(String.valueOf(c.rank), badgeCenterX, badgeCenterY + 3f, paint);
+                    paint.setTextAlign(Paint.Align.LEFT);
 
-                    // 2. Status Pill
-                    String pillText = isWinner ? "Winner" : "Runner-up";
+                    // 2. Status Badge Pill
+                    String pillText = isWinner ? "ELECTED CR" : "CANDIDATE";
                     int pBg = isWinner ? Color.parseColor("#FEF3C7") : Color.parseColor("#F1F5F9");
-                    int pBorder = isWinner ? Color.parseColor("#FDE68A") : Color.parseColor("#E2E8F0");
-                    int pTextCol = isWinner ? Color.parseColor("#92400E") : Color.parseColor("#475569");
+                    int pBorder = isWinner ? Color.parseColor("#FCD34D") : Color.parseColor("#E2E8F0");
+                    int pTextCol = isWinner ? Color.parseColor("#92400E") : Color.parseColor("#64748B");
 
                     paint.setTypeface(fontBold);
-                    paint.setTextSize(px(10f));
+                    paint.setTextSize(7.5f);
                     float pTextW = paint.measureText(pillText);
-                    float pPadX = px(8f);
-                    float pPadY = px(3f);
-                    float pH = px(10f) + (2 * pPadY);
+                    float pPadX = 5f;
+                    float pH = 13f;
                     float pW = pTextW + (2 * pPadX);
+                    float pTop = currentY + (rowHeight - pH) / 2f;
 
-                    RectF pRect = new RectF(cStatusX, currentY + px(9f), cStatusX + pW, currentY + px(9f) + pH);
+                    RectF pRect = new RectF(colStatusX, pTop, colStatusX + pW, pTop + pH);
                     paint.setColor(pBg);
                     paint.setStyle(Paint.Style.FILL);
                     canvas.drawRoundRect(pRect, pH / 2f, pH / 2f, paint);
 
                     paint.setColor(pBorder);
                     paint.setStyle(Paint.Style.STROKE);
-                    paint.setStrokeWidth(px(1f));
+                    paint.setStrokeWidth(1f);
                     canvas.drawRoundRect(pRect, pH / 2f, pH / 2f, paint);
 
                     paint.setStyle(Paint.Style.FILL);
                     paint.setColor(pTextCol);
                     paint.setTypeface(fontBold);
-                    paint.setTextSize(px(10f));
-                    canvas.drawText(pillText, cStatusX + pPadX, currentY + px(21f), paint);
+                    paint.setTextSize(7.5f);
+                    canvas.drawText(pillText, colStatusX + pPadX, pTop + 9.5f, paint);
 
                     // 3. Candidate Name
                     paint.setColor(Color.parseColor("#0F172A"));
-                    paint.setTextSize(px(12f));
+                    paint.setTextSize(10f);
                     paint.setTypeface(isWinner ? fontBold : fontSemiBold);
-                    String truncName = truncateText(c.name, paint, px(130f));
-                    canvas.drawText(truncName, cNameX, currentY + px(22f), paint);
+                    String truncName = truncateText(c.name, paint, 130f);
+                    canvas.drawText(truncName, colNameX, currentY + 19f, paint);
 
                     // 4. Department
                     paint.setColor(Color.parseColor("#64748B"));
-                    paint.setTextSize(px(12f));
+                    paint.setTextSize(9f);
                     paint.setTypeface(fontMedium);
-                    String truncDept = truncateText(c.dept, paint, px(120f));
-                    canvas.drawText(truncDept, cDeptX, currentY + px(22f), paint);
+                    String truncDept = truncateText(c.dept, paint, 95f);
+                    canvas.drawText(truncDept, colDeptX, currentY + 19f, paint);
 
-                    // 5. Votes & Progress Bar
+                    // 5. Votes Count & Progress Bar
                     paint.setColor(Color.parseColor("#0F172A"));
-                    paint.setTextSize(px(14f));
+                    paint.setTextSize(10.5f);
                     paint.setTypeface(fontExtraBold);
-                    canvas.drawText(String.valueOf(c.votes), cVotesX, currentY + px(18f), paint);
+                    canvas.drawText(String.valueOf(c.votes), colVotesX, currentY + 19f, paint);
 
-                    float barW = px(80f);
-                    float barH = px(5f);
-                    float barY = currentY + px(23f);
-                    RectF barTrack = new RectF(cVotesX, barY, cVotesX + barW, barY + barH);
+                    float barX = colVotesX + 20f;
+                    float barW = 70f;
+                    float barH = 4f;
+                    float barY = currentY + 15f;
+                    RectF barTrack = new RectF(barX, barY, barX + barW, barY + barH);
                     paint.setColor(Color.parseColor("#E2E8F0"));
-                    canvas.drawRoundRect(barTrack, px(3f), px(3f), paint);
+                    canvas.drawRoundRect(barTrack, 2f, 2f, paint);
 
                     double share = totalVotes > 0 ? ((double) c.votes * 100.0 / totalVotes) : 0;
                     float fillW = barW * ((float) c.votes / maxVotes);
                     if (fillW > 0) {
-                        RectF barFill = new RectF(cVotesX, barY, cVotesX + fillW, barY + barH);
+                        RectF barFill = new RectF(barX, barY, barX + fillW, barY + barH);
                         Shader barShader = new LinearGradient(
-                                cVotesX, barY, cVotesX + fillW, barY,
-                                new int[]{Color.parseColor("#0066FF"), Color.parseColor("#38BDF8")},
+                                barX, barY, barX + fillW, barY,
+                                new int[]{Color.parseColor("#2563EB"), Color.parseColor("#38BDF8")},
                                 null, Shader.TileMode.CLAMP
                         );
                         paint.setShader(barShader);
-                        canvas.drawRoundRect(barFill, px(3f), px(3f), paint);
+                        canvas.drawRoundRect(barFill, 2f, 2f, paint);
                         paint.setShader(null);
                     }
 
-                    // 6. Share % Chip (right-aligned)
+                    // 6. Share % Pill Container (Right-aligned to colShareX = 549)
                     String shareStr = String.format(Locale.getDefault(), "%.1f%%", share);
                     paint.setTypeface(fontBold);
-                    paint.setTextSize(px(11f));
-                    float sW2 = paint.measureText(shareStr);
-                    float sPadX2 = px(8f);
-                    float sPadY2 = px(3f);
-                    float sH2 = px(11f) + (2 * sPadY2);
-                    float sBoxW = sW2 + (2 * sPadX2);
-                    float sLeft = cShareX - sBoxW;
-                    float sTop = currentY + px(9f);
+                    paint.setTextSize(8.5f);
+                    float sW = paint.measureText(shareStr);
+                    float sPadX = 6f;
+                    float sBoxW = sW + (2 * sPadX);
+                    float sBoxH = 14f;
+                    float sLeft = colShareX - sBoxW;
+                    float sTop = currentY + (rowHeight - sBoxH) / 2f;
 
-                    RectF shareRect = new RectF(sLeft, sTop, sLeft + sBoxW, sTop + sH2);
-                    paint.setColor(Color.parseColor("#E6F0FF"));
+                    RectF shareRect = new RectF(sLeft, sTop, sLeft + sBoxW, sTop + sBoxH);
+                    paint.setColor(Color.parseColor("#EFF6FF"));
                     paint.setStyle(Paint.Style.FILL);
-                    canvas.drawRoundRect(shareRect, px(6f), px(6f), paint);
+                    canvas.drawRoundRect(shareRect, 4f, 4f, paint);
 
-                    paint.setColor(Color.parseColor("#0066FF"));
+                    paint.setColor(Color.parseColor("#2563EB"));
                     paint.setTypeface(fontBold);
-                    paint.setTextSize(px(11f));
-                    canvas.drawText(shareStr, sLeft + sPadX2, sTop + px(13f), paint);
+                    paint.setTextSize(8.5f);
+                    canvas.drawText(shareStr, sLeft + sPadX, sTop + 10.5f, paint);
 
-                    currentY += rowH;
+                    currentY += rowHeight;
                     currentRowIndex++;
                     rowsDrawnOnThisPage++;
                 }
             }
 
-            // ==========================================
-            // FOOTER & BOTTOM BAR
-            // ==========================================
-            float footerH = px(36f);
-            float footerY = pageHeight - footerH - px(4f);
-            RectF footerRect = new RectF(0, footerY, pageWidth, footerY + footerH);
+            // =========================================================================
+            // FOOTER & DIGITAL SECURITY SIGNATURE
+            // =========================================================================
+            float footerY = pageHeight - marginX - footerHeight;
 
-            Shader footerBg = new LinearGradient(
-                    0, footerY, pageWidth, footerY,
-                    new int[]{Color.parseColor("#F8FAFF"), Color.parseColor("#EFF6FF")},
-                    null, Shader.TileMode.CLAMP
-            );
-            paint.setShader(footerBg);
-            paint.setStyle(Paint.Style.FILL);
-            canvas.drawRect(footerRect, paint);
-            paint.setShader(null);
-
-            // Footer Top Border
+            // Footer Top Divider
             paint.setColor(Color.parseColor("#E2E8F0"));
-            paint.setStrokeWidth(px(1f));
-            canvas.drawLine(0, footerY, pageWidth, footerY, paint);
+            paint.setStrokeWidth(1f);
+            canvas.drawLine(marginX, footerY, marginX + contentWidth, footerY, paint);
 
-            // Footer Left Text
+            float fTextY = footerY + 18f;
+
+            // Security Verification Text
             paint.setColor(Color.parseColor("#64748B"));
-            paint.setTextSize(px(10f));
-            paint.setTypeface(fontSemiBold);
-            float fTextY = footerY + px(22f);
-
+            paint.setTextSize(8f);
+            paint.setTypeface(fontMedium);
             canvas.drawText("Certified electronically via ", marginX, fTextY, paint);
-            float cX = marginX + paint.measureText("Certified electronically via ");
-            paint.setTypeface(fontBold);
-            paint.setColor(Color.parseColor("#0066FF"));
-            canvas.drawText("CRConnect", cX, fTextY, paint);
-            float restX2 = cX + paint.measureText("CRConnect");
-            paint.setTypeface(fontSemiBold);
-            paint.setColor(Color.parseColor("#64748B"));
-            canvas.drawText(" · BUBT Department Network · Secure Key: BUBT-CR-VERIFIED", restX2, fTextY, paint);
 
-            // Footer Right Text ("Page X of Y")
+            float curX = marginX + paint.measureText("Certified electronically via ");
+            paint.setTypeface(fontBold);
+            paint.setColor(Color.parseColor("#2563EB"));
+            canvas.drawText("CRConnect", curX, fTextY, paint);
+
+            curX += paint.measureText("CRConnect");
+            paint.setTypeface(fontMedium);
+            paint.setColor(Color.parseColor("#64748B"));
+            canvas.drawText(" · BUBT Department Network · Security Hash Key: BUBT-CR-VERIFIED", curX, fTextY, paint);
+
+            // Page Numbering ("Page X of Y")
             paint.setTextAlign(Paint.Align.RIGHT);
             paint.setColor(Color.parseColor("#94A3B8"));
             paint.setTypeface(fontSemiBold);
+            paint.setTextSize(8f);
             canvas.drawText("Page " + pageNum + " of " + totalPages, pageWidth - marginX, fTextY, paint);
             paint.setTextAlign(Paint.Align.LEFT);
 
-            // Bottom 4px Gradient Bar
-            Shader bottomBarShader = new LinearGradient(
-                    0, pageHeight - px(4f), pageWidth, pageHeight,
-                    new int[]{Color.parseColor("#0066FF"), Color.parseColor("#38BDF8"), Color.parseColor("#0B3A9E")},
+            // Bottom 4pt Gradient Bar
+            Shader bottomGrad = new LinearGradient(
+                    0, pageHeight - 4f, pageWidth, pageHeight,
+                    new int[]{Color.parseColor("#2563EB"), Color.parseColor("#38BDF8"), Color.parseColor("#1D4ED8")},
                     null, Shader.TileMode.CLAMP
             );
-            paint.setShader(bottomBarShader);
-            canvas.drawRect(0, pageHeight - px(4f), pageWidth, pageHeight, paint);
+            paint.setShader(bottomGrad);
+            canvas.drawRect(0, pageHeight - 4f, pageWidth, pageHeight, paint);
             paint.setShader(null);
 
             pdfDocument.finishPage(page);
         }
 
-        // --- SAVE TO DISK ---
+        // Save PDF to Documents/CRConnect_Reports
         File pdfDir = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "CRConnect_Reports");
         if (!pdfDir.exists()) {
             pdfDir.mkdirs();
@@ -685,7 +706,7 @@ public class PdfReportGenerator {
             pdfDocument.writeTo(fos);
             pdfDocument.close();
             fos.close();
-            Log.d("PDF_DEBUG", "PDF successfully written to: " + pdfFile.getAbsolutePath());
+            Log.d(TAG, "PDF successfully written to: " + pdfFile.getAbsolutePath());
             return pdfFile;
         } catch (IOException e) {
             Log.e(TAG, "Error writing PDF document: " + e.getMessage(), e);
@@ -694,78 +715,92 @@ public class PdfReportGenerator {
         }
     }
 
-    private static float drawMetaItem(Canvas canvas, Paint paint, Typeface fontBold, Typeface fontSemiBold, String label, String value, float x, float y) {
+    private static void drawMetaCard(Canvas canvas, Paint paint, Typeface fontBold, Typeface fontMedium,
+                                     float left, float top, float width, float height, String label, String value) {
+        RectF cardRect = new RectF(left, top, left + width, top + height);
+        paint.setColor(Color.parseColor("#F8FAFC"));
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawRoundRect(cardRect, 6f, 6f, paint);
+
+        paint.setColor(Color.parseColor("#E2E8F0"));
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1f);
+        canvas.drawRoundRect(cardRect, 6f, 6f, paint);
+        paint.setStyle(Paint.Style.FILL);
+
         paint.setColor(Color.parseColor("#94A3B8"));
         paint.setTypeface(fontBold);
-        paint.setTextSize(px(10f));
-        paint.setLetterSpacing(0.8f / 10f);
-        canvas.drawText(label, x, y, paint);
+        paint.setTextSize(7.5f);
+        paint.setLetterSpacing(0.04f);
+        canvas.drawText(label, left + 8f, top + 11f, paint);
         paint.setLetterSpacing(0f);
 
         paint.setColor(Color.parseColor("#0F172A"));
-        paint.setTypeface(fontSemiBold);
-        paint.setTextSize(px(12f));
-        canvas.drawText(value, x, y + px(15f), paint);
-
-        return x + paint.measureText(value);
+        paint.setTypeface(fontMedium);
+        paint.setTextSize(8.5f);
+        String truncVal = truncateText(value, paint, width - 12f);
+        canvas.drawText(truncVal, left + 8f, top + 23f, paint);
     }
 
-    private static void drawMetricCard(Context context, Canvas canvas, Paint paint, Typeface fontExtraBold, Typeface fontSemiBold, float left, float top, float width, float height, String stripColorHex, String number, String label, int iconResId, String iconBgHex) {
+    private static void drawMetricCard(Context context, Canvas canvas, Paint paint, Typeface fontExtraBold,
+                                       Typeface fontSemiBold, float left, float top, float width, float height,
+                                       String stripColorHex, String number, String label, int iconResId, String iconBgHex) {
         RectF cardRect = new RectF(left, top, left + width, top + height);
+        float radius = 8f;
 
         canvas.save();
         Path cardPath = new Path();
-        cardPath.addRoundRect(cardRect, px(16f), px(16f), Path.Direction.CW);
+        cardPath.addRoundRect(cardRect, radius, radius, Path.Direction.CW);
         canvas.clipPath(cardPath);
 
-        // Card Background
+        // Card Fill
         paint.setColor(Color.parseColor("#F8FAFC"));
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRect(cardRect, paint);
 
-        // Top 3px Color Strip
+        // Top 3.5pt Accent Color Strip (Clipped cleanly to rounded top corners)
+        RectF topStrip = new RectF(left, top, left + width, top + 3.5f);
         paint.setColor(Color.parseColor(stripColorHex));
-        RectF stripRect = new RectF(left, top, left + width, top + px(3f));
-        canvas.drawRect(stripRect, paint);
+        canvas.drawRect(topStrip, paint);
+
         canvas.restore();
 
-        // Card Border
+        // Border
         paint.setColor(Color.parseColor("#E2E8F0"));
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(px(1f));
-        canvas.drawRoundRect(cardRect, px(16f), px(16f), paint);
+        paint.setStrokeWidth(1f);
+        canvas.drawRoundRect(cardRect, radius, radius, paint);
+        paint.setStyle(Paint.Style.FILL);
 
-        // Icon Box (32x32, radius 10)
-        float iconBoxSize = px(32f);
-        float iconBoxLeft = left + px(14f);
-        float iconBoxTop = top + px(14f);
+        // Icon Box (22x22)
+        float iconBoxSize = 22f;
+        float iconBoxLeft = left + 8f;
+        float iconBoxTop = top + 8f;
         RectF iconBoxRect = new RectF(iconBoxLeft, iconBoxTop, iconBoxLeft + iconBoxSize, iconBoxTop + iconBoxSize);
 
-        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.parseColor(iconBgHex));
-        canvas.drawRoundRect(iconBoxRect, px(10f), px(10f), paint);
+        canvas.drawRoundRect(iconBoxRect, 5f, 5f, paint);
 
-        // Draw Icon
         Drawable icon = ContextCompat.getDrawable(context, iconResId);
         if (icon != null) {
-            float iconSize = px(16f);
+            float iconSize = 12f;
             float iconLeft = iconBoxLeft + (iconBoxSize - iconSize) / 2f;
             float iconTop = iconBoxTop + (iconBoxSize - iconSize) / 2f;
             icon.setBounds((int)iconLeft, (int)iconTop, (int)(iconLeft + iconSize), (int)(iconTop + iconSize));
             icon.draw(canvas);
         }
 
-        // Number (28/800 line-height 1)
+        // Numeric Metric Value
         paint.setColor(Color.parseColor(stripColorHex));
         paint.setTypeface(fontExtraBold);
-        paint.setTextSize(px(28f));
-        canvas.drawText(number, left + px(14f), top + px(65f), paint);
+        paint.setTextSize(16f);
+        canvas.drawText(number, left + 8f, top + 42f, paint);
 
-        // Label (11/600 #64748B, margin-top 4)
+        // Label
         paint.setColor(Color.parseColor("#64748B"));
         paint.setTypeface(fontSemiBold);
-        paint.setTextSize(px(11f));
-        canvas.drawText(label, left + px(14f), top + px(80f), paint);
+        paint.setTextSize(8f);
+        canvas.drawText(label, left + 8f, top + 52f, paint);
     }
 
     private static String truncateText(String text, Paint paint, float maxWidth) {
@@ -861,7 +896,7 @@ public class PdfReportGenerator {
 
         Uri fileUri = FileProvider.getUriForFile(
                 context,
-                "com.example.crconnect.fileprovider",
+                context.getPackageName() + ".fileprovider",
                 pdfFile
         );
 
