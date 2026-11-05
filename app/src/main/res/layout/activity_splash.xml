@@ -52,12 +52,12 @@
                 android:background="@drawable/bg_splash_logo_card">
 
                 <ImageView
-                    android:layout_width="84dp"
-                    android:layout_height="84dp"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
                     android:layout_gravity="center"
                     android:contentDescription="@string/app_name"
                     android:scaleType="fitCenter"
-                    android:src="@drawable/bubt_logo" />
+                    android:src="@drawable/ic_crconnect_logo" />
 
             </FrameLayout>
         </FrameLayout>
