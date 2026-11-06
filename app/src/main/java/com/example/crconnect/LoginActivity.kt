@@ -67,11 +67,11 @@ class LoginActivity : AppCompatActivity() {
                 if (account != null) {
                     handleGoogleSignInSuccess(account)
                 } else {
-                    Toast.makeText(this, "Google Sign-In failed.", Toast.LENGTH_SHORT).show()
+                    CustomToast.show(this, "Google Sign-In failed.")
                 }
             } catch (e: Exception) {
                 Log.e("LoginActivity", "Google Sign-In Exception", e)
-                Toast.makeText(this, "Google Sign-In failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                CustomToast.show(this, "Google Sign-In failed: ${e.localizedMessage}")
             }
         }
     }
@@ -514,9 +514,9 @@ class LoginActivity : AppCompatActivity() {
                             .setAction("Resend Link") {
                                 refreshedUser.sendEmailVerification().addOnCompleteListener { resendTask ->
                                     if (resendTask.isSuccessful) {
-                                        Toast.makeText(this@LoginActivity, "Verification email resent to $userEmail!", Toast.LENGTH_LONG).show()
+                                        CustomToast.show(this@LoginActivity, "Verification email resent to $userEmail!")
                                     } else {
-                                        Toast.makeText(this@LoginActivity, "Failed to resend link. Please try again.", Toast.LENGTH_SHORT).show()
+                                        CustomToast.show(this@LoginActivity, "Failed to resend link. Please try again.")
                                     }
                                 }
                             }

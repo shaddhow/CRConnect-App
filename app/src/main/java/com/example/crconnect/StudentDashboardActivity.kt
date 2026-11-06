@@ -9,8 +9,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import com.example.crconnect.student.StudentPortalScreen
 import com.example.crconnect.student.StudentPortalTheme
 import com.example.crconnect.student.StudentPortalViewModel
@@ -40,13 +44,25 @@ class StudentDashboardActivity : FragmentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
         }
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = true
-            isAppearanceLightNavigationBars = true
-        }
 
         setContent {
-            StudentPortalTheme {
+            val uiState by viewModel.uiState.collectAsState()
+            val isSystemDark = isSystemInDarkTheme()
+            val isDarkTheme = when (uiState.themeMode) {
+                SessionManager.THEME_LIGHT -> false
+                SessionManager.THEME_DARK -> true
+                else -> isSystemDark
+            }
+
+            val windowInsetsController = remember(window) {
+                WindowCompat.getInsetsController(window, window.decorView)
+            }
+            SideEffect {
+                windowInsetsController.isAppearanceLightStatusBars = !isDarkTheme
+                windowInsetsController.isAppearanceLightNavigationBars = !isDarkTheme
+            }
+
+            StudentPortalTheme(darkTheme = isDarkTheme) {
                 StudentPortalScreen(
                     viewModel = viewModel,
                     onSignOut = {

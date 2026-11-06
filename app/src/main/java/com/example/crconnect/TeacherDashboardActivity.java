@@ -102,7 +102,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
     private MaterialSwitch switchMasterVoting;
     private TextInputEditText etCandidateName;
-    private MaterialButton btnAddCandidate, btnRunOff, btnResetVotes, btnLogout, btnClearName, btnExportPdf;
+    private MaterialButton btnAddCandidate, btnRunOff, btnResetVotes, btnLogout, btnClearName, btnExportPdf, btnExportPdfSub;
     private boolean isGeneratingPdf = false;
     private ImageView imgUserProfile;
     private ActivityResultLauncher<Intent> profileImagePickerLauncher;
@@ -131,6 +131,13 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private boolean isProgrammaticScroll = false;
 
     private Button btnSec4, btnSec6, btnSec7;
+    private LinearLayout containerSectionButtons;
+    private TextView tvTpAssignedCount;
+    private View btnEditTeacherSections;
+    private final List<Button> dynamicSectionButtons = new ArrayList<>();
+    private DatabaseReference activeCandidateRef, activeVotersRef, activeGateRef;
+    private ValueEventListener activeCandidateListener, activeVotersListener, activeGateListener;
+    private int activeSectionStudentCount = 48;
     private TextView tvTpBigSecNumber, tvTpSecName, tvTpStudents, tvTpVotes, tvTpTurnout;
     private MaterialButton btnTpEditProfile, btnTpSecurity, btnTpLogout;
 
@@ -162,9 +169,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             if (sec != null && !sec.isEmpty() && !sec.equalsIgnoreCase("5A") && !sec.equals("--")) {
                 return sec;
             }
-            sessionManager.setAssignedSection("6");
         }
-        return "6";
+        return "";
     }
 
     private void sanitizeSectionAndBindHeader() {
@@ -344,10 +350,20 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         tvStatTotalVoters = findViewById(R.id.tvStatTotalVoters);
         tvStatTurnout = findViewById(R.id.tvStatTurnout);
         btnExportPdf = findViewById(R.id.btnExportPdf);
-        MaterialButton btnExportPdfSub = findViewById(R.id.btnExportPdfSub);
+        btnExportPdfSub = findViewById(R.id.btnExportPdfSub);
 
-        if (btnExportPdf != null) btnExportPdf.setOnClickListener(v -> exportElectionResultsToPdf());
-        if (btnExportPdfSub != null) btnExportPdfSub.setOnClickListener(v -> exportElectionResultsToPdf());
+        if (btnExportPdf != null) {
+            btnExportPdf.setOnClickListener(v -> {
+                HapticUtils.mediumClick(v);
+                animateButtonBounce(v, this::exportElectionResultsToPdf);
+            });
+        }
+        if (btnExportPdfSub != null) {
+            btnExportPdfSub.setOnClickListener(v -> {
+                HapticUtils.mediumClick(v);
+                animateButtonBounce(v, this::exportElectionResultsToPdf);
+            });
+        }
 
         // Candidate List RecyclerView Setup (Requirement 6)
         if (rvAdminCandidates != null) {
@@ -510,16 +526,25 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     String name = snapshot.child("name").getValue(String.class);
                     String dept = snapshot.child("dept").getValue(String.class);
                     String profileImg = snapshot.child("profileImageUrl").getValue(String.class);
+                    String assignedSections = snapshot.child("assignedSections").getValue(String.class);
+                    String assignedIntakes = snapshot.child("assignedIntakes").getValue(String.class);
                     String assignedSection = snapshot.child("assignedSection").getValue(String.class);
                     if (name == null) name = sessionManager.getUserName();
                     if (dept == null) dept = sessionManager.getUserDept();
-                    if (assignedSection == null || assignedSection.isEmpty() || assignedSection.equalsIgnoreCase("5A") || assignedSection.equals("--")) {
-                        assignedSection = "6";
+                    if (assignedSections != null && !assignedSections.isEmpty()) {
+                        sessionManager.setAssignedSections(assignedSections);
                     }
-                    sessionManager.setAssignedSection(assignedSection);
+                    if (assignedIntakes != null && !assignedIntakes.isEmpty()) {
+                        sessionManager.setAssignedIntakes(assignedIntakes);
+                    }
+                    if (assignedSection != null && !assignedSection.isEmpty() && !assignedSection.equalsIgnoreCase("5A") && !assignedSection.equals("--")) {
+                        sessionManager.setAssignedSection(assignedSection);
+                    }
 
-                    tvHeaderSubtitle.setText(name + " (" + dept + " | Sec: " + assignedSection + ")");
-                    tvHeaderTitle.setText("Admin Console · Sec " + assignedSection);
+                    setupDynamicSectionButtons();
+                    String currentSec = getTeacherAssignedSection();
+                    tvHeaderSubtitle.setText(name + " (" + dept + (currentSec.isEmpty() ? "" : " | Sec: " + currentSec) + ")");
+                    tvHeaderTitle.setText("Admin Console" + (currentSec.isEmpty() ? "" : " · Sec " + currentSec));
 
                     if (profileImg != null && !profileImg.isEmpty()) {
                         sessionManager.setProfileImageUrl(profileImg);
@@ -532,8 +557,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                         snapshot.child("id").getValue(String.class) != null ? snapshot.child("id").getValue(String.class) : sessionManager.getUserID(),
                         "Teacher/Admin",
                         "--",
-                        assignedSection,
-                        "--",
+                        sessionManager.getAssignedSection(),
+                        sessionManager.getAssignedIntakes(),
                         dept
                     );
                 } else if (!uid.isEmpty()) {
@@ -546,16 +571,25 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                 String name = doc.getString("name");
                                 String dept = doc.getString("dept");
                                 String profileImg = doc.getString("profileImageUrl");
+                                String assignedSections = doc.getString("assignedSections");
+                                String assignedIntakes = doc.getString("assignedIntakes");
                                 String assignedSection = doc.getString("assignedSection");
                                 if (name == null) name = sessionManager.getUserName();
                                 if (dept == null) dept = sessionManager.getUserDept();
-                                if (assignedSection == null || assignedSection.isEmpty() || assignedSection.equalsIgnoreCase("5A") || assignedSection.equals("--")) {
-                                    assignedSection = "6";
+                                if (assignedSections != null && !assignedSections.isEmpty()) {
+                                    sessionManager.setAssignedSections(assignedSections);
                                 }
-                                sessionManager.setAssignedSection(assignedSection);
+                                if (assignedIntakes != null && !assignedIntakes.isEmpty()) {
+                                    sessionManager.setAssignedIntakes(assignedIntakes);
+                                }
+                                if (assignedSection != null && !assignedSection.isEmpty() && !assignedSection.equalsIgnoreCase("5A") && !assignedSection.equals("--")) {
+                                    sessionManager.setAssignedSection(assignedSection);
+                                }
 
-                                tvHeaderSubtitle.setText(name + " (" + dept + " | Sec: " + assignedSection + ")");
-                                tvHeaderTitle.setText("Admin Console · Sec " + assignedSection);
+                                setupDynamicSectionButtons();
+                                String currentSec = getTeacherAssignedSection();
+                                tvHeaderSubtitle.setText(name + " (" + dept + (currentSec.isEmpty() ? "" : " | Sec: " + currentSec) + ")");
+                                tvHeaderTitle.setText("Admin Console" + (currentSec.isEmpty() ? "" : " · Sec " + currentSec));
 
                                 if (profileImg != null && !profileImg.isEmpty()) {
                                     sessionManager.setProfileImageUrl(profileImg);
@@ -568,8 +602,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                     doc.getString("id") != null ? doc.getString("id") : sessionManager.getUserID(),
                                     "Teacher/Admin",
                                     "--",
-                                    assignedSection,
-                                    "--",
+                                    sessionManager.getAssignedSection(),
+                                    sessionManager.getAssignedIntakes(),
                                     dept
                                 );
                             } else {
@@ -617,6 +651,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             }
         );
 
+        containerSectionButtons = findViewById(R.id.containerSectionButtons);
+        tvTpAssignedCount = findViewById(R.id.tvTpAssignedCount);
+        btnEditTeacherSections = findViewById(R.id.btnEditTeacherSections);
+
         btnSec4 = findViewById(R.id.btnSec4);
         btnSec6 = findViewById(R.id.btnSec6);
         btnSec7 = findViewById(R.id.btnSec7);
@@ -629,9 +667,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         btnTpSecurity = findViewById(R.id.btnTpSecurity);
         btnTpLogout = findViewById(R.id.btnTpLogout);
 
-        if (btnSec4 != null) btnSec4.setOnClickListener(v -> switchSection("4"));
-        if (btnSec6 != null) btnSec6.setOnClickListener(v -> switchSection("6"));
-        if (btnSec7 != null) btnSec7.setOnClickListener(v -> switchSection("7"));
+        if (btnEditTeacherSections != null) {
+            btnEditTeacherSections.setOnClickListener(v -> showManageTeacherSectionsDialog());
+        }
+
+        setupDynamicSectionButtons();
 
         if (btnTpEditProfile != null) {
             btnTpEditProfile.setOnClickListener(v -> {
@@ -1690,22 +1730,41 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     }
 
     private void updateCandidateNameInDatabase(Candidate candidate, String newName) {
+        if (candidate == null || candidate.getId() == null || newName == null || newName.trim().isEmpty()) return;
+        String nameStr = newName.trim();
         try {
             String activeSec = getTeacherAssignedSection();
             String activeDept = getTeacherDepartment();
             String sanitizedDept = getSanitizedDepartment(activeDept);
             String sanitizedSec = getSanitizedSection(activeSec);
+            String cid = candidate.getId();
+
+            candidate.setName(nameStr);
+            if (currentCandidateList != null && candidateAdapter != null) {
+                int totalVotes = 0;
+                for (Candidate c : currentCandidateList) {
+                    totalVotes += Math.max(0, c.getVotes());
+                }
+                candidateAdapter.updateCandidates(currentCandidateList, totalVotes);
+                LinearLayout containerChart = findViewById(R.id.containerChart);
+                if (containerChart != null) {
+                    containerChart.removeAllViews();
+                    if (!currentCandidateList.isEmpty()) {
+                        updateVoteDistributionChart(currentCandidateList, totalVotes, containerChart);
+                    }
+                }
+            }
 
             Map<String, Object> updates = new HashMap<>();
-            updates.put("candidates/" + candidate.getId() + "/name", newName);
+            updates.put("candidates/" + cid + "/name", nameStr);
             if (!sanitizedSec.equals("--")) {
-                updates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + candidate.getId() + "/name", newName);
-                updates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + candidate.getId() + "/name", newName);
+                updates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + cid + "/name", nameStr);
+                updates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + cid + "/name", nameStr);
             }
 
             dbRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
-                CustomToast.show(TeacherDashboardActivity.this, "Candidate name updated to " + newName);
-                logAdminAction("Updated Candidate Name: " + candidate.getName() + " -> " + newName);
+                CustomToast.show(TeacherDashboardActivity.this, "Candidate name updated to " + nameStr);
+                logAdminAction("Updated Candidate Name: " + nameStr);
             }).addOnFailureListener(e -> {
                 CustomToast.show(TeacherDashboardActivity.this, "Failed to update candidate name: " + e.getMessage());
             });
@@ -1721,13 +1780,38 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             String activeDept = getTeacherDepartment();
             String sanitizedDept = getSanitizedDepartment(activeDept);
             String sanitizedSec = getSanitizedSection(activeSec);
+            String cid = candidate.getId();
+
+            if (currentCandidateList != null) {
+                currentCandidateList.removeIf(c -> c.getId() != null && c.getId().equals(cid));
+                int totalVotes = 0;
+                for (Candidate c : currentCandidateList) {
+                    totalVotes += Math.max(0, c.getVotes());
+                }
+                if (candidateAdapter != null) {
+                    candidateAdapter.updateCandidates(currentCandidateList, totalVotes);
+                }
+                if (tvTotalCandidates != null) {
+                    tvTotalCandidates.setText("Total (Sec " + activeSec + "): " + currentCandidateList.size());
+                }
+                if (tvStatTotalVotes != null) {
+                    tvStatTotalVotes.setText(String.valueOf(totalVotes));
+                }
+                LinearLayout containerChart = findViewById(R.id.containerChart);
+                if (containerChart != null) {
+                    containerChart.removeAllViews();
+                    if (!currentCandidateList.isEmpty()) {
+                        updateVoteDistributionChart(currentCandidateList, totalVotes, containerChart);
+                    }
+                }
+            }
 
             Map<String, Object> updates = new HashMap<>();
-            updates.put("candidates/" + candidate.getId(), null);
+            updates.put("candidates/" + cid, null);
             if (!sanitizedSec.equals("--")) {
-                updates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + candidate.getId(), null);
-                updates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/votes/" + candidate.getId(), null);
-                updates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + candidate.getId(), null);
+                updates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + cid, null);
+                updates.put("voting_controls/" + sanitizedDept + "/" + sanitizedSec + "/votes/" + cid, null);
+                updates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/candidates/" + cid, null);
             }
 
             dbRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
@@ -1834,15 +1918,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 }
             }
 
-            if (candidateList.isEmpty()) {
-                candidateList = getDefaultCandidates();
-                totalVotes = 0;
-                for (Candidate c : candidateList) {
-                    totalVotes += Math.max(0, c.getVotes());
-                }
-                totalCandidates = candidateList.size();
-            }
-
             currentCandidateList = candidateList;
 
             // Display Live Vote Distribution Chart
@@ -1859,7 +1934,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 candidateAdapter.updateCandidates(candidateList, totalVotes);
             }
 
-            tvTotalCandidates.setText("Total (Sec " + activeSec + "): " + totalCandidates);
+            tvTotalCandidates.setText("Total (Sec " + activeSec + "): " + candidateList.size());
             tvStatTotalVotes.setText(String.valueOf(totalVotes));
 
             // Update Turnout % = totalVotes / 48 * 100
@@ -2628,28 +2703,68 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         });
     }
 
+    private void animateButtonBounce(View view, Runnable onAnimationEnd) {
+        if (view == null) {
+            if (onAnimationEnd != null) onAnimationEnd.run();
+            return;
+        }
+        view.animate()
+                .scaleX(0.93f)
+                .scaleY(0.93f)
+                .setDuration(100)
+                .withEndAction(() -> {
+                    view.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(120)
+                            .withEndAction(() -> {
+                                if (onAnimationEnd != null) onAnimationEnd.run();
+                            })
+                            .start();
+                })
+                .start();
+    }
+
+    private void updatePdfButtonLoadingState(MaterialButton btn, boolean loading) {
+        if (btn == null) return;
+        if (loading) {
+            try {
+                CircularProgressIndicatorSpec spec = new CircularProgressIndicatorSpec(
+                        this, null, 0, com.google.android.material.R.style.Widget_Material3_CircularProgressIndicator_ExtraSmall);
+                spec.indicatorColors = new int[]{Color.WHITE};
+                IndeterminateDrawable<CircularProgressIndicatorSpec> progressDrawable =
+                        IndeterminateDrawable.createCircularDrawable(this, spec);
+
+                btn.setIcon(progressDrawable);
+                btn.setIconTint(ColorStateList.valueOf(Color.WHITE));
+                btn.setIconGravity(MaterialButton.ICON_GRAVITY_TEXT_START);
+            } catch (Exception ignored) {
+            }
+            btn.setText("Compiling PDF report…");
+            btn.setEnabled(false);
+
+            ObjectAnimator pulseAnim = ObjectAnimator.ofFloat(btn, "alpha", 1.0f, 0.6f, 1.0f);
+            pulseAnim.setDuration(800);
+            pulseAnim.setRepeatCount(ValueAnimator.INFINITE);
+            pulseAnim.start();
+            btn.setTag(R.id.btnExportPdf, pulseAnim);
+        } else {
+            ObjectAnimator pulseAnim = (ObjectAnimator) btn.getTag(R.id.btnExportPdf);
+            if (pulseAnim != null) {
+                pulseAnim.cancel();
+                btn.setTag(R.id.btnExportPdf, null);
+            }
+            btn.setAlpha(1.0f);
+            btn.setIcon(null);
+            btn.setText("Export results to PDF");
+            btn.setEnabled(true);
+        }
+    }
+
     private void setPdfExportLoading(boolean loading) {
         isGeneratingPdf = loading;
-        if (btnExportPdf != null) {
-            if (loading) {
-                try {
-                    CircularProgressIndicatorSpec spec = new CircularProgressIndicatorSpec(
-                            this, null, 0, com.google.android.material.R.style.Widget_Material3_CircularProgressIndicator_ExtraSmall);
-                    spec.indicatorColors = new int[]{Color.WHITE};
-                    IndeterminateDrawable<CircularProgressIndicatorSpec> progressDrawable =
-                            IndeterminateDrawable.createCircularDrawable(this, spec);
-
-                    btnExportPdf.setIcon(progressDrawable);
-                } catch (Exception ignored) {
-                }
-                btnExportPdf.setText("Generating…");
-                btnExportPdf.setEnabled(false);
-            } else {
-                btnExportPdf.setIcon(null);
-                btnExportPdf.setText("Export results to PDF");
-                btnExportPdf.setEnabled(true);
-            }
-        }
+        updatePdfButtonLoadingState(btnExportPdf, loading);
+        updatePdfButtonLoadingState(btnExportPdfSub, loading);
     }
 
     private void exportElectionResultsToPdf() {
@@ -2828,6 +2943,350 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         selectAdminTab(2, false);
     }
 
+    private void detachLiveFirebaseSectionListeners() {
+        if (activeCandidateRef != null && activeCandidateListener != null) {
+            activeCandidateRef.removeEventListener(activeCandidateListener);
+            activeCandidateRef = null;
+            activeCandidateListener = null;
+        }
+        if (activeVotersRef != null && activeVotersListener != null) {
+            activeVotersRef.removeEventListener(activeVotersListener);
+            activeVotersRef = null;
+            activeVotersListener = null;
+        }
+        if (activeGateRef != null && activeGateListener != null) {
+            activeGateRef.removeEventListener(activeGateListener);
+            activeGateRef = null;
+            activeGateListener = null;
+        }
+        if (votingControlRef != null && votingControlListener != null) {
+            votingControlRef.removeEventListener(votingControlListener);
+            votingControlRef = null;
+        }
+    }
+
+    private void fetchSectionStudentCount(String sec) {
+        String sanitizedSec = getSanitizedSection(sec);
+        dbRef.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (isFinishing() || isDestroyed()) return;
+                int count = 0;
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    String uSec = ds.child("section").getValue(String.class);
+                    if (uSec == null) uSec = ds.child("assignedSection").getValue(String.class);
+                    String role = ds.child("role").getValue(String.class);
+
+                    if (role != null && role.equalsIgnoreCase("Teacher")) {
+                        continue;
+                    }
+
+                    if (uSec != null && !uSec.equals("--")) {
+                        if (getSanitizedSection(uSec).equalsIgnoreCase(sanitizedSec)) {
+                            count++;
+                        }
+                    } else if (sec.equals("6")) {
+                        count++;
+                    }
+                }
+                activeSectionStudentCount = Math.max(1, count);
+                if (tvTpStudents != null) {
+                    tvTpStudents.setText(String.valueOf(activeSectionStudentCount));
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
+    }
+
+    private void attachLiveFirebaseSectionListeners(String sec) {
+        detachLiveFirebaseSectionListeners();
+
+        String teacherDept = getTeacherDepartment();
+        String sanitizedDept = getSanitizedDepartment(teacherDept);
+        String sanitizedSec = getSanitizedSection(sec);
+
+        activeGateRef = !sanitizedSec.equals("--") ?
+                dbRef.child("voting_controls").child(sanitizedDept).child(sanitizedSec).child("isGateOpen") :
+                dbRef.child("master_voting_enabled");
+
+        activeGateListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Boolean isEnabled = snapshot.getValue(Boolean.class);
+                if (isEnabled != null) {
+                    if (switchMasterVoting != null) switchMasterVoting.setChecked(isEnabled);
+                } else {
+                    dbRef.child("master_voting_enabled").addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snap) {
+                            Boolean globalEnabled = snap.getValue(Boolean.class);
+                            if (globalEnabled != null && switchMasterVoting != null) switchMasterVoting.setChecked(globalEnabled);
+                        }
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {}
+                    });
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        };
+        activeGateRef.addValueEventListener(activeGateListener);
+
+        activeCandidateRef = !sanitizedSec.equals("--") ?
+                dbRef.child("voting_controls").child(sanitizedDept).child(sanitizedSec).child("candidates") :
+                dbRef.child("candidates");
+
+        activeCandidateListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                displayAdminCandidatesSnapshot(snapshot);
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("TeacherDashboard", "Candidates query cancelled: " + error.getMessage());
+            }
+        };
+        activeCandidateRef.addValueEventListener(activeCandidateListener);
+
+        activeVotersRef = !sanitizedSec.equals("--") ?
+                dbRef.child("voting_controls").child(sanitizedDept).child(sanitizedSec).child("voters") :
+                dbRef.child("voters");
+
+        activeVotersListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                displayVotersCountSnapshot(snapshot);
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        };
+        activeVotersRef.addValueEventListener(activeVotersListener);
+
+        votingControlRef = !sanitizedSec.equals("--") ?
+                dbRef.child("voting_controls").child(sanitizedDept).child(sanitizedSec) :
+                dbRef.child("voting_controls").child("default");
+
+        votingControlListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    Boolean isOpen = snapshot.child("isOpen").getValue(Boolean.class);
+                    if (isOpen == null) isOpen = snapshot.child("isGateOpen").getValue(Boolean.class);
+                    Boolean isPaused = snapshot.child("isPaused").getValue(Boolean.class);
+                    Long expiry = snapshot.child("expiryTime").getValue(Long.class);
+                    Long remaining = snapshot.child("remainingTimeMs").getValue(Long.class);
+
+                    currentIsGateOpen = isOpen != null && isOpen;
+                    currentIsPaused = isPaused != null && isPaused;
+                    currentExpiryTime = expiry != null ? expiry : 0;
+                    currentRemainingMs = remaining != null ? remaining : 0;
+
+                    updateTimerUI();
+                } else {
+                    currentIsGateOpen = false;
+                    currentIsPaused = false;
+                    currentExpiryTime = 0;
+                    currentRemainingMs = 0;
+                    updateTimerUI();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        };
+        votingControlRef.addValueEventListener(votingControlListener);
+
+        fetchSectionStudentCount(sec);
+    }
+
+    private void setupDynamicSectionButtons() {
+        if (containerSectionButtons == null) return;
+        containerSectionButtons.removeAllViews();
+        dynamicSectionButtons.clear();
+
+        String rawSections = sessionManager != null ? sessionManager.getAssignedSections() : "";
+        if (rawSections.equals("--") || rawSections.equalsIgnoreCase("5A")) rawSections = "";
+
+        List<String> sectionList = new ArrayList<>();
+        if (!rawSections.trim().isEmpty()) {
+            String[] parts = rawSections.split("[,;\\s]+");
+            for (String p : parts) {
+                String clean = p.replaceAll("(?i)^section\\s*|^sec\\.?\\s*", "").trim();
+                if (!clean.isEmpty() && !sectionList.contains(clean)) {
+                    sectionList.add(clean);
+                }
+            }
+        }
+
+        if (tvTpAssignedCount != null) {
+            tvTpAssignedCount.setText(sectionList.size() + (sectionList.size() == 1 ? " section" : " sections"));
+        }
+
+        if (sectionList.isEmpty()) {
+            MaterialButton btnAdd = new MaterialButton(this);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    dpToPx(42)
+            );
+            btnAdd.setLayoutParams(lp);
+            btnAdd.setText("➕ Manage Assigned Sections");
+            btnAdd.setTextColor(Color.WHITE);
+            btnAdd.setTextSize(14f);
+            btnAdd.setTypeface(null, Typeface.BOLD);
+            btnAdd.setCornerRadius(dpToPx(12));
+            btnAdd.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#0284C7")));
+            btnAdd.setOnClickListener(v -> showManageTeacherSectionsDialog());
+            containerSectionButtons.addView(btnAdd);
+
+            if (tvTpBigSecNumber != null) tvTpBigSecNumber.setText("--");
+            if (tvTpSecName != null) tvTpSecName.setText("No Section Assigned");
+            return;
+        }
+
+        String activeSec = getTeacherAssignedSection();
+        if (activeSec.isEmpty() || !sectionList.contains(activeSec)) {
+            activeSec = sectionList.get(0);
+            if (sessionManager != null) sessionManager.setAssignedSection(activeSec);
+        }
+
+        int total = sectionList.size();
+        for (int i = 0; i < total; i++) {
+            final String sec = sectionList.get(i);
+            MaterialButton button = new MaterialButton(this);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    0,
+                    dpToPx(40),
+                    1.0f
+            );
+            if (i > 0) lp.leftMargin = dpToPx(4);
+            if (i < total - 1) lp.rightMargin = dpToPx(4);
+
+            button.setLayoutParams(lp);
+            button.setText("Sec " + sec);
+            button.setTextSize(13f);
+            button.setTypeface(null, Typeface.BOLD);
+            button.setCornerRadius(dpToPx(12));
+            button.setInsetTop(0);
+            button.setInsetBottom(0);
+
+            boolean isSelected = sec.equals(activeSec);
+            updateSectionButtonState(button, isSelected);
+
+            button.setOnClickListener(v -> {
+                switchSection(sec);
+                refreshDynamicSectionButtonSelection(sec);
+            });
+
+            containerSectionButtons.addView(button);
+            dynamicSectionButtons.add(button);
+        }
+
+        switchSection(activeSec);
+    }
+
+    private void refreshDynamicSectionButtonSelection(String activeSec) {
+        String rawSections = sessionManager != null ? sessionManager.getAssignedSections() : "";
+        List<String> sectionList = new ArrayList<>();
+        if (!rawSections.trim().isEmpty()) {
+            String[] parts = rawSections.split("[,;\\s]+");
+            for (String p : parts) {
+                String clean = p.replaceAll("(?i)^section\\s*|^sec\\.?\\s*", "").trim();
+                if (!clean.isEmpty() && !sectionList.contains(clean)) {
+                    sectionList.add(clean);
+                }
+            }
+        }
+        for (int i = 0; i < dynamicSectionButtons.size() && i < sectionList.size(); i++) {
+            Button btn = dynamicSectionButtons.get(i);
+            String sec = sectionList.get(i);
+            updateSectionButtonState(btn, sec.equals(activeSec));
+        }
+    }
+
+    private void showManageTeacherSectionsDialog() {
+        if (getSupportFragmentManager().findFragmentByTag(ManageSectionsBottomSheet.TAG) != null) {
+            return;
+        }
+
+        String currentSections = sessionManager != null ? sessionManager.getAssignedSections() : "";
+        if (currentSections.equals("--")) currentSections = "";
+        String currentIntakes = sessionManager != null ? sessionManager.getAssignedIntakes() : "";
+        if (currentIntakes.equals("--")) currentIntakes = "";
+
+        ManageSectionsBottomSheet bottomSheet = ManageSectionsBottomSheet.newInstance(
+                currentSections,
+                currentIntakes,
+                this::saveTeacherAssignedSectionsAndIntakes
+        );
+        bottomSheet.show(getSupportFragmentManager(), ManageSectionsBottomSheet.TAG);
+    }
+
+    private void saveTeacherAssignedSectionsAndIntakes(String secInput, String intakeInput) {
+        if (sessionManager != null) {
+            sessionManager.setAssignedSections(secInput);
+            sessionManager.setAssignedIntakes(intakeInput);
+        }
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String uid = currentUser != null ? currentUser.getUid() : "";
+        String rawTeacherId = sessionManager != null ? sessionManager.getUserID() : "";
+        String sanitizedTeacherId = rawTeacherId != null ? rawTeacherId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "";
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("assignedSections", secInput);
+        updates.put("assignedIntakes", intakeInput);
+
+        List<String> parsedSecs = new ArrayList<>();
+        if (!secInput.trim().isEmpty()) {
+            for (String s : secInput.split("[,;\\s]+")) {
+                String clean = s.replaceAll("(?i)^section\\s*|^sec\\.?\\s*", "").trim();
+                if (!clean.isEmpty() && !parsedSecs.contains(clean)) parsedSecs.add(clean);
+            }
+        }
+
+        String activeSec = parsedSecs.isEmpty() ? "" : parsedSecs.get(0);
+        if (sessionManager != null) sessionManager.setAssignedSection(activeSec);
+        updates.put("assignedSection", activeSec);
+
+        if (!uid.isEmpty()) {
+            dbRef.child("users").child(uid).updateChildren(updates);
+            FirebaseFirestore.getInstance().collection("users").document(uid).update(updates);
+        }
+        if (!sanitizedTeacherId.isEmpty()) {
+            dbRef.child("users").child(sanitizedTeacherId).updateChildren(updates);
+        }
+
+        setupDynamicSectionButtons();
+        CustomToast.show(this, "Assigned sections updated!");
+    }
+
+    private void switchSection(String sec) {
+        if (sessionManager != null) {
+            sessionManager.setAssignedSection(sec);
+        }
+
+        String intakeStr = sessionManager != null ? sessionManager.getAssignedIntakes() : "";
+        String name = sec.isEmpty() ? "No Section Selected" : "Section " + sec + (intakeStr.isEmpty() ? "" : " · Intake " + intakeStr);
+
+        if (tvTpBigSecNumber != null) tvTpBigSecNumber.setText(sec.isEmpty() ? "--" : sec);
+        if (tvTpSecName != null) tvTpSecName.setText(name);
+
+        if (tvHeaderTitle != null) {
+            tvHeaderTitle.setText("Admin Console" + (sec.isEmpty() ? "" : " · Sec " + sec));
+        }
+        if (tvHeaderSubtitle != null && sessionManager != null) {
+            tvHeaderSubtitle.setText(sessionManager.getUserName() + " (" + sessionManager.getUserDept() + (sec.isEmpty() ? "" : " | Sec: " + sec) + ")");
+        }
+
+        refreshDynamicSectionButtonSelection(sec);
+
+        if (!sec.isEmpty()) {
+            attachLiveFirebaseSectionListeners(sec);
+        }
+    }
+
     private void updateSectionButtonState(Button button, boolean isSelected) {
         if (button == null) return;
         int selectedBg = Color.WHITE;
@@ -2844,54 +3303,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         }
     }
 
-    private void switchSection(String sec) {
-        // TODO: Load section data from Firebase / real data source
-        String name;
-        String students;
-        String votes;
-        String turnout;
-
-        switch (sec) {
-            case "4":
-                name = "Section 4 · Intake 54";
-                students = "45";
-                votes = "3";
-                turnout = "7%";
-                break;
-            case "7":
-                name = "Section 7 · Intake 55";
-                students = "50";
-                votes = "12";
-                turnout = "24%";
-                break;
-            case "6":
-            default:
-                name = "Section 6 · Intake 55";
-                students = "48";
-                votes = "1";
-                turnout = "2%";
-                break;
-        }
-
-        if (tvTpBigSecNumber != null) tvTpBigSecNumber.setText(sec);
-        if (tvTpSecName != null) tvTpSecName.setText(name);
-        if (tvTpStudents != null) tvTpStudents.setText(students);
-        if (tvTpVotes != null) tvTpVotes.setText(votes);
-        if (tvTpTurnout != null) tvTpTurnout.setText(turnout);
-
-        if (tvHeaderTitle != null) {
-            tvHeaderTitle.setText("Admin Console · Sec " + sec);
-        }
-
-        if (sessionManager != null) {
-            sessionManager.setAssignedSection(sec);
-        }
-
-        updateSectionButtonState(btnSec4, sec.equals("4"));
-        updateSectionButtonState(btnSec6, sec.equals("6"));
-        updateSectionButtonState(btnSec7, sec.equals("7"));
-    }
-
     private void showTeacherProfileBottomSheet() {
         if (getSupportFragmentManager().findFragmentByTag(TeacherProfileBottomSheet.TAG) != null) {
             return;
@@ -2904,7 +3315,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             () -> {
                 CustomToast.show(this, "Security settings (Secured by Firebase Auth & Admin Role)");
             },
-            this::showLogoutConfirmationDialog
+            this::showLogoutConfirmationDialog,
+            this::showManageTeacherSectionsDialog
         );
         bottomSheet.showAllowingStateLoss(getSupportFragmentManager(), TeacherProfileBottomSheet.TAG);
     }
@@ -2915,8 +3327,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (timerHandler != null && timerRunnable != null) {
             timerHandler.removeCallbacks(timerRunnable);
         }
-        if (votingControlRef != null && votingControlListener != null) {
-            votingControlRef.removeEventListener(votingControlListener);
-        }
+        detachLiveFirebaseSectionListeners();
     }
 }

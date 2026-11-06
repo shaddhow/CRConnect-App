@@ -168,7 +168,7 @@ public class RegisterActivity extends AppCompatActivity {
             etStudentId.setFocusable(false);
             etStudentId.setFocusableInTouchMode(false);
             etStudentId.setOnClickListener(v -> {
-                Toast.makeText(RegisterActivity.this, "Please tap 'Scan BUBT ID card' above to set your Student ID.", Toast.LENGTH_SHORT).show();
+                CustomToast.show(RegisterActivity.this, "Please tap 'Scan BUBT ID card' above to set your Student ID.");
                 launchDocumentScanner();
             });
         }
@@ -181,7 +181,7 @@ public class RegisterActivity extends AppCompatActivity {
             etTeacherCode.setFocusable(false);
             etTeacherCode.setFocusableInTouchMode(false);
             etTeacherCode.setOnClickListener(v -> {
-                Toast.makeText(RegisterActivity.this, "Please tap 'Scan BUBT ID card' above to set your Teacher Code.", Toast.LENGTH_SHORT).show();
+                CustomToast.show(RegisterActivity.this, "Please tap 'Scan BUBT ID card' above to set your Teacher Code.");
                 launchDocumentScanner();
             });
         }
@@ -293,13 +293,13 @@ public class RegisterActivity extends AppCompatActivity {
                         .addOnCompleteListener(task -> {
                             btnResendVerificationEmail.setEnabled(true);
                             if (task.isSuccessful()) {
-                                Toast.makeText(RegisterActivity.this, "Verification email resent to " + lastCreatedUser.getEmail() + "!", Toast.LENGTH_LONG).show();
+                                CustomToast.show(RegisterActivity.this, "Verification email resent to " + lastCreatedUser.getEmail() + "!");
                             } else {
-                                Toast.makeText(RegisterActivity.this, "Failed to resend email: " + (task.getException() != null ? task.getException().getMessage() : "Unknown error"), Toast.LENGTH_LONG).show();
+                                CustomToast.show(RegisterActivity.this, "Failed to resend email: " + (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
                             }
                         });
                 } else {
-                    Toast.makeText(RegisterActivity.this, "Verification email resent! Please check your inbox.", Toast.LENGTH_LONG).show();
+                    CustomToast.show(RegisterActivity.this, "Verification email resent! Please check your inbox.");
                 }
             });
         }
@@ -325,11 +325,11 @@ public class RegisterActivity extends AppCompatActivity {
                         if (account != null) {
                             handleGoogleRegistrationSuccess(account);
                         } else {
-                            Toast.makeText(RegisterActivity.this, "Google Sign-In failed.", Toast.LENGTH_SHORT).show();
+                            CustomToast.show(RegisterActivity.this, "Google Sign-In failed.");
                         }
                     } catch (ApiException e) {
                         Log.e("RegisterActivity", "Google Sign-In Exception", e);
-                        Toast.makeText(RegisterActivity.this, "Google Sign-In failed: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                        CustomToast.show(RegisterActivity.this, "Google Sign-In failed: " + e.getLocalizedMessage());
                     }
                 }
             }
@@ -350,11 +350,9 @@ public class RegisterActivity extends AppCompatActivity {
         if (radioGroupRole != null) {
             radioGroupRole.setOnCheckedChangeListener((group, checkedId) -> {
                 if (etFullName != null) {
-                    etFullName.setText("");
                     etFullName.setError(null);
                 }
                 if (etRegEmail != null) {
-                    etRegEmail.setText("");
                     etRegEmail.setError(null);
                 }
                 if (etStudentId != null) {
@@ -491,6 +489,20 @@ public class RegisterActivity extends AppCompatActivity {
         if (cbTerms != null) HapticUtils.attachLight(cbTerms);
     }
 
+    private void autoDetectRoleFromEmail(String email) {
+        if (email == null || email.trim().isEmpty()) return;
+        String lowerEmail = email.trim().toLowerCase();
+        if (lowerEmail.endsWith("@bubt.edu.bd")) {
+            if (rbTeacher != null && !rbTeacher.isChecked()) {
+                rbTeacher.setChecked(true);
+            }
+        } else if (lowerEmail.contains("@")) {
+            if (rbStudent != null && !rbStudent.isChecked()) {
+                rbStudent.setChecked(true);
+            }
+        }
+    }
+
     private void setupFormChangeListeners() {
         TextWatcher tw = new TextWatcher() {
             @Override
@@ -505,8 +517,22 @@ public class RegisterActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         };
 
+        TextWatcher emailWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                autoDetectRoleFromEmail(s.toString());
+                validateFormAndEnableButton();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        };
+
         if (etFullName != null) etFullName.addTextChangedListener(tw);
-        if (etRegEmail != null) etRegEmail.addTextChangedListener(tw);
+        if (etRegEmail != null) etRegEmail.addTextChangedListener(emailWatcher);
         if (etStudentId != null) etStudentId.addTextChangedListener(tw);
         if (etTeacherCode != null) etTeacherCode.addTextChangedListener(tw);
         if (etIntake != null) etIntake.addTextChangedListener(tw);
@@ -693,7 +719,7 @@ public class RegisterActivity extends AppCompatActivity {
                     tilTeacherCode.setHelperTextColor(ColorStateList.valueOf(Color.parseColor("#059669")));
                 }
             }
-            Toast.makeText(RegisterActivity.this, "ID Card scanned! Student ID locked for security.", Toast.LENGTH_LONG).show();
+            CustomToast.show(RegisterActivity.this, "ID Card scanned! Student ID locked for security.");
         }
 
         if (extractedIntake != null && etIntake != null) {
@@ -773,7 +799,7 @@ public class RegisterActivity extends AppCompatActivity {
 
         if (id.isEmpty() || isDummyOrGibberish(id)) {
             String idLabel = isStudent ? "Student ID" : "Teacher Code";
-            Toast.makeText(this, "Please tap 'Scan BUBT ID card' above to verify your " + idLabel, Toast.LENGTH_LONG).show();
+            CustomToast.show(this, "Please tap 'Scan BUBT ID card' above to verify your " + idLabel);
             if (btnScanIdCardContainer != null) {
                 btnScanIdCardContainer.startAnimation(AnimationUtils.loadAnimation(this, R.anim.shake));
             } else if (btnScanIdCard != null) {
@@ -793,7 +819,7 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         String role = isStudent ? "Student" : "Teacher";
-        String assignedSection = isStudent ? section : "6";
+        String assignedSection = isStudent ? section : "";
 
         btnRegister.setEnabled(false);
         btnRegister.setText("Checking ID Availability...");
@@ -817,7 +843,7 @@ public class RegisterActivity extends AppCompatActivity {
                         btnRegister.setEnabled(true);
                         btnRegister.setText("Register");
                         String idLabel = isStudent ? "Student ID" : "Teacher Code";
-                        Toast.makeText(RegisterActivity.this, idLabel + " (" + id + ") is already registered to another email address!", Toast.LENGTH_LONG).show();
+                        CustomToast.show(RegisterActivity.this, idLabel + " (" + id + ") is already registered to another email address!");
                         if (isStudent && etStudentId != null) {
                             etStudentId.setError(idLabel + " already registered");
                             etStudentId.startAnimation(AnimationUtils.loadAnimation(RegisterActivity.this, R.anim.shake));
@@ -853,7 +879,7 @@ public class RegisterActivity extends AppCompatActivity {
                     if (user == null) {
                         btnRegister.setEnabled(true);
                         btnRegister.setText("Register");
-                        Toast.makeText(RegisterActivity.this, "Failed to connect Google account. Please try again.", Toast.LENGTH_SHORT).show();
+                        CustomToast.show(RegisterActivity.this, "Failed to connect Google account. Please try again.");
                         return;
                     }
                     lastCreatedUser = user;
@@ -874,7 +900,7 @@ public class RegisterActivity extends AppCompatActivity {
                 if (user == null) {
                     btnRegister.setEnabled(true);
                     btnRegister.setText("Register");
-                    Toast.makeText(RegisterActivity.this, "Failed to create user account. Please try again.", Toast.LENGTH_SHORT).show();
+                    CustomToast.show(RegisterActivity.this, "Failed to create user account. Please try again.");
                     return;
                 }
                 lastCreatedUser = user;
@@ -906,7 +932,7 @@ public class RegisterActivity extends AppCompatActivity {
                 } else if (e.getMessage() != null && !e.getMessage().isEmpty()) {
                     errorMessage = e.getMessage();
                 }
-                Toast.makeText(RegisterActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                CustomToast.show(RegisterActivity.this, errorMessage);
             });
     }
 
@@ -957,17 +983,13 @@ public class RegisterActivity extends AppCompatActivity {
         googleAccount = account;
 
         String email = account.getEmail();
-        String name = account.getDisplayName();
-
-        if (etFullName != null && name != null && !name.trim().isEmpty()) {
-            etFullName.setText(name);
-        }
 
         if (etRegEmail != null && email != null && !email.trim().isEmpty()) {
             etRegEmail.setText(email);
+            autoDetectRoleFromEmail(email);
         }
 
-        Toast.makeText(RegisterActivity.this, "Google account connected! Please enter your Student ID, Intake, and Password to complete registration.", Toast.LENGTH_LONG).show();
+        CustomToast.show(RegisterActivity.this, "Google account connected! Please tap 'Scan BUBT ID card' above to set your Name and ID.");
 
         if (rbStudent != null && rbStudent.isChecked() && etStudentId != null) {
             etStudentId.requestFocus();

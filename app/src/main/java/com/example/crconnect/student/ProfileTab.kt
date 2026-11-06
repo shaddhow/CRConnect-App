@@ -7,6 +7,8 @@ import android.graphics.Paint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,13 +19,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,27 +50,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.crconnect.SessionManager
 
 @Composable
 fun ProfileTab(
     profile: UserProfileModel,
+    themeMode: String = SessionManager.THEME_SYSTEM,
+    onThemeModeSelected: (String) -> Unit = {},
     onEditProfilePicture: () -> Unit,
     onSecuritySettings: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-    val portalGradient = Brush.verticalGradient(
-        colors = listOf(
-            Color(0xFF70D6FF), // Top (0%)
-            Color(0xFFC2EFFF), // Middle (50%)
-            Color(0xFFFFFFFF)  // Bottom (100%)
-        )
-    )
+    val systemDark = isSystemInDarkTheme()
+    val isDark = when (themeMode) {
+        SessionManager.THEME_LIGHT -> false
+        SessionManager.THEME_DARK -> true
+        else -> systemDark
+    }
+    val portalGradient = getPortalGradient(isDark)
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(brush = portalGradient)
             .verticalScroll(scrollState)
             .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 16.dp)
     ) {
@@ -94,12 +106,12 @@ fun ProfileTab(
                             }
 
                             drawCircle(
-                                color = Color.White,
+                                color = if (isDark) Color(0xFF141C2B) else Color.White,
                                 radius = 49.dp.toPx()
                             )
 
                             drawCircle(
-                                color = Color(0xFFE2E8F0),
+                                color = if (isDark) Color(0xFF243147) else Color(0xFFE2E8F0),
                                 radius = 46.5.dp.toPx()
                             )
                         },
@@ -133,7 +145,7 @@ fun ProfileTab(
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Text(
@@ -141,7 +153,7 @@ fun ProfileTab(
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF64748B)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Spacer(modifier = Modifier.height(6.dp))
@@ -149,8 +161,8 @@ fun ProfileTab(
                     Surface(
                         modifier = Modifier.padding(top = 2.dp),
                         shape = RoundedCornerShape(999.dp),
-                        color = Color(0xFFE6F0FF),
-                        border = BorderStroke(1.dp, Color(0xFFBFD7FF))
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                     ) {
                         Box(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
@@ -161,7 +173,7 @@ fun ProfileTab(
                                 fontFamily = PlusJakartaSansFontFamily,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0066FF)
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -193,7 +205,15 @@ fun ProfileTab(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Card 2: Overview & Progress (.card.c)
+        // Card 2: App Theme Selection
+        ThemeSelectionCard(
+            currentMode = themeMode,
+            onModeSelected = onThemeModeSelected
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Card 3: Overview & Progress (.card.c)
         DesignCard(padding = 20.dp) {
             val progress = profile.attendancePct / 100f
             val animatedProgress by animateFloatAsState(
@@ -213,7 +233,7 @@ fun ProfileTab(
                 KeyValueRow(
                     key = "Total enrolled courses",
                     value = "6",
-                    valueColor = TitleText
+                    valueColor = MaterialTheme.colorScheme.onSurface
                 )
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -222,7 +242,7 @@ fun ProfileTab(
                     KeyValueRow(
                         key = "Attendance overview",
                         value = "${profile.attendancePct}% (Excellent)",
-                        valueColor = Color(0xFF0066FF)
+                        valueColor = MaterialTheme.colorScheme.primary
                     )
                     LinearProgressIndicator(
                         progress = { animatedProgress },
@@ -230,8 +250,8 @@ fun ProfileTab(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = Color(0xFF0066FF),
-                        trackColor = Color(0xFFE2E8F0)
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
             }
@@ -239,7 +259,7 @@ fun ProfileTab(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Card 3: Action Buttons (.card.c)
+        // Card 4: Action Buttons (.card.c)
         DesignCard(padding = 20.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SecondaryButton(
@@ -278,6 +298,102 @@ fun ProfileTab(
 }
 
 @Composable
+private fun ThemeSelectionCard(
+    currentMode: String,
+    onModeSelected: (String) -> Unit
+) {
+    DesignCard(padding = 20.dp) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "App Theme",
+                fontFamily = PlusJakartaSansFontFamily,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                ThemeOptionChip(
+                    label = "System",
+                    icon = Icons.Outlined.PhoneAndroid,
+                    isSelected = currentMode == SessionManager.THEME_SYSTEM || currentMode.isBlank(),
+                    onClick = { onModeSelected(SessionManager.THEME_SYSTEM) },
+                    modifier = Modifier.weight(1f)
+                )
+
+                ThemeOptionChip(
+                    label = "Light",
+                    icon = Icons.Outlined.LightMode,
+                    isSelected = currentMode == SessionManager.THEME_LIGHT,
+                    onClick = { onModeSelected(SessionManager.THEME_LIGHT) },
+                    modifier = Modifier.weight(1f)
+                )
+
+                ThemeOptionChip(
+                    label = "Dark",
+                    icon = Icons.Outlined.DarkMode,
+                    isSelected = currentMode == SessionManager.THEME_DARK,
+                    onClick = { onModeSelected(SessionManager.THEME_DARK) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeOptionChip(
+    label: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val bg = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Box(
+        modifier = modifier
+            .height(40.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(bg)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = contentColor,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = label,
+                fontFamily = PlusJakartaSansFontFamily,
+                fontSize = 13.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = contentColor
+            )
+        }
+    }
+}
+
+@Composable
 private fun InfoTile(
     label: String,
     value: String,
@@ -286,8 +402,8 @@ private fun InfoTile(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFFF8FAFC))
-            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
             .padding(vertical = 12.dp, horizontal = 6.dp)
     ) {
         Column(
@@ -299,7 +415,7 @@ private fun InfoTile(
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = MutedText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(2.dp))
@@ -308,7 +424,7 @@ private fun InfoTile(
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = TitleText,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
         }
@@ -319,7 +435,7 @@ private fun InfoTile(
 private fun KeyValueRow(
     key: String,
     value: String,
-    valueColor: Color = TitleText
+    valueColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -331,7 +447,7 @@ private fun KeyValueRow(
             fontFamily = PlusJakartaSansFontFamily,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = MutedText
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = value,

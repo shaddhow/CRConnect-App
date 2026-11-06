@@ -1,5 +1,6 @@
 package com.example.crconnect.student
 
+import com.example.crconnect.SessionManager
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -37,7 +38,8 @@ data class UserProfileModel(
     val department: String = "Dept. of CSE",
     val attendancePct: Int = 92,
     val cgpa: String = "3.85",
-    val initials: String = "ST"
+    val initials: String = "ST",
+    val isCr: Boolean = false
 )
 
 fun computeInitials(name: String): String {
@@ -117,6 +119,7 @@ private val defaultWeekData = calculateCurrentWeekDays()
 
 data class StudentPortalUiState(
     val selectedTab: Int = 0, // Default to Routine tab (index 0)
+    val themeMode: String = SessionManager.THEME_SYSTEM,
     val hasVoted: Boolean = false,
     val votedCandidateId: String? = null,
     val receiptId: String = "CR-839201",
@@ -130,5 +133,7 @@ data class StudentPortalUiState(
     val classMap: Map<Int, List<ClassModel>> = emptyMap(),
     val profile: UserProfileModel = UserProfileModel(),
     val isAddClassSheetOpen: Boolean = false,
+    val isNoticeSheetOpen: Boolean = false,
+    val isCr: Boolean = false,
     val snackbarMessage: String? = null
 )

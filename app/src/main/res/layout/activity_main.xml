@@ -67,24 +67,27 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 
-            <!-- Subtitle "BUBT Department Network" with BUBT Crest -->
+            <!-- Subtitle "BUBT Department Network" with BUBT Crest in Glass Pill Chip -->
             <LinearLayout
                 android:id="@+id/layoutAppSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginTop="4dp"
+                android:background="@drawable/glass_badge_pill"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="6dp"
+                android:layout_marginTop="8dp"
                 app:layout_constraintTop_toBottomOf="@id/tvAppTitle"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent">
 
                 <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="22dp"
+                    android:layout_width="24dp"
+                    android:layout_height="28dp"
                     android:src="@drawable/bubt_logo"
                     android:scaleType="fitCenter"
-                    android:layout_marginEnd="6dp"
+                    android:layout_marginEnd="8dp"
                     android:contentDescription="@string/bubt_logo_desc" />
 
                 <TextView
@@ -92,9 +95,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/app_subtitle"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
                     android:fontFamily="sans-serif-medium"
-                    android:textColor="#64748B" />
+                    android:textColor="#0F172A" />
             </LinearLayout>
 
             <!-- Pill Badge Tag -->
@@ -110,7 +114,7 @@
                 android:background="@drawable/glass_badge_bg"
                 android:paddingHorizontal="14dp"
                 android:paddingVertical="4dp"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="8dp"
                 app:layout_constraintTop_toBottomOf="@id/layoutAppSubtitle"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />

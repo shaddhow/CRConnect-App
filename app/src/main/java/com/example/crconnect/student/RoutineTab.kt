@@ -50,10 +50,14 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -90,6 +94,7 @@ fun RoutineTab(
     onOpenAddClass: () -> Unit,
     onCloseAddClass: () -> Unit,
     onAddClass: (courseName: String, timeSlot: String, room: String) -> Unit,
+    onOpenNoticeSheet: () -> Unit = {},
     onDeleteRoutine: () -> Unit = {},
     onScannedEntriesAdded: (List<ClassEntry>) -> Unit = { _ -> },
     onShowToast: (String) -> Unit
@@ -252,14 +257,14 @@ fun RoutineTab(
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TitleText
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = todayDateFormatted,
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MutedText
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -285,6 +290,89 @@ fun RoutineTab(
             }
         }
 
+        // Glassy CR Control Card (Only visible when student is promoted to CR)
+        if (uiState.isCr) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = RoundedCornerShape(20.dp),
+                        ambientColor = Color(0x33D97706),
+                        spotColor = Color(0x33D97706)
+                    ),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            GlassCrBadge()
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "CR Control Panel",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Text(
+                            text = "Sec " + uiState.profile.section,
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Text(
+                        text = "As the official CR of Section ${uiState.profile.section}, you can broadcast urgent notices or extra class alerts to all classmates.",
+                        fontFamily = PlusJakartaSansFontFamily,
+                        fontSize = 13.sp,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp
+                    )
+
+                    Button(
+                        onClick = onOpenNoticeSheet,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFD97706),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Broadcast Class Notice",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         // Week Card (.card.c)
         DesignCard(padding = 24.dp) {
             Row(
@@ -297,7 +385,7 @@ fun RoutineTab(
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TitleText
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -305,8 +393,8 @@ fun RoutineTab(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color.White)
-                            .border(1.dp, BorderColor, RoundedCornerShape(10.dp))
+                            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
@@ -316,7 +404,7 @@ fun RoutineTab(
                         Icon(
                             imageVector = Icons.Default.ChevronLeft,
                             contentDescription = "Previous week",
-                            tint = TitleText,
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -325,8 +413,8 @@ fun RoutineTab(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color.White)
-                            .border(1.dp, BorderColor, RoundedCornerShape(10.dp))
+                            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
@@ -336,7 +424,7 @@ fun RoutineTab(
                         Icon(
                             imageVector = Icons.Default.ChevronRight,
                             contentDescription = "Next week",
-                            tint = TitleText,
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -373,14 +461,14 @@ fun RoutineTab(
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = TitleText
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(if (classesForSelectedDay.isNotEmpty()) TintLightBlue else Color(0xFFF1F5F9))
-                    .border(1.dp, if (classesForSelectedDay.isNotEmpty()) TintLightBlueBorder else BorderColor, RoundedCornerShape(999.dp))
+                    .background(if (classesForSelectedDay.isNotEmpty()) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(999.dp))
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 Text(
@@ -388,7 +476,7 @@ fun RoutineTab(
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (classesForSelectedDay.isNotEmpty()) Primary else MutedText
+                    color = if (classesForSelectedDay.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -416,13 +504,13 @@ fun RoutineTab(
                         modifier = Modifier
                             .size(72.dp)
                             .clip(CircleShape)
-                            .background(TintLightBlue),
+                            .background(androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.CalendarToday,
                             contentDescription = null,
-                            tint = Primary,
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(30.dp)
                         )
                     }
@@ -432,7 +520,7 @@ fun RoutineTab(
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TitleText
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                     )
 
                     Text(
@@ -440,7 +528,7 @@ fun RoutineTab(
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = MutedText,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
 
@@ -461,7 +549,7 @@ fun RoutineTab(
         ModalBottomSheet(
             onDismissRequest = onCloseAddClass,
             sheetState = sheetState,
-            containerColor = Color.White,
+            containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
             windowInsets = WindowInsets(0, 0, 0, 0),
             dragHandle = {
@@ -470,7 +558,7 @@ fun RoutineTab(
                         .padding(top = 12.dp, bottom = 4.dp)
                         .size(width = 40.dp, height = 4.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(Color(0xFFCBD5E1))
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.outline)
                 )
             }
         ) {
@@ -494,7 +582,7 @@ fun RoutineTab(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
-                    .background(Color.White)
+                    .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
                     .padding(28.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -503,7 +591,7 @@ fun RoutineTab(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     CircularProgressIndicator(
-                        color = Primary,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         strokeWidth = 3.dp,
                         modifier = Modifier.size(48.dp)
                     )
@@ -512,7 +600,7 @@ fun RoutineTab(
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TitleText,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -528,12 +616,15 @@ private fun DayPill(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val pillBg = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.surface
+    val pillBorder = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+
     Box(
         modifier = modifier
             .height(64.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(if (isSelected) Primary else Color.White)
-            .border(1.dp, if (isSelected) Primary else BorderColor, RoundedCornerShape(16.dp))
+            .background(pillBg)
+            .border(1.dp, pillBorder, RoundedCornerShape(16.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -549,7 +640,7 @@ private fun DayPill(
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isSelected) Color.White else MutedText
+                color = if (isSelected) Color.White else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -557,7 +648,7 @@ private fun DayPill(
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isSelected) Color.White else TitleText
+                color = if (isSelected) Color.White else androidx.compose.material3.MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(4.dp))
             Box(
@@ -567,7 +658,7 @@ private fun DayPill(
                     .background(
                         when {
                             day.hasClasses && isSelected -> Color.White
-                            day.hasClasses -> Primary
+                            day.hasClasses -> androidx.compose.material3.MaterialTheme.colorScheme.primary
                             else -> Color.Transparent
                         }
                     )
@@ -594,7 +685,7 @@ private fun ClassCardItem(
                 modifier = Modifier
                     .width(72.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(TintLightBlue)
+                    .background(androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer)
                     .padding(vertical = 10.dp, horizontal = 4.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -603,7 +694,7 @@ private fun ClassCardItem(
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Primary,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,
                     lineHeight = 16.sp
                 )
@@ -620,7 +711,7 @@ private fun ClassCardItem(
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TitleText,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                     lineHeight = 22.sp
                 )
 
@@ -630,7 +721,7 @@ private fun ClassCardItem(
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MutedText
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 // Pills Row (.pill-row) - Room Pill & Duration Pill

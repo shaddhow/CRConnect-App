@@ -2,8 +2,13 @@ package com.example.crconnect;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import androidx.appcompat.app.AppCompatDelegate;
 
 public class SessionManager {
+    public static final String THEME_SYSTEM = "system";
+    public static final String THEME_LIGHT = "light";
+    public static final String THEME_DARK = "dark";
+
     private static final String PREF_NAME = "CRConnectSession";
     private static final String KEY_IS_LOGGED_IN = "isLoggedIn";
     private static final String KEY_NAME = "userName";
@@ -16,6 +21,7 @@ public class SessionManager {
     private static final String KEY_DEPT = "userDept";
     private static final String KEY_PROFILE_IMAGE = "profileImageUrl";
     private static final String KEY_DARK_MODE = "darkMode";
+    private static final String KEY_THEME_MODE = "themeMode";
 
     private final SharedPreferences pref;
     private final SharedPreferences.Editor editor;
@@ -47,11 +53,16 @@ public class SessionManager {
     }
 
     public String getUserName() { return pref.getString(KEY_NAME, "User"); }
+    private static final String KEY_ASSIGNED_SECTIONS = "assignedSections";
+    private static final String KEY_ASSIGNED_INTAKES = "assignedIntakes";
+
     public String getUserEmail() { return pref.getString(KEY_EMAIL, ""); }
     public String getUserID() { return pref.getString(KEY_ID, ""); }
     public String getUserRole() { return pref.getString(KEY_ROLE, "Student"); }
     public String getUserSection() { return pref.getString(KEY_SECTION, "--"); }
     public String getAssignedSection() { return pref.getString(KEY_ASSIGNED_SECTION, "--"); }
+    public String getAssignedSections() { return pref.getString(KEY_ASSIGNED_SECTIONS, getAssignedSection()); }
+    public String getAssignedIntakes() { return pref.getString(KEY_ASSIGNED_INTAKES, getUserIntake()); }
     public String getUserIntake() { return pref.getString(KEY_INTAKE, "--"); }
     public String getUserDept() { return pref.getString(KEY_DEPT, "--"); }
     public String getProfileImageUrl() { return pref.getString(KEY_PROFILE_IMAGE, ""); }
@@ -76,13 +87,49 @@ public class SessionManager {
         editor.commit();
     }
 
-    public void setDarkMode(boolean isDarkMode) {
-        editor.putBoolean(KEY_DARK_MODE, isDarkMode);
+    public void setAssignedSections(String sections) {
+        editor.putString(KEY_ASSIGNED_SECTIONS, sections);
         editor.commit();
     }
 
+    public void setAssignedIntakes(String intakes) {
+        editor.putString(KEY_ASSIGNED_INTAKES, intakes);
+        editor.commit();
+    }
+
+    public String getThemeMode() {
+        return pref.getString(KEY_THEME_MODE, THEME_SYSTEM);
+    }
+
+    public void setThemeMode(String mode) {
+        editor.putString(KEY_THEME_MODE, mode);
+        editor.putBoolean(KEY_DARK_MODE, THEME_DARK.equalsIgnoreCase(mode));
+        editor.commit();
+        applyThemeMode(mode);
+    }
+
+    public static void applyThemeMode(String mode) {
+        if (THEME_LIGHT.equalsIgnoreCase(mode)) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        } else if (THEME_DARK.equalsIgnoreCase(mode)) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        }
+    }
+
+    public void setDarkMode(boolean isDarkMode) {
+        setThemeMode(isDarkMode ? THEME_DARK : THEME_LIGHT);
+    }
+
     public boolean isDarkMode() {
-        return pref.getBoolean(KEY_DARK_MODE, true); // Default to Dark mode
+        String mode = getThemeMode();
+        if (THEME_LIGHT.equalsIgnoreCase(mode)) {
+            return false;
+        } else if (THEME_DARK.equalsIgnoreCase(mode)) {
+            return true;
+        }
+        return pref.getBoolean(KEY_DARK_MODE, false);
     }
 
     public void logoutUser() {

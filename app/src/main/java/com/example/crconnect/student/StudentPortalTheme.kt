@@ -1,11 +1,14 @@
 package com.example.crconnect.student
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -36,6 +39,15 @@ val DangerBorder = Color(0xFFFECACA)
 val DisabledBg = Color(0xFFE5E7EB)
 val DisabledText = Color(0xFF94A3B8)
 
+// Dark Theme Color Tokens - Deep Uniform Rich Dark Architecture
+val DarkBackground = Color(0xFF0A0E1A)
+val DarkSurface = Color(0xFF131B2E)
+val DarkSurfaceVariant = Color(0xFF1C273E)
+val DarkTitleText = Color(0xFFF8FAFC)
+val DarkMutedText = Color(0xFF94A3B8)
+val DarkBorderColor = Color(0xFF24354D)
+val DarkInputBorderColor = Color(0xFF334155)
+
 val PlusJakartaSansFontFamily = FontFamily.SansSerif
 
 private val LightColorScheme = lightColorScheme(
@@ -47,8 +59,26 @@ private val LightColorScheme = lightColorScheme(
     onBackground = TitleText,
     surface = Color.White,
     onSurface = TitleText,
+    surfaceVariant = Color(0xFFF8FAFC),
+    onSurfaceVariant = MutedText,
     surfaceTint = Color.Transparent,
     outline = BorderColor,
+    error = ErrorColor
+)
+
+private val DarkColorScheme = darkColorScheme(
+    primary = Color(0xFF3B82F6),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF1E293B),
+    onPrimaryContainer = Color(0xFF60A5FA),
+    background = DarkBackground,
+    onBackground = DarkTitleText,
+    surface = DarkSurface,
+    onSurface = DarkTitleText,
+    surfaceVariant = DarkSurfaceVariant,
+    onSurfaceVariant = DarkMutedText,
+    surfaceTint = Color.Transparent,
+    outline = DarkBorderColor,
     error = ErrorColor
 )
 
@@ -57,64 +87,54 @@ val StudentPortalTypography = Typography(
         fontFamily = PlusJakartaSansFontFamily,
         fontSize = 28.sp,
         fontWeight = FontWeight.ExtraBold,
-        letterSpacing = (-0.3).sp,
-        color = TitleText
+        letterSpacing = (-0.3).sp
     ),
     headlineMedium = TextStyle(
         fontFamily = PlusJakartaSansFontFamily,
         fontSize = 22.sp,
         fontWeight = FontWeight.ExtraBold,
-        letterSpacing = (-0.2).sp,
-        color = TitleText
+        letterSpacing = (-0.2).sp
     ),
     titleLarge = TextStyle(
         fontFamily = PlusJakartaSansFontFamily,
         fontSize = 20.sp,
         fontWeight = FontWeight.ExtraBold,
-        letterSpacing = (-0.2).sp,
-        color = TitleText
+        letterSpacing = (-0.2).sp
     ),
     titleMedium = TextStyle(
         fontFamily = PlusJakartaSansFontFamily,
         fontSize = 18.sp,
-        fontWeight = FontWeight.Bold,
-        color = TitleText
+        fontWeight = FontWeight.Bold
     ),
     titleSmall = TextStyle(
         fontFamily = PlusJakartaSansFontFamily,
         fontSize = 16.sp,
-        fontWeight = FontWeight.Bold,
-        color = TitleText
+        fontWeight = FontWeight.Bold
     ),
     bodyLarge = TextStyle(
         fontFamily = PlusJakartaSansFontFamily,
         fontSize = 16.sp,
-        fontWeight = FontWeight.Medium,
-        color = TitleText
+        fontWeight = FontWeight.Medium
     ),
     bodyMedium = TextStyle(
         fontFamily = PlusJakartaSansFontFamily,
         fontSize = 14.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = TitleText
+        fontWeight = FontWeight.SemiBold
     ),
     bodySmall = TextStyle(
         fontFamily = PlusJakartaSansFontFamily,
         fontSize = 13.sp,
-        fontWeight = FontWeight.Medium,
-        color = MutedText
+        fontWeight = FontWeight.Medium
     ),
     labelMedium = TextStyle(
         fontFamily = PlusJakartaSansFontFamily,
         fontSize = 13.sp,
-        fontWeight = FontWeight.Bold,
-        color = TitleText
+        fontWeight = FontWeight.Bold
     ),
     labelSmall = TextStyle(
         fontFamily = PlusJakartaSansFontFamily,
         fontSize = 12.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = MutedText
+        fontWeight = FontWeight.SemiBold
     )
 )
 
@@ -124,10 +144,34 @@ val StudentPortalShapes = Shapes(
     large = RoundedCornerShape(20.dp)
 )
 
+fun getPortalGradient(darkTheme: Boolean): Brush {
+    return if (darkTheme) {
+        // Uniform deep rich dark background to eliminate vertical gradient banding & color depth mismatch
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF0A0E1A),
+                Color(0xFF0A0E1A)
+            )
+        )
+    } else {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF70D6FF), // Top
+                Color(0xFFC2EFFF), // Middle
+                Color(0xFFFFFFFF)  // Bottom
+            )
+        )
+    }
+}
+
 @Composable
-fun StudentPortalTheme(content: @Composable () -> Unit) {
+fun StudentPortalTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     MaterialTheme(
-        colorScheme = LightColorScheme,
+        colorScheme = colorScheme,
         typography = StudentPortalTypography,
         shapes = StudentPortalShapes,
         content = content

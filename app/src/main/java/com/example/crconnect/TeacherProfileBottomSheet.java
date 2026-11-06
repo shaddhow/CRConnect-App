@@ -34,13 +34,19 @@ public class TeacherProfileBottomSheet extends BottomSheetDialogFragment {
     private Runnable onEditProfileClick;
     private Runnable onSecurityClick;
     private Runnable onLogoutClick;
+    private Runnable onEditSectionsClick;
 
-    public static TeacherProfileBottomSheet newInstance(@Nullable Runnable onEditProfile, @Nullable Runnable onSecurity, @Nullable Runnable onLogout) {
+    public static TeacherProfileBottomSheet newInstance(@Nullable Runnable onEditProfile, @Nullable Runnable onSecurity, @Nullable Runnable onLogout, @Nullable Runnable onEditSections) {
         TeacherProfileBottomSheet fragment = new TeacherProfileBottomSheet();
         fragment.onEditProfileClick = onEditProfile;
         fragment.onSecurityClick = onSecurity;
         fragment.onLogoutClick = onLogout;
+        fragment.onEditSectionsClick = onEditSections;
         return fragment;
+    }
+
+    public static TeacherProfileBottomSheet newInstance(@Nullable Runnable onEditProfile, @Nullable Runnable onSecurity, @Nullable Runnable onLogout) {
+        return newInstance(onEditProfile, onSecurity, onLogout, null);
     }
 
     @Override
@@ -125,7 +131,23 @@ public class TeacherProfileBottomSheet extends BottomSheetDialogFragment {
         if (tvTeacherCode != null) tvTeacherCode.setText(!id.isEmpty() ? id : "T-0142");
         if (tvRole != null) tvRole.setText(role);
         if (tvDepartment != null) tvDepartment.setText(dept);
-        if (tvAssignedSection != null) tvAssignedSection.setText("Section " + assignedSec);
+        if (tvAssignedSection != null) {
+            String sectionsStr = sessionManager.getAssignedSections();
+            if (sectionsStr == null || sectionsStr.trim().isEmpty() || sectionsStr.equals("--")) {
+                sectionsStr = assignedSec;
+            }
+            if (sectionsStr == null || sectionsStr.trim().isEmpty() || sectionsStr.equals("--")) {
+                tvAssignedSection.setText("Not Assigned (Tap to Edit)");
+            } else {
+                tvAssignedSection.setText("Sec: " + sectionsStr + " (Tap to Edit)");
+            }
+            tvAssignedSection.setOnClickListener(v -> {
+                dismissAllowingStateLoss();
+                if (onEditSectionsClick != null) {
+                    onEditSectionsClick.run();
+                }
+            });
+        }
         if (tvDept != null) tvDept.setText("Verified teacher · Department of " + dept);
 
         if (tvAvatarText != null) {
@@ -145,6 +167,21 @@ public class TeacherProfileBottomSheet extends BottomSheetDialogFragment {
             imgAvatar.setVisibility(View.VISIBLE);
             tvAvatarText.setVisibility(View.GONE);
             Glide.with(this).load(profileImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgAvatar);
+        }
+
+        MaterialButton btnToggleDarkMode = view.findViewById(R.id.btnToggleDarkMode);
+        if (btnToggleDarkMode != null) {
+            boolean isDark = sessionManager.isDarkMode();
+            btnToggleDarkMode.setText(isDark ? "Switch to Light mode" : "Switch to Dark mode");
+            btnToggleDarkMode.setIconResource(isDark ? R.drawable.ic_tip_light : R.drawable.ic_moon);
+            btnToggleDarkMode.setOnClickListener(v -> {
+                boolean newMode = !sessionManager.isDarkMode();
+                sessionManager.setDarkMode(newMode);
+                dismiss();
+                if (getActivity() != null) {
+                    getActivity().recreate();
+                }
+            });
         }
 
         if (btnEditProfile != null) {

@@ -69,6 +69,7 @@ class StudentPortalViewModel : ViewModel() {
 
         val studentName = session.userName.ifBlank { "Student" }
         val initials = computeInitials(studentName)
+        val isUserCr = session.userRole.contains("CR", ignoreCase = true)
 
         val profileModel = UserProfileModel(
             name = studentName,
@@ -77,11 +78,20 @@ class StudentPortalViewModel : ViewModel() {
             intake = session.userIntake.ifBlank { "--" },
             section = rawSec,
             department = rawDept,
-            initials = initials
+            initials = initials,
+            isCr = isUserCr
         )
 
         val todayIdx = getTodayDayIndex()
-        _uiState.update { it.copy(profile = profileModel, selectedDayIndex = todayIdx) }
+        val currentThemeMode = session.themeMode
+        _uiState.update {
+            it.copy(
+                profile = profileModel,
+                isCr = isUserCr,
+                selectedDayIndex = todayIdx,
+                themeMode = currentThemeMode
+            )
+        }
 
         val repo = RoutineRepository(context)
         val savedEntries = repo.getClassEntries()
@@ -225,19 +235,7 @@ class StudentPortalViewModel : ViewModel() {
             val candRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)?.child("candidates")
             candidatesListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists() && snapshot.hasChildren()) {
-                        parseCandidatesSnapshot(snapshot)
-                    } else {
-                        // Fallback live listener to root candidates node
-                        dbRef?.child("candidates")?.addValueEventListener(object : ValueEventListener {
-                            override fun onDataChange(rootSnap: DataSnapshot) {
-                                if (_uiState.value.candidates.isEmpty() || !snapshot.exists()) {
-                                    parseCandidatesSnapshot(rootSnap)
-                                }
-                            }
-                            override fun onCancelled(error: DatabaseError) {}
-                        })
-                    }
+                    parseCandidatesSnapshot(snapshot)
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -322,6 +320,24 @@ class StudentPortalViewModel : ViewModel() {
             Handler(Looper.getMainLooper()).postDelayed({
                 isFirstAnnouncementLoad = false
             }, 2000)
+
+            // 5. Live User Role Listener (Checks if student was promoted to CR by Teacher)
+            val authUser = FirebaseAuth.getInstance().currentUser
+            if (authUser != null) {
+                dbRef?.child("users")?.child(authUser.uid)?.child("role")?.addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val roleStr = snapshot.getValue(String::class.java) ?: ""
+                        val isUserCr = roleStr.contains("CR", ignoreCase = true)
+                        _uiState.update { currentState ->
+                            currentState.copy(
+                                isCr = isUserCr,
+                                profile = currentState.profile.copy(isCr = isUserCr)
+                            )
+                        }
+                    }
+                    override fun onCancelled(error: DatabaseError) {}
+                })
+            }
 
         } catch (e: Exception) {
             Log.e("StudentPortalViewModel", "Error setting up RTDB listeners", e)
@@ -579,6 +595,41 @@ class StudentPortalViewModel : ViewModel() {
         _uiState.update { it.copy(isAddClassSheetOpen = false) }
     }
 
+    fun openNoticeSheet() {
+        _uiState.update { it.copy(isNoticeSheetOpen = true) }
+    }
+
+    fun closeNoticeSheet() {
+        _uiState.update { it.copy(isNoticeSheetOpen = false) }
+    }
+
+    fun publishNotice(title: String, body: String) {
+        if (title.isBlank() || body.isBlank()) {
+            _uiState.update { it.copy(snackbarMessage = "Please enter notice title and text") }
+            return
+        }
+        val notifRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)?.child("announcements")
+        val newNoticeRef = notifRef?.push()
+        val noticeMap = mapOf(
+            "title" to title.trim(),
+            "body" to body.trim(),
+            "timestamp" to System.currentTimeMillis(),
+            "postedBy" to (_uiState.value.profile.name + " (CR)")
+        )
+        newNoticeRef?.setValue(noticeMap)?.addOnSuccessListener {
+            _uiState.update { 
+                it.copy(
+                    isNoticeSheetOpen = false,
+                    snackbarMessage = "Notice broadcasted to Section $sanitizedSec!"
+                )
+            }
+        }?.addOnFailureListener { e ->
+            _uiState.update { 
+                it.copy(snackbarMessage = "Failed to post notice: ${e.message}")
+            }
+        }
+    }
+
     fun addClass(courseName: String, timeSlot: String, room: String) {
         _uiState.update { currentState ->
             val currentDayIndex = currentState.selectedDayIndex
@@ -770,6 +821,12 @@ class StudentPortalViewModel : ViewModel() {
         return key.trim().lowercase(Locale.ROOT)
             .replace(Regex("[^a-z0-9_]"), "_")
             .replace(Regex("_+"), "_")
+    }
+
+    fun setThemeMode(context: Context, mode: String) {
+        val session = SessionManager(context)
+        session.setThemeMode(mode)
+        _uiState.update { it.copy(themeMode = mode) }
     }
 
     fun clearSnackbar() {

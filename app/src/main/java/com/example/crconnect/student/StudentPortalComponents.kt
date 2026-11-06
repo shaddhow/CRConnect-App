@@ -259,6 +259,7 @@ fun TopHeader(
     name: String = "Student",
     department: String = "Dept. of CSE",
     initials: String = "ST",
+    isCr: Boolean = false,
     onMenuClick: () -> Unit,
     onAvatarClick: () -> Unit,
     onSignOutClick: () -> Unit,
@@ -326,15 +327,22 @@ fun TopHeader(
         Column(
             modifier = Modifier.weight(1f)
         ) {
-            Text(
-                text = displayName,
-                fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = displayName,
+                    fontFamily = PlusJakartaSansFontFamily,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (isCr) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    GlassCrBadge()
+                }
+            }
             Text(
                 text = displayDepartment,
                 fontFamily = PlusJakartaSansFontFamily,
@@ -474,3 +482,26 @@ fun StudentBottomNavigation(
         }
     }
 }
+
+@Composable
+fun GlassCrBadge(
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(Color(0xFFFEF3C7))
+            .border(1.dp, Color(0xFFFDE68A), RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "CR",
+            fontFamily = PlusJakartaSansFontFamily,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = Color(0xFFD97706)
+        )
+    }
+}
+

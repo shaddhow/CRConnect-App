@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.Camera
@@ -39,7 +38,7 @@ class RoutineCameraActivity : AppCompatActivity() {
         if (isGranted) {
             startCamera()
         } else {
-            Toast.makeText(this, "Camera permission is required to scan routine", Toast.LENGTH_SHORT).show()
+            CustomToast.show(this, "Camera permission is required to scan routine")
             finish()
         }
     }
@@ -124,7 +123,7 @@ class RoutineCameraActivity : AppCompatActivity() {
 
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
-                Toast.makeText(this, "Failed to start camera: ${exc.message}", Toast.LENGTH_SHORT).show()
+                CustomToast.show(this, "Failed to start camera: ${exc.message}")
             }
         }, ContextCompat.getMainExecutor(this))
     }
@@ -132,15 +131,15 @@ class RoutineCameraActivity : AppCompatActivity() {
     private fun toggleFlashMode() {
         flashMode = when (flashMode) {
             ImageCapture.FLASH_MODE_OFF -> {
-                Toast.makeText(this, "Flash ON", Toast.LENGTH_SHORT).show()
+                CustomToast.show(this, "Flash ON")
                 ImageCapture.FLASH_MODE_ON
             }
             ImageCapture.FLASH_MODE_ON -> {
-                Toast.makeText(this, "Flash AUTO", Toast.LENGTH_SHORT).show()
+                CustomToast.show(this, "Flash AUTO")
                 ImageCapture.FLASH_MODE_AUTO
             }
             else -> {
-                Toast.makeText(this, "Flash OFF", Toast.LENGTH_SHORT).show()
+                CustomToast.show(this, "Flash OFF")
                 ImageCapture.FLASH_MODE_OFF
             }
         }
@@ -149,7 +148,7 @@ class RoutineCameraActivity : AppCompatActivity() {
 
     private fun takePhoto() {
         val imageCapture = imageCapture ?: run {
-            Toast.makeText(this, "Camera is not ready yet", Toast.LENGTH_SHORT).show()
+            CustomToast.show(this, "Camera is not ready yet")
             return
         }
 
@@ -167,7 +166,7 @@ class RoutineCameraActivity : AppCompatActivity() {
                 override fun onError(exc: ImageCaptureException) {
                     binding.btnShutter.isEnabled = true
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
-                    Toast.makeText(baseContext, "Photo capture failed: ${exc.message}", Toast.LENGTH_SHORT).show()
+                    CustomToast.show(this@RoutineCameraActivity, "Photo capture failed: ${exc.message}")
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -75,13 +76,13 @@ fun CandidatesTab(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(if (uiState.isGateOpen) SuccessTint else WarningTint),
+                            .background(if (uiState.isGateOpen) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = if (uiState.isGateOpen) Icons.Default.HowToVote else Icons.Default.Lock,
                             contentDescription = null,
-                            tint = if (uiState.isGateOpen) SuccessColor else Color(0xFFD97706),
+                            tint = if (uiState.isGateOpen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -92,14 +93,14 @@ fun CandidatesTab(
                             fontFamily = PlusJakartaSansFontFamily,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = TitleText
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = if (uiState.isGateOpen) "Status: ${uiState.timerStatus}" else "Voting is currently locked by teacher",
                             fontFamily = PlusJakartaSansFontFamily,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MutedText
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -108,8 +109,8 @@ fun CandidatesTab(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (uiState.isGateOpen) TintLightBlue else Color(0xFFF1F5F9))
-                        .border(1.dp, if (uiState.isGateOpen) TintLightBlueBorder else BorderColor, RoundedCornerShape(12.dp))
+                        .background(if (uiState.isGateOpen) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Row(
@@ -119,7 +120,7 @@ fun CandidatesTab(
                         Icon(
                             imageVector = Icons.Default.HourglassTop,
                             contentDescription = null,
-                            tint = if (uiState.isGateOpen) Primary else MutedText,
+                            tint = if (uiState.isGateOpen) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
@@ -127,7 +128,7 @@ fun CandidatesTab(
                             fontFamily = PlusJakartaSansFontFamily,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (uiState.isGateOpen) Primary else MutedText
+                            color = if (uiState.isGateOpen) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -142,7 +143,7 @@ fun CandidatesTab(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-0.2).sp,
-                color = TitleText
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -153,7 +154,7 @@ fun CandidatesTab(
                     .fillMaxWidth()
                     .height(10.dp)
                     .clip(RoundedCornerShape(5.dp))
-                    .background(Color(0xFFE5E7EB))
+                    .background(androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 if (totalVotes > 0) {
                     uiState.candidates.forEachIndexed { index, candidate ->
@@ -197,7 +198,7 @@ fun CandidatesTab(
                                     fontFamily = PlusJakartaSansFontFamily,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = TitleText
+                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                                 )
                             }
 
@@ -206,7 +207,7 @@ fun CandidatesTab(
                                 fontFamily = PlusJakartaSansFontFamily,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = MutedText
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -217,7 +218,7 @@ fun CandidatesTab(
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MutedText
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -251,7 +252,7 @@ fun CandidatesTab(
                                 modifier = Modifier
                                     .size(48.dp)
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(TintLightBlue),
+                                    .background(androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
@@ -259,7 +260,7 @@ fun CandidatesTab(
                                     fontFamily = PlusJakartaSansFontFamily,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = Primary
+                                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary
                                 )
                             }
 
@@ -271,7 +272,7 @@ fun CandidatesTab(
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     letterSpacing = (-0.2).sp,
-                                    color = TitleText
+                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(modifier = Modifier.height(3.dp))
                                 Text(
@@ -279,7 +280,7 @@ fun CandidatesTab(
                                     fontFamily = PlusJakartaSansFontFamily,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = MutedText
+                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 

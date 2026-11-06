@@ -974,7 +974,7 @@ public class RoutineActivity extends AppCompatActivity {
                 routineAdapter.notifyDataSetChanged();
             }
             updateUiVisibilityAndSummary();
-            Toast.makeText(this, "Current routine deleted", Toast.LENGTH_SHORT).show();
+            CustomToast.show(this, "Current routine deleted");
         } catch (Exception e) {
             Log.e("RoutineActivity", "Error clearing routine", e);
         }
@@ -1000,7 +1000,7 @@ public class RoutineActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 launchCameraForRoutine();
             } else {
-                Toast.makeText(this, "Camera permission is required to scan routine", Toast.LENGTH_SHORT).show();
+                CustomToast.show(this, "Camera permission is required to scan routine");
             }
         }
     }
@@ -1036,7 +1036,7 @@ public class RoutineActivity extends AppCompatActivity {
                         try {
                             if (loadingDialog.isShowing()) loadingDialog.dismiss();
                             if (isFinishing() || isDestroyed()) return;
-                            Toast.makeText(RoutineActivity.this, "OCR scan failed: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                            CustomToast.show(RoutineActivity.this, "OCR scan failed: " + e.getLocalizedMessage());
                             Log.e("RoutineActivity", "OCR scan failed: " + e.getLocalizedMessage(), e);
                         } catch (Exception ex) {
                             Log.e("RoutineActivity", "Error handling OCR failure", ex);

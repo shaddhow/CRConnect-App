@@ -18,17 +18,17 @@
         style="@style/Widget.Material3.Button.IconButton"
         android:layout_width="44dp"
         android:layout_height="44dp"
-        android:backgroundTint="#FFFFFF"
+        android:backgroundTint="@color/card_bg"
         android:insetLeft="0dp"
         android:insetTop="0dp"
         android:insetRight="0dp"
         android:insetBottom="0dp"
         app:cornerRadius="22dp"
-        app:strokeColor="#E2E8F0"
+        app:strokeColor="@color/slate_border"
         app:strokeWidth="1dp"
         app:icon="@drawable/ic_menu"
         app:iconSize="24dp"
-        app:iconTint="#0F172A"
+        app:iconTint="@color/title_text"
         android:contentDescription="Open menu" />
 
     <!-- 2. Avatar Circle: 44dp, filled #0066FF, white initials "TT" bold 16sp, 3dp white ring border -->
@@ -67,32 +67,32 @@
         android:layout_marginStart="12dp"
         android:orientation="vertical">
 
-        <!-- Line 1: "Admin Console · Sec 6" — bold 16sp, color #0F172A -->
+        <!-- Line 1: "Admin Console · Sec 6" — bold 16sp -->
         <TextView
             android:id="@+id/tvHeaderTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Admin Console · Sec 6"
-            android:textColor="#0F172A"
+            android:textColor="@color/title_text"
             android:textSize="16sp"
             android:textStyle="bold"
             android:fontFamily="sans-serif-black"
             android:maxLines="1"
             android:ellipsize="end" />
 
-        <!-- Line 2: "Test Teacher (Dev) · CSE" — regular 12sp, color #64748B -->
+        <!-- Line 2: "Test Teacher (Dev) · CSE" — regular 12sp -->
         <TextView
             android:id="@+id/tvHeaderSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Test Teacher (Dev) · CSE"
-            android:textColor="#64748B"
+            android:textColor="@color/muted_text"
             android:textSize="12sp"
             android:maxLines="1"
             android:ellipsize="end" />
     </LinearLayout>
 
-    <!-- 4. Chip Badge "Secure": Pill shape (radius 999dp), bg #DCFCE7, text #166534, border #BBF7D0, font 12sp bold, padding 4dp top/bottom, 10dp start/end -->
+    <!-- 4. Chip Badge "Secure" -->
     <TextView
         android:id="@+id/tvSecureBadge"
         android:layout_width="wrap_content"
@@ -105,7 +105,7 @@
         android:paddingTop="4dp"
         android:paddingBottom="4dp"
         android:text="Secure"
-        android:textColor="#166534"
+        android:textColor="@color/tp_chip_verified_text"
         android:textSize="12sp"
         android:textStyle="bold" />
 
@@ -116,17 +116,17 @@
         android:layout_width="44dp"
         android:layout_height="44dp"
         android:layout_marginStart="12dp"
-        android:backgroundTint="#FFFFFF"
+        android:backgroundTint="@color/card_bg"
         android:insetLeft="0dp"
         android:insetTop="0dp"
         android:insetRight="0dp"
         android:insetBottom="0dp"
         app:cornerRadius="22dp"
-        app:strokeColor="#E2E8F0"
+        app:strokeColor="@color/slate_border"
         app:strokeWidth="1dp"
         app:icon="@drawable/ic_power"
         app:iconSize="24dp"
-        app:iconTint="#0F172A"
+        app:iconTint="@color/title_text"
         android:contentDescription="Power / Sign out" />
 
 </LinearLayout>

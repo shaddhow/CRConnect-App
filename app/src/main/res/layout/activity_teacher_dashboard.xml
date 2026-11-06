@@ -1021,13 +1021,45 @@
                                     android:textSize="12sp"
                                     android:textStyle="bold" />
 
-                                <TextView
+                                <LinearLayout
+                                    android:id="@+id/btnEditTeacherSections"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:background="@drawable/bg_tp_stat_box"
+                                    android:layout_marginEnd="6dp"
+                                    android:background="@drawable/bg_glassy_pill"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:foreground="?attr/selectableItemBackground"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal"
                                     android:paddingHorizontal="10dp"
-                                    android:paddingVertical="3dp"
-                                    android:text="3 sections"
+                                    android:paddingVertical="4dp">
+
+                                    <ImageView
+                                        android:layout_width="12dp"
+                                        android:layout_height="12dp"
+                                        android:contentDescription="Edit"
+                                        android:src="@drawable/ic_edit"
+                                        app:tint="#FFFFFF" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="4dp"
+                                        android:text="Manage"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <TextView
+                                    android:id="@+id/tvTpAssignedCount"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_glassy_pill"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="4dp"
+                                    android:text="0 sections"
                                     android:textColor="#FFFFFF"
                                     android:textSize="11sp"
                                     android:textStyle="bold" />
@@ -1046,7 +1078,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:includeFontPadding="false"
-                                    android:text="6"
+                                    android:text="--"
                                     android:textColor="#FFFFFF"
                                     android:textSize="56sp"
                                     android:textStyle="bold" />
@@ -1071,20 +1103,20 @@
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:layout_marginTop="2dp"
-                                        android:text="Section 6 · Intake 55"
+                                        android:text="Select or Add Section"
                                         android:textColor="#FFFFFF"
                                         android:textSize="18sp"
                                         android:textStyle="bold" />
                                 </LinearLayout>
                             </LinearLayout>
 
-                            <!-- Section Toggle Buttons -->
+                            <!-- Section Toggle Buttons Container -->
                             <LinearLayout
+                                android:id="@+id/containerSectionButtons"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="16dp"
-                                android:orientation="horizontal"
-                                android:weightSum="3">
+                                android:orientation="horizontal">
 
                                 <Button
                                     android:id="@+id/btnSec4"

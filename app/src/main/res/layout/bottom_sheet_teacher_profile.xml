@@ -297,6 +297,26 @@
                     app:strokeWidth="1.5dp" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnToggleDarkMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="8dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="Switch to Dark mode"
+                    android:textColor="#0066FF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="#FFFFFF"
+                    app:cornerRadius="12dp"
+                    app:icon="@drawable/ic_moon"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp"
+                    app:iconTint="#0066FF"
+                    app:strokeColor="#0066FF"
+                    app:strokeWidth="1.5dp" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnProfileLogout"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"

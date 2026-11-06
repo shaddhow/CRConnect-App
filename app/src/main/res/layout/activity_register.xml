@@ -76,10 +76,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="24dp"
-                app:cardElevation="6dp"
+                app:cardElevation="2dp"
+                app:cardPreventCornerOverlap="false"
                 app:cardBackgroundColor="#FFFFFF"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
+                app:strokeColor="@color/slate_border_light"
                 android:layout_marginBottom="24dp">
 
                 <LinearLayout
@@ -591,7 +592,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="24dp"
-                app:cardElevation="6dp"
+                app:cardElevation="2dp"
+                app:cardPreventCornerOverlap="false"
                 app:cardBackgroundColor="#FFFFFF"
                 app:strokeWidth="1dp"
                 app:strokeColor="#16A34A"
@@ -678,7 +680,7 @@
         android:orientation="vertical"
         android:gravity="center_horizontal"
         android:background="@drawable/sticky_footer_bg"
-        android:elevation="12dp"
+        android:elevation="2dp"
         android:paddingHorizontal="20dp"
         android:paddingTop="16dp"
         android:paddingBottom="24dp">

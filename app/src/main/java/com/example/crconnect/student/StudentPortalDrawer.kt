@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,14 +56,14 @@ fun StudentPortalDrawerContent(
     val haptic = LocalHapticFeedback.current
 
     ModalDrawerSheet(
-        drawerContainerColor = Color.White,
+        drawerContainerColor = MaterialTheme.colorScheme.surface,
         drawerTonalElevation = 0.dp,
         drawerShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
         modifier = Modifier
             .width(300.dp)
             .border(
                 width = 1.dp,
-                color = Color(0xFFE2E8F0),
+                color = MaterialTheme.colorScheme.outline,
                 shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)
             )
     ) {
@@ -88,8 +89,8 @@ fun StudentPortalDrawerContent(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(CircleShape)
-                        .background(Color.White)
-                        .border(1.dp, Color(0xFFE2E8F0), CircleShape),
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -102,15 +103,25 @@ fun StudentPortalDrawerContent(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Text(
-                    text = profile.name,
-                    fontFamily = PlusJakartaSansFontFamily,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = profile.name,
+                        fontFamily = PlusJakartaSansFontFamily,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    if (profile.isCr) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        GlassCrBadge()
+                    }
+                }
 
                 val deptText = if (profile.department.contains("CSE", ignoreCase = true)) {
                     "Department of CSE, BUBT"
@@ -118,24 +129,26 @@ fun StudentPortalDrawerContent(
                     profile.department
                 }
 
+                val roleLabel = if (profile.isCr) "Official CR" else "Student"
+
                 Text(
-                    text = "Student · $deptText",
+                    text = "$roleLabel · $deptText",
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Normal,
-                    color = Color(0xFF64748B),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
 
-            // Header Divider Line (1dp #E2E8F0)
+            // Header Divider Line
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(Color(0xFFE2E8F0))
+                    .background(MaterialTheme.colorScheme.outline)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -196,13 +209,26 @@ fun StudentPortalDrawerContent(
                     }
                 )
 
-                // Menu Items Divider Line (1dp #E2E8F0)
+                Spacer(modifier = Modifier.height(2.dp))
+
+                DrawerNavItem(
+                    label = "App theme",
+                    iconRes = R.drawable.ic_moon,
+                    isSelected = false,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        localSelectedTab = 3
+                        onTabSelected(3)
+                    }
+                )
+
+                // Menu Items Divider Line
                 Box(
                     modifier = Modifier
                         .padding(vertical = 8.dp)
                         .fillMaxWidth()
                         .height(1.dp)
-                        .background(Color(0xFFE2E8F0))
+                        .background(MaterialTheme.colorScheme.outline)
                 )
 
                 DrawerNavItem(
@@ -226,7 +252,7 @@ fun StudentPortalDrawerContent(
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color(0x990F172A),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -244,16 +270,16 @@ private fun DrawerNavItem(
     onClick: () -> Unit,
     isDanger: Boolean = false
 ) {
-    val bg = if (isSelected) Color(0xFFE6F0FF) else Color.Transparent
+    val bg = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
     val tintColor = when {
-        isDanger -> Color(0xFFDC2626)
-        isSelected -> Color(0xFF0066FF)
-        else -> Color(0xFF64748B)
+        isDanger -> MaterialTheme.colorScheme.error
+        isSelected -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val textColor = when {
-        isDanger -> Color(0xFFDC2626)
-        isSelected -> Color(0xFF0066FF)
-        else -> Color(0xFF0F172A)
+        isDanger -> MaterialTheme.colorScheme.error
+        isSelected -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurface
     }
 
     Row(
