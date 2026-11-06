@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Core Colors -->
+    <!-- Core Colors (Light Theme) -->
     <color name="primary">#0066FF</color>
     <color name="primaryVariant">#0052CC</color>
     <color name="secondary">#0066FF</color>
-    <color name="background">#0A0D14</color>
-    <color name="surface">#161B26</color>
-    <color name="surface_card">#161B26</color>
-    <color name="card_stroke">#222938</color>
-    <color name="input_bg">#161B26</color>
-    <color name="glass_card">#CC161B26</color>
-    <color name="error">#7F1D1D</color>
-    <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#94A3B8</color>
-    <color name="divider">#1F2937</color>
+    <color name="background">#F8FAFC</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="card_stroke">#CBD5E1</color>
+    <color name="input_bg">#FFFFFF</color>
+    <color name="glass_card">#CCFFFFFF</color>
+    <color name="error">#DC2626</color>
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="divider">#E2E8F0</color>
     <color name="accent_violet">#0066FF</color>
     <color name="accent_purple_glow">#E6F0FF</color>
     <color name="accent_green">#10B981</color>
     <color name="accent_amber">#F59E0B</color>
-    <color name="destructive_bg">#7F1D1D</color>
-    <color name="destructive_text">#FCA5A5</color>
+    <color name="destructive_bg">#FEF2F2</color>
+    <color name="destructive_text">#B91C1C</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="primary_pressed">#0052CC</color>
@@ -29,7 +29,7 @@
     <color name="error_red">#DC2626</color>
     <color name="tint">#E6F0FF</color>
     <color name="nav_selected">#0066FF</color>
-    <color name="nav_unselected">#94A3B8</color>
+    <color name="nav_unselected">#64748B</color>
 
     <!-- CRConnect Redesign Specification Palette -->
     <color name="splashBackground">#70D6FF</color>

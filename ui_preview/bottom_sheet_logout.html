@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bottom_sheet_logout - CRConnect UI Preview</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="preview-header">
+    <div class="preview-header-left">
+        <a href="index.html" class="back-link">← Back to Screen Index</a>
+        <span class="screen-title">bottom_sheet_logout.xml</span>
+        <span class="screen-badge">Modal Bottom Sheet</span>
+    </div>
+    <div class="preview-header-right">
+        <button onclick="toggleDeviceFrame()" class="btn-toggle-frame">📱 Toggle View Mode</button>
+    </div>
+</header>
+
+<main class="preview-viewport">
+    <div class="device-frame" id="deviceFrame">
+        <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+                <span>📶</span>
+                <span>🔋</span>
+            </div>
+        </div>
+
+        <div class="device-screen">
+            <div id="logoutBottomSheetRoot" class="android-container linearlayout" style="width: 100%; height: auto; display: flex; flex-direction: column; padding-left: 20px; padding-right: 20px; padding-top: 12px; padding-bottom: 34px; background-color: #FFFFFF; border-radius: 24px 24px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.15);"><div  class="android-container view" style="width: 40px; height: 4px; align-items: center; text-align: center; margin-bottom: 20px; background-color: #CBD5E1; border-radius: 99px;"></div><h2 id="tvLogoutTitle" class="android-textview textview" style="width: 100%; height: auto; margin-bottom: 8px; color: #0F172A; font-size: 20px; font-weight: 700;">Confirm logout</h2><p id="tvLogoutMsg" class="android-textview textview" style="width: 100%; height: auto; margin-bottom: 24px; color: #64748B; font-size: 14px;">Are you sure you want to log out of Admin Console?</p><button id="btnCancelLogout" class="android-button btn btn-outlined materialbutton" style="width: 100%; height: 52px; margin-bottom: 12px; color: #0066FF; font-size: 16px; font-weight: 700; border-radius: 12px; border: 1.5px solid #0066FF;"><span>Cancel</span></button><button id="btnConfirmLogout" class="android-button btn btn-primary materialbutton" style="width: 100%; height: 52px; color: #FFFFFF; font-size: 16px; font-weight: 700; border-radius: 12px;"><span>Logout</span></button></div>
+        </div>
+
+        <div class="home-bar-indicator"></div>
+    </div>
+</main>
+
+<script>
+function toggleDeviceFrame() {
+    const frame = document.getElementById('deviceFrame');
+    frame.classList.toggle('full-width');
+}
+</script>
+
+</body>
+</html>

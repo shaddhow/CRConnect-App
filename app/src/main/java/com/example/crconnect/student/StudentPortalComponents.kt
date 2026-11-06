@@ -42,6 +42,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -97,8 +98,8 @@ fun DesignCard(
                 } else Modifier
             ),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, BorderColor)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
             modifier = Modifier.padding(padding)
@@ -188,7 +189,7 @@ fun SecondaryButton(
             .height(52.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (isDanger) DangerTint else Color.White,
+            containerColor = if (isDanger) DangerTint else MaterialTheme.colorScheme.surface,
             contentColor = contentColor,
             disabledContainerColor = DisabledBg,
             disabledContentColor = DisabledText
@@ -402,22 +403,23 @@ fun StudentBottomNavigation(
     onTabSelected: (Int) -> Unit
 ) {
     val navSelectedColor = Color(0xFF0066FF)
-    val navUnselectedColor = Color(0xFF64748B)
+    val navUnselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val outlineColor = MaterialTheme.colorScheme.outline
+    val surfaceColor = MaterialTheme.colorScheme.surface
     val view = LocalView.current
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .drawBehind {
-                // Top border 1dp solid #E2E8F0
                 drawLine(
-                    color = Color(0xFFE2E8F0),
+                    color = outlineColor,
                     start = Offset(0f, 0f),
                     end = Offset(size.width, 0f),
                     strokeWidth = 1.dp.toPx()
                 )
             },
-        color = Color.White
+        color = surfaceColor
     ) {
         Row(
             modifier = Modifier
@@ -436,7 +438,7 @@ fun StudentBottomNavigation(
             items.forEach { (label, iconRes, index) ->
                 val selected = selectedTab == index
 
-                val pillBg = if (selected) Color(0xFFE6F0FF) else Color.Transparent
+                val pillBg = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
                 val itemColor = if (selected) navSelectedColor else navUnselectedColor
 
                 Column(

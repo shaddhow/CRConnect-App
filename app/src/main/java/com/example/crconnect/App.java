@@ -2,6 +2,7 @@ package com.example.crconnect;
 
 import android.app.Application;
 import android.util.Log;
+import androidx.appcompat.app.AppCompatDelegate;
 import com.google.firebase.database.FirebaseDatabase;
 
 public class App extends Application {
@@ -9,9 +10,7 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         try {
-            // Restore user's saved theme preference (System Default, Light, or Dark mode)
-            SessionManager sessionManager = new SessionManager(this);
-            SessionManager.applyThemeMode(sessionManager.getThemeMode());
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
 
             // Enable offline persistence for Firebase Realtime Database
             try {

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>activity_splash - CRConnect UI Preview</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="preview-header">
+    <div class="preview-header-left">
+        <a href="index.html" class="back-link">← Back to Screen Index</a>
+        <span class="screen-title">activity_splash.xml</span>
+        <span class="screen-badge">Activity / Screen</span>
+    </div>
+    <div class="preview-header-right">
+        <button onclick="toggleDeviceFrame()" class="btn-toggle-frame">📱 Toggle View Mode</button>
+    </div>
+</header>
+
+<main class="preview-viewport">
+    <div class="device-frame" id="deviceFrame">
+        <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+                <span>📶</span>
+                <span>🔋</span>
+            </div>
+        </div>
+
+        <div class="device-screen">
+            <div  class="android-container constraintlayout" style="width: 100%; min-height: 100%; display: flex; flex-direction: column; position: relative; background: linear-gradient(180deg, #70D6FF 0%, #C2EFFF 50%, #FFFFFF 100%);"><div id="layoutSplashContent" class="android-container linearlayout" style="width: auto; height: auto; display: flex; flex-direction: column; align-items: center; text-align: center;"><div  class="android-container framelayout" style="width: auto; height: auto; display: flex; flex-direction: column; position: relative;"><div id="viewPulse1" class="android-container view" style="width: 120px; height: 120px; align-items: center; justify-content: center; text-align: center; background-color: rgba(0, 102, 255, 0.13); border-radius: 32px;"></div><div id="viewPulse2" class="android-container view" style="width: 120px; height: 120px; align-items: center; justify-content: center; text-align: center; background-color: rgba(0, 102, 255, 0.13); border-radius: 32px;"></div><div id="cardSplashLogo" class="android-container framelayout" style="width: 120px; height: 120px; display: flex; flex-direction: column; position: relative; align-items: center; justify-content: center; text-align: center; background-color: #FFFFFF; border: 6px solid rgba(255, 255, 255, 0.60); border-radius: 32px;"><div  class="android-imageview imageview" style="width: 80px; height: 80px; align-items: center; justify-content: center; text-align: center;"><svg width="80px" height="80px" viewBox="0 0 72 72"><path d="M36,2a34,34 0 1,0 0,68a34,34 0 1,0 0,-68Z" fill="#0F172A"/><path d="M13,23a5,5 0 1,0 0,10a5,5 0 1,0 0,-10Z" fill="#0F172A"/><path d="M5,48 C5,41 8.5,38 13,38 C17.5,38 21,41 21,48" fill="none" stroke="#0F172A" stroke-width="2.2" stroke-linecap="round"/><path d="M59,23a5,5 0 1,0 0,10a5,5 0 1,0 0,-10Z" fill="#0F172A"/><path d="M51,48 C51,41 54.5,38 59,38 C63.5,38 67,41 67,48" fill="none" stroke="#0F172A" stroke-width="2.2" stroke-linecap="round"/><path d="M24,26 Q18,20 18,28" fill="none" stroke-width="1.8" stroke-linecap="round"/><path d="M48,26 Q54,20 54,28" fill="none" stroke-width="1.8" stroke-linecap="round"/><path d="M36,15a9,9 0 1,0 0,18a9,9 0 1,0 0,-18Z" fill="none"/><path d="M20,52 C20,42 27,37.5 36,37.5 C45,37.5 52,42 52,52" fill="none" stroke-width="3.5" stroke-linecap="round"/><path d="M36,14 L37.2,17.6 L41,17.6 L38.1,19.8 L39.2,23.4 L36,21.2 L32.8,23.4 L33.9,19.8 L31,17.6 L34.8,17.6 Z" fill="#0F172A"/></svg></div></div></div><h2 id="tvSplashTitle" class="android-textview textview" style="width: auto; height: auto; margin-top: 28px; color: #0F172A; font-size: 32px; font-weight: 700;">CRConnect</h2><h2 id="tvSplashTagline" class="android-textview textview" style="width: auto; height: auto; padding-left: 18px; padding-right: 18px; padding-top: 5px; padding-bottom: 5px; margin-top: 11px; background-color: rgba(255, 255, 255, 0.85); border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 999px; backdrop-filter: blur(8px); color: #0B3A9E; font-size: 13px; font-weight: 700;">BUBT Department Network</h2></div><div id="progressBar" class="android-progressbar progressbar" style="width: 120px; height: 3px; margin-bottom: 100px;"><div class="progress-fill" style="width: 60%; height: 100%; background-color: #0066FF; border-radius: 99px;"></div></div><p id="tvSplashFooter" class="android-textview textview" style="width: auto; height: auto; align-items: center; justify-content: center; text-align: center; margin-top: 16px; color: rgba(15, 23, 42, 0.35); font-size: 11px; font-weight: 700;">Bangladesh University of Business &amp; Technology</p></div>
+        </div>
+
+        <div class="home-bar-indicator"></div>
+    </div>
+</main>
+
+<script>
+function toggleDeviceFrame() {
+    const frame = document.getElementById('deviceFrame');
+    frame.classList.toggle('full-width');
+}
+</script>
+
+</body>
+</html>

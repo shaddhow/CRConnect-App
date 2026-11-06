@@ -169,20 +169,7 @@ public class TeacherProfileBottomSheet extends BottomSheetDialogFragment {
             Glide.with(this).load(profileImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgAvatar);
         }
 
-        MaterialButton btnToggleDarkMode = view.findViewById(R.id.btnToggleDarkMode);
-        if (btnToggleDarkMode != null) {
-            boolean isDark = sessionManager.isDarkMode();
-            btnToggleDarkMode.setText(isDark ? "Switch to Light mode" : "Switch to Dark mode");
-            btnToggleDarkMode.setIconResource(isDark ? R.drawable.ic_tip_light : R.drawable.ic_moon);
-            btnToggleDarkMode.setOnClickListener(v -> {
-                boolean newMode = !sessionManager.isDarkMode();
-                sessionManager.setDarkMode(newMode);
-                dismiss();
-                if (getActivity() != null) {
-                    getActivity().recreate();
-                }
-            });
-        }
+
 
         if (btnEditProfile != null) {
             btnEditProfile.setOnClickListener(v -> {

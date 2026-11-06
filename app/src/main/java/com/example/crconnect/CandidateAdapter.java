@@ -247,7 +247,7 @@ public class CandidateAdapter extends RecyclerView.Adapter<CandidateAdapter.Cand
             tvPct = itemView.findViewById(R.id.tvCandidatePct);
             btnVote = itemView.findViewById(R.id.btnVoteCandidate);
             btnDelete = itemView.findViewById(R.id.btnDeleteCandidate);
-            btnTestVote = itemView.findViewById(R.id.btnTestVoteCandidate);
+            btnTestVote = itemView.findViewById(R.id .btnTestVoteCandidate);
             pbVotes = itemView.findViewById(R.id.pbCandidateVotes);
         }
     }

@@ -20,7 +20,7 @@ public class SessionManager {
     private static final String KEY_INTAKE = "userIntake";
     private static final String KEY_DEPT = "userDept";
     private static final String KEY_PROFILE_IMAGE = "profileImageUrl";
-    private static final String KEY_DARK_MODE = "darkMode";
+    private static final String KEY_DARK_MODE = "dark_mode";
     private static final String KEY_THEME_MODE = "themeMode";
 
     private final SharedPreferences pref;
@@ -102,8 +102,9 @@ public class SessionManager {
     }
 
     public void setThemeMode(String mode) {
+        boolean isDark = THEME_DARK.equalsIgnoreCase(mode);
         editor.putString(KEY_THEME_MODE, mode);
-        editor.putBoolean(KEY_DARK_MODE, THEME_DARK.equalsIgnoreCase(mode));
+        editor.putBoolean(KEY_DARK_MODE, isDark);
         editor.commit();
         applyThemeMode(mode);
     }
@@ -119,16 +120,15 @@ public class SessionManager {
     }
 
     public void setDarkMode(boolean isDarkMode) {
-        setThemeMode(isDarkMode ? THEME_DARK : THEME_LIGHT);
+        editor.putBoolean(KEY_DARK_MODE, isDarkMode);
+        editor.putString(KEY_THEME_MODE, isDarkMode ? THEME_DARK : THEME_LIGHT);
+        editor.commit();
+        AppCompatDelegate.setDefaultNightMode(
+            isDarkMode ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
+        );
     }
 
     public boolean isDarkMode() {
-        String mode = getThemeMode();
-        if (THEME_LIGHT.equalsIgnoreCase(mode)) {
-            return false;
-        } else if (THEME_DARK.equalsIgnoreCase(mode)) {
-            return true;
-        }
         return pref.getBoolean(KEY_DARK_MODE, false);
     }
 

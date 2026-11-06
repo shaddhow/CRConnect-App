@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>list_item_candidate - CRConnect UI Preview</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="preview-header">
+    <div class="preview-header-left">
+        <a href="index.html" class="back-link">← Back to Screen Index</a>
+        <span class="screen-title">list_item_candidate.xml</span>
+        <span class="screen-badge">Component / Item Layout</span>
+    </div>
+    <div class="preview-header-right">
+        <button onclick="toggleDeviceFrame()" class="btn-toggle-frame">📱 Toggle View Mode</button>
+    </div>
+</header>
+
+<main class="preview-viewport">
+    <div class="device-frame" id="deviceFrame">
+        <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+                <span>📶</span>
+                <span>🔋</span>
+            </div>
+        </div>
+
+        <div class="device-screen">
+            <div id="cardCandidateItem" class="android-container materialcardview" style="width: 100%; height: auto; margin-bottom: 12px; background-color: #FFFFFF; border-radius: 20px; border: 1px solid #E2E8F0; box-shadow: 0 4px 2px rgba(0,0,0,0.08);"><div id="layoutCandidateCardContent" class="android-container constraintlayout" style="width: 100%; height: auto; display: flex; flex-direction: column; position: relative; padding: 20px;"><p id="tvCandidateRank" class="android-textview textview" style="width: 44px; height: 44px; align-items: center; justify-content: center; text-align: center; background-color: #E6F0FF; border-radius: 12px; color: #0066FF; font-size: 15px; font-weight: 700;">01</p><p id="tvCandidateName" class="android-textview textview" style="height: auto; margin-left: 12px; margin-right: 12px; color: #0F172A; font-size: 16px; font-weight: 700;">Candidate Name</p><h2 id="tvCandidateSubline" class="android-textview textview" style="height: auto; margin-left: 12px; margin-right: 12px; margin-top: 2px; color: #64748B; font-size: 12px;">0 votes · Dept. of CSE</h2><p id="tvCandidatePct" class="android-textview textview" style="width: auto; height: auto; color: #0F172A; font-size: 18px; font-weight: 700;">0%</p><h2 id="tvCandidateVotes" class="android-textview textview" style="display: none !important; width: auto; height: auto; margin-left: 12px; margin-top: 6px; color: #64748B; font-size: 12px; font-weight: 700;">0 Votes</h2><p id="tvCandidateDept" class="android-textview textview" style="display: none !important; height: auto; padding-left: 10px; padding-right: 10px; padding-top: 4px; padding-bottom: 4px; margin-left: 8px; margin-right: 8px; margin-top: 6px; background-color: #F1F5F9; border: 1px solid #E2E8F0; border-radius: 999px; color: #64748B; font-size: 11px; font-weight: 700;">Department of CSE, BUBT</p><button id="btnVoteCandidate" class="android-button btn btn-primary materialbutton" style="display: none !important; width: auto; height: 36px; padding-left: 16px; padding-right: 16px; color: #FFFFFF; font-size: 12px; font-weight: 700; border-radius: 12px;"><span>Vote</span></button><button id="btnDeleteCandidate" class="android-button btn btn-outlined materialbutton" style="display: none !important; width: auto; height: 36px; padding-left: 12px; padding-right: 12px; color: #B91C1C; font-size: 12px; font-weight: 700; border-radius: 12px; border: 1px solid #FECACA;"><span>Delete</span></button><div id="pbCandidateVotes" class="android-progressbar progressbar" style="height: 6px; margin-top: 12px;"><div class="progress-fill" style="width: 60%; height: 100%; background-color: #0066FF; border-radius: 99px;"></div></div><button id="btnTestVoteCandidate" class="android-button btn btn-text materialbutton" style="display: none !important; width: auto; height: auto; padding-left: 0px; padding-right: 0px; padding-top: 0px; padding-bottom: 0px; margin-top: 8px; color: #0066FF; font-size: 12px; font-weight: 700;"><span>+1 test vote</span></button></div></div>
+        </div>
+
+        <div class="home-bar-indicator"></div>
+    </div>
+</main>
+
+<script>
+function toggleDeviceFrame() {
+    const frame = document.getElementById('deviceFrame');
+    frame.classList.toggle('full-width');
+}
+</script>
+
+</body>
+</html>

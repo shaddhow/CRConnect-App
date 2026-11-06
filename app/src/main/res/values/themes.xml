@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.CRConnect" parent="Theme.Material3.DayNight.NoActionBar">
+    <!-- Base application light theme. -->
+    <style name="Base.Theme.CRConnect" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorSecondary">@color/primary_pressed</item>
         <item name="android:windowBackground">@color/background</item>

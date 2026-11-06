@@ -8,14 +8,11 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="16dp"
     android:hapticFeedbackEnabled="true"
-    app:cardBackgroundColor="#FFFFFF"
+    app:cardBackgroundColor="@color/card_bg"
     app:cardCornerRadius="20dp"
     app:cardElevation="2dp"
-    app:strokeColor="#E2E8F0"
-    app:strokeWidth="1dp"
-    android:outlineAmbientShadowColor="#14000000"
-    android:outlineSpotShadowColor="#14000000"
-    tools:ignore="UnusedAttribute">
+    app:strokeColor="@color/slate_border_light"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,7 +20,6 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <!-- Top Header Row: Title & Status Badge -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -32,23 +28,20 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-                <!-- Icon Badge Container -->
                 <FrameLayout
                     android:layout_width="40dp"
                     android:layout_height="40dp"
-                    android:background="@drawable/bg_icon_badge"
+                    android:background="@drawable/bg_icon_square_blue"
                     android:layout_marginEnd="12dp">
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_gravity="center"
-                        android:src="@drawable/ic_nav_timer"
-                        app:tint="#0066FF"
+                        android:src="@drawable/ic_clock"
+                        app:tint="@color/primary"
                         tools:ignore="ContentDescription" />
                 </FrameLayout>
 
@@ -56,7 +49,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Live election control"
-                    android:textColor="#0F172A"
+                    android:textColor="@color/title_text"
                     android:textSize="16sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -71,105 +64,88 @@
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="4dp"
                 android:text="Closed"
-                android:textColor="#64748B"
+                android:textColor="@color/muted_text"
                 android:textSize="12sp"
                 android:textStyle="bold" />
         </RelativeLayout>
 
-        <!-- Countdown Timer Display Box with Light Background -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:background="@drawable/bg_timer_box"
-            android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:gravity="center"
+            android:padding="20dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_timer_box">
 
             <TextView
                 android:id="@+id/tvAdminTimerDisplay"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-monospace"
-                android:fontFeatureSettings="tnum"
-                android:gravity="center_horizontal"
-                android:letterSpacing="0.02"
                 android:text="00:00"
-                android:textAlignment="center"
-                android:textColor="#0F172A"
+                android:textColor="@color/title_text"
                 android:textSize="44sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center_horizontal"
                 android:text="Remaining election time"
-                android:textAlignment="center"
-                android:textColor="#64748B"
-                android:textSize="13sp" />
+                android:textColor="@color/muted_text"
+                android:textSize="13sp"
+                android:layout_marginTop="4dp" />
         </LinearLayout>
 
-        <!-- Adjust Duration Section Header -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
             android:text="Adjust duration"
-            android:textColor="#64748B"
+            android:textColor="@color/muted_text"
             android:textSize="13sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
 
-        <!-- Adjust Duration Buttons Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
             android:orientation="horizontal"
-            android:weightSum="3">
+            android:layout_marginBottom="12dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnExtend5Min"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
-                android:layout_marginEnd="6dp"
                 android:layout_weight="1"
-                android:hapticFeedbackEnabled="true"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:padding="0dp"
+                android:layout_marginEnd="6dp"
                 android:text="+5 min"
-                android:textAllCaps="false"
-                android:textColor="#0066FF"
+                android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                app:backgroundTint="#FFFFFF"
+                app:strokeColor="@color/primary"
+                app:strokeWidth="1.5dp"
                 app:cornerRadius="12dp"
-                app:strokeColor="#0066FF"
-                app:strokeWidth="1.5dp" />
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnExtend10Min"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
-                android:layout_marginEnd="6dp"
                 android:layout_weight="1"
-                android:hapticFeedbackEnabled="true"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:padding="0dp"
+                android:layout_marginEnd="6dp"
                 android:text="+10 min"
-                android:textAllCaps="false"
-                android:textColor="#0066FF"
+                android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                app:backgroundTint="#FFFFFF"
+                app:strokeColor="@color/primary"
+                app:strokeWidth="1.5dp"
                 app:cornerRadius="12dp"
-                app:strokeColor="#0066FF"
-                app:strokeWidth="1.5dp" />
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnReduce5Min"
@@ -177,103 +153,79 @@
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:hapticFeedbackEnabled="true"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:padding="0dp"
                 android:text="−5 min"
-                android:textAllCaps="false"
-                android:textColor="#0066FF"
+                android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                app:backgroundTint="#FFFFFF"
+                app:strokeColor="@color/primary"
+                app:strokeWidth="1.5dp"
                 app:cornerRadius="12dp"
-                app:strokeColor="#0066FF"
-                app:strokeWidth="1.5dp" />
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp" />
         </LinearLayout>
 
-        <!-- Action Buttons Section Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="2">
+            android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPauseResume"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
-                android:layout_marginEnd="6dp"
                 android:layout_weight="1"
-                android:gravity="center"
-                android:hapticFeedbackEnabled="true"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:padding="0dp"
+                android:layout_marginEnd="6dp"
                 android:text="Pause voting"
-                android:textAllCaps="false"
-                android:textColor="#0066FF"
+                android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                app:backgroundTint="#FFFFFF"
-                app:cornerRadius="12dp"
                 app:icon="@drawable/ic_pause"
-                app:iconGravity="textStart"
-                app:iconPadding="8dp"
-                app:iconSize="18dp"
-                app:iconTint="#0066FF"
-                app:strokeColor="#0066FF"
-                app:strokeWidth="1.5dp" />
+                app:iconTint="@color/primary"
+                app:strokeColor="@color/primary"
+                app:strokeWidth="1.5dp"
+                app:cornerRadius="12dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnEndVotingNow"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
-                android:gravity="center"
-                android:hapticFeedbackEnabled="true"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:padding="0dp"
                 android:text="End voting now"
-                android:textAllCaps="false"
                 android:textColor="#B91C1C"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                app:backgroundTint="#FEF2F2"
-                app:cornerRadius="12dp"
                 app:icon="@drawable/ic_stop"
-                app:iconGravity="textStart"
-                app:iconPadding="8dp"
-                app:iconSize="18dp"
                 app:iconTint="#B91C1C"
                 app:strokeColor="#FECACA"
-                app:strokeWidth="1.5dp" />
+                app:strokeWidth="1.5dp"
+                app:backgroundTint="@color/btn_danger_bg_color"
+                app:cornerRadius="12dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp" />
         </LinearLayout>
 
-        <!-- Manage CR Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnManageCR"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="12dp"
-            android:gravity="center"
-            android:hapticFeedbackEnabled="true"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
             android:text="Manage CR (promote / demote)"
-            android:textAllCaps="false"
             android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:textStyle="bold"
-            app:backgroundTint="#0066FF"
-            app:cornerRadius="12dp"
+            app:backgroundTint="@color/primary"
             app:icon="@drawable/ic_users"
-            app:iconGravity="textStart"
-            app:iconPadding="8dp"
-            app:iconSize="18dp"
-            app:iconTint="#FFFFFF" />
+            app:iconTint="#FFFFFF"
+            app:cornerRadius="12dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp" />
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

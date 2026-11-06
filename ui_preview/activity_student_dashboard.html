@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>activity_student_dashboard - CRConnect UI Preview</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="preview-header">
+    <div class="preview-header-left">
+        <a href="index.html" class="back-link">← Back to Screen Index</a>
+        <span class="screen-title">activity_student_dashboard.xml</span>
+        <span class="screen-badge">Activity / Screen</span>
+    </div>
+    <div class="preview-header-right">
+        <button onclick="toggleDeviceFrame()" class="btn-toggle-frame">📱 Toggle View Mode</button>
+    </div>
+</header>
+
+<main class="preview-viewport">
+    <div class="device-frame" id="deviceFrame">
+        <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+                <span>📶</span>
+                <span>🔋</span>
+            </div>
+        </div>
+
+        <div class="device-screen">
+            <div id="drawerLayoutStudent" class="android-container drawerlayout" style="width: 100%; min-height: 100%; background: linear-gradient(180deg, #0A0D14 0%, #161B26 100%); color: #FFFFFF;"><div id="layoutMainContent" class="android-container constraintlayout" style="width: 100%; min-height: 100%; display: flex; flex-direction: column; position: relative; background: linear-gradient(180deg, #0A0D14 0%, #161B26 100%); color: #FFFFFF;"><div class="included-layout-stub" id="includeHeader" style="height: auto;"><span class="inc-badge">Include: include_header.xml</span></div><div id="dividerBottomNav" class="android-container view" style="width: 100%; height: 1px; background-color: #E2E8F0;"></div><div id="bottomNavStudent" class="android-container bottomnavigationview" style="height: 64px; background-color: #FFFFFF;"></div><div id="containerHeaderAndBody" class="android-container linearlayout" style="display: flex; flex-direction: column; padding-left: 16px; padding-right: 16px;"><div id="layoutHomeDashboardContent" class="android-container linearlayout" style="width: 100%; height: auto; display: flex; flex-direction: column;"><div id="cardStudentTimerStatus" class="android-container materialcardview" style="width: 100%; height: auto; margin-bottom: 12px; background-color: #F0FDF4; border-radius: 16px; border: 1px solid #BBF7D0;"><div  class="android-container linearlayout" style="width: 100%; height: auto; display: flex; flex-direction: row; justify-content: center; padding-left: 16px; padding-right: 16px; padding-top: 16px; padding-bottom: 16px;"><div id="bannerIconContainer" class="android-container framelayout" style="width: 40px; height: 40px; display: flex; flex-direction: column; position: relative; margin-right: 12px; background-color: #E6F0FF; border-radius: 12px;"><div  class="android-imageview imageview" style="width: 20px; height: 20px; align-items: center; justify-content: center; text-align: center;"><svg width="20px" height="20px" viewBox="0 0 24 24"><path d="M12,3L4,9v12h16V9L12,3zM18,19h-4v-5h-4v5H6v-9.17l6-4.5l6,4.5V19z" fill="#FFFFFF"/></svg></div></div><div  class="android-container linearlayout" style="width: 0px; height: auto; flex: 1; display: flex; flex-direction: column;"><p id="tvVotingStatus" class="android-textview textview" style="width: auto; height: auto; color: #0F172A; font-size: 16px; font-weight: 700;">Syncing Live Data...</p><h2 id="tvStudentCountdown" class="android-textview textview" style="width: auto; height: auto; margin-top: 2px; color: #166534; font-size: 13px;">Status: Pending</h2></div></div></div><div id="cardStudentProfile" class="android-container materialcardview" style="width: 100%; height: auto; margin-bottom: 12px; background-color: #FFFFFF; border-radius: 20px; border: 1.5px solid #E2E8F0; box-shadow: 0 4px 6px rgba(0,0,0,0.08);"><div  class="android-container linearlayout" style="width: 100%; height: auto; display: flex; flex-direction: column; padding-left: 20px; padding-right: 20px; padding-top: 16px; padding-bottom: 16px;"><div  class="android-container linearlayout" style="width: 100%; height: auto; display: flex; flex-direction: row; justify-content: center; margin-bottom: 10px;"><p id="tvStudentName" class="android-textview textview" style="width: 0px; height: auto; flex: 1; color: #0F172A; font-size: 18px; font-weight: 700;">Developer Student</p><h2 id="tvStudentDept" class="android-textview textview" style="width: auto; height: auto; padding-left: 10px; padding-right: 10px; padding-top: 4px; padding-bottom: 4px; margin-left: 8px; background-color: #F1F5F9; color: #0066FF; font-size: 12px; font-weight: 700;">CSE</h2></div><div  class="android-container linearlayout" style="width: 100%; height: auto; display: flex; flex-direction: row; margin-bottom: 12px;"><div  class="android-container linearlayout" style="width: 0px; height: auto; flex: 1.2; display: flex; flex-direction: column;"><p  class="android-textview textview" style="width: auto; height: auto; color: #64748B; font-size: 11px; font-weight: 700;">STUDENT ID</p><h2 id="tvStudentDetailsID" class="android-textview textview" style="width: auto; height: auto; margin-top: 2px; color: #0F172A; font-size: 13px; font-weight: 700;">2023-DEV-001</h2></div><div  class="android-container linearlayout" style="width: 0px; height: auto; flex: 0.9; display: flex; flex-direction: column;"><p  class="android-textview textview" style="width: auto; height: auto; color: #64748B; font-size: 11px; font-weight: 700;">INTAKE</p><h2 id="tvStudentIntake" class="android-textview textview" style="width: auto; height: auto; margin-top: 2px; color: #0F172A; font-size: 13px; font-weight: 700;">55</h2></div><div  class="android-container linearlayout" style="width: 0px; height: auto; flex: 0.9; display: flex; flex-direction: column;"><p  class="android-textview textview" style="width: auto; height: auto; color: #64748B; font-size: 11px; font-weight: 700;">SECTION</p><h2 id="tvStudentSection" class="android-textview textview" style="width: auto; height: auto; margin-top: 2px; color: #0F172A; font-size: 13px; font-weight: 700;">55/8</h2></div></div><p  class="android-textview textview" style="width: 100%; height: auto; align-items: center; justify-content: center; text-align: center; padding-top: 6px; padding-bottom: 6px; background-color: #F1F5F9; color: #64748B; font-size: 11px; font-weight: 700;">Verified Student Profile • Locked</p></div></div><div id="cardAnnouncementsSection" class="android-container materialcardview" style="width: 100%; height: auto; margin-bottom: 12px; background-color: #FFFFFF; border-radius: 18px; border: 1.5px solid #E2E8F0; box-shadow: 0 4px 6px rgba(0,0,0,0.08);"><div  class="android-container linearlayout" style="width: 100%; height: auto; display: flex; flex-direction: row; justify-content: center; padding-left: 16px; padding-right: 16px; padding-top: 14px; padding-bottom: 14px;"><div  class="android-container linearlayout" style="width: 0px; height: auto; flex: 1; display: flex; flex-direction: row; justify-content: center;"><div  class="android-container framelayout" style="width: 40px; height: 40px; display: flex; flex-direction: column; position: relative; margin-right: 12px; background-color: #E6F0FF; border-radius: 12px;"><div  class="android-imageview imageview" style="width: 20px; height: 20px; align-items: center; justify-content: center; text-align: center;"><svg width="20px" height="20px" viewBox="0 0 24 24"><path d="M20,2H4C2.9,2 2,2.9 2,4v18l4,-4h14c1.1,0 2,-0.9 2,-2V4C22,2.9 21.1,2 20,2zM6,9h12v2H6V9zM14,13H6v-2h8V13zM18,7H6V5h12V7z" fill="#A5B4FC"/></svg></div></div><p  class="android-textview textview" style="width: auto; height: auto; color: #0F172A; font-size: 15px; font-weight: 700;">Section Announcements</p></div><button id="btnViewAnnouncements" class="android-button btn btn-outlined materialbutton" style="width: auto; height: 38px; padding-left: 12px; padding-right: 12px; color: #0066FF; font-size: 12px; font-weight: 700; border-radius: 10px; border: 1px solid #0066FF;"><span>View All</span></button></div></div></div><div id="layoutCandidates" class="android-container linearlayout" style="width: 100%; flex: 1; display: flex; flex-direction: column; margin-bottom: 8px;"><p  class="android-textview textview" style="width: auto; height: auto; margin-left: 4px; margin-bottom: 8px; color: #0F172A; font-size: 16px; font-weight: 700;">Election Candidates</p><div id="scrollViewCandidates" class="android-container nestedscrollview" style="width: 100%; min-height: 100%; overflow-y: auto; display: flex; flex-direction: column; flex: 1; padding-bottom: 16px;"><div id="containerCandidates" class="android-container linearlayout" style="width: 100%; height: auto; display: flex; flex-direction: column;"></div></div></div><div class="included-layout-stub"  ><span class="inc-badge">Include: layout_profile.xml</span></div></div><div id="fabCreateAnnouncement" class="android-container floatingactionbutton" style="display: none !important; width: auto; height: auto; margin-right: 20px; margin-bottom: 20px;"></div></div><div id="navViewStudent" class="android-container navigationview" style="width: auto; min-height: 100%; background-color: #FFFFFF;"></div></div>
+        </div>
+
+        <div class="home-bar-indicator"></div>
+    </div>
+</main>
+
+<script>
+function toggleDeviceFrame() {
+    const frame = document.getElementById('deviceFrame');
+    frame.classList.toggle('full-width');
+}
+</script>
+
+</body>
+</html>

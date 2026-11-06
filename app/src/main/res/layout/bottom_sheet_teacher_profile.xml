@@ -30,10 +30,10 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="#FFFFFF"
+            app:cardBackgroundColor="@color/card_bg"
             app:cardCornerRadius="20dp"
             app:cardElevation="2dp"
-            app:strokeColor="#E2E8F0"
+            app:strokeColor="@color/slate_border_light"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -74,7 +74,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:text="Test Teacher (Dev)"
-                    android:textColor="#0F172A"
+                    android:textColor="@color/title_text"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -85,7 +85,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="teacher@bubt.edu.bd"
-                    android:textColor="#64748B"
+                    android:textColor="@color/muted_text"
                     android:textSize="13sp" />
 
                 <!-- Dept Pill -->
@@ -98,7 +98,7 @@
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="4dp"
                     android:text="Verified teacher · Department of CSE"
-                    android:textColor="#0066FF"
+                    android:textColor="@color/primary"
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
@@ -110,10 +110,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            app:cardBackgroundColor="#FFFFFF"
+            app:cardBackgroundColor="@color/card_bg"
             app:cardCornerRadius="20dp"
             app:cardElevation="2dp"
-            app:strokeColor="#E2E8F0"
+            app:strokeColor="@color/slate_border_light"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -127,7 +127,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     android:text="Teacher details"
-                    android:textColor="#0F172A"
+                    android:textColor="@color/title_text"
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
@@ -142,14 +142,14 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Teacher code"
-                        android:textColor="#64748B"
+                        android:textColor="@color/muted_text"
                         android:textSize="13sp" />
                     <TextView
                         android:id="@+id/tvProfileTeacherCode"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="T-0142"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/title_text"
                         android:textSize="13sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -165,14 +165,14 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Role"
-                        android:textColor="#64748B"
+                        android:textColor="@color/muted_text"
                         android:textSize="13sp" />
                     <TextView
                         android:id="@+id/tvProfileRole"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Teacher / Admin"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/title_text"
                         android:textSize="13sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -188,14 +188,14 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Department"
-                        android:textColor="#64748B"
+                        android:textColor="@color/muted_text"
                         android:textSize="13sp" />
                     <TextView
                         android:id="@+id/tvProfileDepartment"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="CSE"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/title_text"
                         android:textSize="13sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -211,14 +211,14 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Assigned section"
-                        android:textColor="#64748B"
+                        android:textColor="@color/muted_text"
                         android:textSize="13sp" />
                     <TextView
                         android:id="@+id/tvProfileAssignedSection"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Section 6"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/title_text"
                         android:textSize="13sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -233,7 +233,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Account"
-                        android:textColor="#64748B"
+                        android:textColor="@color/muted_text"
                         android:textSize="13sp" />
                     <TextView
                         android:id="@+id/tvProfileAccountStatus"
@@ -253,10 +253,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            app:cardBackgroundColor="#FFFFFF"
+            app:cardBackgroundColor="@color/card_bg"
             app:cardCornerRadius="20dp"
             app:cardElevation="2dp"
-            app:strokeColor="#E2E8F0"
+            app:strokeColor="@color/slate_border_light"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -272,12 +272,12 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:text="Edit profile picture"
-                    android:textColor="#0066FF"
+                    android:textColor="@color/primary"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    app:backgroundTint="#FFFFFF"
+                    app:backgroundTint="@color/card_bg"
                     app:cornerRadius="12dp"
-                    app:strokeColor="#0066FF"
+                    app:strokeColor="@color/primary"
                     app:strokeWidth="1.5dp" />
 
                 <com.google.android.material.button.MaterialButton
@@ -288,33 +288,14 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:text="Security settings"
-                    android:textColor="#0066FF"
+                    android:textColor="@color/primary"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    app:backgroundTint="#FFFFFF"
+                    app:backgroundTint="@color/card_bg"
                     app:cornerRadius="12dp"
-                    app:strokeColor="#0066FF"
+                    app:strokeColor="@color/primary"
                     app:strokeWidth="1.5dp" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnToggleDarkMode"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="8dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    android:text="Switch to Dark mode"
-                    android:textColor="#0066FF"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    app:backgroundTint="#FFFFFF"
-                    app:cornerRadius="12dp"
-                    app:icon="@drawable/ic_moon"
-                    app:iconGravity="textStart"
-                    app:iconPadding="8dp"
-                    app:iconTint="#0066FF"
-                    app:strokeColor="#0066FF"
-                    app:strokeWidth="1.5dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnProfileLogout"
@@ -327,9 +308,9 @@
                     android:textColor="#B91C1C"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    app:backgroundTint="#FEF2F2"
+                    app:backgroundTint="@color/btn_danger_bg_color"
                     app:cornerRadius="12dp"
-                    app:strokeColor="#FECACA"
+                    app:strokeColor="@color/btn_danger_stroke_color"
                     app:strokeWidth="1dp" />
 
             </LinearLayout>

@@ -2,6 +2,7 @@ package com.example.crconnect
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Rect
@@ -27,6 +28,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import com.example.crconnect.core.utils.HapticUtils
 import com.example.crconnect.core.utils.KeyboardUtils
 import com.example.crconnect.databinding.ActivityLoginBinding
@@ -77,6 +79,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         super.onCreate(savedInstanceState)
 
         binding = ActivityLoginBinding.inflate(layoutInflater)
@@ -142,13 +145,23 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setupGradientBackground() {
-        val gradientDrawable = GradientDrawable(
-            GradientDrawable.Orientation.TOP_BOTTOM,
+        val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val colors = if (isDark) {
+            intArrayOf(
+                Color.parseColor("#0B1120"),
+                Color.parseColor("#0E1626"),
+                Color.parseColor("#0F172A")
+            )
+        } else {
             intArrayOf(
                 Color.parseColor("#70D6FF"),
                 Color.parseColor("#C2EFFF"),
                 Color.parseColor("#FFFFFF")
             )
+        }
+        val gradientDrawable = GradientDrawable(
+            GradientDrawable.Orientation.TOP_BOTTOM,
+            colors
         )
         binding.root.background = gradientDrawable
     }
@@ -158,9 +171,15 @@ class LoginActivity : AppCompatActivity() {
             val paint = binding.tvAppTitle.paint
             val width = paint.measureText(binding.tvAppTitle.text.toString())
             if (width > 0f) {
+                val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+                val colors = if (isDark) {
+                    intArrayOf(Color.parseColor("#FFFFFF"), Color.parseColor("#60A5FA"))
+                } else {
+                    intArrayOf(Color.parseColor("#0F172A"), Color.parseColor("#0B3A9E"))
+                }
                 val shader = LinearGradient(
                     0f, 0f, width, 0f,
-                    intArrayOf(Color.parseColor("#0F172A"), Color.parseColor("#0B3A9E")),
+                    colors,
                     null,
                     Shader.TileMode.CLAMP
                 )
@@ -222,6 +241,8 @@ class LoginActivity : AppCompatActivity() {
                 updateRoleTabUi()
             }
         }
+
+        updateRoleTabUi()
     }
 
     private fun updateRoleTabUi() {
@@ -230,19 +251,19 @@ class LoginActivity : AppCompatActivity() {
 
         if (selectedRole == "Student") {
             binding.tabStudent.setBackgroundResource(R.drawable.bg_segmented_tab_active)
-            binding.tabStudent.setTextColor(ContextCompat.getColor(this, R.color.brand_blue))
+            binding.tabStudent.setTextColor(ContextCompat.getColor(this, R.color.white))
 
             binding.tabTeacher.setBackgroundResource(R.drawable.bg_segmented_tab_inactive)
-            binding.tabTeacher.setTextColor(ContextCompat.getColor(this, R.color.slate_muted))
+            binding.tabTeacher.setTextColor(ContextCompat.getColor(this, R.color.muted_text))
 
             binding.tvIdLabel.setText(R.string.student_id_or_email)
             binding.etIdInput.setHint(R.string.id_hint_student)
         } else {
             binding.tabTeacher.setBackgroundResource(R.drawable.bg_segmented_tab_active)
-            binding.tabTeacher.setTextColor(ContextCompat.getColor(this, R.color.brand_blue))
+            binding.tabTeacher.setTextColor(ContextCompat.getColor(this, R.color.white))
 
             binding.tabStudent.setBackgroundResource(R.drawable.bg_segmented_tab_inactive)
-            binding.tabStudent.setTextColor(ContextCompat.getColor(this, R.color.slate_muted))
+            binding.tabStudent.setTextColor(ContextCompat.getColor(this, R.color.muted_text))
 
             binding.tvIdLabel.setText(R.string.teacher_id_or_email)
             binding.etIdInput.setHint(R.string.id_hint_teacher)

@@ -25,10 +25,10 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="#FFFFFF"
+            app:cardBackgroundColor="@color/card_bg"
             app:cardCornerRadius="24dp"
             app:cardElevation="4dp"
-            app:strokeColor="#E2E8F0"
+            app:strokeColor="@color/slate_border_light"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -70,7 +70,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:text="Rahim Uddin"
-                    android:textColor="#0F172A"
+                    android:textColor="@color/title_text"
                     android:textSize="20sp"
                     android:textStyle="bold"
                     tools:ignore="HardcodedText" />
@@ -82,7 +82,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="student@bubt.edu.bd"
-                    android:textColor="#64748B"
+                    android:textColor="@color/muted_text"
                     android:textSize="14sp"
                     tools:ignore="HardcodedText" />
 
@@ -96,7 +96,7 @@
                     android:paddingHorizontal="14dp"
                     android:paddingVertical="5dp"
                     android:text="Department of CSE, BUBT"
-                    android:textColor="#0066FF"
+                    android:textColor="@color/primary"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     tools:ignore="HardcodedText" />
@@ -124,7 +124,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Student ID"
-                            android:textColor="#64748B"
+                            android:textColor="@color/muted_text"
                             android:textSize="11sp"
                             android:textStyle="bold"
                             tools:ignore="HardcodedText,SmallSp" />
@@ -136,7 +136,7 @@
                             android:layout_marginTop="2dp"
                             android:singleLine="true"
                             android:text="2112345"
-                            android:textColor="#0F172A"
+                            android:textColor="@color/title_text"
                             android:textSize="15sp"
                             android:textStyle="bold"
                             tools:ignore="HardcodedText" />
@@ -157,7 +157,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Intake"
-                            android:textColor="#64748B"
+                            android:textColor="@color/muted_text"
                             android:textSize="11sp"
                             android:textStyle="bold"
                             tools:ignore="HardcodedText,SmallSp" />
@@ -168,7 +168,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="55"
-                            android:textColor="#0F172A"
+                            android:textColor="@color/title_text"
                             android:textSize="15sp"
                             android:textStyle="bold"
                             tools:ignore="HardcodedText" />
@@ -188,7 +188,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Section"
-                            android:textColor="#64748B"
+                            android:textColor="@color/muted_text"
                             android:textSize="11sp"
                             android:textStyle="bold"
                             tools:ignore="HardcodedText,SmallSp" />
@@ -199,7 +199,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="6"
-                            android:textColor="#0F172A"
+                            android:textColor="@color/title_text"
                             android:textSize="15sp"
                             android:textStyle="bold"
                             tools:ignore="HardcodedText" />
@@ -215,10 +215,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardBackgroundColor="#FFFFFF"
+            app:cardBackgroundColor="@color/card_bg"
             app:cardCornerRadius="24dp"
             app:cardElevation="4dp"
-            app:strokeColor="#E2E8F0"
+            app:strokeColor="@color/slate_border_light"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -238,7 +238,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Verification status"
-                        android:textColor="#64748B"
+                        android:textColor="@color/muted_text"
                         android:textSize="14sp"
                         tools:ignore="HardcodedText" />
 
@@ -264,7 +264,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Total enrolled courses"
-                        android:textColor="#64748B"
+                        android:textColor="@color/muted_text"
                         android:textSize="14sp"
                         tools:ignore="HardcodedText" />
 
@@ -272,7 +272,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="6"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/title_text"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         tools:ignore="HardcodedText" />
@@ -290,7 +290,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Attendance overview"
-                        android:textColor="#64748B"
+                        android:textColor="@color/muted_text"
                         android:textSize="14sp"
                         tools:ignore="HardcodedText" />
 
@@ -298,7 +298,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="92% (Excellent)"
-                        android:textColor="#0066FF"
+                        android:textColor="@color/primary"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         tools:ignore="HardcodedText" />
@@ -321,10 +321,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardBackgroundColor="#FFFFFF"
+            app:cardBackgroundColor="@color/card_bg"
             app:cardCornerRadius="24dp"
             app:cardElevation="4dp"
-            app:strokeColor="#E2E8F0"
+            app:strokeColor="@color/slate_border_light"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -341,12 +341,12 @@
                     android:insetBottom="0dp"
                     android:insetTop="0dp"
                     android:text="Edit profile picture"
-                    android:textColor="#0066FF"
+                    android:textColor="@color/primary"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    app:backgroundTint="#FFFFFF"
+                    app:backgroundTint="@color/card_bg"
                     app:cornerRadius="12dp"
-                    app:strokeColor="#0066FF"
+                    app:strokeColor="@color/primary"
                     app:strokeWidth="1.5dp"
                     tools:ignore="HardcodedText" />
 
@@ -359,14 +359,15 @@
                     android:insetBottom="0dp"
                     android:insetTop="0dp"
                     android:text="Security settings"
-                    android:textColor="#0066FF"
+                    android:textColor="@color/primary"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    app:backgroundTint="#FFFFFF"
+                    app:backgroundTint="@color/card_bg"
                     app:cornerRadius="12dp"
-                    app:strokeColor="#0066FF"
+                    app:strokeColor="@color/primary"
                     app:strokeWidth="1.5dp"
                     tools:ignore="HardcodedText" />
+
 
                 <!-- Log out -->
                 <com.google.android.material.button.MaterialButton
@@ -380,9 +381,9 @@
                     android:textColor="#B91C1C"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    app:backgroundTint="#FEF2F2"
+                    app:backgroundTint="@color/btn_danger_bg_color"
                     app:cornerRadius="12dp"
-                    app:strokeColor="#FECACA"
+                    app:strokeColor="@color/btn_danger_stroke_color"
                     app:strokeWidth="1dp"
                     tools:ignore="HardcodedText" />
 

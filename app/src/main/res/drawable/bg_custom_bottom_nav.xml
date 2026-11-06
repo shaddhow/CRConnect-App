@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Top border line color #E2E8F0 -->
+    <!-- Top border line -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#E2E8F0" />
+            <solid android:color="@color/slate_border_light" />
         </shape>
     </item>
-    <!-- Main white background with 1dp top inset -->
+    <!-- Main surface background with 1dp top inset -->
     <item android:top="1dp">
         <shape android:shape="rectangle">
-            <solid android:color="#FFFFFF" />
+            <solid android:color="@color/surface" />
         </shape>
     </item>
 </layer-list>

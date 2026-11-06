@@ -14,6 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/layoutStickyFooter"
+        android:background="@color/background"
         android:fillViewport="true"
         android:overScrollMode="ifContentScrolls"
         android:clipToPadding="false">
@@ -49,7 +50,7 @@
                     android:textSize="22sp"
                     android:textStyle="bold"
                     android:fontFamily="sans-serif-medium"
-                    android:textColor="#0F172A"
+                    android:textColor="@color/title_text"
                     android:layout_marginStart="8dp" />
 
                 <ImageView
@@ -66,7 +67,7 @@
                 android:text="@string/join_network_sub"
                 android:textSize="14sp"
                 android:fontFamily="sans-serif"
-                android:textColor="#64748B"
+                android:textColor="@color/muted_text"
                 android:layout_marginStart="4dp"
                 android:layout_marginBottom="16dp" />
 
@@ -78,7 +79,7 @@
                 app:cardCornerRadius="24dp"
                 app:cardElevation="2dp"
                 app:cardPreventCornerOverlap="false"
-                app:cardBackgroundColor="#FFFFFF"
+                app:cardBackgroundColor="@color/card_bg"
                 app:strokeWidth="1dp"
                 app:strokeColor="@color/slate_border_light"
                 android:layout_marginBottom="24dp">
@@ -161,7 +162,7 @@
                                 android:textSize="14sp"
                                 android:textStyle="bold"
                                 android:fontFamily="sans-serif-medium"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/title_text" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -169,7 +170,7 @@
                                 android:text="@string/scan_id_sub"
                                 android:textSize="12sp"
                                 android:fontFamily="sans-serif"
-                                android:textColor="#64748B" />
+                                android:textColor="@color/muted_text" />
                         </LinearLayout>
 
                         <ImageView
@@ -205,7 +206,7 @@
                             android:text="@string/or_enter_manually"
                             android:textSize="12sp"
                             android:fontFamily="sans-serif"
-                            android:textColor="#64748B"
+                            android:textColor="@color/muted_text"
                             android:paddingHorizontal="12dp" />
 
                         <View
@@ -223,7 +224,7 @@
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:fontFamily="sans-serif-medium"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/title_text"
                         android:layout_marginBottom="12dp" />
 
                     <com.google.android.material.textfield.TextInputLayout
@@ -236,13 +237,13 @@
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusBottomStart="12dp"
                         app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxBackgroundColor="#FFFFFF"
+                        app:boxBackgroundColor="@color/input_bg"
                         app:boxStrokeColor="@color/input_box_stroke"
                         app:boxStrokeWidth="1dp"
                         app:boxStrokeWidthFocused="1.5dp"
                         app:startIconDrawable="@drawable/ic_user"
                         app:startIconTint="#94A3B8"
-                        android:textColorHint="#64748B"
+                        android:textColorHint="@color/muted_text"
                         app:hintTextColor="#0066FF">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -251,7 +252,7 @@
                             android:layout_height="54dp"
                             android:inputType="textPersonName|textCapWords"
                             android:imeOptions="actionNext"
-                            android:textColor="#0F172A"
+                            android:textColor="@color/title_text"
                             android:textSize="16sp"
                             android:fontFamily="sans-serif-medium" />
                     </com.google.android.material.textfield.TextInputLayout>
@@ -269,13 +270,13 @@
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusBottomStart="12dp"
                         app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxBackgroundColor="#FFFFFF"
+                        app:boxBackgroundColor="@color/input_bg"
                         app:boxStrokeColor="@color/input_box_stroke"
                         app:boxStrokeWidth="1dp"
                         app:boxStrokeWidthFocused="1.5dp"
                         app:startIconDrawable="@drawable/ic_mail"
                         app:startIconTint="#94A3B8"
-                        android:textColorHint="#64748B"
+                        android:textColorHint="@color/muted_text"
                         app:hintTextColor="#0066FF">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -284,7 +285,7 @@
                             android:layout_height="54dp"
                             android:inputType="textEmailAddress"
                             android:imeOptions="actionNext"
-                            android:textColor="#0F172A"
+                            android:textColor="@color/title_text"
                             android:textSize="16sp"
                             android:fontFamily="sans-serif-medium" />
                     </com.google.android.material.textfield.TextInputLayout>
@@ -297,7 +298,7 @@
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:fontFamily="sans-serif-medium"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/title_text"
                         android:layout_marginBottom="12dp" />
 
                     <!-- Student Academic Fields -->
@@ -318,13 +319,13 @@
                             app:boxCornerRadiusTopEnd="12dp"
                             app:boxCornerRadiusBottomStart="12dp"
                             app:boxCornerRadiusBottomEnd="12dp"
-                            app:boxBackgroundColor="#FFFFFF"
+                            app:boxBackgroundColor="@color/input_bg"
                             app:boxStrokeColor="@color/input_box_stroke"
                             app:boxStrokeWidth="1dp"
                             app:boxStrokeWidthFocused="1.5dp"
                             app:startIconDrawable="@drawable/ic_id_card"
                             app:startIconTint="#94A3B8"
-                            android:textColorHint="#64748B"
+                            android:textColorHint="@color/muted_text"
                             app:hintTextColor="#0066FF">
 
                             <com.google.android.material.textfield.TextInputEditText
@@ -333,7 +334,7 @@
                                 android:layout_height="54dp"
                                 android:inputType="number"
                                 android:imeOptions="actionNext"
-                                android:textColor="#0F172A"
+                                android:textColor="@color/title_text"
                                 android:textSize="16sp"
                                 android:fontFamily="sans-serif-medium" />
                         </com.google.android.material.textfield.TextInputLayout>
@@ -356,11 +357,11 @@
                                 app:boxCornerRadiusTopEnd="12dp"
                                 app:boxCornerRadiusBottomStart="12dp"
                                 app:boxCornerRadiusBottomEnd="12dp"
-                                app:boxBackgroundColor="#FFFFFF"
+                                app:boxBackgroundColor="@color/input_bg"
                                 app:boxStrokeColor="@color/input_box_stroke"
                                 app:boxStrokeWidth="1dp"
                                 app:boxStrokeWidthFocused="1.5dp"
-                                android:textColorHint="#64748B"
+                                android:textColorHint="@color/muted_text"
                                 app:hintTextColor="#0066FF">
 
                                 <com.google.android.material.textfield.TextInputEditText
@@ -369,7 +370,7 @@
                                     android:layout_height="54dp"
                                     android:inputType="number"
                                     android:imeOptions="actionNext"
-                                    android:textColor="#0F172A"
+                                    android:textColor="@color/title_text"
                                     android:textSize="16sp"
                                     android:fontFamily="sans-serif-medium" />
                             </com.google.android.material.textfield.TextInputLayout>
@@ -427,13 +428,13 @@
                             app:boxCornerRadiusTopEnd="12dp"
                             app:boxCornerRadiusBottomStart="12dp"
                             app:boxCornerRadiusBottomEnd="12dp"
-                            app:boxBackgroundColor="#FFFFFF"
+                            app:boxBackgroundColor="@color/input_bg"
                             app:boxStrokeColor="@color/input_box_stroke"
                             app:boxStrokeWidth="1dp"
                             app:boxStrokeWidthFocused="1.5dp"
                             app:startIconDrawable="@drawable/ic_id_card"
                             app:startIconTint="#94A3B8"
-                            android:textColorHint="#64748B"
+                            android:textColorHint="@color/muted_text"
                             app:hintTextColor="#0066FF">
 
                             <com.google.android.material.textfield.TextInputEditText
@@ -442,7 +443,7 @@
                                 android:layout_height="54dp"
                                 android:inputType="text"
                                 android:imeOptions="actionNext"
-                                android:textColor="#0F172A"
+                                android:textColor="@color/title_text"
                                 android:textSize="16sp"
                                 android:fontFamily="sans-serif-medium" />
                         </com.google.android.material.textfield.TextInputLayout>
@@ -472,7 +473,7 @@
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:fontFamily="sans-serif-medium"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/title_text"
                         android:layout_marginBottom="12dp" />
 
                     <com.google.android.material.textfield.TextInputLayout
@@ -485,7 +486,7 @@
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusBottomStart="12dp"
                         app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxBackgroundColor="#FFFFFF"
+                        app:boxBackgroundColor="@color/input_bg"
                         app:boxStrokeColor="@color/input_box_stroke"
                         app:boxStrokeWidth="1dp"
                         app:boxStrokeWidthFocused="1.5dp"
@@ -493,7 +494,7 @@
                         app:startIconTint="#94A3B8"
                         app:endIconMode="password_toggle"
                         app:endIconTint="#64748B"
-                        android:textColorHint="#64748B"
+                        android:textColorHint="@color/muted_text"
                         app:hintTextColor="#0066FF">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -502,7 +503,7 @@
                             android:layout_height="54dp"
                             android:inputType="textPassword"
                             android:imeOptions="actionDone"
-                            android:textColor="#0F172A"
+                            android:textColor="@color/title_text"
                             android:textSize="16sp"
                             android:fontFamily="sans-serif-medium" />
                     </com.google.android.material.textfield.TextInputLayout>
@@ -554,7 +555,7 @@
                         android:text="@string/password_help"
                         android:textSize="12sp"
                         android:fontFamily="sans-serif"
-                        android:textColor="#64748B" />
+                        android:textColor="@color/muted_text" />
 
                     <View
                         android:id="@+id/dividerGoogle"
@@ -572,10 +573,10 @@
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:fontFamily="sans-serif-medium"
-                        android:textColor="#334155"
+                        android:textColor="@color/title_text"
                         android:textAllCaps="false"
                         app:cornerRadius="12dp"
-                        app:strokeColor="#CBD5E1"
+                        app:strokeColor="@color/slate_border"
                         app:strokeWidth="1.5dp"
                         app:icon="@drawable/ic_google"
                         app:iconGravity="textStart"
@@ -594,7 +595,7 @@
                 app:cardCornerRadius="24dp"
                 app:cardElevation="2dp"
                 app:cardPreventCornerOverlap="false"
-                app:cardBackgroundColor="#FFFFFF"
+                app:cardBackgroundColor="@color/card_bg"
                 app:strokeWidth="1dp"
                 app:strokeColor="#16A34A"
                 android:visibility="gone"
@@ -622,7 +623,7 @@
                         android:textSize="22sp"
                         android:textStyle="bold"
                         android:fontFamily="sans-serif-medium"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/title_text"
                         android:gravity="center"
                         android:layout_marginBottom="12dp" />
 
@@ -633,7 +634,7 @@
                         android:text="Verification link sent to your email. Please check your inbox and verify your account before logging in."
                         android:textSize="15sp"
                         android:fontFamily="sans-serif"
-                        android:textColor="#64748B"
+                        android:textColor="@color/muted_text"
                         android:gravity="center"
                         android:lineSpacingExtra="4dp"
                         android:layout_marginBottom="28dp" />
@@ -692,7 +693,7 @@
             android:text="@string/terms_consent"
             android:textSize="12sp"
             android:fontFamily="sans-serif"
-            android:textColor="#64748B"
+            android:textColor="@color/muted_text"
             app:buttonTint="#0066FF"
             app:buttonIconTint="#FFFFFF"
             android:layout_marginBottom="8dp" />
@@ -721,7 +722,7 @@
             android:textSize="14sp"
             android:textStyle="bold"
             android:fontFamily="sans-serif-medium"
-            android:textColor="#0066FF"
+            android:textColor="@color/primary"
             android:padding="4dp"
             android:clickable="true"
             android:focusable="true"

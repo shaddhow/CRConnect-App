@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dialog_add_routine_class - CRConnect UI Preview</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="preview-header">
+    <div class="preview-header-left">
+        <a href="index.html" class="back-link">← Back to Screen Index</a>
+        <span class="screen-title">dialog_add_routine_class.xml</span>
+        <span class="screen-badge">Dialog Overlay</span>
+    </div>
+    <div class="preview-header-right">
+        <button onclick="toggleDeviceFrame()" class="btn-toggle-frame">📱 Toggle View Mode</button>
+    </div>
+</header>
+
+<main class="preview-viewport">
+    <div class="device-frame" id="deviceFrame">
+        <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+                <span>📶</span>
+                <span>🔋</span>
+            </div>
+        </div>
+
+        <div class="device-screen">
+            <div  class="android-container linearlayout" style="width: 100%; height: auto; display: flex; flex-direction: column; padding: 20px; background-color: #0A0D14;"><p  class="android-textview textview" style="width: 100%; height: auto; margin-bottom: 16px; color: #FFFFFF; font-size: 18px; font-weight: 700;">Add Routine Class</p><h2  class="android-textview textview" style="width: auto; height: auto; margin-bottom: 6px; color: #94A3B8; font-size: 12px; font-weight: 700;">Select Day</h2><select id="spinnerRoutineDay" class="android-spinner spinner" style="width: 100%; height: 48px; padding-left: 12px; padding-right: 12px; margin-bottom: 12px; background-color: #FFFFFF; border: 1px solid #CBD5E1; border-radius: 12px;"><option>Select option...</option><option>Intake 48</option><option>Section 1</option></select><div  class="text-input-layout form-group textinputlayout" style="width: 100%; height: auto; margin-bottom: 12px;"><label class="input-hint-label">Subject Name</label><input id="etRoutineSubject" type="text" class="android-input textinputedittext" placeholder="" value="" style="width: 100%; height: auto; color: #FFFFFF;"/></div><div  class="text-input-layout form-group textinputlayout" style="width: 100%; height: auto; margin-bottom: 12px;"><label class="input-hint-label">Time Slot (e.g. 09:00 AM - 10:30 AM)</label><input id="etRoutineTime" type="text" class="android-input textinputedittext" placeholder="" value="" style="width: 100%; height: auto; color: #FFFFFF;"/></div><div  class="text-input-layout form-group textinputlayout" style="width: 100%; height: auto; margin-bottom: 12px;"><label class="input-hint-label">Room Number (e.g. 402 / Lab 3)</label><input id="etRoutineRoom" type="text" class="android-input textinputedittext" placeholder="" value="" style="width: 100%; height: auto; color: #FFFFFF;"/></div><div  class="text-input-layout form-group textinputlayout" style="width: 100%; height: auto; margin-bottom: 20px;"><label class="input-hint-label">Instructor Name</label><input id="etRoutineTeacher" type="text" class="android-input textinputedittext" placeholder="" value="" style="width: 100%; height: auto; color: #FFFFFF;"/></div><button id="btnSaveRoutineClass" class="android-button btn btn-primary materialbutton" style="width: 100%; height: 48px; color: #FFFFFF; font-weight: 700; border-radius: 12px;"><span>Save Class to Routine</span></button></div>
+        </div>
+
+        <div class="home-bar-indicator"></div>
+    </div>
+</main>
+
+<script>
+function toggleDeviceFrame() {
+    const frame = document.getElementById('deviceFrame');
+    frame.classList.toggle('full-width');
+}
+</script>
+
+</body>
+</html>

@@ -1,41 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Night Mode Color Overrides -->
+    <!-- Core Colors Night Mode Overrides -->
     <color name="primary">#3B82F6</color>
-    <color name="background">#0A0D18</color>
-    <color name="surface">#141C2B</color>
-    <color name="surface_card">#141C2B</color>
-    <color name="card_bg">#141C2B</color>
+    <color name="primaryVariant">#1D4ED8</color>
+    <color name="secondary">#3B82F6</color>
+    <color name="background">#0F172A</color>
+    <color name="surface">#1E293B</color>
+    <color name="surface_card">#1E293B</color>
+    <color name="card_bg">#1E293B</color>
     <color name="card_stroke">#243147</color>
     <color name="input_bg">#1E293B</color>
-
-    <color name="title_text">#F8FAFC</color>
-    <color name="muted_text">#94A3B8</color>
-    <color name="text_primary">#F8FAFC</color>
+    <color name="glass_card">#CC1E293B</color>
+    <color name="error">#EF4444</color>
+    <color name="text_primary">#F1F5F9</color>
     <color name="text_secondary">#94A3B8</color>
+    <color name="divider">#243147</color>
+    <color name="accent_violet">#3B82F6</color>
+    <color name="accent_purple_glow">#1E293B</color>
+    <color name="accent_green">#10B981</color>
+    <color name="accent_amber">#F59E0B</color>
+    <color name="destructive_bg">#7F1D1D</color>
+    <color name="destructive_text">#FCA5A5</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="primary_pressed">#2563EB</color>
+    <color name="title_text">#F1F5F9</color>
+    <color name="muted_text">#94A3B8</color>
+    <color name="error_red">#EF4444</color>
+    <color name="tint">#1E293B</color>
+    <color name="nav_selected">#3B82F6</color>
+    <color name="nav_unselected">#94A3B8</color>
 
-    <color name="slate_dark">#F8FAFC</color>
+    <!-- CRConnect Redesign Specification Palette Night -->
+    <color name="splashBackground">#0B1120</color>
+    <color name="bg_gradient_start">#0B1120</color>
+    <color name="bg_gradient_center">#0E1626</color>
+    <color name="bg_gradient_end">#0F172A</color>
+
+    <color name="brand_blue">#3B82F6</color>
+    <color name="brand_blue_dark">#1D4ED8</color>
+    <color name="brand_blue_pressed">#2563EB</color>
+    <color name="brand_blue_light">#1E293B</color>
+
+    <color name="slate_dark">#F1F5F9</color>
+    <color name="slate_dark_72">#B8F1F5F9</color>
+    <color name="slate_dark_60">#99F1F5F9</color>
     <color name="slate_muted">#94A3B8</color>
     <color name="slate_icon">#94A3B8</color>
     <color name="slate_border">#243147</color>
     <color name="slate_border_light">#1E293B</color>
 
     <color name="segmented_bg">#1E293B</color>
-    <color name="tint">#1E293B</color>
+    <color name="badge_bg">#1E293B</color>
+    <color name="badge_border">#243147</color>
 
-    <!-- Night Gradients -->
-    <color name="splashBackground">#0B1120</color>
-    <color name="bg_gradient_start">#0B1120</color>
-    <color name="bg_gradient_center">#0E1626</color>
-    <color name="bg_gradient_end">#0A0D18</color>
+    <color name="btn_disabled_bg">#1E293B</color>
+    <color name="btn_disabled_text">#64748B</color>
 
     <!-- Teacher Profile Palette Night -->
-    <color name="tp_hero_bg_start">#141C2B</color>
+    <color name="tp_hero_bg_start">#1E293B</color>
     <color name="tp_hero_bg_end">#1E293B</color>
-    <color name="tp_chip_dept_bg">#1E293B</color>
-    <color name="tp_chip_dept_border">#243147</color>
-    <color name="tp_chip_dept_text">#60A5FA</color>
+    <color name="tp_avatar_start">#3B82F6</color>
+    <color name="tp_avatar_end">#60A5FA</color>
+    <color name="tp_avatar_ring">#1E293B</color>
+    <color name="tp_asg_start">#3B82F6</color>
+    <color name="tp_asg_end">#1D4ED8</color>
+    <color name="tp_asg_badge_bg">#331E293B</color>
+    <color name="tp_asg_sw_unselected_bg">#261E293B</color>
+    <color name="tp_asg_sw_unselected_stroke">#73243147</color>
+    <color name="tp_asg_stat_bg">#291E293B</color>
     <color name="tp_chip_verified_bg">#062D19</color>
     <color name="tp_chip_verified_border">#0D472B</color>
     <color name="tp_chip_verified_text">#4ADE80</color>
+    <color name="tp_chip_dept_bg">#1E293B</color>
+    <color name="tp_chip_dept_border">#243147</color>
+    <color name="tp_chip_dept_text">#60A5FA</color>
+    <color name="btn_danger_bg_color">#450A0A</color>
+    <color name="btn_danger_stroke_color">#7F1D1D</color>
+    <color name="btn_danger_text_color">#FCA5A5</color>
 </resources>

@@ -115,14 +115,14 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#E2E8F0"/>
+        android:background="@color/slate_border_light"/>
 
     <!-- Bottom Navigation Bar -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="64dp"
-        android:background="#FFFFFF"
+        android:background="@color/surface"
         app:elevation="0dp"
         app:itemIconSize="26dp"
         app:itemIconTint="@color/nav_item_color"

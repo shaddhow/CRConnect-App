@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center_vertical"
-    android:textColor="#0F172A"
+    android:textColor="@color/title_text"
     android:textSize="15sp"
     android:paddingHorizontal="16dp"
     android:paddingVertical="12dp"
@@ -14,4 +14,4 @@
     android:ellipsize="end"
     android:drawableEnd="@drawable/ic_chevron_down"
     app:drawableEndCompat="@drawable/ic_chevron_down"
-    app:drawableTint="#64748B"/>
+    app:drawableTint="@color/muted_text"/>

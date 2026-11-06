@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRConnect UI Layout Preview Gallery</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background-color: #0F172A;
+            color: #FFFFFF;
+            padding: 32px;
+        }
+        .gallery-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .gallery-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #1E293B;
+            margin-bottom: 32px;
+        }
+        .gallery-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+        .gallery-subtitle {
+            color: #94A3B8;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .search-box {
+            width: 100%;
+            max-width: 360px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            background: #161B26;
+            color: #FFFFFF;
+            font-size: 15px;
+            outline: none;
+        }
+        .index-section {
+            margin-bottom: 40px;
+        }
+        .section-heading {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #70D6FF;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .screen-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .screen-card {
+            background: #161B26;
+            border: 1px solid #222938;
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: #FFFFFF;
+            transition: all 0.2s ease;
+        }
+        .screen-card:hover {
+            border-color: #0066FF;
+            transform: translateY(-2px);
+            background: #1E293B;
+        }
+        .card-icon {
+            font-size: 24px;
+            margin-right: 14px;
+        }
+        .card-info {
+            flex: 1;
+        }
+        .card-title {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 2px;
+        }
+        .card-sub {
+            font-size: 12px;
+            color: #94A3B8;
+        }
+        .card-arrow {
+            color: #0066FF;
+            font-weight: 700;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="gallery-container">
+    <header class="gallery-header">
+        <div>
+            <h1 class="gallery-title">CRConnect UI Preview Gallery</h1>
+            <p class="gallery-subtitle">HTML/CSS Visual Replicas of all 42 Android XML Layouts</p>
+        </div>
+        <input type="text" id="searchBox" class="search-box" placeholder="🔍 Search layout screens..." onkeyup="filterScreens()"/>
+    </header>
+
+    <main id="sectionsContainer">
+        
+        <section class="index-section">
+            <h2 class="section-heading">Activities & Main Screens (10)</h2>
+            <div class="screen-grid">
+                
+            <a href="activity_forgot_password.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">activity_forgot_password</div>
+                    <div class="card-sub">activity_forgot_password.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="activity_login.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">activity_login</div>
+                    <div class="card-sub">activity_login.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="activity_main.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">activity_main</div>
+                    <div class="card-sub">activity_main.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="activity_register.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">activity_register</div>
+                    <div class="card-sub">activity_register.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="activity_routine.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">activity_routine</div>
+                    <div class="card-sub">activity_routine.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="activity_routine_camera.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">activity_routine_camera</div>
+                    <div class="card-sub">activity_routine_camera.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="activity_splash.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">activity_splash</div>
+                    <div class="card-sub">activity_splash.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="activity_student_dashboard.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">activity_student_dashboard</div>
+                    <div class="card-sub">activity_student_dashboard.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="activity_student_portal.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">activity_student_portal</div>
+                    <div class="card-sub">activity_student_portal.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="activity_teacher_dashboard.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">activity_teacher_dashboard</div>
+                    <div class="card-sub">activity_teacher_dashboard.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            </div>
+        </section>
+        
+        <section class="index-section">
+            <h2 class="section-heading">Fragments (4)</h2>
+            <div class="screen-grid">
+                
+            <a href="fragment_home.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">fragment_home</div>
+                    <div class="card-sub">fragment_home.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="fragment_profile.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">fragment_profile</div>
+                    <div class="card-sub">fragment_profile.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="fragment_routine.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">fragment_routine</div>
+                    <div class="card-sub">fragment_routine.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="fragment_student_candidates.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">fragment_student_candidates</div>
+                    <div class="card-sub">fragment_student_candidates.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            </div>
+        </section>
+        
+        <section class="index-section">
+            <h2 class="section-heading">Bottom Sheets (7)</h2>
+            <div class="screen-grid">
+                
+            <a href="bottom_sheet_end_voting.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">bottom_sheet_end_voting</div>
+                    <div class="card-sub">bottom_sheet_end_voting.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="bottom_sheet_export_pdf.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">bottom_sheet_export_pdf</div>
+                    <div class="card-sub">bottom_sheet_export_pdf.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="bottom_sheet_logout.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">bottom_sheet_logout</div>
+                    <div class="card-sub">bottom_sheet_logout.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="bottom_sheet_manage_sections.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">bottom_sheet_manage_sections</div>
+                    <div class="card-sub">bottom_sheet_manage_sections.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="bottom_sheet_reset_votes.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">bottom_sheet_reset_votes</div>
+                    <div class="card-sub">bottom_sheet_reset_votes.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="bottom_sheet_run_off.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">bottom_sheet_run_off</div>
+                    <div class="card-sub">bottom_sheet_run_off.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="bottom_sheet_teacher_profile.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">bottom_sheet_teacher_profile</div>
+                    <div class="card-sub">bottom_sheet_teacher_profile.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            </div>
+        </section>
+        
+        <section class="index-section">
+            <h2 class="section-heading">Dialogs (8)</h2>
+            <div class="screen-grid">
+                
+            <a href="dialog_add_routine_class.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">dialog_add_routine_class</div>
+                    <div class="card-sub">dialog_add_routine_class.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="dialog_announcements.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">dialog_announcements</div>
+                    <div class="card-sub">dialog_announcements.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="dialog_confirm.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">dialog_confirm</div>
+                    <div class="card-sub">dialog_confirm.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="dialog_create_announcement.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">dialog_create_announcement</div>
+                    <div class="card-sub">dialog_create_announcement.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="dialog_ocr_loading.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">dialog_ocr_loading</div>
+                    <div class="card-sub">dialog_ocr_loading.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="dialog_pdf_ready.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">dialog_pdf_ready</div>
+                    <div class="card-sub">dialog_pdf_ready.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="dialog_scan_routine_options.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">dialog_scan_routine_options</div>
+                    <div class="card-sub">dialog_scan_routine_options.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="dialog_scan_success.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">dialog_scan_success</div>
+                    <div class="card-sub">dialog_scan_success.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            </div>
+        </section>
+        
+        <section class="index-section">
+            <h2 class="section-heading">Components, List Items & Includes (13)</h2>
+            <div class="screen-grid">
+                
+            <a href="include_header.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">include_header</div>
+                    <div class="card-sub">include_header.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="item_candidate.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">item_candidate</div>
+                    <div class="card-sub">item_candidate.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="item_day_pill.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">item_day_pill</div>
+                    <div class="card-sub">item_day_pill.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="item_routine_class_card.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">item_routine_class_card</div>
+                    <div class="card-sub">item_routine_class_card.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="layout_profile.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">layout_profile</div>
+                    <div class="card-sub">layout_profile.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="list_item_announcement.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">list_item_announcement</div>
+                    <div class="card-sub">list_item_announcement.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="list_item_candidate.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">list_item_candidate</div>
+                    <div class="card-sub">list_item_candidate.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="list_item_routine_class.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">list_item_routine_class</div>
+                    <div class="card-sub">list_item_routine_class.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="nav_header.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">nav_header</div>
+                    <div class="card-sub">nav_header.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="spinner_dropdown_item.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">spinner_dropdown_item</div>
+                    <div class="card-sub">spinner_dropdown_item.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="spinner_item.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">spinner_item</div>
+                    <div class="card-sub">spinner_item.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="tab_profile.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">tab_profile</div>
+                    <div class="card-sub">tab_profile.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            <a href="teacher_dashboard_control.html" class="screen-card">
+                <div class="card-icon">📱</div>
+                <div class="card-info">
+                    <div class="card-title">teacher_dashboard_control</div>
+                    <div class="card-sub">teacher_dashboard_control.xml</div>
+                </div>
+                <div class="card-arrow">→</div>
+            </a>
+            
+            </div>
+        </section>
+        
+    </main>
+</div>
+
+<script>
+function filterScreens() {
+    const query = document.getElementById('searchBox').value.toLowerCase();
+    const cards = document.querySelectorAll('.screen-card');
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (text.includes(query)) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+
+</body>
+</html>
