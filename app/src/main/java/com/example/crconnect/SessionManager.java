@@ -22,6 +22,8 @@ public class SessionManager {
     private static final String KEY_PROFILE_IMAGE = "profileImageUrl";
     private static final String KEY_DARK_MODE = "dark_mode";
     private static final String KEY_THEME_MODE = "themeMode";
+    private static final String KEY_STUDENT_THEME_MODE = "studentThemeMode";
+    private static final String KEY_TEACHER_THEME_MODE = "teacherThemeMode";
 
     private final SharedPreferences pref;
     private final SharedPreferences.Editor editor;
@@ -107,6 +109,26 @@ public class SessionManager {
         editor.putBoolean(KEY_DARK_MODE, isDark);
         editor.commit();
         applyThemeMode(mode);
+    }
+
+    public String getStudentThemeMode() {
+        return pref.getString(KEY_STUDENT_THEME_MODE, getThemeMode());
+    }
+
+    public void setStudentThemeMode(String mode) {
+        editor.putString(KEY_STUDENT_THEME_MODE, mode);
+        editor.commit();
+        setThemeMode(mode);
+    }
+
+    public String getTeacherThemeMode() {
+        return pref.getString(KEY_TEACHER_THEME_MODE, getThemeMode());
+    }
+
+    public void setTeacherThemeMode(String mode) {
+        editor.putString(KEY_TEACHER_THEME_MODE, mode);
+        editor.commit();
+        setThemeMode(mode);
     }
 
     public static void applyThemeMode(String mode) {

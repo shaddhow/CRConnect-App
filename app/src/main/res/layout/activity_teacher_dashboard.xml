@@ -27,87 +27,47 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Custom Bottom Fixed Navigation Bar for Admin Console -->
+        <!-- Custom Floating Glassy Capsule Navigation Bar for Admin Console -->
         <LinearLayout
             android:id="@+id/customBottomNavAdmin"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="60dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="12dp"
             android:orientation="horizontal"
             android:baselineAligned="false"
-            android:background="@drawable/bg_custom_bottom_nav"
-            android:elevation="0dp"
-            android:outlineProvider="none"
-            android:paddingTop="8dp"
+            android:background="@drawable/bg_glassy_floating_nav"
+            android:elevation="6dp"
+            android:outlineProvider="background"
+            android:paddingTop="0dp"
             android:paddingHorizontal="0dp"
-            android:paddingBottom="8dp"
-            android:weightSum="4"
+            android:paddingBottom="0dp"
+            android:weightSum="3"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <!-- Tab 1: Stats -->
-            <LinearLayout
-                android:id="@+id/navTabStats"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:paddingTop="8dp"
-                android:paddingBottom="0dp"
-                android:gravity="center_horizontal|top"
-                android:orientation="vertical"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless">
-
-                <FrameLayout
-                    android:id="@+id/pillStats"
-                    android:layout_width="64dp"
-                    android:layout_height="32dp"
-                    android:layout_gravity="center_horizontal"
-                    android:background="@drawable/bg_nav_pill_active">
-
-                    <ImageView
-                        android:id="@+id/iconStats"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_nav_stats"
-                        app:tint="#0066FF"
-                        tools:ignore="ContentDescription" />
-                </FrameLayout>
-
-                <TextView
-                    android:id="@+id/labelStats"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="2dp"
-                    android:text="Stats"
-                    android:textColor="#0066FF"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- Tab 2: Election -->
+            <!-- Tab 1: Election -->
             <LinearLayout
                 android:id="@+id/navTabControls"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:paddingTop="8dp"
+                android:paddingTop="0dp"
                 android:paddingBottom="0dp"
-                android:gravity="center_horizontal|top"
+                android:gravity="center"
                 android:orientation="vertical"
                 android:clickable="true"
                 android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless">
+                android:background="@android:color/transparent">
 
                 <FrameLayout
                     android:id="@+id/pillControls"
-                    android:layout_width="64dp"
-                    android:layout_height="32dp"
+                    android:layout_width="56dp"
+                    android:layout_height="30dp"
                     android:layout_gravity="center_horizontal"
-                    android:background="@drawable/bg_nav_pill_inactive">
+                    android:background="@drawable/bg_nav_pill_active">
 
                     <ImageView
                         android:id="@+id/iconControls"
@@ -115,7 +75,7 @@
                         android:layout_height="20dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_nav_timer"
-                        app:tint="#64748B"
+                        app:tint="#0066FF"
                         tools:ignore="ContentDescription" />
                 </FrameLayout>
 
@@ -126,29 +86,29 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="2dp"
                     android:text="Election"
-                    android:textColor="#64748B"
+                    android:textColor="#0066FF"
                     android:textSize="11sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Tab 3: Profile -->
+            <!-- Tab 2: Profile -->
             <LinearLayout
                 android:id="@+id/navTabProfile"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:paddingTop="8dp"
+                android:paddingTop="0dp"
                 android:paddingBottom="0dp"
-                android:gravity="center_horizontal|top"
+                android:gravity="center"
                 android:orientation="vertical"
                 android:clickable="true"
                 android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless">
+                android:background="@android:color/transparent">
 
                 <FrameLayout
                     android:id="@+id/pillProfile"
-                    android:layout_width="64dp"
-                    android:layout_height="32dp"
+                    android:layout_width="56dp"
+                    android:layout_height="30dp"
                     android:layout_gravity="center_horizontal"
                     android:background="@drawable/bg_nav_pill_inactive">
 
@@ -158,7 +118,7 @@
                         android:layout_height="20dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_user"
-                        app:tint="#64748B"
+                        app:tint="@color/muted_text"
                         tools:ignore="ContentDescription" />
                 </FrameLayout>
 
@@ -169,29 +129,29 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="2dp"
                     android:text="Profile"
-                    android:textColor="#64748B"
+                    android:textColor="@color/muted_text"
                     android:textSize="11sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Tab 4: Logout -->
+            <!-- Tab 3: Logout -->
             <LinearLayout
                 android:id="@+id/navTabLogout"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:paddingTop="8dp"
+                android:paddingTop="0dp"
                 android:paddingBottom="0dp"
-                android:gravity="center_horizontal|top"
+                android:gravity="center"
                 android:orientation="vertical"
                 android:clickable="true"
                 android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless">
+                android:background="@android:color/transparent">
 
                 <FrameLayout
                     android:id="@+id/pillLogout"
-                    android:layout_width="64dp"
-                    android:layout_height="32dp"
+                    android:layout_width="56dp"
+                    android:layout_height="30dp"
                     android:layout_gravity="center_horizontal"
                     android:background="@drawable/bg_nav_pill_inactive">
 
@@ -201,7 +161,7 @@
                         android:layout_height="20dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_nav_logout"
-                        app:tint="#64748B"
+                        app:tint="@color/muted_text"
                         tools:ignore="ContentDescription" />
                 </FrameLayout>
 
@@ -212,22 +172,23 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="2dp"
                     android:text="Logout"
-                    android:textColor="#64748B"
+                    android:textColor="@color/muted_text"
                     android:textSize="11sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
         </LinearLayout>
 
-        <!-- NestedScrollView constrained between Header and Custom BottomNav -->
+        <!-- NestedScrollView spanning edge-to-edge behind Floating Custom BottomNav -->
         <androidx.core.widget.NestedScrollView
             android:id="@+id/scrollViewAdmin"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:fillViewport="true"
             android:clipToPadding="false"
+            android:paddingBottom="90dp"
             app:layout_constraintTop_toBottomOf="@id/includeHeader"
-            app:layout_constraintBottom_toTopOf="@id/customBottomNavAdmin"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
@@ -241,186 +202,13 @@
                 android:paddingBottom="20dp"
                 android:clipToPadding="false">
 
-                <!-- TAB 0: Stats Tab Section -->
-                <LinearLayout
-                    android:id="@+id/layoutTabStats"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <!-- Live Statistics Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardLiveStats"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:hapticFeedbackEnabled="true"
-                        app:cardBackgroundColor="@color/card_bg"
-                        app:cardCornerRadius="20dp"
-                        app:cardElevation="2dp"
-                        app:strokeColor="#E2E8F0"
-                        app:strokeWidth="1dp"
-                        android:outlineAmbientShadowColor="#1A0066FF"
-                        android:outlineSpotShadowColor="#1A0066FF"
-                        tools:ignore="UnusedAttribute">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:baselineAligned="false"
-                            android:orientation="vertical"
-                            android:padding="20dp">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="16dp"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal">
-
-                                <!-- Icon Badge Container -->
-                                <FrameLayout
-                                    android:layout_width="40dp"
-                                    android:layout_height="40dp"
-                                    android:background="@drawable/bg_icon_badge"
-                                    android:layout_marginEnd="12dp">
-                                    <ImageView
-                                        android:layout_width="20dp"
-                                        android:layout_height="20dp"
-                                        android:layout_gravity="center"
-                                        android:src="@drawable/ic_nav_stats"
-                                        app:tint="#0066FF"
-                                        tools:ignore="ContentDescription" />
-                                </FrameLayout>
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Live election statistics"
-                                    android:textColor="#0F172A"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:baselineAligned="false"
-                                android:orientation="horizontal"
-                                android:paddingVertical="8dp"
-                                android:weightSum="3">
-
-                                <LinearLayout
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:gravity="center"
-                                    android:orientation="vertical">
-
-                                    <TextView
-                                        android:id="@+id/tvStatTotalVotes"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="1"
-                                        android:textColor="#0F172A"
-                                        android:textSize="26sp"
-                                        android:textStyle="bold"
-                                        tools:text="1" />
-
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginTop="2dp"
-                                        android:text="Votes cast"
-                                        android:textColor="#64748B"
-                                        android:textSize="12sp" />
-                                </LinearLayout>
-
-                                <LinearLayout
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:gravity="center"
-                                    android:orientation="vertical">
-
-                                    <TextView
-                                        android:id="@+id/tvStatTotalVoters"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="48"
-                                        android:textColor="#0F172A"
-                                        android:textSize="26sp"
-                                        android:textStyle="bold"
-                                        tools:text="48" />
-
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginTop="2dp"
-                                        android:text="Voters"
-                                        android:textColor="#64748B"
-                                        android:textSize="12sp" />
-                                </LinearLayout>
-
-                                <LinearLayout
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:gravity="center"
-                                    android:orientation="vertical">
-
-                                    <TextView
-                                        android:id="@+id/tvStatTurnout"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="2%"
-                                        android:textColor="#0066FF"
-                                        android:textSize="26sp"
-                                        android:textStyle="bold"
-                                        tools:text="2%" />
-
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginTop="2dp"
-                                        android:text="Turnout"
-                                        android:textColor="#64748B"
-                                        android:textSize="12sp" />
-                                </LinearLayout>
-                            </LinearLayout>
-
-                            <!-- Export Results to PDF Button -->
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnExportPdf"
-                                android:layout_width="match_parent"
-                                android:layout_height="52dp"
-                                android:layout_marginTop="16dp"
-                                android:hapticFeedbackEnabled="true"
-                                android:paddingHorizontal="16dp"
-                                android:text="Export results to PDF"
-                                android:textAllCaps="false"
-                                android:textColor="#FFFFFF"
-                                android:textSize="16sp"
-                                android:textStyle="bold"
-                                app:backgroundTint="#0066FF"
-                                app:cornerRadius="12dp"
-                                app:elevation="8dp"
-                                android:outlineAmbientShadowColor="#800066FF"
-                                android:outlineSpotShadowColor="#800066FF"
-                                android:insetBottom="0dp"
-                                android:insetTop="0dp" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                </LinearLayout>
-
-                <!-- TAB 1: Election Tab Section -->
+                <!-- Main Election Tab Section (Visible by Default) -->
                 <LinearLayout
                     android:id="@+id/layoutTabControls"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:visibility="gone">
+                    android:visibility="visible">
 
                     <!-- Sub-Toggle Selector Bar: Timing | Candidates Manage | Export Result -->
                     <LinearLayout
@@ -485,13 +273,181 @@
                             app:cornerRadius="12dp" />
                     </LinearLayout>
 
-                    <!-- SUB-VIEW 1: Election Timing -->
+                    <!-- SUB-VIEW 1: Election Timing & Live Monitor -->
                     <LinearLayout
                         android:id="@+id/layoutSubTiming"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:visibility="visible">
+
+                        <!-- Live Statistics Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/cardLiveStats"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            android:hapticFeedbackEnabled="true"
+                            app:cardBackgroundColor="@color/card_bg"
+                            app:cardCornerRadius="20dp"
+                            app:cardElevation="2dp"
+                            app:strokeColor="@color/card_stroke"
+                            app:strokeWidth="1dp"
+                            android:outlineAmbientShadowColor="#1A0066FF"
+                            android:outlineSpotShadowColor="#1A0066FF"
+                            tools:ignore="UnusedAttribute">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:baselineAligned="false"
+                                android:orientation="vertical"
+                                android:padding="20dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginBottom="16dp"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <!-- Icon Badge Container -->
+                                    <FrameLayout
+                                        android:layout_width="40dp"
+                                        android:layout_height="40dp"
+                                        android:background="@drawable/bg_icon_badge"
+                                        android:layout_marginEnd="12dp">
+                                        <ImageView
+                                            android:layout_width="20dp"
+                                            android:layout_height="20dp"
+                                            android:layout_gravity="center"
+                                            android:src="@drawable/ic_nav_stats"
+                                            app:tint="#0066FF"
+                                            tools:ignore="ContentDescription" />
+                                    </FrameLayout>
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Live election statistics"
+                                        android:textColor="@color/title_text"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:baselineAligned="false"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp"
+                                    android:weightSum="3">
+
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:gravity="center"
+                                        android:orientation="vertical">
+
+                                        <TextView
+                                            android:id="@+id/tvStatTotalVotes"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="1"
+                                            android:textColor="@color/title_text"
+                                            android:textSize="26sp"
+                                            android:textStyle="bold"
+                                            tools:text="1" />
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="2dp"
+                                            android:text="Votes cast"
+                                            android:textColor="#64748B"
+                                            android:textSize="12sp" />
+                                    </LinearLayout>
+
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:gravity="center"
+                                        android:orientation="vertical">
+
+                                        <TextView
+                                            android:id="@+id/tvStatTotalVoters"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="48"
+                                            android:textColor="@color/title_text"
+                                            android:textSize="26sp"
+                                            android:textStyle="bold"
+                                            tools:text="48" />
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="2dp"
+                                            android:text="Voters"
+                                            android:textColor="#64748B"
+                                            android:textSize="12sp" />
+                                    </LinearLayout>
+
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:gravity="center"
+                                        android:orientation="vertical">
+
+                                        <TextView
+                                            android:id="@+id/tvStatTurnout"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="2%"
+                                            android:textColor="#0066FF"
+                                            android:textSize="26sp"
+                                            android:textStyle="bold"
+                                            tools:text="2%" />
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="2dp"
+                                            android:text="Turnout"
+                                            android:textColor="#64748B"
+                                            android:textSize="12sp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+
+                                <!-- Export Results to PDF Button -->
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnExportPdf"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="52dp"
+                                    android:layout_marginTop="16dp"
+                                    android:hapticFeedbackEnabled="true"
+                                    android:paddingHorizontal="16dp"
+                                    android:text="Export results to PDF"
+                                    android:textAllCaps="false"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold"
+                                    app:icon="@drawable/ic_nav_pdf"
+                                    app:iconTint="#FFFFFF"
+                                    app:iconPadding="8dp"
+                                    app:iconGravity="textStart"
+                                    app:backgroundTint="@color/primary"
+                                    app:cornerRadius="12dp"
+                                    app:elevation="8dp"
+                                    android:outlineAmbientShadowColor="#800066FF"
+                                    android:outlineSpotShadowColor="#800066FF"
+                                    android:insetBottom="0dp"
+                                    android:insetTop="0dp" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
 
                         <!-- Voting Gate Control Card -->
                         <com.google.android.material.card.MaterialCardView
@@ -503,7 +459,7 @@
                             app:cardBackgroundColor="@color/card_bg"
                             app:cardCornerRadius="20dp"
                             app:cardElevation="2dp"
-                            app:strokeColor="#E2E8F0"
+                            app:strokeColor="@color/card_stroke"
                             app:strokeWidth="1dp"
                             android:outlineAmbientShadowColor="#1A0066FF"
                             android:outlineSpotShadowColor="#1A0066FF"
@@ -541,7 +497,7 @@
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:text="Live voting gate"
-                                        android:textColor="#0F172A"
+                                        android:textColor="@color/title_text"
                                         android:textSize="16sp"
                                         android:textStyle="bold" />
 
@@ -589,7 +545,7 @@
                             app:cardBackgroundColor="@color/card_bg"
                             app:cardCornerRadius="20dp"
                             app:cardElevation="2dp"
-                            app:strokeColor="#E2E8F0"
+                            app:strokeColor="@color/card_stroke"
                             app:strokeWidth="1dp"
                             android:outlineAmbientShadowColor="#14000000"
                             android:outlineSpotShadowColor="#14000000"
@@ -612,7 +568,7 @@
                                         android:layout_alignParentStart="true"
                                         android:layout_centerVertical="true"
                                         android:text="New candidate"
-                                        android:textColor="#0F172A"
+                                        android:textColor="@color/title_text"
                                         android:textSize="16sp"
                                         android:textStyle="bold" />
 
@@ -626,7 +582,7 @@
                                         android:paddingHorizontal="10dp"
                                         android:paddingVertical="4dp"
                                         android:text="Total (Sec 6): 0"
-                                        android:textColor="#64748B"
+                                        android:textColor="@color/muted_text"
                                         android:textSize="12sp"
                                         android:textStyle="bold" />
                                 </RelativeLayout>
@@ -636,7 +592,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginBottom="6dp"
                                     android:text="Full name"
-                                    android:textColor="#0F172A"
+                                    android:textColor="@color/title_text"
                                     android:textSize="14sp"
                                     android:textStyle="bold" />
 
@@ -654,7 +610,7 @@
                                     app:boxCornerRadiusTopStart="12dp"
                                     app:boxStrokeColor="@color/input_box_stroke"
                                     app:startIconDrawable="@drawable/ic_user"
-                                    app:startIconTint="#94A3B8">
+                                    app:startIconTint="@color/muted_text">
 
                                     <com.google.android.material.textfield.TextInputEditText
                                         android:id="@+id/etCandidateName"
@@ -665,9 +621,9 @@
                                         android:paddingTop="0dp"
                                         android:paddingBottom="0dp"
                                         android:singleLine="true"
-                                        android:textColor="#0F172A"
+                                        android:textColor="@color/title_text"
                                         android:textColorHint="@color/muted_text"
-                                        android:textSize="16sp" />
+                                        android:textSize="15sp" />
                                 </com.google.android.material.textfield.TextInputLayout>
 
                                 <com.google.android.material.button.MaterialButton
@@ -683,7 +639,7 @@
                                     android:textColor="#FFFFFF"
                                     android:textSize="15sp"
                                     android:textStyle="bold"
-                                    app:backgroundTint="#0066FF"
+                                    app:backgroundTint="@color/primary"
                                     app:cornerRadius="12dp" />
 
                                 <com.google.android.material.button.MaterialButton
@@ -696,7 +652,7 @@
                                     android:hapticFeedbackEnabled="true"
                                     android:text="Reset input"
                                     android:textAllCaps="false"
-                                    android:textColor="#0066FF"
+                                    android:textColor="@color/primary"
                                     android:textSize="14sp"
                                     android:textStyle="bold" />
                             </LinearLayout>
@@ -717,7 +673,7 @@
                                 android:layout_marginStart="4dp"
                                 android:layout_marginBottom="8dp"
                                 android:text="Published candidates"
-                                android:textColor="#0F172A"
+                                android:textColor="@color/title_text"
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
 
@@ -755,7 +711,7 @@
                             app:cardBackgroundColor="@color/card_bg"
                             app:cardCornerRadius="20dp"
                             app:cardElevation="2dp"
-                            app:strokeColor="#E2E8F0"
+                            app:strokeColor="@color/card_stroke"
                             app:strokeWidth="1dp"
                             android:outlineAmbientShadowColor="#14000000"
                             android:outlineSpotShadowColor="#14000000"
@@ -772,7 +728,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginBottom="12dp"
                                     android:text="Advanced controls"
-                                    android:textColor="#64748B"
+                                    android:textColor="@color/muted_text"
                                     android:textSize="13sp"
                                     android:textStyle="bold" />
 
@@ -796,12 +752,12 @@
                                         android:paddingHorizontal="12dp"
                                         android:text="Run-off"
                                         android:textAllCaps="false"
-                                        android:textColor="#0066FF"
+                                        android:textColor="@color/primary"
                                         android:textSize="14sp"
                                         android:textStyle="bold"
-                                        app:backgroundTint="#FFFFFF"
+                                        app:backgroundTint="@color/card_bg"
                                         app:cornerRadius="12dp"
-                                        app:strokeColor="#0066FF"
+                                        app:strokeColor="@color/primary"
                                         app:strokeWidth="1.5dp" />
 
                                     <com.google.android.material.button.MaterialButton
@@ -815,12 +771,12 @@
                                         android:paddingHorizontal="12dp"
                                         android:text="Reset all"
                                         android:textAllCaps="false"
-                                        android:textColor="#B91C1C"
+                                        android:textColor="@color/btn_danger_text_color"
                                         android:textSize="14sp"
                                         android:textStyle="bold"
-                                        app:backgroundTint="#FEF2F2"
+                                        app:backgroundTint="@color/btn_danger_bg_color"
                                         app:cornerRadius="12dp"
-                                        app:strokeColor="#FECACA"
+                                        app:strokeColor="@color/btn_danger_stroke_color"
                                         app:strokeWidth="1.5dp" />
                                 </LinearLayout>
                             </LinearLayout>
@@ -842,7 +798,7 @@
                             app:cardBackgroundColor="@color/card_bg"
                             app:cardCornerRadius="20dp"
                             app:cardElevation="2dp"
-                            app:strokeColor="#E2E8F0"
+                            app:strokeColor="@color/card_stroke"
                             app:strokeWidth="1dp">
 
                             <LinearLayout
@@ -856,7 +812,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginBottom="12dp"
                                     android:text="Export election report"
-                                    android:textColor="#0F172A"
+                                    android:textColor="@color/title_text"
                                     android:textSize="16sp"
                                     android:textStyle="bold" />
 
@@ -909,7 +865,7 @@
                         app:cardBackgroundColor="@color/card_bg"
                         app:cardCornerRadius="20dp"
                         app:cardElevation="2dp"
-                        app:strokeColor="#E2E8F0"
+                        app:strokeColor="@color/card_stroke"
                         app:strokeWidth="1dp">
 
                         <LinearLayout
@@ -938,7 +894,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="12dp"
                                 android:text="Test Teacher (Dev)"
-                                android:textColor="#0F172A"
+                                android:textColor="@color/title_text"
                                 android:textSize="20sp"
                                 android:textStyle="bold" />
 
@@ -1274,7 +1230,7 @@
                         app:cardBackgroundColor="@color/card_bg"
                         app:cardCornerRadius="20dp"
                         app:cardElevation="2dp"
-                        app:strokeColor="#E2E8F0"
+                        app:strokeColor="@color/card_stroke"
                         app:strokeWidth="1dp">
 
                         <LinearLayout
@@ -1288,7 +1244,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginBottom="14dp"
                                 android:text="Teacher details"
-                                android:textColor="#0F172A"
+                                android:textColor="@color/title_text"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
 
@@ -1309,7 +1265,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="T-0142"
-                                    android:textColor="#0F172A"
+                                    android:textColor="@color/title_text"
                                     android:textSize="14sp"
                                     android:textStyle="bold" />
                             </LinearLayout>
@@ -1331,7 +1287,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="Teacher / Admin"
-                                    android:textColor="#0F172A"
+                                    android:textColor="@color/title_text"
                                     android:textSize="14sp"
                                     android:textStyle="bold" />
                             </LinearLayout>
@@ -1353,7 +1309,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="CSE"
-                                    android:textColor="#0F172A"
+                                    android:textColor="@color/title_text"
                                     android:textSize="14sp"
                                     android:textStyle="bold" />
                             </LinearLayout>
@@ -1375,7 +1331,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="Closed"
-                                    android:textColor="#0F172A"
+                                    android:textColor="@color/title_text"
                                     android:textSize="14sp"
                                     android:textStyle="bold" />
                             </LinearLayout>
@@ -1411,7 +1367,7 @@
                         app:cardBackgroundColor="@color/card_bg"
                         app:cardCornerRadius="20dp"
                         app:cardElevation="2dp"
-                        app:strokeColor="#E2E8F0"
+                        app:strokeColor="@color/card_stroke"
                         app:strokeWidth="1dp">
 
                         <LinearLayout
@@ -1478,15 +1434,15 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Navigation Drawer -->
+    <!-- Custom Navigation Drawer for Teacher Dashboard -->
     <LinearLayout
         android:id="@+id/drawerContainerTeacher"
-        android:layout_width="300dp"
+        android:layout_width="280dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:background="@drawable/bg_drawer"
         android:orientation="vertical"
-        android:paddingTop="47dp"
+        android:paddingTop="36dp"
         android:clickable="true"
         android:focusable="true">
 
@@ -1496,31 +1452,36 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="20dp"
-            android:paddingBottom="16dp"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="20dp"
             android:background="?attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true">
 
-            <!-- Logo (64dp x 64dp) -->
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/imgNavHeaderProfile"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:src="@drawable/bubt_logo"
-                android:scaleType="centerCrop"
-                android:background="#FFFFFF"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
-                app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                android:layout_marginBottom="12dp" />
+            <!-- Rounded Profile Icon Box matching target mockup -->
+            <FrameLayout
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_icon_badge"
+                android:layout_marginBottom="14dp">
+
+                <ImageView
+                    android:id="@+id/imgNavHeaderProfile"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_user"
+                    app:tint="@color/primary"
+                    tools:ignore="ContentDescription" />
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/tvNavHeaderName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Test Teacher (Dev)"
-                android:textColor="#0F172A"
+                android:text="Test Teacher"
+                android:textColor="@color/title_text"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:singleLine="true"
@@ -1531,59 +1492,23 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Teacher / Admin · Department of CSE, BUBT"
-                android:textColor="#64748B"
+                android:text="Admin · Department of CSE"
+                android:textColor="@color/muted_text"
                 android:textSize="13sp"
                 android:singleLine="true"
                 android:ellipsize="end" />
         </LinearLayout>
 
-        <!-- Header Divider Line: 1dp #E2E8F0 -->
         <View
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#E2E8F0"
-            android:layout_marginBottom="12dp" />
+            android:layout_height="8dp" />
 
         <!-- Drawer Menu Items -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="12dp">
-
-            <!-- Item 0: My profile & assigned section -->
-            <LinearLayout
-                android:id="@+id/drawerItemProfile"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="52dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
-                android:layout_marginBottom="4dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:id="@+id/drawerIconProfile"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_user"
-                    app:tint="#64748B"
-                    tools:ignore="ContentDescription" />
-
-                <TextView
-                    android:id="@+id/drawerLabelProfile"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:text="My profile &amp; assigned section"
-                    android:textColor="#0F172A"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
+            android:paddingHorizontal="14dp">
 
             <!-- Item 1: Live statistics -->
             <LinearLayout
@@ -1593,7 +1518,7 @@
                 android:minHeight="52dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
+                android:paddingHorizontal="14dp"
                 android:background="@drawable/bg_drawer_pill_active"
                 android:clickable="true"
                 android:focusable="true">
@@ -1602,8 +1527,8 @@
                     android:id="@+id/drawerIconStats"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/ic_bar_chart"
-                    app:tint="#0066FF"
+                    android:src="@drawable/ic_nav_stats"
+                    app:tint="@color/primary"
                     tools:ignore="ContentDescription" />
 
                 <TextView
@@ -1612,7 +1537,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:text="Live statistics"
-                    android:textColor="#0066FF"
+                    android:textColor="@color/primary"
                     android:textSize="15sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -1625,8 +1550,8 @@
                 android:minHeight="52dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
-                android:layout_marginTop="2dp"
+                android:paddingHorizontal="14dp"
+                android:layout_marginTop="4dp"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -1635,7 +1560,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_shield"
-                    app:tint="#64748B"
+                    app:tint="@color/muted_text"
                     tools:ignore="ContentDescription" />
 
                 <TextView
@@ -1643,8 +1568,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:text="Election controls &amp; gate"
-                    android:textColor="#0F172A"
+                    android:text="Live election gate control"
+                    android:textColor="@color/title_text"
                     android:textSize="15sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -1657,8 +1582,8 @@
                 android:minHeight="52dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
-                android:layout_marginTop="2dp"
+                android:paddingHorizontal="14dp"
+                android:layout_marginTop="4dp"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -1667,7 +1592,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_people"
-                    app:tint="#64748B"
+                    app:tint="@color/muted_text"
                     tools:ignore="ContentDescription" />
 
                 <TextView
@@ -1676,7 +1601,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:text="Candidate management"
-                    android:textColor="#0F172A"
+                    android:textColor="@color/title_text"
                     android:textSize="15sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -1689,8 +1614,8 @@
                 android:minHeight="52dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
-                android:layout_marginTop="2dp"
+                android:paddingHorizontal="14dp"
+                android:layout_marginTop="4dp"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -1699,7 +1624,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_person_add"
-                    app:tint="#64748B"
+                    app:tint="@color/muted_text"
                     tools:ignore="ContentDescription" />
 
                 <TextView
@@ -1708,7 +1633,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:text="Manage CR"
-                    android:textColor="#0F172A"
+                    android:textColor="@color/title_text"
                     android:textSize="15sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -1721,8 +1646,8 @@
                 android:minHeight="52dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
-                android:layout_marginTop="2dp"
+                android:paddingHorizontal="14dp"
+                android:layout_marginTop="4dp"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -1730,8 +1655,8 @@
                     android:id="@+id/drawerIconPdf"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/ic_file_text"
-                    app:tint="#64748B"
+                    android:src="@drawable/ic_nav_pdf"
+                    app:tint="@color/muted_text"
                     tools:ignore="ContentDescription" />
 
                 <TextView
@@ -1740,19 +1665,16 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
                     android:text="Export PDF report"
-                    android:textColor="#0F172A"
+                    android:textColor="@color/title_text"
                     android:textSize="15sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Menu Items Divider Line: 1dp #E2E8F0 -->
             <View
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#E2E8F0"
-                android:layout_marginVertical="8dp" />
+                android:layout_height="24dp" />
 
-            <!-- Item 6: Logout account -->
+            <!-- Item 6: Logout account (Red Box Badge icon + Red Text) -->
             <LinearLayout
                 android:id="@+id/drawerItemLogout"
                 android:layout_width="match_parent"
@@ -1760,25 +1682,32 @@
                 android:minHeight="52dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
+                android:paddingHorizontal="14dp"
                 android:clickable="true"
                 android:focusable="true">
 
-                <ImageView
-                    android:id="@+id/drawerIconLogout"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_power_settings"
-                    app:tint="#DC2626"
-                    tools:ignore="ContentDescription" />
+                <FrameLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_icon_square_red"
+                    android:layout_marginEnd="16dp">
+
+                    <ImageView
+                        android:id="@+id/drawerIconLogout"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_power"
+                        app:tint="@color/btn_danger_text_color"
+                        tools:ignore="ContentDescription" />
+                </FrameLayout>
 
                 <TextView
                     android:id="@+id/drawerLabelLogout"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
                     android:text="Logout account"
-                    android:textColor="#DC2626"
+                    android:textColor="@color/btn_danger_text_color"
                     android:textSize="15sp"
                     android:textStyle="bold" />
             </LinearLayout>

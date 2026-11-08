@@ -1,6 +1,5 @@
 package com.example.crconnect.student
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -34,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -60,7 +56,7 @@ fun StudentPortalDrawerContent(
         drawerTonalElevation = 0.dp,
         drawerShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
         modifier = Modifier
-            .width(300.dp)
+            .width(280.dp)
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.outline,
@@ -73,7 +69,7 @@ fun StudentPortalDrawerContent(
                 .verticalScroll(scrollState)
                 .statusBarsPadding()
         ) {
-            // Drawer Header - Clickable like Teacher Portal to navigate to Profile
+            // Drawer Header - Avatar & Student Profile Info
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -82,33 +78,32 @@ fun StudentPortalDrawerContent(
                         localSelectedTab = 3
                         onTabSelected(3)
                     }
-                    .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 16.dp)
+                    .padding(start = 24.dp, end = 20.dp, top = 24.dp, bottom = 20.dp)
             ) {
-                // Circular BUBT logo / avatar (64dp x 64dp) matching Teacher Portal
+                // Rounded Blue Profile Avatar Container Box matching target design
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surface)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                        .size(52.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.bubt_logo),
-                        contentDescription = "BUBT Logo",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_nav_profile),
+                        contentDescription = "Profile",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(26.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = profile.name,
+                        text = profile.name.ifBlank { "Student" },
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
@@ -143,35 +138,14 @@ fun StudentPortalDrawerContent(
                 )
             }
 
-            // Header Divider Line
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(MaterialTheme.colorScheme.outline)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Drawer Menu Items
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
+                    .padding(horizontal = 14.dp)
             ) {
-                DrawerNavItem(
-                    label = "Class routine",
-                    iconRes = R.drawable.ic_nav_routine,
-                    isSelected = localSelectedTab == 0,
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        localSelectedTab = 0
-                        onTabSelected(0)
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
                 DrawerNavItem(
                     label = "Candidates",
                     iconRes = R.drawable.ic_people,
@@ -183,7 +157,20 @@ fun StudentPortalDrawerContent(
                     }
                 )
 
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+
+                DrawerNavItem(
+                    label = "Class routine",
+                    iconRes = R.drawable.ic_nav_routine,
+                    isSelected = localSelectedTab == 0,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        localSelectedTab = 0
+                        onTabSelected(0)
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
 
                 DrawerNavItem(
                     label = "Vote status",
@@ -196,7 +183,7 @@ fun StudentPortalDrawerContent(
                     }
                 )
 
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 DrawerNavItem(
                     label = "My profile",
@@ -209,27 +196,7 @@ fun StudentPortalDrawerContent(
                     }
                 )
 
-                Spacer(modifier = Modifier.height(2.dp))
-
-                DrawerNavItem(
-                    label = "App theme",
-                    iconRes = R.drawable.ic_moon,
-                    isSelected = false,
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        localSelectedTab = 3
-                        onTabSelected(3)
-                    }
-                )
-
-                // Menu Items Divider Line
-                Box(
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(MaterialTheme.colorScheme.outline)
-                )
+                Spacer(modifier = Modifier.height(24.dp))
 
                 DrawerNavItem(
                     label = "Logout account",
@@ -243,7 +210,7 @@ fun StudentPortalDrawerContent(
                 )
             }
 
-            // Flex spacer pushing footer to the bottom
+            // Flex spacer pushing footer to bottom
             Spacer(modifier = Modifier.weight(1f))
 
             // Footer
@@ -272,12 +239,12 @@ private fun DrawerNavItem(
 ) {
     val bg = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
     val tintColor = when {
-        isDanger -> MaterialTheme.colorScheme.error
+        isDanger -> Color(0xFFEF4444)
         isSelected -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val textColor = when {
-        isDanger -> MaterialTheme.colorScheme.error
+        isDanger -> Color(0xFFEF4444)
         isSelected -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.onSurface
     }
@@ -286,18 +253,35 @@ private fun DrawerNavItem(
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(bg)
             .clickable { onClick() }
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            painter = painterResource(id = iconRes),
-            contentDescription = label,
-            tint = tintColor,
-            modifier = Modifier.size(20.dp)
-        )
+        if (isDanger) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFF3B1319)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = label,
+                    tint = Color(0xFFEF4444),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        } else {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = label,
+                tint = tintColor,
+                modifier = Modifier.size(22.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.width(16.dp))
 

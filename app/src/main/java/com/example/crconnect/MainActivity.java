@@ -64,7 +64,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        sessionManager = new SessionManager(this);
+        SessionManager.applyThemeMode(sessionManager.getThemeMode());
 
         super.onCreate(savedInstanceState);
 
@@ -85,7 +86,6 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
         
-        sessionManager = new SessionManager(this);
         if (!sessionManager.isLoggedIn()) {
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
@@ -278,9 +278,24 @@ public class MainActivity extends AppCompatActivity {
         // Forgot Password Click Listener -> Opens Dedicated 3-Step Forgot Password Screen
         if (tvForgotPassword != null) {
             tvForgotPassword.setOnClickListener(v -> {
-                Intent intent = new Intent(MainActivity.this, ForgotPasswordActivity.class);
-                startActivity(intent);
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                HapticUtils.lightClick(v);
+                v.animate()
+                    .scaleX(0.93f)
+                    .scaleY(0.93f)
+                    .setDuration(90)
+                    .withEndAction(() -> {
+                        v.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(100)
+                            .withEndAction(() -> {
+                                Intent intent = new Intent(MainActivity.this, ForgotPasswordActivity.class);
+                                startActivity(intent);
+                                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                            })
+                            .start();
+                    })
+                    .start();
             });
         }
 

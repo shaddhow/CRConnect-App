@@ -50,6 +50,10 @@ class RoutineRepository(context: Context) {
         }
     }
 
+    fun getDefaultSampleEntries(): List<ClassEntry> {
+        return emptyList()
+    }
+
     fun getEntriesForDay(day: String): List<ClassEntry> {
         val normTarget = normalizeDay(day)
         return getClassEntries().filter { normalizeDay(it.day) == normTarget }.sortedBy { startMinutes(it.startTime) }

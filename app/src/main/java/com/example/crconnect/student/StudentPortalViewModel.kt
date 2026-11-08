@@ -83,7 +83,7 @@ class StudentPortalViewModel : ViewModel() {
         )
 
         val todayIdx = getTodayDayIndex()
-        val currentThemeMode = session.themeMode
+        val currentThemeMode = session.studentThemeMode
         _uiState.update {
             it.copy(
                 profile = profileModel,
@@ -94,10 +94,14 @@ class StudentPortalViewModel : ViewModel() {
         }
 
         val repo = RoutineRepository(context)
-        val savedEntries = repo.getClassEntries()
+        val savedEntries = repo.getClassEntries().filterNot { entry ->
+            (entry.course == "CSE 301 · Algorithms" || entry.course == "CSE 305 · Database" || entry.course == "MAT 211 · Numerical Methods") && entry.faculty == "TBA"
+        }
         if (savedEntries.isNotEmpty()) {
+            repo.replaceClassEntries(savedEntries)
             loadRoutineEntriesIntoState(savedEntries)
         } else {
+            repo.clearEntries()
             loadFirestoreRoutineToCache(context)
         }
 
@@ -825,7 +829,7 @@ class StudentPortalViewModel : ViewModel() {
 
     fun setThemeMode(context: Context, mode: String) {
         val session = SessionManager(context)
-        session.setThemeMode(mode)
+        session.setStudentThemeMode(mode)
         _uiState.update { it.copy(themeMode = mode) }
     }
 

@@ -138,7 +138,8 @@ public class RegisterActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        SessionManager sessionManager = new SessionManager(this);
+        SessionManager.applyThemeMode(sessionManager.getThemeMode());
         super.onCreate(savedInstanceState);
 
         // --- STRICT EDGE-TO-EDGE FULL SCREEN WITH LIGHT BACKGROUND STATUS BARS ---

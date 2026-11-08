@@ -23,6 +23,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.text.HtmlCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -105,8 +106,8 @@ class LoginActivity : AppCompatActivity() {
         // 2. Programmatic vertical gradient background (70D6FF -> C2EFFF -> #FFFFFF)
         setupGradientBackground()
 
-        // 3. Brand Header Gradient Text (CRConnect: #0F172A -> #0B3A9E)
-        setupHeaderGradientText()
+        // 3. Brand Header Text ("CR" in #0066FF, "Connect" in #0F172A)
+        setupAppTitle()
 
         // 4. Session & Auto-login Validation
         checkExistingSession()
@@ -131,6 +132,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setupWindowDecorations() {
+        val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.TRANSPARENT
@@ -138,19 +140,25 @@ class LoginActivity : AppCompatActivity() {
             window.isNavigationBarContrastEnforced = false
         }
         val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-        insetsController?.isAppearanceLightStatusBars = true
-        insetsController?.isAppearanceLightNavigationBars = true
+        insetsController?.isAppearanceLightStatusBars = !isDark
+        insetsController?.isAppearanceLightNavigationBars = !isDark
 
         KeyboardUtils.setupSmoothKeyboardHandling(this, binding.scrollViewLogin)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val shadowColor = ContextCompat.getColor(this, R.color.splash_card_shadow)
+            binding.cardLogo.outlineSpotShadowColor = shadowColor
+            binding.cardLogo.outlineAmbientShadowColor = shadowColor
+        }
     }
 
     private fun setupGradientBackground() {
         val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         val colors = if (isDark) {
             intArrayOf(
-                Color.parseColor("#0B1120"),
-                Color.parseColor("#0E1626"),
-                Color.parseColor("#0F172A")
+                Color.parseColor("#0D1B2A"),
+                Color.parseColor("#0F2744"),
+                Color.parseColor("#0A1628")
             )
         } else {
             intArrayOf(
@@ -166,27 +174,15 @@ class LoginActivity : AppCompatActivity() {
         binding.root.background = gradientDrawable
     }
 
-    private fun setupHeaderGradientText() {
-        binding.tvAppTitle.post {
-            val paint = binding.tvAppTitle.paint
-            val width = paint.measureText(binding.tvAppTitle.text.toString())
-            if (width > 0f) {
-                val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-                val colors = if (isDark) {
-                    intArrayOf(Color.parseColor("#FFFFFF"), Color.parseColor("#60A5FA"))
-                } else {
-                    intArrayOf(Color.parseColor("#0F172A"), Color.parseColor("#0B3A9E"))
-                }
-                val shader = LinearGradient(
-                    0f, 0f, width, 0f,
-                    colors,
-                    null,
-                    Shader.TileMode.CLAMP
-                )
-                paint.shader = shader
-                binding.tvAppTitle.invalidate()
-            }
-        }
+    private fun setupAppTitle() {
+        val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val crColor = if (isDark) "#60A5FA" else "#0066FF"
+        val connectColor = if (isDark) "#E2E8F0" else "#0F172A"
+        binding.tvAppTitle.text = HtmlCompat.fromHtml(
+            "<font color='$crColor'><b>CR</b></font>" +
+            "<font color='$connectColor'><b>Connect</b></font>",
+            HtmlCompat.FROM_HTML_MODE_LEGACY
+        )
     }
 
     private fun checkExistingSession() {
@@ -340,10 +336,25 @@ class LoginActivity : AppCompatActivity() {
         }
 
         // Forgot password link
-        binding.tvForgotPassword.setOnClickListener {
-            val intent = Intent(this, ForgotPasswordActivity::class.java)
-            startActivity(intent)
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        binding.tvForgotPassword.setOnClickListener { view ->
+            HapticUtils.lightClick(view)
+            view.animate()
+                .scaleX(0.93f)
+                .scaleY(0.93f)
+                .setDuration(90)
+                .withEndAction {
+                    view.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(100)
+                        .withEndAction {
+                            val intent = Intent(this, ForgotPasswordActivity::class.java)
+                            startActivity(intent)
+                            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+                        }
+                        .start()
+                }
+                .start()
         }
 
         // Google Sign In button touch feedback & click
@@ -364,6 +375,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         // Developer bypass options
+        setupButtonScaleTouchFeedback(binding.btnDevStudent)
         binding.btnDevStudent.setOnClickListener {
             sessionManager.createLoginSession(
                 "Test Student (Dev)",
@@ -375,13 +387,10 @@ class LoginActivity : AppCompatActivity() {
                 "50",
                 "Department of CSE, BUBT"
             )
-            val intent = Intent(this, StudentDashboardActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            navigateBasedOnRole("Student", "student@bubt.edu.bd")
         }
 
+        setupButtonScaleTouchFeedback(binding.btnDevTeacher)
         binding.btnDevTeacher.setOnClickListener {
             sessionManager.createLoginSession(
                 "Test Teacher (Dev)",
@@ -393,11 +402,7 @@ class LoginActivity : AppCompatActivity() {
                 "--",
                 "Department of CSE, BUBT"
             )
-            val intent = Intent(this, TeacherDashboardActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            navigateBasedOnRole("Teacher/Admin", "teacher@bubt.edu.bd")
         }
     }
 
@@ -516,7 +521,7 @@ class LoginActivity : AppCompatActivity() {
             .addOnSuccessListener { authResult ->
                 val user = authResult.user
                 if (user == null) {
-                    binding.btnSignIn.isEnabled = false
+                    binding.btnSignIn.isEnabled = true
                     return@addOnSuccessListener
                 }
 
@@ -595,7 +600,8 @@ class LoginActivity : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { e ->
-                binding.btnSignIn.isEnabled = false
+                binding.btnSignIn.isEnabled = true
+                CustomToast.show(this@LoginActivity, e.localizedMessage ?: "Sign in failed.")
             }
     }
 

@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.HourglassTop
-import androidx.compose.material.icons.filled.HowToVote
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,12 +37,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 val CHART_COLORS = listOf(
-    Color(0xFF6C63FF),
-    Color(0xFF0066FF),
-    Color(0xFF00C9A7),
-    Color(0xFFFF6B6B),
+    Color(0xFF3B82F6),
+    Color(0xFFA855F7),
+    Color(0xFF22C55E),
     Color(0xFFF59E0B),
-    Color(0xFF8B5CF6)
+    Color(0xFFEC4899),
+    Color(0xFF6366F1)
 )
 
 @Composable
@@ -59,102 +58,104 @@ fun CandidatesTab(
             .fillMaxSize()
             .verticalScroll(scrollState)
             .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // Card 0: Live Gate & Timer Status Banner
-        DesignCard {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        // Gate & Timer Status Banner (Only when voting is closed/locked)
+        if (!uiState.isGateOpen) {
+            DesignCard {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(if (uiState.isGateOpen) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (uiState.isGateOpen) Icons.Default.HowToVote else Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = if (uiState.isGateOpen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    Column {
-                        Text(
-                            text = if (uiState.isGateOpen) "Election Gate Open" else "Election Gate Closed",
-                            fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = if (uiState.isGateOpen) "Status: ${uiState.timerStatus}" else "Voting is currently locked by teacher",
-                            fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                // Timer pill
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (uiState.isGateOpen) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.HourglassTop,
-                            contentDescription = null,
-                            tint = if (uiState.isGateOpen) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                            text = uiState.timerText,
-                            fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (uiState.isGateOpen) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        Column {
+                            Text(
+                                text = "Election Gate Closed",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Voting is currently locked by teacher",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    // Timer pill
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.HourglassTop,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = uiState.timerText,
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // Card 1: Live Vote Distribution (.card.c.chart)
+        // Card 1: Live Vote Distribution
         DesignCard {
             Text(
                 text = "Live vote distribution",
                 fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.2).sp,
-                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Multi-color progress bar (.dist)
+            // Distribution Top Bar Accent Line
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(10.dp)
-                    .clip(RoundedCornerShape(5.dp))
-                    .background(androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant)
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(Color(0xFF3B82F6))
             ) {
                 if (totalVotes > 0) {
                     uiState.candidates.forEachIndexed { index, candidate ->
@@ -173,11 +174,12 @@ fun CandidatesTab(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Legend (#slegend) with space-between alignment and 10dp gap
+            // Candidates Vote Legend
             if (uiState.candidates.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     uiState.candidates.forEachIndexed { index, candidate ->
                         val percentage = if (totalVotes > 0) (candidate.votes * 100) / totalVotes else 0
+                        val color = CHART_COLORS[index % CHART_COLORS.size]
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -191,23 +193,23 @@ fun CandidatesTab(
                                     modifier = Modifier
                                         .size(10.dp)
                                         .clip(RoundedCornerShape(3.dp))
-                                        .background(CHART_COLORS[index % CHART_COLORS.size])
+                                        .background(color)
                                 )
                                 Text(
                                     text = candidate.name,
                                     fontFamily = PlusJakartaSansFontFamily,
                                     fontSize = 15.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
 
                             Text(
                                 text = "${candidate.votes} votes ($percentage%)",
                                 fontFamily = PlusJakartaSansFontFamily,
-                                fontSize = 15.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -218,12 +220,12 @@ fun CandidatesTab(
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
-        // Candidates Cards Stack (#scands) - 16dp spacing
+        // Candidate Cards Stack
         if (uiState.candidates.isNotEmpty()) {
             uiState.candidates.forEachIndexed { index, candidate ->
                 val percentage = if (totalVotes > 0) (candidate.votes * 100) / totalVotes else 0
@@ -247,44 +249,44 @@ fun CandidatesTab(
                             horizontalArrangement = Arrangement.spacedBy(14.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            // Enlarged 48x48 Number Badge (.num)
+                            // Enlarged Number Badge (.num)
                             Box(
                                 modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer),
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = String.format(Locale.getDefault(), "%02d", index + 1),
                                     fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 18.sp,
+                                    fontSize = 17.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
 
-                            // Candidate Name & Details (.nm)
+                            // Candidate Name & Details
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = candidate.name,
                                     fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold,
                                     letterSpacing = (-0.2).sp,
-                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
-                                Spacer(modifier = Modifier.height(3.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "${candidate.votes} votes · ${candidate.department}",
+                                    text = "${candidate.votes} votes · ${cleanDept(candidate.department)}",
                                     fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 14.sp,
+                                    fontSize = 13.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 
-                            // Vibrant Blue Vote Button with pure white text (#FFFFFF)
+                            // Vote Button
                             if (isVotedForThis) {
                                 Button(
                                     onClick = { },
@@ -296,13 +298,13 @@ fun CandidatesTab(
                                     ),
                                     border = ButtonDefaults.outlinedButtonBorder.copy(brush = SolidColor(SuccessBorder)),
                                     modifier = Modifier
-                                        .height(44.dp)
+                                        .height(42.dp)
                                         .padding(horizontal = 4.dp)
                                 ) {
                                     Text(
                                         text = "Voted",
                                         fontFamily = PlusJakartaSansFontFamily,
-                                        fontSize = 15.sp,
+                                        fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -312,39 +314,39 @@ fun CandidatesTab(
                                     enabled = !uiState.hasVoted && uiState.isGateOpen,
                                     shape = RoundedCornerShape(12.dp),
                                     elevation = ButtonDefaults.buttonElevation(
-                                        defaultElevation = 4.dp,
-                                        pressedElevation = 2.dp
+                                        defaultElevation = 2.dp,
+                                        pressedElevation = 1.dp
                                     ),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF0062FF),
+                                        containerColor = Color(0xFF3B82F6),
                                         contentColor = Color.White,
-                                        disabledContainerColor = DisabledBg,
-                                        disabledContentColor = DisabledText
+                                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     ),
                                     modifier = Modifier
-                                        .height(44.dp)
+                                        .height(42.dp)
                                         .padding(horizontal = 4.dp)
                                 ) {
                                     Text(
                                         text = if (!uiState.isGateOpen) "Locked" else "Vote",
                                         fontFamily = PlusJakartaSansFontFamily,
-                                        fontSize = 15.sp,
+                                        fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        color = if (!uiState.hasVoted && uiState.isGateOpen) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                        // Individual candidate progress bar with assigned color & 6dp track height
+                        // Individual candidate progress bar line
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(6.dp)
+                                .height(5.dp)
                                 .clip(RoundedCornerShape(3.dp))
-                                .background(Color(0xFFE5E7EB))
+                                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                         ) {
                             if (percentage > 0) {
                                 Box(
@@ -353,7 +355,7 @@ fun CandidatesTab(
                                         .fillMaxSize()
                                         .background(candidateColor)
                                 )
-                            } else if (isVotedForThis) {
+                            } else if (index == 0 || isVotedForThis) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -361,7 +363,7 @@ fun CandidatesTab(
                                         .background(candidateColor)
                                 )
                             }
-                            if (100 - percentage > 0 && !isVotedForThis) {
+                            if (100 - percentage > 0 && !(index == 0 || isVotedForThis)) {
                                 Box(
                                     modifier = Modifier
                                         .weight((100 - percentage).toFloat())
@@ -374,6 +376,12 @@ fun CandidatesTab(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(84.dp))
     }
+}
+
+private fun cleanDept(dept: String): String {
+    if (dept.isBlank()) return "Dept. of CSE"
+    if (dept.contains("CSE", ignoreCase = true)) return "Dept. of CSE"
+    return dept.replace("Department of", "Dept. of", ignoreCase = true)
 }

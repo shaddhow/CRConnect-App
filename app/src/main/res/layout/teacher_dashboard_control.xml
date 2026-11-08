@@ -11,7 +11,7 @@
     app:cardBackgroundColor="@color/card_bg"
     app:cardCornerRadius="20dp"
     app:cardElevation="2dp"
-    app:strokeColor="@color/slate_border_light"
+    app:strokeColor="@color/card_stroke"
     app:strokeWidth="1dp">
 
     <LinearLayout
@@ -29,7 +29,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:layout_alignParentStart="true"
+                android:layout_toStartOf="@id/tvAdminTimerStatus"
+                android:layout_marginEnd="8dp">
 
                 <FrameLayout
                     android:layout_width="40dp"
@@ -51,7 +54,9 @@
                     android:text="Live election control"
                     android:textColor="@color/title_text"
                     android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:singleLine="true"
+                    android:ellipsize="end" />
             </LinearLayout>
 
             <TextView
@@ -74,7 +79,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
-            android:padding="20dp"
+            android:paddingVertical="18dp"
+            android:paddingHorizontal="16dp"
             android:layout_marginBottom="16dp"
             android:background="@drawable/bg_timer_box">
 
@@ -85,7 +91,8 @@
                 android:text="00:00"
                 android:textColor="@color/title_text"
                 android:textSize="44sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:includeFontPadding="false" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -120,8 +127,10 @@
                 android:layout_marginEnd="6dp"
                 android:text="+5 min"
                 android:textColor="@color/primary"
-                android:textSize="14sp"
+                android:textSize="13.5sp"
                 android:textStyle="bold"
+                android:singleLine="true"
+                android:maxLines="1"
                 app:strokeColor="@color/primary"
                 app:strokeWidth="1.5dp"
                 app:cornerRadius="12dp"
@@ -138,8 +147,10 @@
                 android:layout_marginEnd="6dp"
                 android:text="+10 min"
                 android:textColor="@color/primary"
-                android:textSize="14sp"
+                android:textSize="13.5sp"
                 android:textStyle="bold"
+                android:singleLine="true"
+                android:maxLines="1"
                 app:strokeColor="@color/primary"
                 app:strokeWidth="1.5dp"
                 app:cornerRadius="12dp"
@@ -155,8 +166,10 @@
                 android:layout_weight="1"
                 android:text="−5 min"
                 android:textColor="@color/primary"
-                android:textSize="14sp"
+                android:textSize="13.5sp"
                 android:textStyle="bold"
+                android:singleLine="true"
+                android:maxLines="1"
                 app:strokeColor="@color/primary"
                 app:strokeWidth="1.5dp"
                 app:cornerRadius="12dp"
@@ -179,16 +192,20 @@
                 android:layout_marginEnd="6dp"
                 android:text="Pause voting"
                 android:textColor="@color/primary"
-                android:textSize="14sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
+                android:singleLine="true"
+                android:maxLines="1"
+                android:paddingHorizontal="4dp"
                 app:icon="@drawable/ic_pause"
                 app:iconTint="@color/primary"
+                app:iconGravity="textStart"
+                app:iconPadding="6dp"
                 app:strokeColor="@color/primary"
                 app:strokeWidth="1.5dp"
                 app:cornerRadius="12dp"
                 android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:padding="0dp" />
+                android:insetBottom="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnEndVotingNow"
@@ -197,32 +214,41 @@
                 android:layout_height="48dp"
                 android:layout_weight="1"
                 android:text="End voting now"
-                android:textColor="#B91C1C"
-                android:textSize="14sp"
+                android:textColor="@color/btn_danger_text_color"
+                android:textSize="12.5sp"
                 android:textStyle="bold"
+                android:singleLine="true"
+                android:maxLines="1"
+                android:paddingHorizontal="4dp"
                 app:icon="@drawable/ic_stop"
-                app:iconTint="#B91C1C"
-                app:strokeColor="#FECACA"
+                app:iconTint="@color/btn_danger_text_color"
+                app:iconGravity="textStart"
+                app:iconPadding="6dp"
+                app:strokeColor="@color/btn_danger_stroke_color"
                 app:strokeWidth="1.5dp"
                 app:backgroundTint="@color/btn_danger_bg_color"
                 app:cornerRadius="12dp"
                 android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:padding="0dp" />
+                android:insetBottom="0dp" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnManageCR"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="12dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="14dp"
             android:text="Manage CR (promote / demote)"
             android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:textStyle="bold"
+            android:singleLine="true"
+            android:maxLines="1"
+            android:paddingHorizontal="8dp"
             app:backgroundTint="@color/primary"
             app:icon="@drawable/ic_users"
             app:iconTint="#FFFFFF"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
             app:cornerRadius="12dp"
             android:insetTop="0dp"
             android:insetBottom="0dp" />

@@ -1,10 +1,15 @@
 package com.example.crconnect
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.Keyframe
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Shader
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -12,9 +17,11 @@ import android.os.Looper
 import android.provider.Settings
 import android.text.Spannable
 import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
+import android.text.TextPaint
+import android.text.style.CharacterStyle
+import android.text.style.UpdateAppearance
 import android.view.View
-import android.view.animation.OvershootInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.view.animation.PathInterpolator
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -22,10 +29,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import android.content.res.Configuration
 
 class SplashActivity : AppCompatActivity() {
 
     private val handler = Handler(Looper.getMainLooper())
+    private var pulseAnimator1: ObjectAnimator? = null
+    private var pulseAnimator2: ObjectAnimator? = null
+    private var pulseRingAnimatorA: ObjectAnimator? = null
+    private var pulseRingAnimatorB: ObjectAnimator? = null
     private var logoAnimator: ObjectAnimator? = null
     private var titleAnimator: ObjectAnimator? = null
     private var taglineAnimator: ObjectAnimator? = null
@@ -56,24 +68,36 @@ class SplashActivity : AppCompatActivity() {
             window.isNavigationBarContrastEnforced = false
         }
 
+        val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
         val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-        insetsController.isAppearanceLightStatusBars = true
-        insetsController.isAppearanceLightNavigationBars = true
+        insetsController.isAppearanceLightStatusBars = !isDark
+        insetsController.isAppearanceLightNavigationBars = !isDark
 
         setContentView(R.layout.activity_splash)
 
+        startPulseAnimation()
+
+        val viewPulse1 = findViewById<View>(R.id.viewPulse1)
+        val viewPulse2 = findViewById<View>(R.id.viewPulse2)
         val logoCard = findViewById<View>(R.id.cardSplashLogo)
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && logoCard != null) {
+            val shadowColor = ContextCompat.getColor(this, R.color.splash_card_shadow)
+            logoCard.outlineSpotShadowColor = shadowColor
+            logoCard.outlineAmbientShadowColor = shadowColor
+        }
         val tvSplashTitle = findViewById<TextView>(R.id.tvSplashTitle)
         val tvSplashTagline = findViewById<TextView>(R.id.tvSplashTagline)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
         val tvSplashFooter = findViewById<TextView>(R.id.tvSplashFooter)
 
         setupAppNameSpannable(tvSplashTitle)
-        setupTaglineText(tvSplashTagline)
 
         if (isAnimatorDurationScaleZero()) {
             skipAnimationsToEndState(
+                viewPulse1 = viewPulse1,
+                viewPulse2 = viewPulse2,
                 logoCard = logoCard,
                 tvTitle = tvSplashTitle,
                 tvTagline = tvSplashTagline,
@@ -81,12 +105,13 @@ class SplashActivity : AppCompatActivity() {
                 tvFooter = tvSplashFooter,
             )
         } else {
+            setupPulseAnimations(viewPulse1, viewPulse2)
             setupLogoAnimation(logoCard)
             setupTitleAndTaglineAnimations(tvSplashTitle, tvSplashTagline)
             setupProgressBarAndFooterAnimations(progressBar, tvSplashFooter)
 
-            // Navigate to MainActivity after progress bar animation completes (1000ms delay + 2600ms duration)
-            handler.postDelayed(navigateRunnable, 3600)
+            // Fast navigation to MainActivity (1400ms total splash delay)
+            handler.postDelayed(navigateRunnable, 1400)
         }
     }
 
@@ -109,12 +134,17 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun skipAnimationsToEndState(
+        viewPulse1: View?,
+        viewPulse2: View?,
         logoCard: View?,
         tvTitle: TextView?,
         tvTagline: TextView?,
         progressBar: ProgressBar?,
         tvFooter: TextView?,
     ) {
+        viewPulse1?.alpha = 0.0f
+        viewPulse2?.alpha = 0.0f
+
         logoCard?.apply {
             scaleX = 1.0f
             scaleY = 1.0f
@@ -133,6 +163,8 @@ class SplashActivity : AppCompatActivity() {
         progressBar?.apply {
             max = 100
             progress = 100
+            alpha = 1.0f
+            translationY = 0f
         }
         tvFooter?.apply {
             alpha = 1.0f
@@ -145,57 +177,128 @@ class SplashActivity : AppCompatActivity() {
     private fun setupAppNameSpannable(tvTitle: TextView?) {
         tvTitle ?: return
         val appName = "CRConnect"
-        val spannable = SpannableString(appName)
-        val colorBlue = ContextCompat.getColor(this, R.color.brand_blue) // #0066FF
-        val colorDark = ContextCompat.getColor(this, R.color.slate_dark) // #0F172A
+        tvTitle.post {
+            val paint = tvTitle.paint
+            val crWidth = paint.measureText("CR")
+            val totalWidth = paint.measureText(appName)
 
-        spannable.setSpan(
-            ForegroundColorSpan(colorBlue),
-            0,
-            2,
-            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        spannable.setSpan(
-            ForegroundColorSpan(colorDark),
-            2,
-            appName.length,
-            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        tvTitle.text = spannable
+            val crStartColor = ContextCompat.getColor(this, R.color.splash_title_cr)
+            val crEndColor = ContextCompat.getColor(this, R.color.splash_title_cr_end)
+            val connectStartColor = ContextCompat.getColor(this, R.color.splash_title_connect)
+            val connectEndColor = ContextCompat.getColor(this, R.color.splash_title_connect_end)
+
+            val spannable = SpannableString(appName)
+
+            val crSpan = object : CharacterStyle(), UpdateAppearance {
+                override fun updateDrawState(tp: TextPaint) {
+                    tp.shader = LinearGradient(
+                        0f, 0f, crWidth, 0f,
+                        intArrayOf(crStartColor, crEndColor),
+                        null, Shader.TileMode.CLAMP
+                    )
+                }
+            }
+
+            val connectSpan = object : CharacterStyle(), UpdateAppearance {
+                override fun updateDrawState(tp: TextPaint) {
+                    tp.shader = LinearGradient(
+                        crWidth, 0f, totalWidth, 0f,
+                        intArrayOf(connectStartColor, connectEndColor),
+                        floatArrayOf(0f, 1f), Shader.TileMode.CLAMP
+                    )
+                }
+            }
+
+            spannable.setSpan(crSpan, 0, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            spannable.setSpan(connectSpan, 2, appName.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            tvTitle.text = spannable
+        }
     }
 
-    private fun setupTaglineText(tvTagline: TextView?) {
-        tvTagline ?: return
-        tvTagline.text = getString(R.string.app_subtitle) // "BUBT Department Network"
-    }
+    private fun setupPulseAnimations(viewPulse1: View?, viewPulse2: View?) {
+        if (viewPulse1 == null || viewPulse2 == null) return
 
-    private fun setupLogoAnimation(logoCard: View?) {
-        if (logoCard == null) return
+        val decelerate = DecelerateInterpolator()
 
-        val slideDistancePx = 32f * resources.displayMetrics.density
-        val cubicInterpolator = OvershootInterpolator(1.1f)
+        // Pulse View 1: delay 0ms, duration 2800ms
+        viewPulse1.scaleX = 1.0f
+        viewPulse1.scaleY = 1.0f
+        viewPulse1.alpha = 0.65f
 
-        logoCard.scaleX = 0.45f
-        logoCard.scaleY = 0.45f
-        logoCard.alpha = 0.0f
-        logoCard.translationY = slideDistancePx
+        val pvhScaleX1 = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0f, 1.9f)
+        val pvhScaleY1 = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.0f, 1.9f)
+        val pvhAlpha1 = PropertyValuesHolder.ofFloat(View.ALPHA, 0.65f, 0.0f)
 
-        val pvhScaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 0.45f, 1.0f)
-        val pvhScaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.45f, 1.0f)
-        val pvhAlpha = PropertyValuesHolder.ofFloat(View.ALPHA, 0.0f, 1.0f)
-        val pvhTransY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, slideDistancePx, 0.0f)
+        pulseAnimator1 = ObjectAnimator.ofPropertyValuesHolder(viewPulse1, pvhScaleX1, pvhScaleY1, pvhAlpha1).apply {
+            duration = 2800
+            startDelay = 0
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.RESTART
+            interpolator = decelerate
+            start()
+        }
 
-        logoAnimator = ObjectAnimator.ofPropertyValuesHolder(logoCard, pvhScaleX, pvhScaleY, pvhAlpha, pvhTransY).apply {
-            duration = 1000
-            startDelay = 100
-            interpolator = cubicInterpolator
+        // Pulse View 2: delay 1400ms, duration 2800ms
+        viewPulse2.scaleX = 1.0f
+        viewPulse2.scaleY = 1.0f
+        viewPulse2.alpha = 0.65f
+
+        val pvhScaleX2 = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0f, 1.9f)
+        val pvhScaleY2 = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.0f, 1.9f)
+        val pvhAlpha2 = PropertyValuesHolder.ofFloat(View.ALPHA, 0.65f, 0.0f)
+
+        pulseAnimator2 = ObjectAnimator.ofPropertyValuesHolder(viewPulse2, pvhScaleX2, pvhScaleY2, pvhAlpha2).apply {
+            duration = 2800
+            startDelay = 1400
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.RESTART
+            interpolator = decelerate
             start()
         }
     }
 
-    private fun setupTitleAndTaglineAnimations(tvTitle: View?, tvTagline: View?) {
+    private fun setupLogoAnimation(logoCard: View?) {
+        logoCard ?: return
+
+        val slideDistancePx = 32f * resources.displayMetrics.density
+        val overshootPx = -4f * resources.displayMetrics.density
+        val cubicBezier = PathInterpolator(0.16f, 1.0f, 0.3f, 1.0f)
+
+        // Keyframes for Alpha (0% -> 0.0, 60% -> 1.0, 100% -> 1.0)
+        val kfAlpha0 = Keyframe.ofFloat(0f, 0f)
+        val kfAlpha60 = Keyframe.ofFloat(0.6f, 1f)
+        val kfAlpha100 = Keyframe.ofFloat(1f, 1f)
+        val pvhAlpha = PropertyValuesHolder.ofKeyframe(View.ALPHA, kfAlpha0, kfAlpha60, kfAlpha100)
+
+        // Keyframes for ScaleX (0% -> 0.45, 60% -> 1.05, 100% -> 1.0)
+        val kfScaleX0 = Keyframe.ofFloat(0f, 0.45f)
+        val kfScaleX60 = Keyframe.ofFloat(0.6f, 1.05f)
+        val kfScaleX100 = Keyframe.ofFloat(1f, 1.0f)
+        val pvhScaleX = PropertyValuesHolder.ofKeyframe(View.SCALE_X, kfScaleX0, kfScaleX60, kfScaleX100)
+
+        // Keyframes for ScaleY (0% -> 0.45, 60% -> 1.05, 100% -> 1.0)
+        val kfScaleY0 = Keyframe.ofFloat(0f, 0.45f)
+        val kfScaleY60 = Keyframe.ofFloat(0.6f, 1.05f)
+        val kfScaleY100 = Keyframe.ofFloat(1f, 1.0f)
+        val pvhScaleY = PropertyValuesHolder.ofKeyframe(View.SCALE_Y, kfScaleY0, kfScaleY60, kfScaleY100)
+
+        // Keyframes for TranslationY (0% -> 32dp, 60% -> -4dp, 100% -> 0dp)
+        val kfTransY0 = Keyframe.ofFloat(0f, slideDistancePx)
+        val kfTransY60 = Keyframe.ofFloat(0.6f, overshootPx)
+        val kfTransY100 = Keyframe.ofFloat(1f, 0f)
+        val pvhTransY = PropertyValuesHolder.ofKeyframe(View.TRANSLATION_Y, kfTransY0, kfTransY60, kfTransY100)
+
+        logoAnimator = ObjectAnimator.ofPropertyValuesHolder(logoCard, pvhAlpha, pvhScaleX, pvhScaleY, pvhTransY).apply {
+            duration = 1000
+            startDelay = 100
+            interpolator = cubicBezier
+            start()
+        }
+    }
+
+    private fun setupTitleAndTaglineAnimations(tvTitle: TextView?, tvTagline: TextView?) {
         val slideDistancePx = 16f * resources.displayMetrics.density
-        val cubicBezierInterpolator = PathInterpolator(0.16f, 1.0f, 0.3f, 1.0f)
+        val cubicBezier = PathInterpolator(0.16f, 1.0f, 0.3f, 1.0f)
 
         if (tvTitle != null) {
             tvTitle.alpha = 0.0f
@@ -207,7 +310,7 @@ class SplashActivity : AppCompatActivity() {
             titleAnimator = ObjectAnimator.ofPropertyValuesHolder(tvTitle, pvhAlpha, pvhTransY).apply {
                 duration = 750
                 startDelay = 600
-                interpolator = cubicBezierInterpolator
+                interpolator = cubicBezier
                 start()
             }
         }
@@ -221,16 +324,17 @@ class SplashActivity : AppCompatActivity() {
 
             taglineAnimator = ObjectAnimator.ofPropertyValuesHolder(tvTagline, pvhAlpha, pvhTransY).apply {
                 duration = 700
-                startDelay = 800 // staggered 200ms after title (600ms + 200ms)
-                interpolator = cubicBezierInterpolator
+                startDelay = 800
+                interpolator = cubicBezier
                 start()
             }
         }
     }
 
     private fun setupProgressBarAndFooterAnimations(progressBar: ProgressBar?, tvFooter: TextView?) {
-        val cubicBezierInterpolator = PathInterpolator(0.4f, 0f, 0.2f, 1f)
         val slideDistancePx = 16f * resources.displayMetrics.density
+        val cubicBezier = PathInterpolator(0.16f, 1.0f, 0.3f, 1.0f)
+        val progressInterpolator = PathInterpolator(0.4f, 0.0f, 0.2f, 1.0f)
 
         if (progressBar != null) {
             progressBar.alpha = 0.0f
@@ -238,21 +342,20 @@ class SplashActivity : AppCompatActivity() {
             progressBar.max = 100
             progressBar.progress = 0
 
-            // Fade-in and slide-up animation for progress bar container
             val pvhAlpha = PropertyValuesHolder.ofFloat(View.ALPHA, 0.0f, 1.0f)
             val pvhTransY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, slideDistancePx, 0.0f)
+
             ObjectAnimator.ofPropertyValuesHolder(progressBar, pvhAlpha, pvhTransY).apply {
                 duration = 600
                 startDelay = 1000
-                interpolator = PathInterpolator(0.16f, 1.0f, 0.3f, 1.0f)
+                interpolator = cubicBezier
                 start()
             }
 
-            // Fill animation for progress bar
             progressAnimator = ObjectAnimator.ofInt(progressBar, "progress", 0, 100).apply {
-                duration = 2600
-                startDelay = 1000
-                interpolator = cubicBezierInterpolator
+                duration = 1000
+                startDelay = 400
+                interpolator = progressInterpolator
                 start()
             }
         }
@@ -267,15 +370,48 @@ class SplashActivity : AppCompatActivity() {
             footerAnimator = ObjectAnimator.ofPropertyValuesHolder(tvFooter, pvhAlpha, pvhTransY).apply {
                 duration = 500
                 startDelay = 1600
-                interpolator = PathInterpolator(0.16f, 1.0f, 0.3f, 1.0f)
+                interpolator = cubicBezier
                 start()
             }
+        }
+    }
+
+    private fun startPulseAnimation() {
+        val pulseRingA = findViewById<View>(R.id.pulseRingA) ?: return
+        val pulseRingB = findViewById<View>(R.id.pulseRingB) ?: return
+
+        pulseRingAnimatorA = createPulseRingAnimator(pulseRingA, 0)
+        pulseRingAnimatorB = createPulseRingAnimator(pulseRingB, 1400)
+    }
+
+    private fun createPulseRingAnimator(view: View, delay: Long): ObjectAnimator {
+        val pvhScaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0f, 2.2f)
+        val pvhScaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.0f, 2.2f)
+        val pvhAlpha = PropertyValuesHolder.ofFloat(View.ALPHA, 0.7f, 0.0f)
+
+        return ObjectAnimator.ofPropertyValuesHolder(view, pvhScaleX, pvhScaleY, pvhAlpha).apply {
+            duration = 2800
+            startDelay = delay
+            interpolator = DecelerateInterpolator()
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    if (!isFinishing && !isDestroyed) {
+                        startDelay = 0
+                        start()
+                    }
+                }
+            })
+            start()
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacks(navigateRunnable)
+        pulseRingAnimatorA?.cancel()
+        pulseRingAnimatorB?.cancel()
+        pulseAnimator1?.cancel()
+        pulseAnimator2?.cancel()
         logoAnimator?.cancel()
         titleAnimator?.cancel()
         taglineAnimator?.cancel()

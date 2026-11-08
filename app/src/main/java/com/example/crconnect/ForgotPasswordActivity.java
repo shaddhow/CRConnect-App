@@ -1,6 +1,7 @@
 package com.example.crconnect;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -58,7 +59,8 @@ public class ForgotPasswordActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        SessionManager sessionManager = new SessionManager(this);
+        SessionManager.applyThemeMode(sessionManager.getThemeMode());
         super.onCreate(savedInstanceState);
 
         // --- STRICT EDGE-TO-EDGE FULL SCREEN ---
@@ -70,8 +72,9 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         }
         WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         if (insetsController != null) {
-            insetsController.setAppearanceLightStatusBars(true);
-            insetsController.setAppearanceLightNavigationBars(true);
+            boolean isDark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+            insetsController.setAppearanceLightStatusBars(!isDark);
+            insetsController.setAppearanceLightNavigationBars(!isDark);
         }
         getWindow().setBackgroundDrawable(ContextCompat.getDrawable(this, R.drawable.bg_gradient));
 
@@ -118,12 +121,22 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         setupOtpListeners();
 
         fBack.setOnClickListener(v -> {
-            finish();
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            HapticUtils.lightClick(v);
+            v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(90).withEndAction(() -> {
+                v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).withEndAction(() -> {
+                    finish();
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                }).start();
+            }).start();
         });
 
         send.setOnClickListener(v -> handleSendCode());
-        again.setOnClickListener(v -> switchPane(p2, p1, false));
+        again.setOnClickListener(v -> {
+            HapticUtils.lightClick(v);
+            v.animate().scaleX(0.93f).scaleY(0.93f).setDuration(90).withEndAction(() -> {
+                v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).withEndAction(() -> switchPane(p2, p1, false)).start();
+            }).start();
+        });
         reset.setOnClickListener(v -> handleResetPassword());
         done.setOnClickListener(v -> {
             finish();

@@ -235,13 +235,13 @@ fun RoutineTab(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(TintLightBlue),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.CalendarToday,
                     contentDescription = "Routine",
-                    tint = Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -524,11 +524,11 @@ fun RoutineTab(
                     )
 
                     Text(
-                        text = "Tap another day, or add a class to this one.",
+                        text = "Tap another day, or add a class.",
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
 
@@ -540,7 +540,7 @@ fun RoutineTab(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(84.dp))
     }
 
     // Add Class Bottom Sheet (#rsheet)
@@ -909,8 +909,8 @@ private fun AddClassBottomSheetContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
-                    .background(Primary)
-                    .padding(18.dp)
+                    .background(Color(0xFF3B82F6))
+                    .padding(20.dp)
             ) {
                 Text(
                     text = "Photo in, routine out",
@@ -919,55 +919,79 @@ private fun AddClassBottomSheetContent(
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "Point at your printed routine or pick a screenshot. Reads on your phone. Nothing is uploaded.",
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color.White.copy(alpha = 0.92f),
+                    color = Color.White.copy(alpha = 0.95f),
                     lineHeight = 20.sp
                 )
             }
 
-            PrimaryButton(
-                text = "Scan with camera",
+            Button(
                 onClick = onScanCamera,
-                icon = Icons.Default.CameraAlt
-            )
-
-            SecondaryButton(
-                text = "Choose from gallery",
-                onClick = onChooseGallery,
-                icon = Icons.Default.Image
-            )
-
-            // Delete Current Routine Option
-            OutlinedButton(
-                onClick = onDeleteRoutine,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.5.dp, Color(0xFFEF4444)),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFFDC2626)
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF3B82F6),
+                    contentColor = Color.White
                 )
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete routine",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color(0xFFDC2626)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Scan with camera",
+                        fontFamily = PlusJakartaSansFontFamily,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            OutlinedButton(
+                onClick = onChooseGallery,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = Color(0xFF3B82F6)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Delete current routine",
-                    fontFamily = PlusJakartaSansFontFamily,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFDC2626)
-                )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Image,
+                        contentDescription = null,
+                        tint = Color(0xFF3B82F6),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Choose from gallery",
+                        fontFamily = PlusJakartaSansFontFamily,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF3B82F6)
+                    )
+                }
             }
 
             Text(
@@ -975,7 +999,7 @@ private fun AddClassBottomSheetContent(
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = MutedText
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             // Tips 2x2 grid (.tips)
@@ -984,44 +1008,67 @@ private fun AddClassBottomSheetContent(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    TipChip("Good light", Icons.Default.WbSunny, Modifier.weight(1f))
-                    TipChip("Fit whole routine", Icons.Default.Crop, Modifier.weight(1f))
+                    TipChip("Good lighting", Icons.Default.WbSunny, Modifier.weight(1f))
+                    TipChip("Flat surface", Icons.Default.Crop, Modifier.weight(1f))
                 }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    TipChip("Screenshots from PDFs", Icons.Default.Description, Modifier.weight(1f))
-                    TipChip("Review before added", Icons.Default.RemoveRedEye, Modifier.weight(1f))
+                    TipChip("All in frame", Icons.Default.RemoveRedEye, Modifier.weight(1f))
+                    TipChip("Hold steady", Icons.Default.Check, Modifier.weight(1f))
                 }
             }
 
-            TextLink(
-                text = "Or add classes manually",
+            OutlinedButton(
                 onClick = { isManualMode = true },
-                modifier = Modifier.fillMaxWidth()
-            )
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = Color(0xFF3B82F6)
+                )
+            ) {
+                Text(
+                    text = "Enter manually instead",
+                    fontFamily = PlusJakartaSansFontFamily,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF3B82F6)
+                )
+            }
         } else {
             // Manual Entry Mode
+            var courseError by remember { mutableStateOf(false) }
+
             Text(
                 text = "Add a class on $selectedDayName",
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = TitleText
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             OutlinedTextField(
                 value = courseName,
-                onValueChange = { courseName = it },
-                label = { Text("Course Name & Code") },
-                placeholder = { Text("e.g. CSE 301 · Algorithms") },
+                onValueChange = {
+                    courseName = it
+                    if (it.isNotBlank()) courseError = false
+                },
+                isError = courseError,
+                supportingText = if (courseError) { { Text("Enter the course name", color = Color(0xFFDC2626)) } } else null,
+                label = { Text("Course name") },
+                placeholder = { Text("e.g., CSE 301 · Algorithms") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Primary,
-                    unfocusedBorderColor = InputBorderColor
+                    focusedBorderColor = Color(0xFF3B82F6),
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    errorBorderColor = Color(0xFFDC2626)
                 )
             )
 
@@ -1033,12 +1080,12 @@ private fun AddClassBottomSheetContent(
                     value = timeSlot,
                     onValueChange = { timeSlot = it },
                     label = { Text("Time") },
-                    placeholder = { Text("09:00 - 10:30") },
+                    placeholder = { Text("e.g., 09:00–10:30") },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Primary,
-                        unfocusedBorderColor = InputBorderColor
+                        focusedBorderColor = Color(0xFF3B82F6),
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     )
                 )
 
@@ -1046,12 +1093,12 @@ private fun AddClassBottomSheetContent(
                     value = room,
                     onValueChange = { room = it },
                     label = { Text("Room") },
-                    placeholder = { Text("Room 402") },
+                    placeholder = { Text("e.g., Room 402") },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Primary,
-                        unfocusedBorderColor = InputBorderColor
+                        focusedBorderColor = Color(0xFF3B82F6),
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     )
                 )
             }
@@ -1061,8 +1108,11 @@ private fun AddClassBottomSheetContent(
             PrimaryButton(
                 text = "Add class",
                 onClick = {
-                    if (courseName.isNotBlank()) {
-                        onAddClass(courseName, timeSlot, room)
+                    if (courseName.isBlank()) {
+                        courseError = true
+                    } else {
+                        courseError = false
+                        onAddClass(courseName, timeSlot.ifBlank { "09:00 - 10:30" }, room.ifBlank { "Room TBA" })
                     }
                 }
             )
@@ -1070,7 +1120,7 @@ private fun AddClassBottomSheetContent(
             TextLink(
                 text = "Back",
                 onClick = { isManualMode = false },
-                color = MutedText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -1087,25 +1137,25 @@ private fun TipChip(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(999.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(999.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = Primary,
+            tint = Color(0xFF3B82F6),
             modifier = Modifier.size(16.dp)
         )
         Text(
             text = text,
             fontFamily = PlusJakartaSansFontFamily,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = TitleText
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

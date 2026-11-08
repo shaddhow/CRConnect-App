@@ -1,6 +1,8 @@
 package com.example.crconnect.student
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,9 +25,9 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -44,8 +46,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -73,6 +80,27 @@ fun StudentPortalScreen(
         }
     }
 
+    var isNavVisible by remember { mutableStateOf(true) }
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                if (delta < -12f && isNavVisible) {
+                    isNavVisible = false
+                } else if (delta > 12f && !isNavVisible) {
+                    isNavVisible = true
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
+    val navOffsetY by animateFloatAsState(
+        targetValue = if (isNavVisible) 0f else 180f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "StudentNavHideAnimation"
+    )
+
     val systemDark = isSystemInDarkTheme()
     val isDark = when (uiState.themeMode) {
         SessionManager.THEME_LIGHT -> false
@@ -86,6 +114,14 @@ fun StudentPortalScreen(
             .fillMaxSize()
             .background(brush = portalGradient)
     ) {
+        val headerTitle = when (uiState.selectedTab) {
+            0 -> "Class Routine"
+            1 -> "CR Candidates"
+            2 -> "Election Status"
+            3 -> "My Profile"
+            else -> "Class Routine"
+        }
+
         ModalNavigationDrawer(
             drawerState = drawerState,
             scrimColor = Color(0x660F172A),
@@ -96,6 +132,7 @@ fun StudentPortalScreen(
                     onTabSelected = { tab ->
                         coroutineScope.launch {
                             drawerState.close()
+                            isNavVisible = true
                             viewModel.selectTab(tab)
                         }
                     },
@@ -111,6 +148,7 @@ fun StudentPortalScreen(
             Scaffold(
                 topBar = {
                     TopHeader(
+                        title = headerTitle,
                         name = uiState.profile.name,
                         department = uiState.profile.department,
                         initials = uiState.profile.initials,
@@ -119,17 +157,10 @@ fun StudentPortalScreen(
                             coroutineScope.launch { drawerState.open() }
                         },
                         onAvatarClick = {
+                            isNavVisible = true
                             viewModel.selectTab(3) // Profile Tab
                         },
                         onSignOutClick = onSignOut
-                    )
-                },
-                bottomBar = {
-                    StudentBottomNavigation(
-                        selectedTab = uiState.selectedTab,
-                        onTabSelected = { tab ->
-                            viewModel.selectTab(tab)
-                        }
                     )
                 },
                 snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -138,49 +169,72 @@ fun StudentPortalScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
+                        .nestedScroll(nestedScrollConnection)
                 ) {
-                    Crossfade(
-                        targetState = uiState.selectedTab,
-                        animationSpec = tween(durationMillis = 200),
-                        label = "StudentPortalTabTransition"
-                    ) { tab ->
-                        when (tab) {
-                            0 -> RoutineTab(
-                                uiState = uiState,
-                                onDaySelected = { day -> viewModel.selectScheduleDay(day) },
-                                onOpenAddClass = { viewModel.openAddClassSheet() },
-                                onCloseAddClass = { viewModel.closeAddClassSheet() },
-                                onAddClass = { course, time, room ->
-                                    viewModel.addClass(course, time, room)
-                                },
-                                onOpenNoticeSheet = { viewModel.openNoticeSheet() },
-                                onDeleteRoutine = {
-                                    viewModel.deleteCurrentRoutine(context)
-                                },
-                                onScannedEntriesAdded = { entries ->
-                                    viewModel.saveScannedEntries(entries, context)
-                                },
-                                onShowToast = { msg -> viewModel.showToast(msg) }
-                            )
-                            1 -> CandidatesTab(
-                                uiState = uiState,
-                                onCastVote = { candidateId -> viewModel.castVote(candidateId) }
-                            )
-                            2 -> StatusTab(
-                                uiState = uiState,
-                                onGoToCandidates = { viewModel.selectTab(1) }
-                            )
-                            3 -> ProfileTab(
-                                profile = uiState.profile,
-                                themeMode = uiState.themeMode,
-                                onThemeModeSelected = { mode -> viewModel.setThemeMode(context, mode) },
-                                onEditProfilePicture = { viewModel.showToast("Edit profile picture (demo)") },
-                                onSecuritySettings = { viewModel.showToast("Security settings (demo)") },
-                                onSignOut = onSignOut
-                            )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = paddingValues.calculateTopPadding())
+                    ) {
+                        Crossfade(
+                            targetState = uiState.selectedTab,
+                            animationSpec = tween(durationMillis = 200),
+                            label = "StudentPortalTabTransition"
+                        ) { tab ->
+                            when (tab) {
+                                0 -> RoutineTab(
+                                    uiState = uiState,
+                                    onDaySelected = { day -> viewModel.selectScheduleDay(day) },
+                                    onOpenAddClass = { viewModel.openAddClassSheet() },
+                                    onCloseAddClass = { viewModel.closeAddClassSheet() },
+                                    onAddClass = { course, time, room ->
+                                        viewModel.addClass(course, time, room)
+                                    },
+                                    onOpenNoticeSheet = { viewModel.openNoticeSheet() },
+                                    onDeleteRoutine = {
+                                        viewModel.deleteCurrentRoutine(context)
+                                    },
+                                    onScannedEntriesAdded = { entries ->
+                                        viewModel.saveScannedEntries(entries, context)
+                                    },
+                                    onShowToast = { msg -> viewModel.showToast(msg) }
+                                )
+                                1 -> CandidatesTab(
+                                    uiState = uiState,
+                                    onCastVote = { candidateId -> viewModel.castVote(candidateId) }
+                                )
+                                2 -> StatusTab(
+                                    uiState = uiState,
+                                    onGoToCandidates = {
+                                        isNavVisible = true
+                                        viewModel.selectTab(1)
+                                    }
+                                )
+                                3 -> ProfileTab(
+                                    profile = uiState.profile,
+                                    themeMode = uiState.themeMode,
+                                    onThemeModeSelected = { mode -> viewModel.setThemeMode(context, mode) },
+                                    onEditProfilePicture = { viewModel.showToast("Edit profile picture (demo)") },
+                                    onSecuritySettings = { viewModel.showToast("Security settings (demo)") },
+                                    onSignOut = onSignOut
+                                )
+                            }
                         }
                     }
+
+                    StudentBottomNavigation(
+                        selectedTab = uiState.selectedTab,
+                        onTabSelected = { tab ->
+                            isNavVisible = true
+                            viewModel.selectTab(tab)
+                        },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .graphicsLayer {
+                                translationY = navOffsetY
+                                alpha = if (navOffsetY >= 160f) 0f else 1f - (navOffsetY / 180f)
+                            }
+                    )
 
                     if (uiState.isNoticeSheetOpen) {
                         GlassNoticeBottomSheet(

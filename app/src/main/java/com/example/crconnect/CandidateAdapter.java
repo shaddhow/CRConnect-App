@@ -3,6 +3,7 @@ package com.example.crconnect;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -112,40 +113,46 @@ public class CandidateAdapter extends RecyclerView.Adapter<CandidateAdapter.Cand
             if (holder.tvDept != null) holder.tvDept.setVisibility(View.GONE);
             if (holder.tvVotes != null) holder.tvVotes.setVisibility(View.GONE);
 
-            // Number badge: 44dp, 12dp radius, #E6F0FF background, #0066FF number w800
+            // Number badge: 44dp, 12dp radius
             ViewGroup.LayoutParams rankLp = holder.tvRank.getLayoutParams();
             int sz44 = dpToPx(44);
             rankLp.width = sz44;
             rankLp.height = sz44;
             holder.tvRank.setLayoutParams(rankLp);
 
+            boolean isDark = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+
             GradientDrawable badgeBg = new GradientDrawable();
             badgeBg.setCornerRadius(dpToPx(12));
-            badgeBg.setColor(Color.parseColor("#E6F0FF"));
+            badgeBg.setColor(Color.parseColor(isDark ? "#1A2B4C" : "#E6F0FF"));
             holder.tvRank.setBackground(badgeBg);
-            holder.tvRank.setTextColor(Color.parseColor("#0066FF"));
+            holder.tvRank.setTextColor(Color.parseColor(isDark ? "#60A5FA" : "#0066FF"));
             holder.tvRank.setTypeface(null, Typeface.BOLD);
             holder.tvRank.setTextSize(15f);
 
-            // Sub-line "N votes · Dept. of CSE"
+            holder.tvName.setTextColor(Color.parseColor(isDark ? "#F1F5F9" : "#0F172A"));
+
+            // Sub-line "N vote(s) · Dept. of CSE"
             if (holder.tvSubline != null) {
                 holder.tvSubline.setVisibility(View.VISIBLE);
-                holder.tvSubline.setText(votes + " votes · " + dept);
+                holder.tvSubline.setText(votes + (votes == 1 ? " vote · " : " votes · ") + dept);
+                holder.tvSubline.setTextColor(Color.parseColor(isDark ? "#94A3B8" : "#64748B"));
             }
 
             // Percentage "P%"
             if (holder.tvPct != null) {
                 holder.tvPct.setVisibility(View.VISIBLE);
                 holder.tvPct.setText(percentage + "%");
+                holder.tvPct.setTextColor(Color.parseColor(isDark ? "#F1F5F9" : "#0F172A"));
             }
 
-            // Progress bar: 6dp height, track #E2E8F0, fill = candidate's palette color, animate width 400ms
+            // Progress bar: 6dp height, track #1E293B, fill = candidate's palette color, animate width 400ms
             if (holder.pbVotes != null) {
                 holder.pbVotes.setVisibility(View.VISIBLE);
                 holder.pbVotes.setMax(100);
 
                 holder.pbVotes.setProgressTintList(ColorStateList.valueOf(color));
-                holder.pbVotes.setProgressBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#E2E8F0")));
+                holder.pbVotes.setProgressBackgroundTintList(ColorStateList.valueOf(Color.parseColor(isDark ? "#1E293B" : "#E2E8F0")));
 
                 int currentProg = holder.pbVotes.getProgress();
                 ObjectAnimator anim = ObjectAnimator.ofInt(holder.pbVotes, "progress", currentProg, percentage);
@@ -158,12 +165,15 @@ public class CandidateAdapter extends RecyclerView.Adapter<CandidateAdapter.Cand
                 holder.btnDelete.setVisibility(View.GONE);
             }
 
-            if (holder.btnTestVote != null) {
-                holder.btnTestVote.setVisibility(View.VISIBLE);
-                holder.btnTestVote.setOnClickListener(v -> {
+            if (holder.btnTestVoteCandidate != null) {
+                holder.btnTestVoteCandidate.setVisibility(View.VISIBLE);
+                holder.btnTestVoteCandidate.setText("+1 test vote");
+                holder.btnTestVoteCandidate.setTextColor(Color.parseColor(isDark ? "#60A5FA" : "#0066FF"));
+                holder.btnTestVoteCandidate.setOnClickListener(v -> {
                     if (listener != null) listener.onTestVoteClick(candidate);
                 });
             }
+
         } else {
             // STUDENT MODE LAYOUT
             int p16 = dpToPx(16);
@@ -173,7 +183,8 @@ public class CandidateAdapter extends RecyclerView.Adapter<CandidateAdapter.Cand
 
             if (holder.tvSubline != null) holder.tvSubline.setVisibility(View.GONE);
             if (holder.tvPct != null) holder.tvPct.setVisibility(View.GONE);
-            if (holder.btnTestVote != null) holder.btnTestVote.setVisibility(View.GONE);
+            if (holder.btnTestVoteCandidate != null) holder.btnTestVoteCandidate.setVisibility(View.GONE);
+
 
             if (holder.btnVote != null) holder.btnVote.setVisibility(View.VISIBLE);
             if (holder.tvDept != null) {
@@ -232,7 +243,7 @@ public class CandidateAdapter extends RecyclerView.Adapter<CandidateAdapter.Cand
         MaterialCardView cardItem;
         ConstraintLayout cardContentLayout;
         TextView tvRank, tvName, tvVotes, tvDept, tvSubline, tvPct;
-        MaterialButton btnVote, btnDelete, btnTestVote;
+        MaterialButton btnVote, btnDelete, btnTestVoteCandidate;
         ProgressBar pbVotes;
 
         public CandidateViewHolder(@NonNull View itemView) {
@@ -247,7 +258,7 @@ public class CandidateAdapter extends RecyclerView.Adapter<CandidateAdapter.Cand
             tvPct = itemView.findViewById(R.id.tvCandidatePct);
             btnVote = itemView.findViewById(R.id.btnVoteCandidate);
             btnDelete = itemView.findViewById(R.id.btnDeleteCandidate);
-            btnTestVote = itemView.findViewById(R.id .btnTestVoteCandidate);
+            btnTestVoteCandidate = itemView.findViewById(R.id.btnTestVoteCandidate);
             pbVotes = itemView.findViewById(R.id.pbCandidateVotes);
         }
     }

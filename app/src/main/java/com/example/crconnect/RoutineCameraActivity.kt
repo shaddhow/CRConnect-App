@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -45,7 +44,8 @@ class RoutineCameraActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        val sessionManager = SessionManager(this)
+        SessionManager.applyThemeMode(sessionManager.themeMode)
         super.onCreate(savedInstanceState)
         binding = ActivityRoutineCameraBinding.inflate(layoutInflater)
         setContentView(binding.root)

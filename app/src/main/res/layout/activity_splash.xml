@@ -7,6 +7,28 @@
     android:background="@drawable/bg_splash_gradient"
     tools:context=".SplashActivity">
 
+    <!-- Top-Right White Ambient Orb -->
+    <View
+        android:id="@+id/vOrbTopRight"
+        android:layout_width="340dp"
+        android:layout_height="340dp"
+        android:layout_marginTop="-110dp"
+        android:layout_marginEnd="-130dp"
+        android:background="@drawable/bg_splash_orb_top"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Left Blue Ambient Orb -->
+    <View
+        android:id="@+id/vOrbLeft"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_marginStart="-140dp"
+        android:layout_marginTop="260dp"
+        android:background="@drawable/bg_splash_orb_left"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <!-- Center Content Stack -->
     <LinearLayout
         android:id="@+id/layoutSplashContent"
@@ -14,6 +36,8 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:orientation="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         app:layout_constraintBottom_toTopOf="@id/progressBar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -22,8 +46,11 @@
 
         <!-- Logo Wrap with Pulse Aura -->
         <FrameLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+            android:layout_width="260dp"
+            android:layout_height="260dp"
+            android:layout_gravity="center_horizontal"
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
             <!-- Pulse View 1 -->
             <View
@@ -43,17 +70,35 @@
                 android:alpha="0"
                 android:background="@drawable/bg_pulse_aura" />
 
+            <View
+                android:id="@+id/pulseRingA"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_gravity="center"
+                android:background="@drawable/pulse_ring_bg" />
+
+            <View
+                android:id="@+id/pulseRingB"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_gravity="center"
+                android:background="@drawable/pulse_ring_bg" />
+
             <!-- Logo Card -->
             <FrameLayout
                 android:id="@+id/cardSplashLogo"
                 android:layout_width="120dp"
                 android:layout_height="120dp"
                 android:layout_gravity="center"
-                android:background="@drawable/bg_splash_logo_card">
+                android:background="@drawable/bg_splash_logo_card"
+                android:elevation="12dp"
+                android:outlineSpotShadowColor="@color/splash_card_shadow"
+                android:outlineAmbientShadowColor="@color/splash_card_shadow"
+                tools:targetApi="p">
 
                 <ImageView
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
                     android:layout_gravity="center"
                     android:contentDescription="@string/app_name"
                     android:scaleType="fitCenter"
@@ -69,10 +114,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="28dp"
             android:alpha="0"
-            android:fontFamily="sans-serif-black"
+            android:fontFamily="@font/plus_jakarta_sans"
             android:letterSpacing="-0.02"
             android:text="@string/app_name"
-            android:textColor="@color/slate_dark"
+            android:textColor="@color/splash_title_connect"
             android:textSize="32sp"
             android:textStyle="bold" />
 
@@ -84,11 +129,11 @@
             android:layout_marginTop="11dp"
             android:alpha="0"
             android:background="@drawable/bg_tagline_pill"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/plus_jakarta_sans"
             android:paddingHorizontal="18dp"
             android:paddingVertical="5dp"
             android:text="@string/app_subtitle"
-            android:textColor="@color/brand_blue_dark"
+            android:textColor="@color/splash_tagline_text"
             android:textSize="13sp"
             android:textStyle="bold" />
 
@@ -114,17 +159,17 @@
         android:id="@+id/tvSplashFooter"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginBottom="36dp"
         android:alpha="0"
-        android:fontFamily="sans-serif-medium"
+        android:fontFamily="@font/plus_jakarta_sans"
         android:gravity="center"
         android:letterSpacing="0.06"
         android:text="@string/bubt_full_name"
-        android:textColor="#590F172A"
+        android:textColor="@color/splash_footer_text"
         android:textSize="11sp"
         android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/progressBar" />
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

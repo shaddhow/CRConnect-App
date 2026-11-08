@@ -18,27 +18,13 @@
         android:layout_marginBottom="20dp"
         android:background="@drawable/bg_grab_handle" />
 
-    <FrameLayout
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginBottom="16dp"
-        android:background="@drawable/bg_icon_square_blue">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_sheet_pdf"
-            app:tint="#0066FF" />
-    </FrameLayout>
-
     <TextView
         android:id="@+id/tvExportPdfTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:text="Official election PDF ready"
-        android:textColor="#0F172A"
+        android:textColor="@color/title"
         android:textSize="20sp"
         android:textStyle="bold" />
 
@@ -49,7 +35,7 @@
         android:layout_marginBottom="24dp"
         android:lineSpacingExtra="2dp"
         android:text="Report compiled. Choose how to save, share or open it."
-        android:textColor="#64748B"
+        android:textColor="@color/muted"
         android:textSize="14sp" />
 
     <com.google.android.material.button.MaterialButton
@@ -64,7 +50,7 @@
         android:textColor="#FFFFFF"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="#0066FF"
+        app:backgroundTint="@color/primary"
         app:cornerRadius="12dp"
         app:strokeWidth="0dp" />
 
@@ -78,12 +64,12 @@
         android:insetBottom="0dp"
         android:text="Share PDF"
         android:textAllCaps="false"
-        android:textColor="#0066FF"
+        android:textColor="@color/btn_outline_text"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="#FFFFFF"
+        app:backgroundTint="@color/btn_outline_bg"
         app:cornerRadius="12dp"
-        app:strokeColor="#0066FF"
+        app:strokeColor="@color/btn_outline_stroke"
         app:strokeWidth="1.5dp" />
 
     <com.google.android.material.button.MaterialButton
@@ -96,12 +82,12 @@
         android:insetBottom="0dp"
         android:text="Open PDF"
         android:textAllCaps="false"
-        android:textColor="#0066FF"
+        android:textColor="@color/btn_outline_text"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="#FFFFFF"
+        app:backgroundTint="@color/btn_outline_bg"
         app:cornerRadius="12dp"
-        app:strokeColor="#0066FF"
+        app:strokeColor="@color/btn_outline_stroke"
         app:strokeWidth="1.5dp" />
 
 </LinearLayout>

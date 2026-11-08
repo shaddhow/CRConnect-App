@@ -31,7 +31,7 @@
             android:layout_height="24dp"
             android:layout_gravity="center"
             android:src="@drawable/ic_nav_stats"
-            app:tint="#0284C7" />
+            app:tint="@color/primary" />
     </FrameLayout>
 
     <!-- Title & Subtitle -->
@@ -41,7 +41,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
         android:text="Manage Sections &amp; Intakes"
-        android:textColor="#0F172A"
+        android:textColor="@color/title"
         android:textSize="20sp"
         android:textStyle="bold" />
 
@@ -52,7 +52,7 @@
         android:layout_marginBottom="20dp"
         android:lineSpacingExtra="2dp"
         android:text="Specify the sections and intakes you manage. Separate multiple entries with commas."
-        android:textColor="#64748B"
+        android:textColor="@color/muted"
         android:textSize="14sp" />
 
     <!-- Sections Input Box -->
@@ -67,15 +67,15 @@
         app:boxCornerRadiusBottomStart="12dp"
         app:boxCornerRadiusTopEnd="12dp"
         app:boxCornerRadiusTopStart="12dp"
-        app:boxStrokeColor="#0284C7"
-        app:hintTextColor="#0284C7">
+        app:boxStrokeColor="@color/primary"
+        app:hintTextColor="@color/primary">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etAssignedSections"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="text"
-            android:textColor="#0F172A"
+            android:textColor="@color/title"
             android:textSize="15sp" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -91,15 +91,15 @@
         app:boxCornerRadiusBottomStart="12dp"
         app:boxCornerRadiusTopEnd="12dp"
         app:boxCornerRadiusTopStart="12dp"
-        app:boxStrokeColor="#0284C7"
-        app:hintTextColor="#0284C7">
+        app:boxStrokeColor="@color/primary"
+        app:hintTextColor="@color/primary">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etAssignedIntakes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="text"
-            android:textColor="#0F172A"
+            android:textColor="@color/title"
             android:textSize="15sp" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -116,7 +116,7 @@
         android:textColor="#FFFFFF"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="#0284C7"
+        app:backgroundTint="@color/primary"
         app:cornerRadius="12dp" />
 
     <com.google.android.material.button.MaterialButton
@@ -128,12 +128,12 @@
         android:insetBottom="0dp"
         android:text="Cancel"
         android:textAllCaps="false"
-        android:textColor="#64748B"
+        android:textColor="@color/btn_outline_text"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="#FFFFFF"
+        app:backgroundTint="@color/btn_outline_bg"
         app:cornerRadius="12dp"
-        app:strokeColor="#CBD5E1"
-        app:strokeWidth="1dp" />
+        app:strokeColor="@color/btn_outline_stroke"
+        app:strokeWidth="1.5dp" />
 
 </LinearLayout>

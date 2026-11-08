@@ -8,6 +8,7 @@
     android:fillViewport="true"
     android:overScrollMode="ifContentScrolls"
     android:clipToPadding="false"
+    android:paddingBottom="56dp"
     tools:context=".LoginActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -27,15 +28,16 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <!-- Rounded rectangle logo card (96x112dp, 28dp radius, 6dp 45% white ring border, elevation) -->
+            <!-- Rounded rectangle logo card (96x96dp, 28dp radius, 6dp white ring border, elevation 12dp) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardLogo"
                 android:layout_width="96dp"
-                android:layout_height="112dp"
+                android:layout_height="96dp"
+                android:padding="6dp"
                 app:cardCornerRadius="28dp"
-                app:cardBackgroundColor="@color/card_bg"
+                app:cardBackgroundColor="#FFFFFF"
                 app:strokeWidth="6dp"
-                app:strokeColor="#73FFFFFF"
+                app:strokeColor="#FFFFFF"
                 app:cardElevation="12dp"
                 app:cardPreventCornerOverlap="false"
                 app:layout_constraintTop_toTopOf="parent"
@@ -45,7 +47,7 @@
                 <ImageView
                     android:id="@+id/ivLogo"
                     android:layout_width="64dp"
-                    android:layout_height="80dp"
+                    android:layout_height="64dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_crconnect_logo"
                     android:scaleType="fitCenter"
@@ -342,10 +344,10 @@
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:fontFamily="sans-serif-medium"
-                    android:textColor="@color/brand_blue"
+                    android:textColor="@color/primary"
                     android:clickable="true"
                     android:focusable="true"
-                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:background="@android:color/transparent"
                     android:layout_marginTop="12dp"
                     app:layout_constraintTop_toBottomOf="@id/tvPasswordError"
                     app:layout_constraintStart_toStartOf="parent"
@@ -469,10 +471,13 @@
                 android:id="@+id/btnDevStudent"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
                 android:text="@string/dev_student"
-                android:textSize="11sp"
-                android:fontFamily="sans-serif"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium"
                 android:textColor="@color/brand_blue"
                 android:layout_marginEnd="8dp"/>
 
@@ -480,10 +485,13 @@
                 android:id="@+id/btnDevTeacher"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
                 android:text="@string/dev_teacher"
-                android:textSize="11sp"
-                android:fontFamily="sans-serif"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium"
                 android:textColor="@color/brand_blue"/>
         </LinearLayout>
 

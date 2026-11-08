@@ -18,7 +18,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -43,33 +46,33 @@ fun StatusTab(
             .fillMaxSize()
             .verticalScroll(scrollState)
             .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         if (uiState.hasVoted) {
             // Success Banner (.banner)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(SuccessTint)
-                    .border(1.dp, SuccessBorder, RoundedCornerShape(16.dp))
-                    .padding(16.dp)
+                    .background(Color(0xFF0D3B24))
+                    .border(1.dp, Color(0xFF15803D).copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                    .padding(18.dp)
             ) {
                 // Circle Icon Box (.ib)
                 Box(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(SuccessColor),
+                        .background(Color(0xFF22C55E)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = "Success",
                         tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
@@ -77,18 +80,18 @@ fun StatusTab(
                     Text(
                         text = "Vote secured & recorded",
                         fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 16.sp,
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TitleText,
+                        color = Color.White,
                         lineHeight = 22.sp
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = "Status: Vote cast",
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = SuccessText
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF4ADE80)
                     )
                 }
             }
@@ -105,18 +108,18 @@ fun StatusTab(
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = MutedText
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = uiState.receiptId,
+                        text = uiState.receiptId.ifBlank { "REC-849201" },
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TitleText
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -128,37 +131,37 @@ fun StatusTab(
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = MutedText
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "Encrypted & anonymous",
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = SuccessText
+                        color = Color(0xFF4ADE80)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 // Steps (.step)
                 StepItem(title = "Account registered", isCompleted = true)
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
                 StepItem(title = "Identity verified", isCompleted = true)
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
                 StepItem(title = "Vote cast", isCompleted = true)
             }
         } else {
-            // Warning Banner (.banner.w)
+            // Warning Banner (.banner.w) - Dark Amber/Orange Container matching target mockup
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(WarningTint)
-                    .border(1.dp, WarningBorder, RoundedCornerShape(16.dp))
-                    .padding(16.dp)
+                    .background(Color(0xFF381500))
+                    .border(1.dp, Color(0xFF92400E).copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                    .padding(18.dp)
             ) {
                 // Circle Icon Box (.ib)
                 Box(
@@ -172,7 +175,7 @@ fun StatusTab(
                         painter = painterResource(id = R.drawable.ic_clock),
                         contentDescription = "Pending",
                         tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
@@ -180,18 +183,18 @@ fun StatusTab(
                     Text(
                         text = "You have not voted yet",
                         fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 16.sp,
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TitleText,
+                        color = Color.White,
                         lineHeight = 22.sp
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = "Status: Pending",
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = WarningText
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFF59E0B)
                     )
                 }
             }
@@ -199,21 +202,36 @@ fun StatusTab(
             // Steps Card (.card.c)
             DesignCard {
                 StepItem(title = "Account registered", isCompleted = true)
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
                 StepItem(title = "Identity verified", isCompleted = true)
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
                 StepItem(title = "Vote cast", isCompleted = false)
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                PrimaryButton(
-                    text = "Go to candidates",
-                    onClick = onGoToCandidates
-                )
+                Button(
+                    onClick = onGoToCandidates,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF3B82F6),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "Go to candidates",
+                        fontFamily = PlusJakartaSansFontFamily,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(84.dp))
     }
 }
 
@@ -224,13 +242,13 @@ private fun StepItem(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Box(
             modifier = Modifier
                 .size(24.dp)
                 .clip(CircleShape)
-                .background(if (isCompleted) SuccessColor else BorderColor),
+                .background(if (isCompleted) Color(0xFF22C55E) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
             contentAlignment = Alignment.Center
         ) {
             if (isCompleted) {
@@ -246,9 +264,9 @@ private fun StepItem(
         Text(
             text = title,
             fontFamily = PlusJakartaSansFontFamily,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (isCompleted) TitleText else MutedText
+            fontSize = 15.sp,
+            fontWeight = if (isCompleted) FontWeight.Bold else FontWeight.Medium,
+            color = if (isCompleted) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

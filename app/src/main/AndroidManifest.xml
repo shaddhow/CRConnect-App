@@ -75,12 +75,14 @@
         <activity
             android:name=".StudentDashboardActivity"
             android:exported="false"
+            android:theme="@style/Theme.CRConnect.Dashboard"
             android:windowSoftInputMode="adjustResize" />
 
         <!-- Teacher / Admin Dashboard Activity -->
         <activity
             android:name=".TeacherDashboardActivity"
             android:exported="false"
+            android:theme="@style/Theme.CRConnect.Dashboard"
             android:windowSoftInputMode="adjustResize" />
 
         <!-- Routine Activity -->

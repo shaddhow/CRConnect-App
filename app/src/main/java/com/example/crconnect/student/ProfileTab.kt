@@ -2,13 +2,9 @@ package com.example.crconnect.student
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import android.graphics.BlurMaskFilter
-import android.graphics.Paint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,15 +21,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.DarkMode
-import androidx.compose.material.icons.outlined.LightMode
-import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,13 +37,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.crconnect.SessionManager
@@ -62,114 +55,77 @@ fun ProfileTab(
     onSignOut: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-    val systemDark = isSystemInDarkTheme()
-    val isDark = when (themeMode) {
-        SessionManager.THEME_LIGHT -> false
-        SessionManager.THEME_DARK -> true
-        else -> systemDark
-    }
-    val portalGradient = getPortalGradient(isDark)
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 16.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Card 1: User Main Info & Avatar (.card.c)
-        DesignCard(padding = 24.dp) {
+        DesignCard(padding = 20.dp) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Large Avatar Box with shadow layers and rings
+                // Large Avatar Circle (80dp x 80dp)
                 Box(
                     modifier = Modifier
-                        .size(98.dp)
-                        .drawBehind {
-                            val paint = Paint().apply {
-                                isAntiAlias = true
-                                color = android.graphics.Color.argb((0.25f * 255).toInt(), 0, 102, 255)
-                                maskFilter = BlurMaskFilter(28.dp.toPx(), BlurMaskFilter.Blur.NORMAL)
-                            }
-                            drawIntoCanvas { canvas ->
-                                canvas.nativeCanvas.save()
-                                canvas.nativeCanvas.translate(0f, 12.dp.toPx())
-                                canvas.nativeCanvas.drawCircle(
-                                    center.x,
-                                    center.y,
-                                    44.dp.toPx(),
-                                    paint
-                                )
-                                canvas.nativeCanvas.restore()
-                            }
-
-                            drawCircle(
-                                color = if (isDark) Color(0xFF141C2B) else Color.White,
-                                radius = 49.dp.toPx()
-                            )
-
-                            drawCircle(
-                                color = if (isDark) Color(0xFF243147) else Color(0xFFE2E8F0),
-                                radius = 46.5.dp.toPx()
-                            )
-                        },
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF0066FF)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(88.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF0066FF)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = profile.initials,
-                            color = Color.White,
-                            fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                    }
+                    Text(
+                        text = profile.initials.ifBlank { "ST" },
+                        color = Color.White,
+                        fontFamily = PlusJakartaSansFontFamily,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
                 }
 
-                // Below avatar, center aligned: Name, Email, Department chip
+                // Below avatar: Name, Email, Department chip
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = profile.name,
+                        text = profile.name.ifBlank { "Student" },
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     Text(
-                        text = profile.email,
+                        text = profile.email.ifBlank { "student@bubt.edu.bd" },
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Surface(
-                        modifier = Modifier.padding(top = 2.dp),
                         shape = RoundedCornerShape(999.dp),
                         color = MaterialTheme.colorScheme.primaryContainer,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                     ) {
                         Box(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Department of CSE, BUBT",
+                                text = if (profile.department.contains("CSE", ignoreCase = true)) "Department of CSE, BUBT" else profile.department,
                                 fontFamily = PlusJakartaSansFontFamily,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -179,7 +135,7 @@ fun ProfileTab(
                     }
                 }
 
-                // Info Tiles Row (.tiles)
+                // 3 Stat Tiles (Student ID, Intake, Section)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -203,17 +159,7 @@ fun ProfileTab(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Card 2: App Theme Selection
-        ThemeSelectionCard(
-            currentMode = themeMode,
-            onModeSelected = onThemeModeSelected
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Card 3: Overview & Progress (.card.c)
+        // Card 2: Overview & Academic Details
         DesignCard(padding = 20.dp) {
             val progress = profile.attendancePct / 100f
             val animatedProgress by animateFloatAsState(
@@ -223,173 +169,162 @@ fun ProfileTab(
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 KeyValueRow(
                     key = "Verification status",
                     value = "Verified · Locked",
-                    valueColor = Color(0xFF16A34A)
+                    valueColor = Color(0xFF4ADE80)
                 )
+
                 KeyValueRow(
                     key = "Total enrolled courses",
                     value = "6",
                     valueColor = MaterialTheme.colorScheme.onSurface
                 )
+
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     KeyValueRow(
                         key = "Attendance overview",
                         value = "${profile.attendancePct}% (Excellent)",
-                        valueColor = MaterialTheme.colorScheme.primary
+                        valueColor = Color(0xFF3B82F6)
                     )
                     LinearProgressIndicator(
                         progress = { animatedProgress },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(6.dp)
+                            .height(5.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = Color(0xFF3B82F6),
                         trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
+
+                KeyValueRow(
+                    key = "CGPA (current)",
+                    value = "3.72",
+                    valueColor = MaterialTheme.colorScheme.onSurface
+                )
+
+                KeyValueRow(
+                    key = "Academic year",
+                    value = "3rd Year, 1st Semester",
+                    valueColor = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Card 4: Action Buttons (.card.c)
+        // Card 3: Action Buttons (Edit profile picture, Security settings, Log out)
         DesignCard(padding = 20.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SecondaryButton(
-                    text = "Edit profile picture",
-                    onClick = onEditProfilePicture
-                )
+                // Edit profile picture
+                OutlinedButton(
+                    onClick = onEditProfilePicture,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = Color(0xFF3B82F6)
+                    )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = null,
+                            tint = Color(0xFF3B82F6),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Edit profile picture",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF3B82F6)
+                        )
+                    }
+                }
 
-                SecondaryButton(
-                    text = "Security settings",
-                    onClick = onSecuritySettings
-                )
+                // Security settings
+                OutlinedButton(
+                    onClick = onSecuritySettings,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = Color(0xFF3B82F6)
+                    )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color(0xFF3B82F6),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Security settings",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF3B82F6)
+                        )
+                    }
+                }
 
-                // Log out Danger Button (.btn.danger)
+                // Log out Danger Button (Dark Red Container matching target mockup)
                 Button(
                     onClick = onSignOut,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFEF2F2),
-                        contentColor = Color(0xFFB91C1C)
+                        containerColor = Color(0xFF3B1319),
+                        contentColor = Color(0xFFEF4444)
                     ),
-                    border = BorderStroke(1.5.dp, Color(0xFFFECACA))
+                    border = BorderStroke(1.5.dp, Color(0xFF7F1D1D).copy(alpha = 0.5f))
                 ) {
-                    Text(
-                        text = "Log out",
-                        fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = null,
+                            tint = Color(0xFFEF4444),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Log out",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFEF4444)
+                        )
+                    }
                 }
             }
         }
-    }
-}
 
-@Composable
-private fun ThemeSelectionCard(
-    currentMode: String,
-    onModeSelected: (String) -> Unit
-) {
-    DesignCard(padding = 20.dp) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "App Theme",
-                fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                ThemeOptionChip(
-                    label = "System",
-                    icon = Icons.Outlined.PhoneAndroid,
-                    isSelected = currentMode == SessionManager.THEME_SYSTEM || currentMode.isBlank(),
-                    onClick = { onModeSelected(SessionManager.THEME_SYSTEM) },
-                    modifier = Modifier.weight(1f)
-                )
-
-                ThemeOptionChip(
-                    label = "Light",
-                    icon = Icons.Outlined.LightMode,
-                    isSelected = currentMode == SessionManager.THEME_LIGHT,
-                    onClick = { onModeSelected(SessionManager.THEME_LIGHT) },
-                    modifier = Modifier.weight(1f)
-                )
-
-                ThemeOptionChip(
-                    label = "Dark",
-                    icon = Icons.Outlined.DarkMode,
-                    isSelected = currentMode == SessionManager.THEME_DARK,
-                    onClick = { onModeSelected(SessionManager.THEME_DARK) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ThemeOptionChip(
-    label: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val bg = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-    val contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-
-    Box(
-        modifier = modifier
-            .height(40.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(bg)
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = contentColor,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = label,
-                fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 13.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = contentColor
-            )
-        }
+        Spacer(modifier = Modifier.height(84.dp))
     }
 }
 
@@ -404,7 +339,7 @@ private fun InfoTile(
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
-            .padding(vertical = 12.dp, horizontal = 6.dp)
+            .padding(vertical = 12.dp, horizontal = 4.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -418,14 +353,16 @@ private fun InfoTile(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(3.dp))
             Text(
                 text = value,
                 fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 15.sp,
+                fontSize = if (value.length > 10) 12.sp else 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

@@ -45,6 +45,7 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.core.widget.NestedScrollView;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -93,6 +94,7 @@ public class RoutineActivity extends AppCompatActivity {
     private RecyclerView recyclerViewRoutine;
     private FloatingActionButton fabAddRoutineClass;
     private BottomNavigationView bottomNavRoutine;
+    private boolean isBottomNavRoutineVisible = true;
     private LinearLayout containerDayPicker;
 
     private View layoutEmptyState;
@@ -126,7 +128,8 @@ public class RoutineActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        sessionManager = new SessionManager(this);
+        SessionManager.applyThemeMode(sessionManager.getThemeMode());
         super.onCreate(savedInstanceState);
 
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
@@ -195,6 +198,16 @@ public class RoutineActivity extends AppCompatActivity {
                 v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), initialBottomPadding + systemBars.bottom);
                 return WindowInsetsCompat.CONSUMED;
             });
+            if (scrollViewRoutine instanceof NestedScrollView) {
+                ((NestedScrollView) scrollViewRoutine).setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                    int dy = scrollY - oldScrollY;
+                    if (dy > 12 && isBottomNavRoutineVisible) {
+                        hideBottomNavRoutine();
+                    } else if (dy < -12 && !isBottomNavRoutineVisible) {
+                        showBottomNavRoutine();
+                    }
+                });
+            }
         }
 
         if (fabAddRoutineClass != null) {
@@ -212,7 +225,13 @@ public class RoutineActivity extends AppCompatActivity {
         if (bottomNavRoutine != null) {
             ViewCompat.setOnApplyWindowInsetsListener(bottomNavRoutine, (v, insets) -> {
                 Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(0, 0, 0, systemBars.bottom);
+                ViewGroup.LayoutParams lp = v.getLayoutParams();
+                if (lp instanceof ViewGroup.MarginLayoutParams) {
+                    ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
+                    float density = v.getResources().getDisplayMetrics().density;
+                    mlp.bottomMargin = (int) (12 * density) + systemBars.bottom;
+                    v.setLayoutParams(mlp);
+                }
                 return insets;
             });
 
@@ -553,6 +572,30 @@ public class RoutineActivity extends AppCompatActivity {
             return cTrim.substring(0, 3).equalsIgnoreCase(tTrim.substring(0, 3));
         }
         return false;
+    }
+
+    private void hideBottomNavRoutine() {
+        if (bottomNavRoutine == null || !isBottomNavRoutineVisible) return;
+        isBottomNavRoutineVisible = false;
+        float density = getResources().getDisplayMetrics().density;
+        int hideDistance = bottomNavRoutine.getHeight() > 0 ? bottomNavRoutine.getHeight() + (int) (30 * density) : (int) (120 * density);
+        bottomNavRoutine.animate()
+                .translationY(hideDistance)
+                .alpha(0f)
+                .setDuration(300)
+                .setInterpolator(new FastOutSlowInInterpolator())
+                .start();
+    }
+
+    private void showBottomNavRoutine() {
+        if (bottomNavRoutine == null || isBottomNavRoutineVisible) return;
+        isBottomNavRoutineVisible = true;
+        bottomNavRoutine.animate()
+                .translationY(0f)
+                .alpha(1f)
+                .setDuration(300)
+                .setInterpolator(new FastOutSlowInInterpolator())
+                .start();
     }
 
     private String getSanitizedKey(String val) {

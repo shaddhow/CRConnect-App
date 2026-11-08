@@ -24,7 +24,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:text="Confirm logout"
-        android:textColor="#0F172A"
+        android:textColor="@color/title"
         android:textSize="20sp"
         android:textStyle="bold" />
 
@@ -35,7 +35,7 @@
         android:layout_marginBottom="24dp"
         android:lineSpacingExtra="2dp"
         android:text="Are you sure you want to log out of Admin Console?"
-        android:textColor="#64748B"
+        android:textColor="@color/muted"
         android:textSize="14sp" />
 
     <com.google.android.material.button.MaterialButton
@@ -48,12 +48,12 @@
         android:insetBottom="0dp"
         android:text="Cancel"
         android:textAllCaps="false"
-        android:textColor="#0066FF"
+        android:textColor="@color/btn_outline_text"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="#FFFFFF"
+        app:backgroundTint="@color/btn_outline_bg"
         app:cornerRadius="12dp"
-        app:strokeColor="#0066FF"
+        app:strokeColor="@color/btn_outline_stroke"
         app:strokeWidth="1.5dp" />
 
     <com.google.android.material.button.MaterialButton
@@ -67,7 +67,7 @@
         android:textColor="#FFFFFF"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="#DC2626"
+        app:backgroundTint="@color/btn_danger_solid_bg"
         app:cornerRadius="12dp"
         app:strokeWidth="0dp" />
 

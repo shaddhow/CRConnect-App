@@ -2,7 +2,7 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@android:id/background">
         <shape android:shape="rectangle">
-            <solid android:color="#61FFFFFF" />
+            <solid android:color="@color/splash_progress_track" />
             <corners android:radius="2dp" />
         </shape>
     </item>
@@ -11,8 +11,8 @@
             <shape android:shape="rectangle">
                 <gradient
                     android:angle="0"
-                    android:startColor="#0066FF"
-                    android:endColor="#38BDF8"
+                    android:startColor="@color/splash_progress_start"
+                    android:endColor="@color/splash_progress_end"
                     android:type="linear" />
                 <corners android:radius="2dp" />
             </shape>

@@ -76,6 +76,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.core.widget.NestedScrollView;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -129,6 +130,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private ImageView iconStats, iconControls, iconProfile, iconLogout;
     private TextView labelStats, labelControls, labelProfile, labelLogout;
     private int currentActiveTab = 0; // Default active tab: Stats (index 0)
+    private int currentActiveDrawerIndex = 0;
+    private boolean isBottomNavVisible = true;
     private DrawerLayout drawerLayoutTeacher;
     private NavigationView navViewTeacher;
     private boolean isProgrammaticScroll = false;
@@ -276,11 +279,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        sessionManager = new SessionManager(this);
+        SessionManager.applyThemeMode(sessionManager.getTeacherThemeMode());
 
         super.onCreate(savedInstanceState);
         
-        sessionManager = new SessionManager(this);
         if (!checkUserAuthenticationAndRole()) {
             return;
         }
@@ -434,55 +437,42 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         setupVotingControlListener();
 
-        // Custom Bottom Navigation Bar Bindings (4 main tabs: Stats, Election, Profile, Logout)
+        // Custom Bottom Navigation Bar Bindings (3 main tabs: Election, Profile, Logout)
         customBottomNavAdmin = findViewById(R.id.customBottomNavAdmin);
-        navTabStats = findViewById(R.id.navTabStats);
         navTabControls = findViewById(R.id.navTabControls);
         navTabProfile = findViewById(R.id.navTabProfile);
         navTabLogout = findViewById(R.id.navTabLogout);
 
-        pillStats = findViewById(R.id.pillStats);
         pillControls = findViewById(R.id.pillControls);
         pillProfile = findViewById(R.id.pillProfile);
         pillLogout = findViewById(R.id.pillLogout);
 
-        iconStats = findViewById(R.id.iconStats);
         iconControls = findViewById(R.id.iconControls);
         iconProfile = findViewById(R.id.iconProfile);
         iconLogout = findViewById(R.id.iconLogout);
 
-        labelStats = findViewById(R.id.labelStats);
         labelControls = findViewById(R.id.labelControls);
         labelProfile = findViewById(R.id.labelProfile);
         labelLogout = findViewById(R.id.labelLogout);
 
         setupHapticFeedback();
-        if (customBottomNavAdmin != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(customBottomNavAdmin, (v, insets) -> insets);
-        }
 
-        if (navTabStats != null) {
-            navTabStats.setOnClickListener(v -> {
-                HapticUtils.lightClick(v);
-                selectAdminTab(0, true);
-            });
-        }
         if (navTabControls != null) {
             navTabControls.setOnClickListener(v -> {
                 HapticUtils.lightClick(v);
-                selectAdminTab(1, true);
+                selectAdminTab(0, true);
             });
         }
         if (navTabProfile != null) {
             navTabProfile.setOnClickListener(v -> {
                 HapticUtils.lightClick(v);
-                selectAdminTab(2, true);
+                selectAdminTab(1, true);
             });
         }
         if (navTabLogout != null) {
             navTabLogout.setOnClickListener(v -> {
                 HapticUtils.lightClick(v);
-                selectAdminTab(3, true);
+                selectAdminTab(2, true);
             });
         }
 
@@ -517,6 +507,14 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
         if (scrollViewAdmin != null) {
             KeyboardUtils.setupSmoothKeyboardHandling(this, scrollViewAdmin, customBottomNavAdmin);
+            scrollViewAdmin.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                int dy = scrollY - oldScrollY;
+                if (dy > 12 && isBottomNavVisible) {
+                    hideCustomBottomNav();
+                } else if (dy < -12 && !isBottomNavVisible) {
+                    showCustomBottomNav();
+                }
+            });
         }
         
         // Dynamic Teacher Profile Loading from Firebase Realtime Database & Firestore
@@ -1027,19 +1025,20 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private void handleTargetTabFromIntent(Intent intent) {
         if (intent != null && intent.hasExtra("EXTRA_TARGET_TAB")) {
             int targetId = intent.getIntExtra("EXTRA_TARGET_TAB", R.id.nav_teacher_candidates);
-            if (targetId == R.id.nav_teacher_stats || targetId == 0) {
+            if (targetId == R.id.nav_teacher_stats || targetId == R.id.nav_teacher_control || targetId == 0 || targetId == 1) {
                 selectAdminTab(0, true);
-            } else if (targetId == R.id.nav_teacher_control || targetId == 1) {
-                selectAdminTab(1, true);
+                selectElectionSubTab(0);
             } else if (targetId == R.id.nav_teacher_candidates || targetId == 2) {
-                selectAdminTab(2, true);
+                selectAdminTab(0, true);
+                selectElectionSubTab(1);
             } else if (targetId == R.id.nav_teacher_pdf || targetId == 3) {
-                selectAdminTab(3, true);
+                selectAdminTab(0, true);
+                selectElectionSubTab(2);
             } else if (targetId == R.id.nav_teacher_logout || targetId == 4) {
-                selectAdminTab(4, true);
+                selectAdminTab(2, true);
             }
         } else {
-            selectAdminTab(0, false); // Default active tab: Stats (index 0)
+            selectAdminTab(0, false); // Default active tab: Election (index 0)
         }
     }
 
@@ -1051,7 +1050,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             drawerLayoutTeacher.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
                 @Override
                 public void onDrawerOpened(View drawerView) {
-                    updateDrawerActiveState(currentActiveTab);
+                    updateDrawerActiveState(currentActiveDrawerIndex);
                 }
             });
         }
@@ -1063,7 +1062,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     if (drawerLayoutTeacher.isDrawerOpen(GravityCompat.START)) {
                         drawerLayoutTeacher.closeDrawer(GravityCompat.START);
                     } else {
-                        updateDrawerActiveState(currentActiveTab);
+                        updateDrawerActiveState(currentActiveDrawerIndex);
                         drawerLayoutTeacher.openDrawer(GravityCompat.START);
                     }
                 }
@@ -1091,7 +1090,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         }
 
         // Menu Items Click Bindings
-        View drawerItemProfile = findViewById(R.id.drawerItemProfile);
         View drawerHeaderContainer = findViewById(R.id.drawerHeaderContainer);
 
         View.OnClickListener profileClickListener = v -> {
@@ -1099,7 +1097,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
         };
 
-        if (drawerItemProfile != null) drawerItemProfile.setOnClickListener(profileClickListener);
         if (drawerHeaderContainer != null) drawerHeaderContainer.setOnClickListener(profileClickListener);
         if (imgNavProfile != null) imgNavProfile.setOnClickListener(profileClickListener);
         if (tvNavName != null) tvNavName.setOnClickListener(profileClickListener);
@@ -1114,22 +1111,30 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         if (drawerItemStats != null) {
             drawerItemStats.setOnClickListener(v -> {
+                selectAdminTab(0, false);
+                selectElectionSubTab(0);
                 updateDrawerActiveState(0);
-                selectAdminTab(0, true);
                 if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
             });
         }
         if (drawerItemControl != null) {
             drawerItemControl.setOnClickListener(v -> {
+                selectAdminTab(0, false);
+                selectElectionSubTab(0);
                 updateDrawerActiveState(1);
-                selectAdminTab(1, true);
+                NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
+                View cardVotingGate = findViewById(R.id.cardVotingGate);
+                if (scrollViewAdmin != null && cardVotingGate != null) {
+                    scrollViewAdmin.post(() -> scrollViewAdmin.smoothScrollTo(0, Math.max(0, cardVotingGate.getTop() - dpToPx(16))));
+                }
                 if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
             });
         }
         if (drawerItemCandidates != null) {
             drawerItemCandidates.setOnClickListener(v -> {
+                selectAdminTab(0, false);
+                selectElectionSubTab(1);
                 updateDrawerActiveState(2);
-                selectAdminTab(2, true);
                 if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
             });
         }
@@ -1142,9 +1147,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         }
         if (drawerItemPdf != null) {
             drawerItemPdf.setOnClickListener(v -> {
+                selectAdminTab(0, false);
+                selectElectionSubTab(2);
                 updateDrawerActiveState(4);
-                selectAdminTab(3, true);
                 if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
+                exportElectionResultsToPdf();
             });
         }
         if (drawerItemLogout != null) {
@@ -1156,46 +1163,45 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     }
 
     private void updateDrawerActiveState(int activeIndex) {
-        View itemProfile = findViewById(R.id.drawerItemProfile);
+        if (activeIndex >= 0) {
+            currentActiveDrawerIndex = activeIndex;
+        }
+        View drawerHeaderContainer = findViewById(R.id.drawerHeaderContainer);
         View itemStats = findViewById(R.id.drawerItemStats);
         View itemControl = findViewById(R.id.drawerItemControl);
         View itemCandidates = findViewById(R.id.drawerItemCandidates);
         View itemManageCR = findViewById(R.id.drawerItemManageCR);
         View itemPdf = findViewById(R.id.drawerItemPdf);
 
-        ImageView iconProfile = findViewById(R.id.drawerIconProfile);
         ImageView iconStats = findViewById(R.id.drawerIconStats);
         ImageView iconControl = findViewById(R.id.drawerIconControl);
         ImageView iconCandidates = findViewById(R.id.drawerIconCandidates);
         ImageView iconManageCR = findViewById(R.id.drawerIconManageCR);
         ImageView iconPdf = findViewById(R.id.drawerIconPdf);
 
-        TextView labelProfile = findViewById(R.id.drawerLabelProfile);
         TextView labelStats = findViewById(R.id.drawerLabelStats);
         TextView labelControl = findViewById(R.id.drawerLabelControl);
         TextView labelCandidates = findViewById(R.id.drawerLabelCandidates);
         TextView labelManageCR = findViewById(R.id.drawerLabelManageCR);
         TextView labelPdf = findViewById(R.id.drawerLabelPdf);
 
-        int inactiveColor = Color.parseColor("#64748B");
+        boolean isDark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        int inactiveColor = isDark ? Color.parseColor("#94A3B8") : Color.parseColor("#64748B");
         int activeColor = Color.parseColor("#0066FF");
-        int titleColor = Color.parseColor("#0F172A");
+        int titleColor = isDark ? Color.parseColor("#F1F5F9") : Color.parseColor("#0F172A");
 
-        if (itemProfile != null) itemProfile.setBackgroundColor(Color.TRANSPARENT);
         if (itemStats != null) itemStats.setBackgroundColor(Color.TRANSPARENT);
         if (itemControl != null) itemControl.setBackgroundColor(Color.TRANSPARENT);
         if (itemCandidates != null) itemCandidates.setBackgroundColor(Color.TRANSPARENT);
         if (itemManageCR != null) itemManageCR.setBackgroundColor(Color.TRANSPARENT);
         if (itemPdf != null) itemPdf.setBackgroundColor(Color.TRANSPARENT);
 
-        if (iconProfile != null) iconProfile.setColorFilter(inactiveColor);
         if (iconStats != null) iconStats.setColorFilter(inactiveColor);
         if (iconControl != null) iconControl.setColorFilter(inactiveColor);
         if (iconCandidates != null) iconCandidates.setColorFilter(inactiveColor);
         if (iconManageCR != null) iconManageCR.setColorFilter(inactiveColor);
         if (iconPdf != null) iconPdf.setColorFilter(inactiveColor);
 
-        if (labelProfile != null) labelProfile.setTextColor(titleColor);
         if (labelStats != null) labelStats.setTextColor(titleColor);
         if (labelControl != null) labelControl.setTextColor(titleColor);
         if (labelCandidates != null) labelCandidates.setTextColor(titleColor);
@@ -1203,11 +1209,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (labelPdf != null) labelPdf.setTextColor(titleColor);
 
         switch (activeIndex) {
-            case 5:
-                if (itemProfile != null) itemProfile.setBackgroundResource(R.drawable.bg_drawer_pill_active);
-                if (iconProfile != null) iconProfile.setColorFilter(activeColor);
-                if (labelProfile != null) labelProfile.setTextColor(activeColor);
-                break;
             case 0:
                 if (itemStats != null) itemStats.setBackgroundResource(R.drawable.bg_drawer_pill_active);
                 if (iconStats != null) iconStats.setColorFilter(activeColor);
@@ -1229,7 +1230,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 if (labelManageCR != null) labelManageCR.setTextColor(activeColor);
                 break;
             case 4:
-                if (itemPdf != null) itemPdf.setBackgroundResource( R.drawable.bg_drawer_pill_active);
+                if (itemPdf != null) itemPdf.setBackgroundResource(R.drawable.bg_drawer_pill_active);
                 if (iconPdf != null) iconPdf.setColorFilter(activeColor);
                 if (labelPdf != null) labelPdf.setTextColor(activeColor);
                 break;
@@ -1237,6 +1238,18 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     }
 
     private void selectElectionSubTab(int subIndex) {
+        if (subIndex == 1) {
+            updateDrawerActiveState(2);
+        } else if (subIndex == 2) {
+            updateDrawerActiveState(4);
+        } else if (subIndex == 0) {
+            if (currentActiveDrawerIndex != 0 && currentActiveDrawerIndex != 1) {
+                updateDrawerActiveState(0);
+            } else {
+                updateDrawerActiveState(currentActiveDrawerIndex);
+            }
+        }
+
         View layoutSubTiming = findViewById(R.id.layoutSubTiming);
         View layoutSubCandidates = findViewById(R.id.layoutSubCandidates);
         View layoutSubExport = findViewById(R.id.layoutSubExport);
@@ -1268,25 +1281,45 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (layoutSubExport != null) layoutSubExport.setVisibility(subIndex == 2 ? View.VISIBLE : View.GONE);
     }
 
+    private void hideCustomBottomNav() {
+        if (customBottomNavAdmin == null || !isBottomNavVisible) return;
+        isBottomNavVisible = false;
+        int hideDistance = customBottomNavAdmin.getHeight() > 0 ? customBottomNavAdmin.getHeight() + dpToPx(30) : dpToPx(120);
+        customBottomNavAdmin.animate()
+                .translationY(hideDistance)
+                .alpha(0f)
+                .setDuration(300)
+                .setInterpolator(new FastOutSlowInInterpolator())
+                .start();
+    }
+
+    private void showCustomBottomNav() {
+        if (customBottomNavAdmin == null || isBottomNavVisible) return;
+        isBottomNavVisible = true;
+        customBottomNavAdmin.animate()
+                .translationY(0f)
+                .alpha(1f)
+                .setDuration(300)
+                .setInterpolator(new FastOutSlowInInterpolator())
+                .start();
+    }
+
     private void selectAdminTab(int tabIndex, boolean triggerAction) {
-        View layoutTabStats = findViewById(R.id.layoutTabStats);
+        showCustomBottomNav();
         View layoutTabControls = findViewById(R.id.layoutTabControls);
         View layoutTabProfile = findViewById(R.id.layoutTabProfile);
 
-        int inactiveColor = Color.parseColor("#64748B");
+        int inactiveColor = ContextCompat.getColor(this, R.color.muted_text);
         int activeColor = Color.parseColor("#0066FF");
 
-        if (pillStats != null) pillStats.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
         if (pillControls != null) pillControls.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
         if (pillProfile != null) pillProfile.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
         if (pillLogout != null) pillLogout.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
 
-        if (iconStats != null) iconStats.setColorFilter(inactiveColor);
         if (iconControls != null) iconControls.setColorFilter(inactiveColor);
         if (iconProfile != null) iconProfile.setColorFilter(inactiveColor);
         if (iconLogout != null) iconLogout.setColorFilter(inactiveColor);
 
-        if (labelStats != null) labelStats.setTextColor(inactiveColor);
         if (labelControls != null) labelControls.setTextColor(inactiveColor);
         if (labelProfile != null) labelProfile.setTextColor(inactiveColor);
         if (labelLogout != null) labelLogout.setTextColor(inactiveColor);
@@ -1294,23 +1327,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
 
         switch (tabIndex) {
-            case 0: // Stats tab (Live election statistics card)
+            case 0: // Election tab (Live Election Stats + Timing + Candidates + Export)
                 currentActiveTab = 0;
-                updateDrawerActiveState(0);
-                if (layoutTabStats != null) layoutTabStats.setVisibility(View.VISIBLE);
-                if (layoutTabControls != null) layoutTabControls.setVisibility(View.GONE);
-                if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.GONE);
-
-                if (pillStats != null) pillStats.setBackgroundResource(R.drawable.bg_nav_pill_active);
-                if (iconStats != null) iconStats.setColorFilter(activeColor);
-                if (labelStats != null) labelStats.setTextColor(activeColor);
-                if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
-                break;
-
-            case 1: // Election tab (Sub-toggle views: Timing, Candidates, Export)
-                currentActiveTab = 1;
-                updateDrawerActiveState(1);
-                if (layoutTabStats != null) layoutTabStats.setVisibility(View.GONE);
                 if (layoutTabControls != null) layoutTabControls.setVisibility(View.VISIBLE);
                 if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.GONE);
 
@@ -1320,11 +1338,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
                 break;
 
-            case 2: // Profile tab
-                currentActiveTab = 2;
-                updateDrawerActiveState(0);
-                if (layoutTabStats != null) layoutTabStats.setVisibility(View.GONE);
+            case 1: // Profile tab
+                currentActiveTab = 1;
+                updateDrawerActiveState(-1);
                 if (layoutTabControls != null) layoutTabControls.setVisibility(View.GONE);
+                if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.VISIBLE);
                 if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.VISIBLE);
 
                 if (pillProfile != null) pillProfile.setBackgroundResource(R.drawable.bg_nav_pill_active);
@@ -1333,8 +1351,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
                 break;
 
-            case 3: // Logout tab
-            case 4:
+            case 2: // Logout tab
+            case 3:
                 if (pillLogout != null) pillLogout.setBackgroundResource(R.drawable.bg_nav_pill_active);
                 if (iconLogout != null) iconLogout.setColorFilter(activeColor);
                 if (labelLogout != null) labelLogout.setTextColor(activeColor);
@@ -1401,6 +1419,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     final boolean isCr = "CR".equalsIgnoreCase(currentRole);
                     final String finalTargetUid = targetUid;
 
+                    boolean isDark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+                    int titleTextColor = ContextCompat.getColor(TeacherDashboardActivity.this, R.color.title_text);
+                    int mutedTextColor = ContextCompat.getColor(TeacherDashboardActivity.this, R.color.muted_text);
+                    int borderColor = ContextCompat.getColor(TeacherDashboardActivity.this, R.color.slate_border_light);
+
                     Dialog dialog = new Dialog(TeacherDashboardActivity.this);
                     dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
@@ -1418,7 +1441,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     tvTitle.setText(cName);
                     tvTitle.setTextSize(18f);
                     tvTitle.setTypeface(null, Typeface.BOLD);
-                    tvTitle.setTextColor(Color.parseColor("#0F172A"));
+                    tvTitle.setTextColor(titleTextColor);
                     LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
                     tvTitle.setLayoutParams(titleLp);
                     headerRow.addView(tvTitle);
@@ -1432,39 +1455,54 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
                     GradientDrawable pillBg = new GradientDrawable();
                     pillBg.setCornerRadius(dpToPx(6));
-                    pillBg.setColor(Color.parseColor(isCr ? "#FEF3C7" : "#EFF6FF"));
-                    pillBg.setStroke(dpToPx(1), Color.parseColor(isCr ? "#FCD34D" : "#BFD7FF"));
+                    if (isCr) {
+                        pillBg.setColor(Color.parseColor(isDark ? "#381500" : "#FEF3C7"));
+                        pillBg.setStroke(dpToPx(1), Color.parseColor(isDark ? "#92400E" : "#FCD34D"));
+                        rolePill.setTextColor(Color.parseColor(isDark ? "#F59E0B" : "#92400E"));
+                    } else {
+                        pillBg.setColor(Color.parseColor(isDark ? "#1A2E4A" : "#EFF6FF"));
+                        pillBg.setStroke(dpToPx(1), Color.parseColor(isDark ? "#1E3A6E" : "#BFD7FF"));
+                        rolePill.setTextColor(Color.parseColor(isDark ? "#60A5FA" : "#1D4ED8"));
+                    }
                     rolePill.setBackground(pillBg);
-                    rolePill.setTextColor(Color.parseColor(isCr ? "#92400E" : "#1D4ED8"));
                     headerRow.addView(rolePill);
 
                     layout.addView(headerRow);
 
                     // Subtitle
                     TextView tvSub = new TextView(TeacherDashboardActivity.this);
-                    tvSub.setText(candidate.getVotes() + " votes · " + (candidate.getDept() != null ? candidate.getDept() : activeDept));
+                    String voteUnit = candidate.getVotes() == 1 ? " vote · " : " votes · ";
+                    tvSub.setText(candidate.getVotes() + voteUnit + (candidate.getDept() != null ? candidate.getDept() : activeDept));
                     tvSub.setTextSize(12.5f);
-                    tvSub.setTextColor(Color.parseColor("#64748B"));
+                    tvSub.setTextColor(mutedTextColor);
                     tvSub.setPadding(0, dpToPx(4), 0, dpToPx(12));
                     layout.addView(tvSub);
 
                     // Divider
                     View divider = new View(TeacherDashboardActivity.this);
-                    divider.setBackgroundColor(Color.parseColor("#E2E8F0"));
+                    divider.setBackgroundColor(borderColor);
                     layout.addView(divider, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(1)));
 
                     // Box 1: Promote / Demote CR
+                    int pTitleColor = isCr ? (isDark ? Color.parseColor("#F59E0B") : Color.parseColor("#B45309"))
+                                           : (isDark ? Color.parseColor("#4ADE80") : Color.parseColor("#15803D"));
+                    int pSubColor   = isCr ? (isDark ? Color.parseColor("#FCD34D") : Color.parseColor("#92400E"))
+                                           : (isDark ? Color.parseColor("#86EFAC") : Color.parseColor("#166534"));
+                    int pBgColor    = isCr ? (isDark ? Color.parseColor("#26381500") : Color.parseColor("#FFFBEB"))
+                                           : (isDark ? Color.parseColor("#26052E16") : Color.parseColor("#F0FDF4"));
+                    int pBorderColor= isCr ? (isDark ? Color.parseColor("#92400E") : Color.parseColor("#FDE68A"))
+                                           : (isDark ? Color.parseColor("#15803D") : Color.parseColor("#BBF7D0"));
+                    int pIconBgColor= isCr ? (isDark ? Color.parseColor("#381500") : Color.parseColor("#FEF3C7"))
+                                           : (isDark ? Color.parseColor("#14532D") : Color.parseColor("#DCFCE7"));
+                    int pIconTint   = isCr ? (isDark ? Color.parseColor("#F59E0B") : Color.parseColor("#D97706"))
+                                           : (isDark ? Color.parseColor("#4ADE80") : Color.parseColor("#16A34A"));
+
                     View boxPromote = createOptionBox(
                             TeacherDashboardActivity.this,
                             isCr ? "Demote from CR to Student" : "Promote to Class Representative",
                             isCr ? "Revert candidate's role back to general student" : "Grant official CR permissions for Section " + activeSec,
                             R.drawable.ic_users,
-                            isCr ? Color.parseColor("#B45309") : Color.parseColor("#15803D"),
-                            isCr ? Color.parseColor("#92400E") : Color.parseColor("#166534"),
-                            Color.parseColor(isCr ? "#FFFBEB" : "#F0FDF4"),
-                            Color.parseColor(isCr ? "#FDE68A" : "#BBF7D0"),
-                            Color.parseColor(isCr ? "#FEF3C7" : "#DCFCE7"),
-                            Color.parseColor(isCr ? "#D97706" : "#16A34A"),
+                            pTitleColor, pSubColor, pBgColor, pBorderColor, pIconBgColor, pIconTint,
                             v -> {
                                 dialog.dismiss();
                                 String newRole = isCr ? "Student" : "CR";
@@ -1492,17 +1530,19 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     layout.addView(boxPromote);
 
                     // Box 2: Edit Candidate Name
+                    int eTitleColor = isDark ? Color.parseColor("#60A5FA") : Color.parseColor("#1D4ED8");
+                    int eSubColor   = isDark ? Color.parseColor("#93C5FD") : Color.parseColor("#1E40AF");
+                    int eBgColor    = isDark ? Color.parseColor("#261E293B") : Color.parseColor("#EFF6FF");
+                    int eBorderColor= isDark ? Color.parseColor("#334155") : Color.parseColor("#BFD7FF");
+                    int eIconBgColor= isDark ? Color.parseColor("#1E293B") : Color.parseColor("#DBEAFE");
+                    int eIconTint   = isDark ? Color.parseColor("#60A5FA") : Color.parseColor("#2563EB");
+
                     View boxEdit = createOptionBox(
                             TeacherDashboardActivity.this,
                             "Edit Candidate Name",
                             "Update candidate name across all election portal records",
                             R.drawable.ic_file_text,
-                            Color.parseColor("#1D4ED8"),
-                            Color.parseColor("#1E40AF"),
-                            Color.parseColor("#EFF6FF"),
-                            Color.parseColor("#BFD7FF"),
-                            Color.parseColor("#DBEAFE"),
-                            Color.parseColor("#2563EB"),
+                            eTitleColor, eSubColor, eBgColor, eBorderColor, eIconBgColor, eIconTint,
                             v -> {
                                 dialog.dismiss();
                                 showEditCandidateNameDialog(candidate);
@@ -1511,17 +1551,19 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     layout.addView(boxEdit);
 
                     // Box 3: Delete Candidate
+                    int dTitleColor = isDark ? Color.parseColor("#F87171") : Color.parseColor("#B91C1C");
+                    int dSubColor   = isDark ? Color.parseColor("#FCA5A5") : Color.parseColor("#991B1B");
+                    int dBgColor    = isDark ? Color.parseColor("#26450A0A") : Color.parseColor("#FEF2F2");
+                    int dBorderColor= isDark ? Color.parseColor("#991B1B") : Color.parseColor("#FECACA");
+                    int dIconBgColor= isDark ? Color.parseColor("#450A0A") : Color.parseColor("#FEE2E2");
+                    int dIconTint   = isDark ? Color.parseColor("#F87171") : Color.parseColor("#DC2626");
+
                     View boxDelete = createOptionBox(
                             TeacherDashboardActivity.this,
                             "Delete Candidate",
                             "Remove candidate permanently from election portal",
                             R.drawable.ic_delete,
-                            Color.parseColor("#B91C1C"),
-                            Color.parseColor("#991B1B"),
-                            Color.parseColor("#FEF2F2"),
-                            Color.parseColor("#FECACA"),
-                            Color.parseColor("#FEE2E2"),
-                            Color.parseColor("#DC2626"),
+                            dTitleColor, dSubColor, dBgColor, dBorderColor, dIconBgColor, dIconTint,
                             v -> {
                                 dialog.dismiss();
                                 showDeleteCandidateDialog(candidate);
@@ -1530,11 +1572,15 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     layout.addView(boxDelete);
 
                     // Cancel button
-                    Button btnClose = new Button(TeacherDashboardActivity.this);
+                    MaterialButton btnClose = new MaterialButton(TeacherDashboardActivity.this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
                     btnClose.setText("Cancel");
-                    btnClose.setTextColor(Color.parseColor("#64748B"));
+                    btnClose.setCornerRadius(dpToPx(12));
+                    btnClose.setStrokeWidth(dpToPx(1));
+                    btnClose.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(TeacherDashboardActivity.this, R.color.card_stroke)));
+                    btnClose.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(TeacherDashboardActivity.this, R.color.input_bg)));
+                    btnClose.setTextColor(titleTextColor);
+                    btnClose.setTextSize(14f);
                     btnClose.setTypeface(null, Typeface.BOLD);
-                    btnClose.setBackgroundResource(R.drawable.bg_btn_outlined);
                     LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.MATCH_PARENT, (int) (44 * getResources().getDisplayMetrics().density));
                     closeLp.setMargins(0, dpToPx(16), 0, 0);
@@ -1667,11 +1713,13 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             layout.setPadding(48, 48, 48, 48);
             layout.setBackgroundResource(R.drawable.bg_dialog_rounded);
 
+            int titleTextColor = ContextCompat.getColor(TeacherDashboardActivity.this, R.color.title_text);
+
             TextView tvTitle = new TextView(TeacherDashboardActivity.this);
             tvTitle.setText("Edit Candidate Name");
             tvTitle.setTextSize(18f);
             tvTitle.setTypeface(null, Typeface.BOLD);
-            tvTitle.setTextColor(Color.parseColor("#0F172A"));
+            tvTitle.setTextColor(titleTextColor);
             tvTitle.setPadding(0, 0, 0, 16);
             layout.addView(tvTitle);
 
@@ -1679,7 +1727,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             etName.setText(candidate.getName());
             if (candidate.getName() != null) etName.setSelection(candidate.getName().length());
             etName.setTextSize(15f);
-            etName.setTextColor(Color.parseColor("#0F172A"));
+            etName.setTextColor(titleTextColor);
+            etName.setHintTextColor(ContextCompat.getColor(TeacherDashboardActivity.this, R.color.muted_text));
             etName.setPadding(24, 24, 24, 24);
             etName.setBackgroundResource(R.drawable.edit_text_bg);
             layout.addView(etName);
@@ -1688,10 +1737,15 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             btnLayout.setOrientation(LinearLayout.HORIZONTAL);
             btnLayout.setPadding(0, 32, 0, 0);
 
-            Button btnCancel = new Button(TeacherDashboardActivity.this);
+            MaterialButton btnCancel = new MaterialButton(TeacherDashboardActivity.this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
             btnCancel.setText("Cancel");
-            btnCancel.setTextColor(Color.parseColor("#64748B"));
-            btnCancel.setBackgroundResource(R.drawable.bg_btn_outlined);
+            btnCancel.setCornerRadius(dpToPx(12));
+            btnCancel.setStrokeWidth(dpToPx(1));
+            btnCancel.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(TeacherDashboardActivity.this, R.color.card_stroke)));
+            btnCancel.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(TeacherDashboardActivity.this, R.color.input_bg)));
+            btnCancel.setTextColor(titleTextColor);
+            btnCancel.setTextSize(14f);
+            btnCancel.setTypeface(null, Typeface.BOLD);
             LinearLayout.LayoutParams cancelLp = new LinearLayout.LayoutParams(0, (int) (44 * getResources().getDisplayMetrics().density), 1f);
             cancelLp.setMarginEnd(12);
             btnCancel.setLayoutParams(cancelLp);
@@ -1957,34 +2011,40 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             container.removeAllViews();
 
-            // Chart Card (Requirement 1: padding 20dp, 16dp gap between title, bar, legend)
+            int cardBgColor = ContextCompat.getColor(this, R.color.card_bg);
+            int strokeColor = ContextCompat.getColor(this, R.color.card_stroke);
+            int titleColor = ContextCompat.getColor(this, R.color.title_text);
+            int mutedTextColor = ContextCompat.getColor(this, R.color.muted_text);
+            int trackColor = ContextCompat.getColor(this, R.color.segmented_bg);
+
+            // Chart Card
             MaterialCardView chartCard = new MaterialCardView(this);
             LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
             cardParams.setMargins(0, 0, 0, dpToPx(16));
             chartCard.setLayoutParams(cardParams);
             chartCard.setRadius(dpToPx(20));
             chartCard.setCardElevation(dpToPx(2));
-            chartCard.setCardBackgroundColor(Color.parseColor("#FFFFFF"));
+            chartCard.setCardBackgroundColor(cardBgColor);
             chartCard.setStrokeWidth(dpToPx(1));
-            chartCard.setStrokeColor(Color.parseColor("#E2E8F0"));
+            chartCard.setStrokeColor(strokeColor);
 
             LinearLayout chartLayout = new LinearLayout(this);
             chartLayout.setOrientation(LinearLayout.VERTICAL);
             int p20 = dpToPx(20);
             chartLayout.setPadding(p20, p20, p20, p20);
 
-            // Title: "Live vote distribution" (sentence case), 15sp, bold, #0F172A
+            // Title: "Live vote distribution"
             TextView tvChartTitle = new TextView(this);
             tvChartTitle.setText("Live vote distribution");
             tvChartTitle.setTextSize(15f);
             tvChartTitle.setTypeface(null, Typeface.BOLD);
-            tvChartTitle.setTextColor(Color.parseColor("#0F172A"));
+            tvChartTitle.setTextColor(titleColor);
             LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(-2, -2);
             titleLp.setMargins(0, 0, 0, dpToPx(16));
             tvChartTitle.setLayoutParams(titleLp);
             chartLayout.addView(tvChartTitle);
 
-            // Horizontal Segmented Bar: Height 10dp, radius 5dp, background #E2E8F0
+            // Horizontal Segmented Bar
             FrameLayout barTrackFrame = new FrameLayout(this);
             LinearLayout.LayoutParams trackLp = new LinearLayout.LayoutParams(-1, dpToPx(10));
             trackLp.setMargins(0, 0, 0, dpToPx(16));
@@ -1992,7 +2052,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             GradientDrawable trackBg = new GradientDrawable();
             trackBg.setCornerRadius(dpToPx(5));
-            trackBg.setColor(Color.parseColor("#E2E8F0"));
+            trackBg.setColor(trackColor);
             barTrackFrame.setBackground(trackBg);
 
             LinearLayout stackedBar = new LinearLayout(this);
@@ -2013,16 +2073,16 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                         View placeholderSegment = new View(this);
                         LinearLayout.LayoutParams segParams = new LinearLayout.LayoutParams(0, -1, 1f);
                         if (i > 0) {
-                            segParams.setMargins(dpToPx(2), 0, 0, 0); // 2dp gap between placeholder segments
+                            segParams.setMargins(dpToPx(2), 0, 0, 0);
                         }
                         placeholderSegment.setLayoutParams(segParams);
-                        placeholderSegment.setBackgroundColor(Color.parseColor("#E2E8F0"));
+                        placeholderSegment.setBackgroundColor(trackColor);
                         stackedBar.addView(placeholderSegment);
                     }
                 } else {
                     View emptyTrack = new View(this);
                     emptyTrack.setLayoutParams(new LinearLayout.LayoutParams(-1, -1));
-                    emptyTrack.setBackgroundColor(Color.parseColor("#E2E8F0"));
+                    emptyTrack.setBackgroundColor(trackColor);
                     stackedBar.addView(emptyTrack);
                 }
             } else {
@@ -2037,12 +2097,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     View segment = new View(this);
                     LinearLayout.LayoutParams segParams = new LinearLayout.LayoutParams(0, -1, (float) vts);
                     if (segIndex > 0) {
-                        segParams.setMargins(dpToPx(2), 0, 0, 0); // 2dp gap between segments
+                        segParams.setMargins(dpToPx(2), 0, 0, 0);
                     }
                     segment.setLayoutParams(segParams);
                     segment.setBackgroundColor(color);
 
-                    // Animate segment width change with 400ms ease-out
                     ValueAnimator anim = ValueAnimator.ofFloat(0f, (float) vts);
                     anim.setDuration(400);
                     anim.setInterpolator(new DecelerateInterpolator());
@@ -2061,7 +2120,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             barTrackFrame.addView(stackedBar);
             chartLayout.addView(barTrackFrame);
 
-            // Legend: one row per candidate, 8dp gap, 13sp
+            // Legend: one row per candidate
             LinearLayout legendLayout = new LinearLayout(this);
             legendLayout.setOrientation(LinearLayout.VERTICAL);
             legendLayout.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
@@ -2079,11 +2138,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 legendRow.setGravity(Gravity.CENTER_VERTICAL);
                 LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, -2);
                 if (i < candidateList.size() - 1) {
-                    rowLp.setMargins(0, 0, 0, dpToPx(8)); // 8dp gap between rows
+                    rowLp.setMargins(0, 0, 0, dpToPx(8));
                 }
                 legendRow.setLayoutParams(rowLp);
 
-                // 10dp square dot (3dp radius) in palette color
                 View square = new View(this);
                 int sqSize = dpToPx(10);
                 LinearLayout.LayoutParams sqParams = new LinearLayout.LayoutParams(sqSize, sqSize);
@@ -2095,27 +2153,25 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 sqBg.setColor(color);
                 square.setBackground(sqBg);
 
-                // Candidate Name (#0F172A, 13sp)
                 TextView tvName = new TextView(this);
                 tvName.setText(cName);
                 tvName.setTextSize(13f);
-                tvName.setTextColor(Color.parseColor("#0F172A"));
+                tvName.setTextColor(titleColor);
                 tvName.setSingleLine(true);
                 tvName.setEllipsize(TextUtils.TruncateAt.END);
                 LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(0, -2, 1f);
                 tvName.setLayoutParams(nameParams);
 
-                // Right-aligned muted text (#64748B) "N votes (P%)"
                 TextView tvMutedText = new TextView(this);
-                tvMutedText.setText(vts + " votes (" + percentage + "%)");
+                String voteText = vts + (vts == 1 ? " vote (" : " votes (") + percentage + "%)";
+                tvMutedText.setText(voteText);
                 tvMutedText.setTextSize(13f);
-                tvMutedText.setTextColor(Color.parseColor("#64748B"));
+                tvMutedText.setTextColor(mutedTextColor);
                 tvMutedText.setGravity(Gravity.END);
 
                 legendRow.addView(square);
                 legendRow.addView(tvName);
                 legendRow.addView(tvMutedText);
-
                 legendLayout.addView(legendRow);
             }
 
@@ -2123,7 +2179,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             chartCard.addView(chartLayout);
             container.addView(chartCard);
         } catch (Exception e) {
-            Log.e("TeacherDashboard", "Error rendering vote chart", e);
+            Log.e("TeacherDashboard", "Error updating chart", e);
         }
     }
 
@@ -2608,23 +2664,70 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     if (id != null) candidateUids.put(id.trim(), uid);
                 }
 
+                boolean isDark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+                int titleTextColor = ContextCompat.getColor(TeacherDashboardActivity.this, R.color.title_text);
+                int mutedTextColor = ContextCompat.getColor(TeacherDashboardActivity.this, R.color.muted_text);
+
                 Dialog dialog = new Dialog(TeacherDashboardActivity.this);
                 dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
                 LinearLayout layout = new LinearLayout(TeacherDashboardActivity.this);
                 layout.setOrientation(LinearLayout.VERTICAL);
-                layout.setPadding(48, 48, 48, 48);
+                layout.setPadding(dpToPx(20), dpToPx(20), dpToPx(20), dpToPx(20));
                 layout.setBackgroundResource(R.drawable.bg_dialog_rounded);
 
-                TextView tvTitle = new TextView(TeacherDashboardActivity.this);
-                tvTitle.setText("Manage CR (Promote / Demote) - Sec " + activeSec);
-                tvTitle.setTextSize(18f);
-                tvTitle.setTypeface(null, Typeface.BOLD);
-                tvTitle.setTextColor(Color.parseColor("#0F172A"));
-                tvTitle.setPadding(0, 0, 0, 24);
-                layout.addView(tvTitle);
+                // Header Row (Icon + Title & Subtitle)
+                LinearLayout headerRow = new LinearLayout(TeacherDashboardActivity.this);
+                headerRow.setOrientation(LinearLayout.HORIZONTAL);
+                headerRow.setGravity(Gravity.CENTER_VERTICAL);
+                headerRow.setPadding(0, 0, 0, dpToPx(12));
 
+                FrameLayout iconBox = new FrameLayout(TeacherDashboardActivity.this);
+                int sz40 = dpToPx(40);
+                LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(sz40, sz40);
+                iconLp.setMarginEnd(dpToPx(12));
+                iconBox.setLayoutParams(iconLp);
+                iconBox.setBackgroundResource(R.drawable.bg_icon_square_blue);
+
+                ImageView imgIcon = new ImageView(TeacherDashboardActivity.this);
+                imgIcon.setImageResource(R.drawable.ic_users);
+                imgIcon.setColorFilter(Color.parseColor("#0066FF"));
+                int sz20 = dpToPx(20);
+                iconBox.addView(imgIcon, new FrameLayout.LayoutParams(sz20, sz20, Gravity.CENTER));
+                headerRow.addView(iconBox);
+
+                LinearLayout titleCol = new LinearLayout(TeacherDashboardActivity.this);
+                titleCol.setOrientation(LinearLayout.VERTICAL);
+                LinearLayout.LayoutParams titleColLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+                titleCol.setLayoutParams(titleColLp);
+
+                TextView tvTitle = new TextView(TeacherDashboardActivity.this);
+                tvTitle.setText("Manage CR Permissions");
+                tvTitle.setTextSize(17f);
+                tvTitle.setTypeface(null, Typeface.BOLD);
+                tvTitle.setTextColor(titleTextColor);
+                titleCol.addView(tvTitle);
+
+                TextView tvSub = new TextView(TeacherDashboardActivity.this);
+                tvSub.setText("Section " + activeSec + " · Tap a candidate to promote or demote");
+                tvSub.setTextSize(12f);
+                tvSub.setTextColor(mutedTextColor);
+                tvSub.setPadding(0, dpToPx(2), 0, 0);
+                titleCol.addView(tvSub);
+
+                headerRow.addView(titleCol);
+                layout.addView(headerRow);
+
+                // Glass Divider Line
+                View divider = new View(TeacherDashboardActivity.this);
+                divider.setBackgroundColor(ContextCompat.getColor(TeacherDashboardActivity.this, R.color.slate_border_light));
+                LinearLayout.LayoutParams divLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(1));
+                divLp.setMargins(0, 0, 0, dpToPx(12));
+                layout.addView(divider, divLp);
+
+                // Candidates Scroll View
                 ScrollView scrollView = new ScrollView(TeacherDashboardActivity.this);
+                scrollView.setVerticalScrollBarEnabled(false);
                 LinearLayout container = new LinearLayout(TeacherDashboardActivity.this);
                 container.setOrientation(LinearLayout.VERTICAL);
 
@@ -2636,56 +2739,57 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     boolean isCr = "CR".equalsIgnoreCase(currentRole);
                     String targetUid = candidateUids.containsKey(keyName) ? candidateUids.get(keyName) : candidate.getId();
 
-                    TextView itemTv = new TextView(TeacherDashboardActivity.this);
-                    itemTv.setText((i + 1) + ". " + cName + (isCr ? " [CR]" : ""));
-                    itemTv.setTextSize(15f);
-                    itemTv.setTextColor(Color.parseColor("#0F172A"));
-                    itemTv.setPadding(24, 24, 24, 24);
+                    View candCard = createManageCRCandidateCard(
+                            TeacherDashboardActivity.this,
+                            candidate,
+                            isCr,
+                            isDark,
+                            vItem -> {
+                                dialog.dismiss();
+                                boolean currentlyCr = isCr;
+                                String newRole = currentlyCr ? "Student" : "CR";
 
-                    TypedValue outValue = new TypedValue();
-                    TeacherDashboardActivity.this.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
-                    itemTv.setBackgroundResource(outValue.resourceId);
+                                Map<String, Object> roleUpdates = new HashMap<>();
+                                if (targetUid != null && !targetUid.isEmpty()) {
+                                    roleUpdates.put("users/" + targetUid + "/role", newRole);
+                                }
+                                if (!sanitizedSec.equals("--") && targetUid != null && !targetUid.isEmpty()) {
+                                    roleUpdates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/students/" + targetUid + "/role", newRole);
+                                }
 
-                    itemTv.setOnClickListener(vItem -> {
-                        dialog.dismiss();
-                        boolean currentlyCr = isCr;
-                        String newRole = currentlyCr ? "Student" : "CR";
-
-                        Map<String, Object> roleUpdates = new HashMap<>();
-                        if (targetUid != null && !targetUid.isEmpty()) {
-                            roleUpdates.put("users/" + targetUid + "/role", newRole);
-                        }
-                        if (!sanitizedSec.equals("--") && targetUid != null && !targetUid.isEmpty()) {
-                            roleUpdates.put("sections/" + sanitizedDept + "/" + sanitizedSec + "/students/" + targetUid + "/role", newRole);
-                        }
-
-                        if (!roleUpdates.isEmpty()) {
-                            dbRef.updateChildren(roleUpdates).addOnSuccessListener(unused -> {
-                                String actionText = (currentlyCr ? "Demoted " : "Promoted ") + cName + " to " + newRole;
-                                CustomToast.show(TeacherDashboardActivity.this, actionText + " successfully!");
-                                logAdminAction(actionText);
-                            }).addOnFailureListener(e -> {
-                                CustomToast.show(TeacherDashboardActivity.this, "Failed to update role: " + e.getMessage());
-                            });
-                        } else {
-                            CustomToast.show(TeacherDashboardActivity.this, "Cannot update role for candidate: UID missing");
-                        }
-                    });
-                    container.addView(itemTv);
+                                if (!roleUpdates.isEmpty()) {
+                                    dbRef.updateChildren(roleUpdates).addOnSuccessListener(unused -> {
+                                        String actionText = (currentlyCr ? "Demoted " : "Promoted ") + cName + " to " + newRole;
+                                        CustomToast.show(TeacherDashboardActivity.this, actionText + " successfully!");
+                                        logAdminAction(actionText);
+                                    }).addOnFailureListener(e -> {
+                                        CustomToast.show(TeacherDashboardActivity.this, "Failed to update role: " + e.getMessage());
+                                    });
+                                } else {
+                                    CustomToast.show(TeacherDashboardActivity.this, "Cannot update role for candidate: UID missing");
+                                }
+                            }
+                    );
+                    container.addView(candCard);
                 }
 
                 scrollView.addView(container);
                 layout.addView(scrollView, new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
 
-                Button btnClose = new Button(TeacherDashboardActivity.this);
-                btnClose.setText("Close");
-                btnClose.setTextColor(Color.parseColor("#0066FF"));
+                // Close Button
+                MaterialButton btnClose = new MaterialButton(TeacherDashboardActivity.this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
+                btnClose.setText("Close Window");
+                btnClose.setCornerRadius(dpToPx(12));
+                btnClose.setStrokeWidth(dpToPx(1));
+                btnClose.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(TeacherDashboardActivity.this, R.color.card_stroke)));
+                btnClose.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(TeacherDashboardActivity.this, R.color.input_bg)));
+                btnClose.setTextColor(titleTextColor);
+                btnClose.setTextSize(14f);
                 btnClose.setTypeface(null, Typeface.BOLD);
-                btnClose.setBackgroundResource(R.drawable.bg_btn_outlined);
                 LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, (int) (48 * getResources().getDisplayMetrics().density));
-                closeLp.setMargins(0, 24, 0, 0);
+                    LinearLayout.LayoutParams.MATCH_PARENT, (int) (46 * getResources().getDisplayMetrics().density));
+                closeLp.setMargins(0, dpToPx(14), 0, 0);
                 btnClose.setLayoutParams(closeLp);
                 btnClose.setOnClickListener(vClose -> dialog.dismiss());
                 layout.addView(btnClose);
@@ -2694,19 +2798,132 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 if (dialog.getWindow() != null) {
                     dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
                     dialog.getWindow().setLayout(
-                        (int) (getResources().getDisplayMetrics().widthPixels * 0.88),
-                        WindowManager.LayoutParams.WRAP_CONTENT
+                            (int) (getResources().getDisplayMetrics().widthPixels * 0.90),
+                            WindowManager.LayoutParams.WRAP_CONTENT
                     );
-                    dialog.getWindow().setDimAmount(0.4f);
+                    dialog.getWindow().setDimAmount(0.50f);
                 }
                 dialog.show();
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                CustomToast.show(TeacherDashboardActivity.this, "Error: " + error.getMessage());
+                CustomToast.show(TeacherDashboardActivity.this, "Error loading user profile: " + error.getMessage());
             }
         });
+    }
+
+    private View createManageCRCandidateCard(
+            Context context,
+            Candidate candidate,
+            boolean isCr,
+            boolean isDark,
+            View.OnClickListener onClickListener
+    ) {
+        MaterialCardView card = new MaterialCardView(context);
+        card.setRadius(dpToPx(14));
+        card.setStrokeWidth(dpToPx(1));
+        card.setStrokeColor(Color.parseColor(isDark ? (isCr ? "#92400E" : "#1E293B") : (isCr ? "#FDE68A" : "#E2E8F0")));
+        card.setCardBackgroundColor(Color.parseColor(isDark ? (isCr ? "#26381500" : "#131B2E") : (isCr ? "#FFFBEB" : "#F8FAFC")));
+        card.setCardElevation(dpToPx(1));
+
+        LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        cardLp.setMargins(0, dpToPx(6), 0, dpToPx(6));
+        card.setLayoutParams(cardLp);
+
+        LinearLayout row = new LinearLayout(context);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dpToPx(12), dpToPx(12), dpToPx(12), dpToPx(12));
+
+        // 1. Avatar Circle (40x40dp)
+        FrameLayout avatarBox = new FrameLayout(context);
+        int sz40 = dpToPx(40);
+        LinearLayout.LayoutParams avatarLp = new LinearLayout.LayoutParams(sz40, sz40);
+        avatarLp.setMarginEnd(dpToPx(12));
+        avatarBox.setLayoutParams(avatarLp);
+
+        GradientDrawable avatarBg = new GradientDrawable();
+        avatarBg.setShape(GradientDrawable.OVAL);
+        avatarBg.setColor(Color.parseColor(isCr ? (isDark ? "#D97706" : "#F59E0B") : "#0066FF"));
+        avatarBox.setBackground(avatarBg);
+
+        TextView tvInitials = new TextView(context);
+        String cName = candidate.getName() != null ? candidate.getName() : "Student";
+        tvInitials.setText(computeInitials(cName));
+        tvInitials.setTextSize(14f);
+        tvInitials.setTypeface(null, Typeface.BOLD);
+        tvInitials.setTextColor(Color.WHITE);
+        tvInitials.setGravity(Gravity.CENTER);
+        avatarBox.addView(tvInitials, new FrameLayout.LayoutParams(-1, -1));
+
+        row.addView(avatarBox);
+
+        // 2. Info Column (Candidate Name + Votes/Dept)
+        LinearLayout infoCol = new LinearLayout(context);
+        infoCol.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams infoLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+        infoCol.setLayoutParams(infoLp);
+
+        TextView tvName = new TextView(context);
+        tvName.setText(cName);
+        tvName.setTextSize(15f);
+        tvName.setTypeface(null, Typeface.BOLD);
+        tvName.setTextColor(ContextCompat.getColor(context, R.color.title_text));
+        tvName.setSingleLine(true);
+        tvName.setEllipsize(TextUtils.TruncateAt.END);
+        infoCol.addView(tvName);
+
+        TextView tvMeta = new TextView(context);
+        int vts = Math.max(0, candidate.getVotes());
+        String voteUnit = vts == 1 ? " vote · " : " votes · ";
+        String dept = candidate.getDept() != null && !candidate.getDept().isEmpty() ? candidate.getDept() : "Dept. of CSE";
+        tvMeta.setText(vts + voteUnit + dept);
+        tvMeta.setTextSize(12f);
+        tvMeta.setTextColor(ContextCompat.getColor(context, R.color.muted_text));
+        tvMeta.setPadding(0, dpToPx(2), 0, 0);
+        infoCol.addView(tvMeta);
+
+        row.addView(infoCol);
+
+        // 3. Action / Status Pill Badge
+        TextView badgeTv = new TextView(context);
+        badgeTv.setTextSize(11f);
+        badgeTv.setTypeface(null, Typeface.BOLD);
+        badgeTv.setPadding(dpToPx(10), dpToPx(6), dpToPx(10), dpToPx(6));
+
+        GradientDrawable badgeBg = new GradientDrawable();
+        badgeBg.setCornerRadius(dpToPx(8));
+        if (isCr) {
+            badgeTv.setText("CR DECLARED");
+            badgeBg.setColor(Color.parseColor(isDark ? "#381500" : "#FEF3C7"));
+            badgeBg.setStroke(dpToPx(1), Color.parseColor(isDark ? "#92400E" : "#FCD34D"));
+            badgeTv.setTextColor(Color.parseColor(isDark ? "#F59E0B" : "#92400E"));
+        } else {
+            badgeTv.setText("+ PROMOTE");
+            badgeBg.setColor(Color.parseColor(isDark ? "#1A2E4A" : "#EFF6FF"));
+            badgeBg.setStroke(dpToPx(1), Color.parseColor(isDark ? "#1E3A6E" : "#BFD7FF"));
+            badgeTv.setTextColor(Color.parseColor(isDark ? "#60A5FA" : "#0066FF"));
+        }
+        badgeTv.setBackground(badgeBg);
+        row.addView(badgeTv);
+
+        card.addView(row);
+        card.setOnClickListener(onClickListener);
+        return card;
+    }
+
+    private String computeInitials(String name) {
+        if (name == null || name.trim().isEmpty()) return "ST";
+        String[] parts = name.trim().split("\\s+");
+        if (parts.length == 1) {
+            return parts[0].substring(0, Math.min(2, parts[0].length())).toUpperCase(Locale.US);
+        } else {
+            return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase(Locale.US);
+        }
     }
 
     private void animateButtonBounce(View view, Runnable onAnimationEnd) {
@@ -2946,7 +3163,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     }
 
     private void showProfileTab() {
-        selectAdminTab(2, false);
+        selectAdminTab(1, false);
     }
 
     private void detachLiveFirebaseSectionListeners() {

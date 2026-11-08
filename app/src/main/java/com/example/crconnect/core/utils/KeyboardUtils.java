@@ -84,10 +84,15 @@ public class KeyboardUtils {
                 ViewCompat.setOnApplyWindowInsetsListener(extraView, (v, insets) -> {
                     Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                     Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-                    int extraBottom = (int) (8 * v.getResources().getDisplayMetrics().density);
-                    int bottomPadding = Math.max(systemBars.bottom, ime.bottom) + extraBottom;
-                    int topPadding = (int) (8 * v.getResources().getDisplayMetrics().density);
-                    v.setPadding(v.getPaddingLeft(), topPadding, v.getPaddingRight(), bottomPadding);
+                    int bottomInset = Math.max(systemBars.bottom, ime.bottom);
+                    ViewGroup.LayoutParams lp = v.getLayoutParams();
+                    if (lp instanceof ViewGroup.MarginLayoutParams) {
+                        ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
+                        float density = v.getResources().getDisplayMetrics().density;
+                        int baseMarginBottom = (int) (12 * density);
+                        mlp.bottomMargin = baseMarginBottom + bottomInset;
+                        v.setLayoutParams(mlp);
+                    }
                     return WindowInsetsCompat.CONSUMED;
                 });
             }

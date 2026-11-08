@@ -9,6 +9,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -257,8 +259,9 @@ fun TextLink(
 
 @Composable
 fun TopHeader(
+    title: String = "Class Routine",
     name: String = "Student",
-    department: String = "Dept. of CSE",
+    department: String = "Dept. of CSE, BUBT",
     initials: String = "ST",
     isCr: Boolean = false,
     onMenuClick: () -> Unit,
@@ -266,9 +269,18 @@ fun TopHeader(
     onSignOutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val displayName = name.ifBlank { "Student" }
-    val displayDepartment = department.ifBlank { "Dept. of CSE" }
-    val displayInitials = if (initials.isNotBlank()) initials else computeInitials(displayName)
+    val displayTitle = title.ifBlank { "Class Routine" }
+    val displayDepartment = if (department.isNotBlank()) {
+        if (department.contains("CSE", ignoreCase = true) && !department.contains("BUBT", ignoreCase = true)) {
+            "Dept. of CSE, BUBT"
+        } else {
+            department
+        }
+    } else {
+        "Dept. of CSE, BUBT"
+    }
+    val displayInitials = if (initials.isNotBlank()) initials else computeInitials(name.ifBlank { "Student" })
+    val isDark = isSystemInDarkTheme() || MaterialTheme.colorScheme.surface == DarkSurface
 
     Row(
         modifier = modifier
@@ -277,12 +289,12 @@ fun TopHeader(
             .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 1. Menu Button: 44dp x 44dp, 24dp ic_menu icon, 1dp #E2E8F0 stroke
+        // 1. Menu Button: 44dp x 44dp, 24dp ic_menu icon
         Surface(
             modifier = Modifier.size(44.dp),
             shape = CircleShape,
-            color = Color.White,
-            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             shadowElevation = 0.dp,
             onClick = onMenuClick
         ) {
@@ -290,7 +302,7 @@ fun TopHeader(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_menu),
                     contentDescription = "Open menu",
-                    tint = Color(0xFF0F172A),
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -298,13 +310,13 @@ fun TopHeader(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // 2. Avatar Circle: 44dp x 44dp, filled #0066FF with 3dp white ring
+        // 2. Avatar Circle: 44dp x 44dp, filled #0066FF
         Box(
             modifier = Modifier
                 .size(44.dp)
                 .clip(CircleShape)
-                .background(Color.White)
-                .padding(3.dp)
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(2.dp)
                 .clip(CircleShape)
                 .background(Color(0xFF0066FF))
                 .clickable(
@@ -330,11 +342,11 @@ fun TopHeader(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = displayName,
+                    text = displayTitle,
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false)
@@ -349,7 +361,7 @@ fun TopHeader(
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Normal,
-                color = Color(0xFF64748B),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -361,8 +373,12 @@ fun TopHeader(
         Box(
             modifier = Modifier
                 .clip(CircleShape)
-                .background(Color(0xFFDCFCE7))
-                .border(1.dp, Color(0xFFBBF7D0), CircleShape)
+                .background(if (isDark) Color(0xFF0D3B24) else Color(0xFFDCFCE7))
+                .border(
+                    1.dp,
+                    if (isDark) Color(0xFF15803D).copy(alpha = 0.5f) else Color(0xFFBBF7D0),
+                    CircleShape
+                )
                 .padding(horizontal = 10.dp, vertical = 4.dp)
         ) {
             Text(
@@ -370,18 +386,18 @@ fun TopHeader(
                 fontFamily = PlusJakartaSansFontFamily,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF166534)
+                color = if (isDark) Color(0xFF4ADE80) else Color(0xFF166534)
             )
         }
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // 5. Power / Sign Out Button: 44dp x 44dp, 24dp ic_power icon, 1dp #E2E8F0 stroke
+        // 5. Power / Sign Out Button: 44dp x 44dp, 24dp ic_power icon
         Surface(
             modifier = Modifier.size(44.dp),
             shape = CircleShape,
-            color = Color.White,
-            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             shadowElevation = 0.dp,
             onClick = onSignOutClick
         ) {
@@ -389,7 +405,7 @@ fun TopHeader(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_power),
                     contentDescription = "Sign out",
-                    tint = Color(0xFF0F172A),
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -400,85 +416,93 @@ fun TopHeader(
 @Composable
 fun StudentBottomNavigation(
     selectedTab: Int,
-    onTabSelected: (Int) -> Unit
+    onTabSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val navSelectedColor = Color(0xFF0066FF)
     val navUnselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
     val outlineColor = MaterialTheme.colorScheme.outline
-    val surfaceColor = MaterialTheme.colorScheme.surface
+    val surfaceColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f)
     val view = LocalView.current
 
-    Surface(
-        modifier = Modifier
+    Box(
+        modifier = modifier
             .fillMaxWidth()
-            .drawBehind {
-                drawLine(
-                    color = outlineColor,
-                    start = Offset(0f, 0f),
-                    end = Offset(size.width, 0f),
-                    strokeWidth = 1.dp.toPx()
-                )
-            },
-        color = surfaceColor
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        Row(
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .height(64.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .height(60.dp)
+                .shadow(
+                    elevation = 6.dp,
+                    shape = RoundedCornerShape(30.dp),
+                    ambientColor = Color.Black.copy(alpha = 0.1f),
+                    spotColor = Color.Black.copy(alpha = 0.15f)
+                ),
+            shape = RoundedCornerShape(30.dp),
+            color = surfaceColor,
+            border = BorderStroke(1.dp, outlineColor)
         ) {
-            val items = listOf(
-                Triple("Routine", R.drawable.ic_nav_routine, 0),
-                Triple("Candidates", R.drawable.ic_nav_candidates, 1),
-                Triple("Status", R.drawable.ic_nav_timer, 2),
-                Triple("Profile", R.drawable.ic_nav_profile, 3)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val items = listOf(
+                    Triple("Candidates", R.drawable.ic_nav_candidates, 1),
+                    Triple("Routine", R.drawable.ic_nav_routine, 0),
+                    Triple("Status", R.drawable.ic_nav_timer, 2),
+                    Triple("Profile", R.drawable.ic_nav_profile, 3)
+                )
 
-            items.forEach { (label, iconRes, index) ->
-                val selected = selectedTab == index
+                items.forEach { (label, iconRes, index) ->
+                    val selected = selectedTab == index
 
-                val pillBg = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-                val itemColor = if (selected) navSelectedColor else navUnselectedColor
+                    val pillBg = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                    val itemColor = if (selected) navSelectedColor else navUnselectedColor
 
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
-                            HapticUtils.lightClick(view)
-                            onTabSelected(index)
-                        },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
+                    Column(
                         modifier = Modifier
-                            .width(64.dp)
-                            .height(32.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(pillBg),
-                        contentAlignment = Alignment.Center
+                            .weight(1f)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                HapticUtils.lightClick(view)
+                                onTabSelected(index)
+                            },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            painter = painterResource(id = iconRes),
-                            contentDescription = label,
-                            tint = itemColor,
-                            modifier = Modifier.size(20.dp)
+                        Box(
+                            modifier = Modifier
+                                .width(56.dp)
+                                .height(30.dp)
+                                .clip(RoundedCornerShape(15.dp))
+                                .background(pillBg),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = iconRes),
+                                contentDescription = label,
+                                tint = itemColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = label,
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight(600),
+                            color = itemColor
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Text(
-                        text = label,
-                        fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight(600),
-                        color = itemColor
-                    )
                 }
             }
         }
