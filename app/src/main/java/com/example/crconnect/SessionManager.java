@@ -135,10 +135,10 @@ public class SessionManager {
     public String getAdvisorName() {
         String intake = getUserIntake();
         String section = getUserSection();
-        if (intake != null && intake.contains("55") && section != null && section.contains("6")) {
+        if (intake != null && intake.contains("55") && section != null && (section.contains("6") || section.contains("5A"))) {
             return pref.getString(KEY_ADVISOR_NAME, "Nasrin Akter");
         }
-        return pref.getString(KEY_ADVISOR_NAME, "Dr. Md. Mamunur Rashid");
+        return pref.getString(KEY_ADVISOR_NAME, "--");
     }
 
     public void setAdvisorName(String name) {
@@ -149,10 +149,10 @@ public class SessionManager {
     public String getAdvisorEmail() {
         String intake = getUserIntake();
         String section = getUserSection();
-        if (intake != null && intake.contains("55") && section != null && section.contains("6")) {
+        if (intake != null && intake.contains("55") && section != null && (section.contains("6") || section.contains("5A"))) {
             return pref.getString(KEY_ADVISOR_EMAIL, "nasrinshipa@bubt.edu.bd");
         }
-        return pref.getString(KEY_ADVISOR_EMAIL, "mamunur@bubt.edu.bd");
+        return pref.getString(KEY_ADVISOR_EMAIL, "--");
     }
 
     public void setAdvisorEmail(String email) {
@@ -161,7 +161,7 @@ public class SessionManager {
     }
 
     public String getCurrentTerm() {
-        return pref.getString(KEY_CURRENT_TERM, "Spring 2025 (Year 3)");
+        return pref.getString(KEY_CURRENT_TERM, "--");
     }
 
     public void setCurrentTerm(String term) {

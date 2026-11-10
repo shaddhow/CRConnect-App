@@ -841,6 +841,21 @@ class LoginActivity : AppCompatActivity() {
             sessionManager.setStudentCgpa(cgpa)
         }
 
+        val advName = snapshot.child("advisorName").getValue(String::class.java) ?: ""
+        if (advName.isNotBlank() && advName != "--") {
+            sessionManager.setAdvisorName(advName)
+        }
+
+        val advEmail = snapshot.child("advisorEmail").getValue(String::class.java) ?: ""
+        if (advEmail.isNotBlank() && advEmail != "--") {
+            sessionManager.setAdvisorEmail(advEmail)
+        }
+
+        val term = snapshot.child("currentTerm").getValue(String::class.java) ?: ""
+        if (term.isNotBlank() && term != "--" && !term.contains("Spring 2025 (Year 3)", ignoreCase = true)) {
+            sessionManager.setCurrentTerm(term)
+        }
+
         var profileImg = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
         if (profileImg.isBlank() && googlePhotoUrl.isNotBlank()) {
             profileImg = googlePhotoUrl
@@ -1099,6 +1114,21 @@ class LoginActivity : AppCompatActivity() {
         val cgpa = doc.getString("cgpa") ?: ""
         if (cgpa.isNotBlank() && cgpa != "--") {
             sessionManager.setStudentCgpa(cgpa)
+        }
+
+        val advName = doc.getString("advisorName") ?: ""
+        if (advName.isNotBlank() && advName != "--" && !advName.contains("Nasrin", ignoreCase = true) && !advName.contains("Mamunur", ignoreCase = true)) {
+            sessionManager.setAdvisorName(advName)
+        }
+
+        val advEmail = doc.getString("advisorEmail") ?: ""
+        if (advEmail.isNotBlank() && advEmail != "--" && !advEmail.contains("nasrin", ignoreCase = true) && !advEmail.contains("mamunur", ignoreCase = true)) {
+            sessionManager.setAdvisorEmail(advEmail)
+        }
+
+        val term = doc.getString("currentTerm") ?: ""
+        if (term.isNotBlank() && term != "--" && !term.contains("Spring 2025", ignoreCase = true)) {
+            sessionManager.setCurrentTerm(term)
         }
 
         var profileImg = doc.getString("profileImageUrl") ?: ""

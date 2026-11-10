@@ -771,11 +771,15 @@ fun ProfileTab(
                         .then(
                             if (profile.advisorName.contains("Nasrin Akter", ignoreCase = true)) {
                                 Modifier.clickable {
-                                    val intent = Intent(
-                                        Intent.ACTION_VIEW,
-                                        Uri.parse("https://bubt.edu.bd/department/department-of-computer-science-engineering/faculty/profile/NAA")
-                                    )
-                                    context.startActivity(intent)
+                                    try {
+                                        val intent = Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse("https://bubt.edu.bd/department/department-of-computer-science-engineering/faculty/profile/NAA")
+                                        )
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        ToastHelper.show(context, "Could not open faculty profile")
+                                    }
                                 }
                             } else Modifier
                         )
@@ -795,13 +799,13 @@ fun ProfileTab(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = profile.advisorName,
+                            text = profile.advisorName.ifBlank { "Nasrin Akter" },
                             fontFamily = PlusJakartaSansFontFamily,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        if (profile.advisorName.contains("Nasrin Akter", ignoreCase = true)) {
+                        if (profile.advisorName.contains("Nasrin Akter", ignoreCase = true) || profile.advisorName.isBlank() || profile.advisorName == "--") {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                                 contentDescription = "View Profile",
@@ -813,7 +817,7 @@ fun ProfileTab(
                 }
                 KeyValueRow(
                     key = "Advisor Email",
-                    value = profile.advisorEmail,
+                    value = profile.advisorEmail.ifBlank { "nasrinshipa@bubt.edu.bd" },
                     valueColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

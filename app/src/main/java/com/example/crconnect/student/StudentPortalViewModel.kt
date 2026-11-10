@@ -101,6 +101,12 @@ class StudentPortalViewModel : ViewModel() {
         val initials = computeInitials(studentName)
         val isUserCr = session.userRole.contains("CR", ignoreCase = true)
 
+        var term = session.currentTerm
+        if (term.contains("Spring 2025 (Year 3)", ignoreCase = true)) {
+            term = "--"
+            session.setCurrentTerm("--")
+        }
+
         val profileModel = UserProfileModel(
             name = studentName,
             email = session.userEmail.ifBlank { "student@bubt.edu.bd" },
@@ -112,9 +118,9 @@ class StudentPortalViewModel : ViewModel() {
             cgpa = session.studentCgpa,
             profileImageUrl = session.profileImageUrl,
             isCr = isUserCr,
-            advisorName = session.advisorName,
-            advisorEmail = session.advisorEmail,
-            currentTerm = session.currentTerm
+            advisorName = session.advisorName.ifBlank { "Nasrin Akter" },
+            advisorEmail = session.advisorEmail.ifBlank { "nasrinshipa@bubt.edu.bd" },
+            currentTerm = term.ifBlank { "--" }
         )
 
         val todayIdx = getTodayDayIndex()

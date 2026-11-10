@@ -95,9 +95,9 @@ data class UserProfileModel(
     val initials: String = "ST",
     val profileImageUrl: String = "",
     val isCr: Boolean = false,
-    val advisorName: String = "Dr. Md. Mamunur Rashid",
-    val advisorEmail: String = "mamunur@bubt.edu.bd",
-    val currentTerm: String = "Spring 2025 (Year 3)"
+    val advisorName: String = "Nasrin Akter",
+    val advisorEmail: String = "nasrinshipa@bubt.edu.bd",
+    val currentTerm: String = "--"
 )
 
 fun computeInitials(name: String): String {
