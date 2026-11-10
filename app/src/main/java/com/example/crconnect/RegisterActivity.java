@@ -443,6 +443,27 @@ public class RegisterActivity extends AppCompatActivity {
 
         setupButtonTouchFeedback(btnRegister);
         setupHapticFeedback();
+        checkPrefilledIntentData();
+    }
+
+    private void checkPrefilledIntentData() {
+        Intent intent = getIntent();
+        if (intent != null) {
+            String prefillEmail = intent.getStringExtra("prefill_email");
+            String prefillName = intent.getStringExtra("prefill_name");
+
+            if (prefillEmail != null && !prefillEmail.trim().isEmpty()) {
+                if (etRegEmail != null) {
+                    etRegEmail.setText(prefillEmail);
+                }
+                autoDetectRoleFromEmail(prefillEmail);
+            }
+            if (prefillName != null && !prefillName.trim().isEmpty()) {
+                if (etFullName != null) {
+                    etFullName.setText(prefillName);
+                }
+            }
+        }
     }
 
     private void setupButtonTouchFeedback(View btn) {
@@ -821,7 +842,7 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        String role = isStudent ? "Student" : "Teacher";
+        String role = isStudent ? "Student" : "Teacher/Admin";
         String assignedSection = isStudent ? section : "";
 
         btnRegister.setEnabled(false);
@@ -956,6 +977,10 @@ public class RegisterActivity extends AppCompatActivity {
         userMap.put("dept", (dept != null && !dept.isEmpty()) ? dept : "Department of CSE, BUBT");
         userMap.put("deviceId", Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID));
         userMap.put("registeredAt", System.currentTimeMillis());
+
+        if (googleAccount != null && googleAccount.getPhotoUrl() != null) {
+            userMap.put("profileImageUrl", googleAccount.getPhotoUrl().toString());
+        }
 
         if (uid != null && !uid.isEmpty()) {
             dbRef.child("users").child(uid).setValue(userMap);

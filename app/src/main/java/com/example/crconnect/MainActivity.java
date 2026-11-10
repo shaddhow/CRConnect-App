@@ -258,8 +258,8 @@ public class MainActivity extends AppCompatActivity {
         if (btnDevTeacher != null) {
             btnDevTeacher.setOnClickListener(v -> {
                 sessionManager.createLoginSession(
-                    "Test Teacher (Dev)",
-                    "teacher@bubt.edu.bd",
+                    "Rahik (Teacher)",
+                    "rahik@bubt.edu.bd",
                     "T1001",
                     "Teacher/Admin",
                     "--",

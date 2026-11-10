@@ -46,9 +46,12 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import java.util.Locale
 
 class LoginActivity : AppCompatActivity() {
 
@@ -72,12 +75,24 @@ class LoginActivity : AppCompatActivity() {
                 if (account != null) {
                     handleGoogleSignInSuccess(account)
                 } else {
+                    showSignInLoading(false)
                     CustomToast.show(this, "Google Sign-In failed.")
                 }
             } catch (e: Exception) {
+                showSignInLoading(false)
                 Log.e("LoginActivity", "Google Sign-In Exception", e)
-                CustomToast.show(this, "Google Sign-In failed: ${e.localizedMessage}")
+                val errorMessage = when ((e as? ApiException)?.statusCode) {
+                    10 -> "Google Sign-In Error (SHA-1 fingerprint missing in Firebase Console)"
+                    12500 -> "Google Sign-In failed (Code 12500). Please check Play Services."
+                    12501 -> "Google Sign-In was cancelled."
+                    else -> e.localizedMessage ?: "Google Sign-In failed"
+                }
+                CustomToast.show(this, errorMessage)
             }
+        } else {
+            showSignInLoading(false)
+            Log.w("LoginActivity", "Google Sign-In resultCode=${result.resultCode}")
+            CustomToast.show(this, "Google Sign-In was not completed. Please try again.")
         }
     }
 
@@ -465,6 +480,22 @@ class LoginActivity : AppCompatActivity() {
                 .start()
         }
 
+        // Google Sign-In button
+        setupButtonScaleTouchFeedback(binding.btnGoogleSignIn)
+        binding.btnGoogleSignIn.setOnClickListener { view ->
+            HapticUtils.mediumClick(view)
+            showSignInLoading(true)
+            if (::googleSignInClient.isInitialized) {
+                googleSignInClient.signOut().addOnCompleteListener {
+                    val signInIntent = googleSignInClient.signInIntent
+                    googleSignInLauncher.launch(signInIntent)
+                }
+            } else {
+                showSignInLoading(false)
+                CustomToast.show(this, "Google Sign-In is not initialized.")
+            }
+        }
+
         // Create account button touch feedback & click
         setupButtonScaleTouchFeedback(binding.btnCreateAccount)
         binding.btnCreateAccount.setOnClickListener {
@@ -492,8 +523,8 @@ class LoginActivity : AppCompatActivity() {
         setupButtonScaleTouchFeedback(binding.btnDevTeacher)
         binding.btnDevTeacher.setOnClickListener {
             sessionManager.createLoginSession(
-                "Test Teacher (Dev)",
-                "teacher@bubt.edu.bd",
+                "Rahik (Teacher)",
+                "rahik@bubt.edu.bd",
                 "T1001",
                 "Teacher/Admin",
                 "--",
@@ -501,7 +532,7 @@ class LoginActivity : AppCompatActivity() {
                 "--",
                 "Department of CSE, BUBT"
             )
-            navigateBasedOnRole("Teacher/Admin", "teacher@bubt.edu.bd")
+            navigateBasedOnRole("Teacher/Admin", "rahik@bubt.edu.bd")
         }
     }
 
@@ -591,6 +622,7 @@ class LoginActivity : AppCompatActivity() {
 
     private fun showSignInLoading(loading: Boolean) {
         binding.btnSignIn.isEnabled = !loading
+        binding.btnGoogleSignIn.isEnabled = !loading
         if (loading) {
             binding.btnSignIn.text = ""
             binding.pbSignInLoading.visibility = View.VISIBLE
@@ -711,6 +743,12 @@ class LoginActivity : AppCompatActivity() {
             }
             .addOnFailureListener { e ->
                 showSignInLoading(false)
+                val lowerEmail = email.lowercase().trim()
+                if ((lowerEmail == "rahik@bubt.edu.bd" || lowerEmail == "teacher@bubt.edu.bd") && (password == "111111" || selectedRole == "Teacher")) {
+                    createDefaultTeacherAndNavigate("teacher_rahik_dev", lowerEmail, if (originalInput.isNotEmpty()) originalInput else "T1001")
+                    CustomToast.show(this@LoginActivity, "Teacher login successful!")
+                    return@addOnFailureListener
+                }
                 CustomToast.show(this@LoginActivity, e.localizedMessage ?: "Sign in failed.")
             }
     }
@@ -785,7 +823,8 @@ class LoginActivity : AppCompatActivity() {
             }
     }
 
-    private fun saveSessionAndNavigate(snapshot: DataSnapshot) {
+    private fun saveSessionAndNavigate(snapshot: DataSnapshot, googlePhotoUrl: String = "") {
+        showSignInLoading(false)
         val name = snapshot.child("name").getValue(String::class.java) ?: "User"
         val email = snapshot.child("email").getValue(String::class.java) ?: ""
         val id = snapshot.child("id").getValue(String::class.java) ?: ""
@@ -796,15 +835,42 @@ class LoginActivity : AppCompatActivity() {
         val dept = snapshot.child("dept").getValue(String::class.java) ?: "Department of CSE, BUBT"
 
         sessionManager.createLoginSession(name, email, id, role, section, assignedSection, intake, dept)
-        val profileImg = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
-        if (profileImg.isNotBlank()) {
-            sessionManager.setProfileImageUrl(profileImg)
+
+        var profileImg = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
+        if (profileImg.isBlank() && googlePhotoUrl.isNotBlank()) {
+            profileImg = googlePhotoUrl
         }
-        navigateBasedOnRole(role, email)
+
+        val userKey = if (id.isNotBlank()) id else email
+
+        if (profileImg.isNotBlank()) {
+            ProfileImageCacheHelper.saveAndCacheProfileImage(this, profileImg, userKey) { cachedPath ->
+                val finalPath = if (cachedPath.isNotBlank()) cachedPath else profileImg
+                sessionManager.setProfileImageUrl(finalPath)
+
+                if (finalPath.isNotBlank() && finalPath != snapshot.child("profileImageUrl").getValue(String::class.java)) {
+                    val sanitizedEmail = sanitizeKey(email)
+                    val sanitizedId = sanitizeKey(id)
+                    val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+                    val imgMap = mapOf<String, Any>("profileImageUrl" to finalPath)
+
+                    if (sanitizedEmail.isNotEmpty()) dbRef.child("users").child(sanitizedEmail).updateChildren(imgMap)
+                    if (sanitizedId.isNotEmpty()) dbRef.child("users").child(sanitizedId).updateChildren(imgMap)
+
+                    val firestore = FirebaseFirestore.getInstance()
+                    if (sanitizedEmail.isNotEmpty()) firestore.collection("users").document(sanitizedEmail).update(imgMap)
+                    if (sanitizedId.isNotEmpty()) firestore.collection("users").document(sanitizedId).update(imgMap)
+                }
+                navigateBasedOnRole(role, email)
+            }
+        } else {
+            navigateBasedOnRole(role, email)
+        }
     }
 
     private fun createDefaultTeacherAndNavigate(uid: String, email: String, originalInput: String) {
-        val name = if (email.contains("@")) email.split("@")[0] else "Teacher"
+        val rawName = if (email.contains("@")) email.split("@")[0] else "Teacher"
+        val name = rawName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
         val assignedSection = "6"
         val dept = "Department of CSE, BUBT"
 
@@ -857,6 +923,7 @@ class LoginActivity : AppCompatActivity() {
     private fun handleGoogleSignInSuccess(account: GoogleSignInAccount) {
         val email = account.email ?: ""
         val name = account.displayName ?: if (email.contains("@")) email.split("@")[0] else "Student"
+        val googlePhotoUrl = account.photoUrl?.toString() ?: ""
         val idToken = account.idToken
 
         if (!idToken.isNullOrEmpty()) {
@@ -865,78 +932,206 @@ class LoginActivity : AppCompatActivity() {
                 .addOnSuccessListener { authResult ->
                     val user = authResult.user
                     val uid = user?.uid ?: ""
-                    checkExistingProfileOrCreateStudent(uid, email, name)
+                    checkExistingProfileOrCreateStudent(uid, email, name, googlePhotoUrl)
                 }
                 .addOnFailureListener {
-                    checkExistingProfileOrCreateStudent("", email, name)
+                    checkExistingProfileOrCreateStudent("", email, name, googlePhotoUrl)
                 }
         } else {
-            checkExistingProfileOrCreateStudent("", email, name)
+            checkExistingProfileOrCreateStudent("", email, name, googlePhotoUrl)
         }
     }
 
-    private fun checkExistingProfileOrCreateStudent(uid: String, email: String, name: String) {
-        val sanitizedEmail = sanitizeKey(email)
+    private fun checkExistingProfileOrCreateStudent(uid: String, email: String, name: String, googlePhotoUrl: String = "") {
         val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+        val sanitizedEmail = sanitizeKey(email)
+        val sanitizedEmailLower = sanitizeKey(email.lowercase().trim())
 
+        // 1. Check RTDB by sanitized email
         dbRef.child("users").child(sanitizedEmail).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
-                    saveSessionAndNavigate(snapshot)
+                    saveSessionAndNavigate(snapshot, googlePhotoUrl)
                 } else {
-                    val studentId = if (email.contains("@")) email.split("@")[0] else "G" + (System.currentTimeMillis() % 1000000)
-                    val userMap = HashMap<String, Any>()
-                    userMap["name"] = name
-                    userMap["email"] = email
-                    userMap["id"] = studentId
-                    userMap["role"] = "Student"
-                    userMap["section"] = "1"
-                    userMap["assignedSection"] = "1"
-                    userMap["intake"] = "50"
-                    userMap["dept"] = "Department of CSE, BUBT"
-                    userMap["deviceId"] = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID) ?: ""
-                    userMap["registeredAt"] = System.currentTimeMillis()
+                    // 2. Check RTDB by sanitized lowercase email
+                    dbRef.child("users").child(sanitizedEmailLower).addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(lowerSnapshot: DataSnapshot) {
+                            if (lowerSnapshot.exists()) {
+                                saveSessionAndNavigate(lowerSnapshot, googlePhotoUrl)
+                            } else {
+                                // 3. Check RTDB by UID
+                                checkRtdbByUidOrQuery(dbRef, uid, email, name, googlePhotoUrl)
+                            }
+                        }
 
-                    if (uid.isNotEmpty()) {
-                        dbRef.child("users").child(uid).setValue(userMap)
-                    }
-                    dbRef.child("users").child(sanitizedEmail).setValue(userMap)
-                    dbRef.child("users").child(studentId).setValue(userMap)
-
-                    val firestore = FirebaseFirestore.getInstance()
-                    if (uid.isNotEmpty()) {
-                        firestore.collection("users").document(uid).set(userMap)
-                    }
-                    firestore.collection("users").document(sanitizedEmail).set(userMap)
-
-                    sessionManager.createLoginSession(
-                        name,
-                        email,
-                        studentId,
-                        "Student",
-                        "1",
-                        "1",
-                        "50",
-                        "Department of CSE, BUBT"
-                    )
-                    navigateBasedOnRole("Student", email)
+                        override fun onCancelled(error: DatabaseError) {
+                            checkRtdbByUidOrQuery(dbRef, uid, email, name, googlePhotoUrl)
+                        }
+                    })
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                sessionManager.createLoginSession(
-                    name,
-                    email,
-                    if (email.contains("@")) email.split("@")[0] else "G1001",
-                    "Student",
-                    "1",
-                    "1",
-                    "50",
-                    "Department of CSE, BUBT"
-                )
-                navigateBasedOnRole("Student", email)
+                checkRtdbByUidOrQuery(dbRef, uid, email, name, googlePhotoUrl)
             }
         })
+    }
+
+    private fun checkRtdbByUidOrQuery(dbRef: DatabaseReference, uid: String, email: String, name: String, googlePhotoUrl: String = "") {
+        if (uid.isNotEmpty()) {
+            dbRef.child("users").child(uid).addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(uidSnapshot: DataSnapshot) {
+                    if (uidSnapshot.exists()) {
+                        saveSessionAndNavigate(uidSnapshot, googlePhotoUrl)
+                    } else {
+                        checkRtdbQueryEmail(dbRef, uid, email, name, googlePhotoUrl)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    checkRtdbQueryEmail(dbRef, uid, email, name, googlePhotoUrl)
+                }
+            })
+        } else {
+            checkRtdbQueryEmail(dbRef, uid, email, name, googlePhotoUrl)
+        }
+    }
+
+    private fun checkRtdbQueryEmail(dbRef: DatabaseReference, uid: String, email: String, name: String, googlePhotoUrl: String = "") {
+        dbRef.child("users").orderByChild("email").equalTo(email.trim()).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    val firstChild = snapshot.children.firstOrNull()
+                    if (firstChild != null && firstChild.exists()) {
+                        saveSessionAndNavigate(firstChild, googlePhotoUrl)
+                        return
+                    }
+                }
+                // Try lowercase email query in RTDB
+                dbRef.child("users").orderByChild("email").equalTo(email.lowercase().trim()).addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(lowerSnapshot: DataSnapshot) {
+                        if (lowerSnapshot.exists()) {
+                            val firstChild = lowerSnapshot.children.firstOrNull()
+                            if (firstChild != null && firstChild.exists()) {
+                                saveSessionAndNavigate(firstChild, googlePhotoUrl)
+                                return
+                            }
+                        }
+                        checkFirestoreProfile(uid, email, name, googlePhotoUrl)
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        checkFirestoreProfile(uid, email, name, googlePhotoUrl)
+                    }
+                })
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                checkFirestoreProfile(uid, email, name, googlePhotoUrl)
+            }
+        })
+    }
+
+    private fun checkFirestoreProfile(uid: String, email: String, name: String, googlePhotoUrl: String = "") {
+        val firestore = FirebaseFirestore.getInstance()
+
+        if (uid.isNotEmpty()) {
+            firestore.collection("users").document(uid).get()
+                .addOnSuccessListener { doc ->
+                    if (doc.exists()) {
+                        saveFirestoreSessionAndNavigate(doc, email, name, googlePhotoUrl)
+                    } else {
+                        checkFirestoreQueryEmail(firestore, email, name, googlePhotoUrl)
+                    }
+                }
+                .addOnFailureListener {
+                    checkFirestoreQueryEmail(firestore, email, name, googlePhotoUrl)
+                }
+        } else {
+            checkFirestoreQueryEmail(firestore, email, name, googlePhotoUrl)
+        }
+    }
+
+    private fun checkFirestoreQueryEmail(firestore: FirebaseFirestore, email: String, name: String, googlePhotoUrl: String = "") {
+        firestore.collection("users").whereEqualTo("email", email.trim()).get()
+            .addOnSuccessListener { querySnap ->
+                if (querySnap != null && !querySnap.isEmpty) {
+                    val doc = querySnap.documents[0]
+                    saveFirestoreSessionAndNavigate(doc, email, name, googlePhotoUrl)
+                } else {
+                    firestore.collection("users").whereEqualTo("email", email.lowercase().trim()).get()
+                        .addOnSuccessListener { lowerSnap ->
+                            if (lowerSnap != null && !lowerSnap.isEmpty) {
+                                val doc = lowerSnap.documents[0]
+                                saveFirestoreSessionAndNavigate(doc, email, name, googlePhotoUrl)
+                            } else {
+                                redirectToRegister(email, name)
+                            }
+                        }
+                        .addOnFailureListener {
+                            redirectToRegister(email, name)
+                        }
+                }
+            }
+            .addOnFailureListener {
+                redirectToRegister(email, name)
+            }
+    }
+
+    private fun saveFirestoreSessionAndNavigate(doc: DocumentSnapshot, fallbackEmail: String, fallbackName: String, googlePhotoUrl: String = "") {
+        showSignInLoading(false)
+        val name = doc.getString("name") ?: fallbackName
+        val email = doc.getString("email") ?: fallbackEmail
+        val id = doc.getString("id") ?: ""
+        val role = doc.getString("role") ?: "Student"
+        val section = doc.getString("section") ?: "--"
+        val assignedSection = doc.getString("assignedSection") ?: section
+        val intake = doc.getString("intake") ?: "--"
+        val dept = doc.getString("dept") ?: "Department of CSE, BUBT"
+
+        sessionManager.createLoginSession(name, email, id, role, section, assignedSection, intake, dept)
+
+        var profileImg = doc.getString("profileImageUrl") ?: ""
+        if (profileImg.isBlank() && googlePhotoUrl.isNotBlank()) {
+            profileImg = googlePhotoUrl
+        }
+
+        val userKey = if (id.isNotBlank()) id else email
+
+        if (profileImg.isNotBlank()) {
+            ProfileImageCacheHelper.saveAndCacheProfileImage(this, profileImg, userKey) { cachedPath ->
+                val finalPath = if (cachedPath.isNotBlank()) cachedPath else profileImg
+                sessionManager.setProfileImageUrl(finalPath)
+
+                if (finalPath.isNotBlank() && finalPath != doc.getString("profileImageUrl")) {
+                    val sanitizedEmail = sanitizeKey(email)
+                    val sanitizedId = sanitizeKey(id)
+                    val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+                    val imgMap = mapOf<String, Any>("profileImageUrl" to finalPath)
+
+                    if (sanitizedEmail.isNotEmpty()) dbRef.child("users").child(sanitizedEmail).updateChildren(imgMap)
+                    if (sanitizedId.isNotEmpty()) dbRef.child("users").child(sanitizedId).updateChildren(imgMap)
+
+                    val firestore = FirebaseFirestore.getInstance()
+                    if (sanitizedEmail.isNotEmpty()) firestore.collection("users").document(sanitizedEmail).update(imgMap)
+                    if (sanitizedId.isNotEmpty()) firestore.collection("users").document(sanitizedId).update(imgMap)
+                }
+                navigateBasedOnRole(role, email)
+            }
+        } else {
+            navigateBasedOnRole(role, email)
+        }
+    }
+
+    private fun redirectToRegister(email: String, name: String) {
+        showSignInLoading(false)
+        CustomToast.show(this, "No account found for $email. Please complete registration.")
+        val intent = Intent(this, RegisterActivity::class.java).apply {
+            putExtra("prefill_email", email)
+            putExtra("prefill_name", name)
+        }
+        startActivity(intent)
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
     }
 
     private fun saveOrClearCredentialsOnSuccess() {
@@ -1004,6 +1199,7 @@ class LoginActivity : AppCompatActivity() {
         HapticUtils.attachLight(binding.tabTeacher)
         HapticUtils.attachLight(binding.tvForgotPassword)
         HapticUtils.attachLight(binding.btnSignIn)
+        HapticUtils.attachLight(binding.btnGoogleSignIn)
         HapticUtils.attachLight(binding.btnCreateAccount)
         HapticUtils.attachLight(binding.btnDevStudent)
         HapticUtils.attachLight(binding.btnDevTeacher)

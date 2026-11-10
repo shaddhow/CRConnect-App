@@ -9,6 +9,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.signature.ObjectKey
+import com.example.crconnect.ProfileImageCacheHelper
 import java.io.File
 import androidx.compose.runtime.key
 import androidx.compose.animation.animateColorAsState
@@ -77,6 +78,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -86,6 +88,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.crconnect.R
+import com.example.crconnect.SessionManager
 import com.example.crconnect.core.utils.HapticUtils
 
 @Composable
@@ -340,16 +343,20 @@ fun TopHeader(
             contentAlignment = Alignment.Center
         ) {
             key(profileImageUrl) {
+                val context = LocalContext.current
                 val bitmap = remember(profileImageUrl) {
                     val path = profileImageUrl
-                    if (path.isNotBlank() && !path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
-                        try {
+                    try {
+                        if (path.isNotBlank() && !path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
                             val file = File(path)
-                            if (file.exists()) BitmapFactory.decodeFile(file.absolutePath) else null
-                        } catch (e: Exception) {
-                            null
+                            if (file.exists() && file.length() > 0) BitmapFactory.decodeFile(file.absolutePath) else null
+                        } else {
+                            val session = SessionManager(context)
+                            val userKey = session.userID.ifBlank { session.userEmail }
+                            val cached = ProfileImageCacheHelper.getValidLocalProfilePath(context, userKey)
+                            if (cached != null) BitmapFactory.decodeFile(cached) else null
                         }
-                    } else {
+                    } catch (e: Exception) {
                         null
                     }
                 }

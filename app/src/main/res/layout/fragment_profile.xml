@@ -231,6 +231,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal">
 
                     <TextView
@@ -243,11 +244,15 @@
                         tools:ignore="HardcodedText" />
 
                     <TextView
+                        android:id="@+id/tvVerificationStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:background="@drawable/bg_chip_green"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="4dp"
                         android:text="Verified · Locked"
-                        android:textColor="#16A34A"
-                        android:textSize="14sp"
+                        android:textColor="@color/tp_chip_verified_text"
+                        android:textSize="12sp"
                         android:textStyle="bold"
                         tools:ignore="HardcodedText" />
                 </LinearLayout>

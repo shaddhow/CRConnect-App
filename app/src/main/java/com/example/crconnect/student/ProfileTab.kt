@@ -11,6 +11,7 @@ import androidx.compose.ui.layout.ContentScale
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.signature.ObjectKey
+import com.example.crconnect.ProfileImageCacheHelper
 import java.io.File
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -114,14 +115,25 @@ fun ProfileTab(
         else -> systemDark
     }
 
-    // Dynamic Attendance Calculation from classMap
+    // Dynamic Attendance Calculation from classMap up to current day & time
     val allClasses = classMap.values.flatten()
-    val markedClasses = allClasses.filter { it.attendanceState != null }
-    val attendedClasses = markedClasses.filter { it.attendanceState == "attended" }
-    val dynamicAttendancePct = if (markedClasses.isNotEmpty()) {
-        ((attendedClasses.size.toFloat() / markedClasses.size) * 100).toInt()
+    val allClassesWithDay = classMap.flatMap { (dayIdx, classes) ->
+        classes.map { dayIdx to it }
+    }
+    val evaluatedClasses = allClassesWithDay.filter { (dayIdx, item) ->
+        val status = getClassTimingStatus(dayIdx, item.timeSlot)
+        status == ClassTimingStatus.PAST || item.attendanceState != null
+    }
+    val attendedClasses = evaluatedClasses.filter { (dayIdx, item) ->
+        getEffectiveAttendanceState(dayIdx, item) == "attended"
+    }
+    val missedClasses = evaluatedClasses.filter { (dayIdx, item) ->
+        getEffectiveAttendanceState(dayIdx, item) == "missed"
+    }
+    val dynamicAttendancePct = if (evaluatedClasses.isNotEmpty()) {
+        ((attendedClasses.size.toFloat() / evaluatedClasses.size) * 100).toInt()
     } else {
-        profile.attendancePct // fallback
+        100
     }
 
     if (showCgpaDialog) {
@@ -328,14 +340,16 @@ fun ProfileTab(
                         key(profile.profileImageUrl) {
                             val bitmap = remember(profile.profileImageUrl) {
                                 val path = profile.profileImageUrl
-                                if (path.isNotBlank() && !path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
-                                    try {
+                                val userKey = profile.studentId.ifBlank { profile.email }
+                                try {
+                                    if (path.isNotBlank() && !path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
                                         val file = File(path)
-                                        if (file.exists()) BitmapFactory.decodeFile(file.absolutePath) else null
-                                    } catch (e: Exception) {
-                                        null
+                                        if (file.exists() && file.length() > 0) BitmapFactory.decodeFile(file.absolutePath) else null
+                                    } else {
+                                        val cached = ProfileImageCacheHelper.getValidLocalProfilePath(context, userKey)
+                                        if (cached != null) BitmapFactory.decodeFile(cached) else null
                                     }
-                                } else {
+                                } catch (e: Exception) {
                                     null
                                 }
                             }
@@ -487,11 +501,40 @@ fun ProfileTab(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                KeyValueRow(
-                    key = "Verification status",
-                    value = "Verified · Locked",
-                    valueColor = Color(0xFF4ADE80)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Verification status",
+                        fontFamily = PlusJakartaSansFontFamily,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    val isDark = isSystemInDarkTheme()
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(if (isDark) Color(0xFF0D3B24) else Color(0xFFDCFCE7))
+                            .border(
+                                1.dp,
+                                if (isDark) Color(0xFF15803D).copy(alpha = 0.5f) else Color(0xFFBBF7D0),
+                                CircleShape
+                            )
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "Verified · Locked",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isDark) Color(0xFF4ADE80) else Color(0xFF166534)
+                        )
+                    }
+                }
 
                 KeyValueRow(
                     key = "Total enrolled courses",
@@ -504,9 +547,13 @@ fun ProfileTab(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     KeyValueRow(
-                        key = "Attendance overview",
-                        value = "$dynamicAttendancePct% (${if (dynamicAttendancePct >= 80) "Excellent" else if (dynamicAttendancePct >= 60) "Good" else "Needs Attention"})",
-                        valueColor = Color(0xFF3B82F6)
+                        key = "Weekly Attendance overview",
+                        value = if (evaluatedClasses.isNotEmpty()) {
+                            "$dynamicAttendancePct% (${if (dynamicAttendancePct >= 80) "Excellent" else if (dynamicAttendancePct >= 60) "Good" else "Needs Attention"})"
+                        } else {
+                            "100% (Weekly Reset)"
+                        },
+                        valueColor = if (dynamicAttendancePct >= 80) Color(0xFF16A34A) else if (dynamicAttendancePct >= 60) Color(0xFF3B82F6) else Color(0xFFDC2626)
                     )
                     LinearProgressIndicator(
                         progress = { animatedProgress },
@@ -514,9 +561,33 @@ fun ProfileTab(
                             .fillMaxWidth()
                             .height(5.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = Color(0xFF3B82F6),
+                        color = if (dynamicAttendancePct >= 80) Color(0xFF22C55E) else if (dynamicAttendancePct >= 60) Color(0xFF3B82F6) else Color(0xFFEF4444),
                         trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (evaluatedClasses.isNotEmpty()) {
+                                "${attendedClasses.size} attended · ${missedClasses.size} missed (${evaluatedClasses.size} evaluated)"
+                            } else {
+                                "No class time passed yet this week"
+                            },
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                        )
+                        Text(
+                            text = "Resets weekly",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
                 }
 
                 // Interactive CGPA Row

@@ -13,7 +13,20 @@
           "package_name": "com.example.crconnect"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "665787114569-3197346klpt3vr7i5mf9go9clmaoid18.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.crconnect",
+            "certificate_hash": "aafba9bd445ba40b355ec235a5b911873ffbbc43"
+          }
+        },
+        {
+          "client_id": "665787114569-qjmr2r6810od111vu1iddc7kkvl39m99.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAA9eEQhuFYwq_OzX7qh0epnWyynrJVAk0"
@@ -21,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "665787114569-qjmr2r6810od111vu1iddc7kkvl39m99.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

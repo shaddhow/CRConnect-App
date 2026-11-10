@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.example.crconnect.SessionManager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import java.util.Calendar
 import java.util.Locale
 
 class RoutineRepository(private val context: Context) {
@@ -145,10 +146,64 @@ class RoutineRepository(private val context: Context) {
         }
     }
 
+    fun getCurrentWeekKey(): String {
+        val cal = Calendar.getInstance()
+        cal.firstDayOfWeek = Calendar.SATURDAY
+        val year = cal.get(Calendar.YEAR)
+        val week = cal.get(Calendar.WEEK_OF_YEAR)
+        return "${year}_W${week}"
+    }
+
+    fun getWeeklyAttendanceMap(): Map<String, String> {
+        val currentWeek = getCurrentWeekKey()
+        val currentUserId = getCurrentUserId().replace(Regex("[^a-zA-Z0-9_]"), "_")
+        val weekKey = KEY_LAST_ATTENDANCE_WEEK + "_" + currentUserId
+        val attendanceKey = KEY_ATTENDANCE_PREFIX + currentUserId
+
+        val lastWeek = prefs.getString(weekKey, null)
+        if (lastWeek != currentWeek) {
+            // Automatic Weekly Reset!
+            prefs.edit()
+                .remove(attendanceKey)
+                .putString(weekKey, currentWeek)
+                .apply()
+            return emptyMap()
+        }
+
+        val json = prefs.getString(attendanceKey, null) ?: return emptyMap()
+        return try {
+            val type = object : TypeToken<Map<String, String>>() {}.type
+            gson.fromJson(json, type) ?: emptyMap()
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    fun saveWeeklyAttendanceState(classId: String, state: String?) {
+        val currentWeek = getCurrentWeekKey()
+        val currentUserId = getCurrentUserId().replace(Regex("[^a-zA-Z0-9_]"), "_")
+        val weekKey = KEY_LAST_ATTENDANCE_WEEK + "_" + currentUserId
+        val attendanceKey = KEY_ATTENDANCE_PREFIX + currentUserId
+
+        val currentMap = getWeeklyAttendanceMap().toMutableMap()
+        if (state == null) {
+            currentMap.remove(classId)
+        } else {
+            currentMap[classId] = state
+        }
+
+        prefs.edit()
+            .putString(attendanceKey, gson.toJson(currentMap))
+            .putString(weekKey, currentWeek)
+            .apply()
+    }
+
     companion object {
         private const val PREF_NAME = "crconnect_routine_preferences"
         private const val KEY_ENTRIES_JSON = "key_parsed_class_entries"
         private const val KEY_USER_ENTRIES_PREFIX = "key_user_entries_"
         private const val KEY_OWNER_ID = "key_routine_owner_id"
+        private const val KEY_ATTENDANCE_PREFIX = "key_weekly_attendance_"
+        private const val KEY_LAST_ATTENDANCE_WEEK = "key_last_attendance_week_"
     }
 }

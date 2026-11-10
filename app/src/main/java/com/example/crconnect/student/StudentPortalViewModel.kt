@@ -6,8 +6,10 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.example.crconnect.ProfileImageCacheHelper
 import com.example.crconnect.RoutineLocalCache
 import com.example.crconnect.SessionManager
+import com.example.crconnect.ToastHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
@@ -101,13 +103,26 @@ class StudentPortalViewModel : ViewModel() {
             )
         }
 
+        // Background caching of profile image if it's a remote URL
+        val rawPhotoUrl = session.profileImageUrl
+        if (rawPhotoUrl.isNotBlank() && (rawPhotoUrl.startsWith("http://") || rawPhotoUrl.startsWith("https://") || rawPhotoUrl.startsWith("content://"))) {
+            ProfileImageCacheHelper.saveAndCacheProfileImage(context, rawPhotoUrl, session.userID.ifBlank { session.userEmail }) { cachedPath ->
+                if (cachedPath.isNotBlank() && cachedPath != rawPhotoUrl) {
+                    session.setProfileImageUrl(cachedPath)
+                    _uiState.update { currentState ->
+                        currentState.copy(profile = currentState.profile.copy(profileImageUrl = cachedPath))
+                    }
+                }
+            }
+        }
+
         val repo = RoutineRepository(context)
         val savedEntries = repo.getClassEntries().filterNot { entry ->
             (entry.course == "CSE 301 · Algorithms" || entry.course == "CSE 305 · Database" || entry.course == "MAT 211 · Numerical Methods") && entry.faculty == "TBA"
         }
         if (savedEntries.isNotEmpty()) {
             repo.replaceClassEntries(savedEntries)
-            loadRoutineEntriesIntoState(savedEntries)
+            loadRoutineEntriesIntoState(savedEntries, context)
         }
         // Background sync: load latest cloud routine silently without blocking UI
         loadFirestoreRoutineToCache(context)
@@ -129,11 +144,13 @@ class StudentPortalViewModel : ViewModel() {
         }
     }
 
-    private fun loadRoutineEntriesIntoState(entries: List<ClassEntry>) {
+    private fun loadRoutineEntriesIntoState(entries: List<ClassEntry>, context: Context? = null) {
         try {
             if (entries.isEmpty()) return
             val daysList = listOf("SAT", "SUN", "MON", "TUE", "WED", "THR", "FRI")
             val loadedMap = mutableMapOf<Int, MutableList<ClassModel>>()
+
+            val attendanceMap = context?.let { RoutineRepository(it).getWeeklyAttendanceMap() } ?: emptyMap()
 
             for (entry in entries) {
                 val dayIdx = daysList.indexOfFirst { it.equals(entry.day, ignoreCase = true) }
@@ -145,12 +162,14 @@ class StudentPortalViewModel : ViewModel() {
                     entry.course
                 }
                 val roomDisplay = if (entry.room.startsWith("Room") || entry.room.startsWith("TBA")) entry.room else "Room ${entry.room}"
+                val classId = "${entry.day}_${entry.course}_${entry.startTime}"
 
                 val classModel = ClassModel(
-                    id = "${entry.day}_${entry.course}_${entry.startTime}",
+                    id = classId,
                     timeSlot = timeSlot,
                     courseName = courseDisplay,
-                    room = roomDisplay
+                    room = roomDisplay,
+                    attendanceState = attendanceMap[classId]
                 )
                 val currentList = loadedMap.getOrPut(targetIdx) { mutableListOf() }
                 if (!currentList.any { it.courseName == classModel.courseName && it.timeSlot == classModel.timeSlot }) {
@@ -225,7 +244,7 @@ class StudentPortalViewModel : ViewModel() {
                         if (entries.isNotEmpty()) {
                             val repo = RoutineRepository(context)
                             repo.replaceClassEntries(entries)
-                            loadRoutineEntriesIntoState(entries)
+                            loadRoutineEntriesIntoState(entries, context)
                         }
                     }
                 }
@@ -332,7 +351,7 @@ class StudentPortalViewModel : ViewModel() {
                 isFirstAnnouncementLoad = false
             }, 2000)
 
-            // 5. Live User Role Listener (Checks if student was promoted to CR by Teacher)
+            // 5. Live User Role Listener & Profile Image Listener
             val authUser = FirebaseAuth.getInstance().currentUser
             if (authUser != null) {
                 dbRef?.child("users")?.child(authUser.uid)?.child("role")?.addValueEventListener(object : ValueEventListener {
@@ -344,6 +363,25 @@ class StudentPortalViewModel : ViewModel() {
                                 isCr = isUserCr,
                                 profile = currentState.profile.copy(isCr = isUserCr)
                             )
+                        }
+                    }
+                    override fun onCancelled(error: DatabaseError) {}
+                })
+
+                dbRef?.child("users")?.child(authUser.uid)?.child("profileImageUrl")?.addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val dbImg = snapshot.getValue(String::class.java) ?: ""
+                        if (dbImg.isNotBlank() && dbImg != _uiState.value.profile.profileImageUrl) {
+                            val context = FirebaseDatabase.getInstance().app.applicationContext
+                            ProfileImageCacheHelper.saveAndCacheProfileImage(context, dbImg, authUser.uid) { localPath ->
+                                val finalPath = if (localPath.isNotBlank()) localPath else dbImg
+                                SessionManager(context).setProfileImageUrl(finalPath)
+                                _uiState.update { currentState ->
+                                    currentState.copy(
+                                        profile = currentState.profile.copy(profileImageUrl = finalPath)
+                                    )
+                                }
+                            }
                         }
                     }
                     override fun onCancelled(error: DatabaseError) {}
@@ -558,17 +596,72 @@ class StudentPortalViewModel : ViewModel() {
         }
     }
 
-    fun toggleAttendance(classId: String, targetState: String) {
-        _uiState.update { currentState ->
-            val updatedMap = currentState.classMap.mapValues { (_, classes) ->
-                classes.map { item ->
-                    if (item.id == classId) {
-                        val newState = if (item.attendanceState == targetState) null else targetState
-                        item.copy(attendanceState = newState)
-                    } else item
+    fun toggleAttendance(classId: String, targetState: String, dayIndex: Int, context: Context? = null) {
+        val currentState = _uiState.value
+        val targetClass = currentState.classMap[dayIndex]?.find { it.id == classId }
+        val timingStatus = targetClass?.let { getClassTimingStatus(dayIndex, it.timeSlot) } ?: ClassTimingStatus.PAST
+
+        if (timingStatus != ClassTimingStatus.LIVE_NOW) {
+            if (context != null) {
+                val timeRange = targetClass?.timeSlot ?: "class time"
+                ToastHelper.showWarning(
+                    context,
+                    "Attendance Locked",
+                    "Attendance can only be marked during class time ($timeRange)."
+                )
+            }
+            return
+        }
+
+        var updatedCourseName: String? = null
+        var finalState: String? = null
+
+        _uiState.update { state ->
+            val updatedMap = state.classMap.mapValues { (dIdx, classes) ->
+                if (dIdx == dayIndex) {
+                    classes.map { item ->
+                        if (item.id == classId) {
+                            val newState = if (item.attendanceState == targetState) null else targetState
+                            finalState = newState
+                            updatedCourseName = item.courseName
+                            item.copy(attendanceState = newState)
+                        } else item
+                    }
+                } else classes
+            }
+            state.copy(classMap = updatedMap)
+        }
+
+        if (context != null) {
+            val repo = RoutineRepository(context)
+            repo.saveWeeklyAttendanceState(classId, finalState)
+
+            val courseDisplay = updatedCourseName?.takeIf { it.isNotBlank() } ?: "class"
+            val cleanCourse = courseDisplay.split("(").firstOrNull()?.trim() ?: courseDisplay
+
+            when (finalState) {
+                "attended" -> {
+                    ToastHelper.showSuccess(
+                        context,
+                        "Attendance Recorded",
+                        "Class marked as attended for $cleanCourse."
+                    )
+                }
+                "missed" -> {
+                    ToastHelper.showWarning(
+                        context,
+                        "Class Missed",
+                        "Class marked as missed for $cleanCourse."
+                    )
+                }
+                else -> {
+                    ToastHelper.showInfo(
+                        context,
+                        "Attendance Cleared",
+                        "Attendance mark cleared for $cleanCourse."
+                    )
                 }
             }
-            currentState.copy(classMap = updatedMap)
         }
     }
 

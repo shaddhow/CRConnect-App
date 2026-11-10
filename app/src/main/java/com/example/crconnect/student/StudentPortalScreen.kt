@@ -232,14 +232,19 @@ fun StudentPortalScreen(
                             }
                         }
 
-                        LaunchedEffect(pagerState.currentPage) {
-                            if (uiState.selectedTab != pagerState.currentPage) {
+                        LaunchedEffect(pagerState.currentPage, uiState.isGateOpen) {
+                            if (pagerState.currentPage == 1 && !uiState.isGateOpen) {
+                                val fallbackPage = if (uiState.selectedTab != 1) uiState.selectedTab else 0
+                                pagerState.scrollToPage(fallbackPage)
+                                CustomToast.show(context, "Election is currently locked by teacher")
+                            } else if (uiState.selectedTab != pagerState.currentPage) {
                                 viewModel.selectTab(pagerState.currentPage)
                             }
                         }
 
                         HorizontalPager(
                             state = pagerState,
+                            userScrollEnabled = false,
                             modifier = Modifier.fillMaxSize()
                         ) { page ->
                             when (page) {
@@ -262,7 +267,7 @@ fun StudentPortalScreen(
                                         viewModel.loadSampleRoutine(context)
                                     },
                                     onNavigateWeek = { delta -> viewModel.navigateWeek(delta) },
-                                    onToggleAttendance = { classId, state -> viewModel.toggleAttendance(classId, state) },
+                                    onToggleAttendance = { classId, state, dayIdx -> viewModel.toggleAttendance(classId, state, dayIdx, context) },
                                     onShowToast = { msg -> viewModel.showToast(msg) }
                                 )
                                 1 -> ElectionTab(

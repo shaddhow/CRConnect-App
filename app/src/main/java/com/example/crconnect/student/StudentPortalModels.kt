@@ -29,6 +29,60 @@ data class ClassModel(
     val attendanceState: String? = null
 )
 
+enum class ClassTimingStatus {
+    LIVE_NOW,
+    PAST,
+    FUTURE
+}
+
+fun endMinutes(timeSlot: String): Int {
+    val parts = timeSlot.split("-", "–")
+    if (parts.size < 2) return startMinutes(timeSlot) + 90
+    val parsed = startMinutes(parts[1].trim())
+    return if (parsed > 0) parsed else startMinutes(timeSlot) + 90
+}
+
+fun getClassTimingStatus(dayIndex: Int, timeSlot: String): ClassTimingStatus {
+    val cal = Calendar.getInstance()
+    val todayIdx = when (cal.get(Calendar.DAY_OF_WEEK)) {
+        Calendar.SATURDAY -> 0
+        Calendar.SUNDAY -> 1
+        Calendar.MONDAY -> 2
+        Calendar.TUESDAY -> 3
+        Calendar.WEDNESDAY -> 4
+        Calendar.THURSDAY -> 5
+        Calendar.FRIDAY -> 6
+        else -> 0
+    }
+
+    if (dayIndex < todayIdx) {
+        return ClassTimingStatus.PAST
+    } else if (dayIndex > todayIdx) {
+        return ClassTimingStatus.FUTURE
+    } else {
+        val currentMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+        val startMins = startMinutes(timeSlot)
+        val endMins = endMinutes(timeSlot)
+
+        return when {
+            currentMinutes < startMins -> ClassTimingStatus.FUTURE
+            currentMinutes > endMins -> ClassTimingStatus.PAST
+            else -> ClassTimingStatus.LIVE_NOW
+        }
+    }
+}
+
+fun getEffectiveAttendanceState(dayIndex: Int, classModel: ClassModel): String? {
+    if (classModel.attendanceState == "attended") {
+        return "attended"
+    }
+    val status = getClassTimingStatus(dayIndex, classModel.timeSlot)
+    if (status == ClassTimingStatus.PAST) {
+        return "missed"
+    }
+    return classModel.attendanceState
+}
+
 data class UserProfileModel(
     val name: String = "Student",
     val email: String = "student@bubt.edu.bd",
