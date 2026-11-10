@@ -1,10 +1,21 @@
 package com.example.crconnect.student
 
+import android.graphics.BitmapFactory
+import android.widget.ImageView
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.viewinterop.AndroidView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.signature.ObjectKey
+import java.io.File
+import androidx.compose.runtime.key
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.alpha
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -30,6 +42,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
@@ -86,22 +99,22 @@ fun DesignCard(
         modifier = modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 3.dp,
-                shape = RoundedCornerShape(20.dp),
+                elevation = 4.dp,
+                shape = RoundedCornerShape(28.dp),
                 clip = false,
-                ambientColor = Color.Black.copy(alpha = 0.05f),
-                spotColor = Color.Black.copy(alpha = 0.05f)
+                ambientColor = Color.Black.copy(alpha = 0.08f),
+                spotColor = Color.Black.copy(alpha = 0.08f)
             )
             .then(
                 if (onClick != null) {
                     Modifier
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(28.dp))
                         .clickable { onClick() }
                 } else Modifier
             ),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
             modifier = Modifier.padding(padding)
@@ -263,6 +276,7 @@ fun TopHeader(
     name: String = "Student",
     department: String = "Dept. of CSE, BUBT",
     initials: String = "ST",
+    profileImageUrl: String = "",
     isCr: Boolean = false,
     onMenuClick: () -> Unit,
     onAvatarClick: () -> Unit,
@@ -280,7 +294,7 @@ fun TopHeader(
         "Dept. of CSE, BUBT"
     }
     val displayInitials = if (initials.isNotBlank()) initials else computeInitials(name.ifBlank { "Student" })
-    val isDark = isSystemInDarkTheme() || MaterialTheme.colorScheme.surface == DarkSurface
+    val isDark = LocalIsDarkTheme.current
 
     Row(
         modifier = modifier
@@ -318,20 +332,64 @@ fun TopHeader(
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(2.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF0066FF))
+                .background(Color.Transparent)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) { onAvatarClick() },
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = displayInitials,
-                color = Color.White,
-                fontFamily = PlusJakartaSansFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
+            key(profileImageUrl) {
+                val bitmap = remember(profileImageUrl) {
+                    val path = profileImageUrl
+                    if (path.isNotBlank() && !path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
+                        try {
+                            val file = File(path)
+                            if (file.exists()) BitmapFactory.decodeFile(file.absolutePath) else null
+                        } catch (e: Exception) {
+                            null
+                        }
+                    } else {
+                        null
+                    }
+                }
+
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Profile",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                    )
+                } else if (profileImageUrl.isNotBlank()) {
+                    AndroidView(
+                        factory = { ctx ->
+                            ImageView(ctx).apply {
+                                scaleType = ImageView.ScaleType.CENTER_CROP
+                                Glide.with(ctx)
+                                    .load(profileImageUrl)
+                                    .circleCrop()
+                                    .signature(ObjectKey(profileImageUrl))
+                                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                                    .into(this)
+                            }
+                        },
+                        update = { view ->
+                            Glide.with(view.context)
+                                .load(profileImageUrl)
+                                .circleCrop()
+                                .signature(ObjectKey(profileImageUrl))
+                                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                                .into(view)
+                        },
+                        modifier = Modifier.fillMaxSize().clip(CircleShape)
+                    )
+                } else {
+                    AnimatedAvatarPlaceholder(size = 40.dp, iconSize = 20.dp)
+                }
+            }
         }
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -344,10 +402,10 @@ fun TopHeader(
                 Text(
                     text = displayTitle,
                     fontFamily = PlusJakartaSansFontFamily,
-                    fontSize = 16.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false)
                 )
@@ -359,7 +417,7 @@ fun TopHeader(
             Text(
                 text = displayDepartment,
                 fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 12.sp,
+                fontSize = 13.5.sp,
                 fontWeight = FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -384,7 +442,7 @@ fun TopHeader(
             Text(
                 text = "Secure",
                 fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 12.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (isDark) Color(0xFF4ADE80) else Color(0xFF166534)
             )
@@ -416,53 +474,54 @@ fun TopHeader(
 @Composable
 fun StudentBottomNavigation(
     selectedTab: Int,
+    isGateOpen: Boolean = true,
     onTabSelected: (Int) -> Unit,
+    onLockedTabClicked: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val navSelectedColor = Color(0xFF0066FF)
-    val navUnselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val outlineColor = MaterialTheme.colorScheme.outline
-    val surfaceColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f)
+    val isDark = LocalIsDarkTheme.current
+    val navSelectedColor = if (isDark) Color(0xFF3B82F6) else Color(0xFF0066FF)
+    val navUnselectedColor = if (isDark) Color(0xFF2A3A52) else Color(0xFFB0BCCF)
+    val surfaceColor = if (isDark) Color(0xFF111827) else Color.White
+    val borderStrokeColor = if (isDark) Color(0x12FFFFFF) else Color(0x0F000000)
     val view = LocalView.current
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp)
+                .height(64.dp)
                 .shadow(
-                    elevation = 6.dp,
-                    shape = RoundedCornerShape(30.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.1f),
-                    spotColor = Color.Black.copy(alpha = 0.15f)
+                    elevation = if (isDark) 0.dp else 10.dp,
+                    shape = RoundedCornerShape(24.dp),
+                    ambientColor = Color(0x1A000000),
+                    spotColor = Color(0x1A000000)
                 ),
-            shape = RoundedCornerShape(30.dp),
+            shape = RoundedCornerShape(24.dp),
             color = surfaceColor,
-            border = BorderStroke(1.dp, outlineColor)
+            border = BorderStroke(1.dp, borderStrokeColor)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 4.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val items = listOf(
-                    Triple("Candidates", R.drawable.ic_nav_candidates, 1),
                     Triple("Routine", R.drawable.ic_nav_routine, 0),
-                    Triple("Status", R.drawable.ic_nav_timer, 2),
-                    Triple("Profile", R.drawable.ic_nav_profile, 3)
+                    Triple("Election", R.drawable.ic_nav_candidates, 1),
+                    Triple("Profile", R.drawable.ic_nav_profile, 2)
                 )
 
                 items.forEach { (label, iconRes, index) ->
+                    val isLocked = (index == 1 && !isGateOpen)
                     val selected = selectedTab == index
-
-                    val pillBg = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-                    val itemColor = if (selected) navSelectedColor else navUnselectedColor
+                    val itemColor = if (isLocked) DisabledText else if (selected) navSelectedColor else navUnselectedColor
 
                     Column(
                         modifier = Modifier
@@ -472,34 +531,49 @@ fun StudentBottomNavigation(
                                 indication = null
                             ) {
                                 HapticUtils.lightClick(view)
-                                onTabSelected(index)
+                                if (isLocked) {
+                                    onLockedTabClicked()
+                                } else {
+                                    onTabSelected(index)
+                                }
                             },
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .width(56.dp)
-                                .height(30.dp)
-                                .clip(RoundedCornerShape(15.dp))
-                                .background(pillBg),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        Box {
                             Icon(
                                 painter = painterResource(id = iconRes),
                                 contentDescription = label,
                                 tint = itemColor,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(22.dp)
                             )
+                            if (isLocked) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 6.dp, y = (-4).dp)
+                                        .size(14.dp)
+                                        .clip(CircleShape)
+                                        .background(ErrorColor),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Lock,
+                                        contentDescription = "Locked",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(9.dp)
+                                    )
+                                }
+                            }
                         }
 
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
                             text = label,
                             fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight(600),
+                            fontSize = 12.sp,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                             color = itemColor
                         )
                     }
@@ -513,11 +587,16 @@ fun StudentBottomNavigation(
 fun GlassCrBadge(
     modifier: Modifier = Modifier
 ) {
+    val isDark = LocalIsDarkTheme.current
+    val badgeBg = if (isDark) Color(0xFF381500) else Color(0xFFFEF3C7)
+    val badgeBorder = if (isDark) Color(0xFF92400E).copy(alpha = 0.5f) else Color(0xFFFDE68A)
+    val badgeText = if (isDark) Color(0xFFF59E0B) else Color(0xFFD97706)
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(6.dp))
-            .background(Color(0xFFFEF3C7))
-            .border(1.dp, Color(0xFFFDE68A), RoundedCornerShape(6.dp))
+            .background(badgeBg)
+            .border(1.dp, badgeBorder, RoundedCornerShape(6.dp))
             .padding(horizontal = 6.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -526,7 +605,51 @@ fun GlassCrBadge(
             fontFamily = PlusJakartaSansFontFamily,
             fontSize = 11.sp,
             fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFFD97706)
+            color = badgeText
+        )
+    }
+}
+
+@Composable
+fun AnimatedAvatarPlaceholder(
+    modifier: Modifier = Modifier,
+    size: Dp = 44.dp,
+    iconSize: Dp = 22.dp
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "AvatarPulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 0.92f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "PulseScale"
+    )
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "PulseAlpha"
+    )
+
+    Box(
+        modifier = modifier
+            .size(size)
+            .scale(scale)
+            .alpha(alpha)
+            .clip(CircleShape)
+            .background(Color(0xFF0066FF)),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Person,
+            contentDescription = "Profile",
+            tint = Color.White,
+            modifier = Modifier.size(iconSize)
         )
     }
 }

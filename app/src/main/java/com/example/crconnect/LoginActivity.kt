@@ -17,6 +17,8 @@ import android.text.method.HideReturnsTransformationMethod
 import android.text.method.PasswordTransformationMethod
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.DecelerateInterpolator
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
@@ -245,28 +247,98 @@ class LoginActivity : AppCompatActivity() {
         clearIdError()
         clearPasswordError()
 
-        if (selectedRole == "Student") {
-            binding.tabStudent.setBackgroundResource(R.drawable.bg_segmented_tab_active)
-            binding.tabStudent.setTextColor(ContextCompat.getColor(this, R.color.white))
+        val isStudent = selectedRole == "Student"
 
-            binding.tabTeacher.setBackgroundResource(R.drawable.bg_segmented_tab_inactive)
-            binding.tabTeacher.setTextColor(ContextCompat.getColor(this, R.color.muted_text))
+        // 1. Sliding Pill Indicator Animation
+        binding.layoutSegmentedControl.post {
+            val totalWidth = binding.layoutSegmentedControl.width - binding.layoutSegmentedControl.paddingLeft - binding.layoutSegmentedControl.paddingRight
+            val tabWidth = totalWidth / 2
 
-            binding.tvIdLabel.setText(R.string.student_id_or_email)
-            binding.etIdInput.setHint(R.string.id_hint_student)
-        } else {
-            binding.tabTeacher.setBackgroundResource(R.drawable.bg_segmented_tab_active)
-            binding.tabTeacher.setTextColor(ContextCompat.getColor(this, R.color.white))
+            val lp = binding.viewSegmentedIndicator.layoutParams
+            if (lp.width != tabWidth && tabWidth > 0) {
+                lp.width = tabWidth
+                binding.viewSegmentedIndicator.layoutParams = lp
+            }
 
-            binding.tabStudent.setBackgroundResource(R.drawable.bg_segmented_tab_inactive)
-            binding.tabStudent.setTextColor(ContextCompat.getColor(this, R.color.muted_text))
+            val targetX = if (isStudent) 0f else tabWidth.toFloat()
+            binding.viewSegmentedIndicator.animate()
+                .translationX(targetX)
+                .setDuration(220)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
+        }
 
-            binding.tvIdLabel.setText(R.string.teacher_id_or_email)
-            binding.etIdInput.setHint(R.string.id_hint_teacher)
+        // Text Colors
+        val activeTextColor = ContextCompat.getColor(this, R.color.white)
+        val inactiveTextColor = ContextCompat.getColor(this, R.color.muted_text)
+        binding.tabStudent.setTextColor(if (isStudent) activeTextColor else inactiveTextColor)
+        binding.tabTeacher.setTextColor(if (!isStudent) activeTextColor else inactiveTextColor)
+
+        // 2. Full Panel Horizontal Slide & Crossfade Animation
+        val slideOutX = if (isStudent) 60f else -60f
+        val slideInStartX = if (isStudent) -60f else 60f
+
+        binding.layoutFormContent.animate()
+            .translationX(slideOutX)
+            .alpha(0f)
+            .setDuration(120)
+            .withEndAction {
+                if (isStudent) {
+                    binding.tvIdLabel.setText(R.string.student_id_or_email)
+                    binding.etIdInput.setHint(R.string.id_hint_student)
+                } else {
+                    binding.tvIdLabel.setText(R.string.teacher_id_or_email)
+                    binding.etIdInput.setHint(R.string.id_hint_teacher)
+                }
+
+                loadSavedCredentialsForSelectedRole()
+
+                binding.layoutFormContent.translationX = slideInStartX
+                binding.layoutFormContent.animate()
+                    .translationX(0f)
+                    .alpha(1f)
+                    .setDuration(160)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
+            }
+            .start()
+    }
+
+    private fun loadSavedCredentialsForSelectedRole() {
+        val isStudent = selectedRole == "Student"
+        val savedId = if (isStudent) sessionManager.savedStudentId else sessionManager.savedTeacherId
+        val savedPass = if (isStudent) sessionManager.savedStudentPassword else sessionManager.savedTeacherPassword
+        val rememberEnabled = sessionManager.isRememberMeEnabled(selectedRole)
+
+        binding.cbRememberMe.isChecked = rememberEnabled || (savedId.isEmpty() && savedPass.isEmpty())
+
+        binding.etIdInput.setText(savedId)
+        binding.etPasswordInput.setText(savedPass)
+
+        if (savedId.isNotEmpty()) {
+            binding.etIdInput.setSelection(savedId.length)
         }
     }
 
     private fun setupInputFieldHandlers() {
+        // Container & Icon click delegation for Email/ID field
+        val focusEmail = View.OnClickListener {
+            binding.etIdInput.requestFocus()
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.showSoftInput(binding.etIdInput, InputMethodManager.SHOW_IMPLICIT)
+        }
+        binding.containerIdInput.setOnClickListener(focusEmail)
+        binding.ivIdIcon.setOnClickListener(focusEmail)
+
+        // Container & Icon click delegation for Password field
+        val focusPassword = View.OnClickListener {
+            binding.etPasswordInput.requestFocus()
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.showSoftInput(binding.etPasswordInput, InputMethodManager.SHOW_IMPLICIT)
+        }
+        binding.containerPasswordInput.setOnClickListener(focusPassword)
+        binding.ivPasswordIcon.setOnClickListener(focusPassword)
+
         // ID input container focus behavior
         binding.etIdInput.setOnFocusChangeListener { _: View, hasFocus: Boolean ->
             if (!isIdErrorState) {
@@ -290,6 +362,17 @@ class LoginActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
+        // IME "Next" action on Email/ID field -> switch focus to Password and scroll smoothly
+        binding.etIdInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_NEXT || actionId == EditorInfo.IME_ACTION_UNSPECIFIED) {
+                binding.etPasswordInput.requestFocus()
+                KeyboardUtils.smoothScrollToFocusedView(binding.scrollViewLogin, binding.etPasswordInput)
+                true
+            } else {
+                false
+            }
+        }
+
         // Password input container focus behavior
         binding.etPasswordInput.setOnFocusChangeListener { _: View, hasFocus: Boolean ->
             if (!isPasswordErrorState) {
@@ -312,6 +395,16 @@ class LoginActivity : AppCompatActivity() {
             }
             override fun afterTextChanged(s: Editable?) {}
         })
+
+        // IME "Done" action on Password field -> submit login form
+        binding.etPasswordInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_UNSPECIFIED) {
+                validateAndSignIn()
+                true
+            } else {
+                false
+            }
+        }
     }
 
     private fun setupPasswordToggle() {
@@ -329,10 +422,25 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setupActionListeners() {
-        // Sign in button touch feedback & click
+        // Sign in button touch feedback & animation click
         setupButtonScaleTouchFeedback(binding.btnSignIn)
-        binding.btnSignIn.setOnClickListener {
-            validateAndSignIn()
+        binding.btnSignIn.setOnClickListener { view ->
+            HapticUtils.mediumClick(view)
+            view.animate()
+                .scaleX(0.94f)
+                .scaleY(0.94f)
+                .setDuration(90)
+                .withEndAction {
+                    view.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(100)
+                        .withEndAction {
+                            validateAndSignIn()
+                        }
+                        .start()
+                }
+                .start()
         }
 
         // Forgot password link
@@ -357,15 +465,6 @@ class LoginActivity : AppCompatActivity() {
                 .start()
         }
 
-        // Google Sign In button touch feedback & click
-        setupButtonScaleTouchFeedback(binding.btnGoogleSignIn)
-        binding.btnGoogleSignIn.setOnClickListener {
-            googleSignInClient.signOut().addOnCompleteListener {
-                val signInIntent = googleSignInClient.signInIntent
-                googleSignInLauncher.launch(signInIntent)
-            }
-        }
-
         // Create account button touch feedback & click
         setupButtonScaleTouchFeedback(binding.btnCreateAccount)
         binding.btnCreateAccount.setOnClickListener {
@@ -374,7 +473,7 @@ class LoginActivity : AppCompatActivity() {
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
 
-        // Developer bypass options
+        // Developer bypass options (Currently hidden in XML)
         setupButtonScaleTouchFeedback(binding.btnDevStudent)
         binding.btnDevStudent.setOnClickListener {
             sessionManager.createLoginSession(
@@ -490,8 +589,19 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    private fun showSignInLoading(loading: Boolean) {
+        binding.btnSignIn.isEnabled = !loading
+        if (loading) {
+            binding.btnSignIn.text = ""
+            binding.pbSignInLoading.visibility = View.VISIBLE
+        } else {
+            binding.btnSignIn.setText(R.string.sign_in)
+            binding.pbSignInLoading.visibility = View.GONE
+        }
+    }
+
     private fun performFirebaseSignIn(emailOrId: String, password: String) {
-        binding.btnSignIn.isEnabled = false
+        showSignInLoading(true)
 
         if (emailOrId.contains("@")) {
             authenticateWithEmail(emailOrId, password, emailOrId)
@@ -521,7 +631,7 @@ class LoginActivity : AppCompatActivity() {
             .addOnSuccessListener { authResult ->
                 val user = authResult.user
                 if (user == null) {
-                    binding.btnSignIn.isEnabled = true
+                    showSignInLoading(false)
                     return@addOnSuccessListener
                 }
 
@@ -530,7 +640,7 @@ class LoginActivity : AppCompatActivity() {
                     if (refreshedUser == null) {
                         FirebaseAuth.getInstance().signOut()
                         sessionManager.logoutUser()
-                        binding.btnSignIn.isEnabled = true
+                        showSignInLoading(false)
                         return@addOnCompleteListener
                     }
 
@@ -549,7 +659,7 @@ class LoginActivity : AppCompatActivity() {
                             .show()
                         FirebaseAuth.getInstance().signOut()
                         sessionManager.logoutUser()
-                        binding.btnSignIn.isEnabled = true
+                        showSignInLoading(false)
                         return@addOnCompleteListener
                     }
 
@@ -600,7 +710,7 @@ class LoginActivity : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { e ->
-                binding.btnSignIn.isEnabled = true
+                showSignInLoading(false)
                 CustomToast.show(this@LoginActivity, e.localizedMessage ?: "Sign in failed.")
             }
     }
@@ -629,6 +739,10 @@ class LoginActivity : AppCompatActivity() {
                         intake ?: "--",
                         dept ?: "Department of CSE, BUBT"
                     )
+                    val profileImg = doc.getString("profileImageUrl") ?: ""
+                    if (profileImg.isNotBlank()) {
+                        sessionManager.setProfileImageUrl(profileImg)
+                    }
                     navigateBasedOnRole(resolvedRole, dbEmail ?: email)
                 } else {
                     val userEmail = refreshedUser.email
@@ -682,6 +796,10 @@ class LoginActivity : AppCompatActivity() {
         val dept = snapshot.child("dept").getValue(String::class.java) ?: "Department of CSE, BUBT"
 
         sessionManager.createLoginSession(name, email, id, role, section, assignedSection, intake, dept)
+        val profileImg = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
+        if (profileImg.isNotBlank()) {
+            sessionManager.setProfileImageUrl(profileImg)
+        }
         navigateBasedOnRole(role, email)
     }
 
@@ -821,7 +939,30 @@ class LoginActivity : AppCompatActivity() {
         })
     }
 
+    private fun saveOrClearCredentialsOnSuccess() {
+        val inputIdOrEmail = binding.etIdInput.text?.toString()?.trim() ?: ""
+        val inputPassword = binding.etPasswordInput.text?.toString() ?: ""
+        if (inputIdOrEmail.isEmpty() || inputPassword.isEmpty()) return
+
+        val remember = binding.cbRememberMe.isChecked
+
+        if (remember) {
+            if (selectedRole == "Teacher") {
+                sessionManager.saveTeacherCredentials(inputIdOrEmail, inputPassword)
+            } else {
+                sessionManager.saveStudentCredentials(inputIdOrEmail, inputPassword)
+            }
+        } else {
+            if (selectedRole == "Teacher") {
+                sessionManager.clearTeacherCredentials()
+            } else {
+                sessionManager.clearStudentCredentials()
+            }
+        }
+    }
+
     private fun navigateBasedOnRole(role: String?, email: String?) {
+        saveOrClearCredentialsOnSuccess()
         val intent = if (isTeacherRole(role, email)) {
             Intent(this, TeacherDashboardActivity::class.java)
         } else {
@@ -875,9 +1016,19 @@ class LoginActivity : AppCompatActivity() {
                 val outRect = Rect()
                 v.getGlobalVisibleRect(outRect)
                 if (!outRect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
-                    v.clearFocus()
-                    val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
-                    imm?.hideSoftInputFromWindow(v.windowToken, 0)
+                    val idRect = Rect()
+                    binding.containerIdInput.getGlobalVisibleRect(idRect)
+                    val passRect = Rect()
+                    binding.containerPasswordInput.getGlobalVisibleRect(passRect)
+
+                    val isTappedInsideInput = idRect.contains(ev.rawX.toInt(), ev.rawY.toInt()) ||
+                                              passRect.contains(ev.rawX.toInt(), ev.rawY.toInt())
+
+                    if (!isTappedInsideInput) {
+                        v.clearFocus()
+                        val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
+                        imm?.hideSoftInputFromWindow(v.windowToken, 0)
+                    }
                 }
             }
         }

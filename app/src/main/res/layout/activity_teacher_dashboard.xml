@@ -31,14 +31,14 @@
         <LinearLayout
             android:id="@+id/customBottomNavAdmin"
             android:layout_width="0dp"
-            android:layout_height="60dp"
+            android:layout_height="64dp"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginBottom="12dp"
+            android:layout_marginBottom="10dp"
             android:orientation="horizontal"
             android:baselineAligned="false"
             android:background="@drawable/bg_glassy_floating_nav"
-            android:elevation="6dp"
+            android:elevation="8dp"
             android:outlineProvider="background"
             android:paddingTop="0dp"
             android:paddingHorizontal="0dp"
@@ -64,18 +64,18 @@
 
                 <FrameLayout
                     android:id="@+id/pillControls"
-                    android:layout_width="56dp"
-                    android:layout_height="30dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:background="@drawable/bg_nav_pill_active">
+                    android:background="@android:color/transparent">
 
                     <ImageView
                         android:id="@+id/iconControls"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_nav_timer"
-                        app:tint="#0066FF"
+                        app:tint="@color/primary"
                         tools:ignore="ContentDescription" />
                 </FrameLayout>
 
@@ -84,10 +84,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="3dp"
                     android:text="Election"
-                    android:textColor="#0066FF"
-                    android:textSize="11sp"
+                    android:textColor="@color/primary"
+                    android:textSize="10.5sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -107,15 +107,15 @@
 
                 <FrameLayout
                     android:id="@+id/pillProfile"
-                    android:layout_width="56dp"
-                    android:layout_height="30dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:background="@drawable/bg_nav_pill_inactive">
+                    android:background="@android:color/transparent">
 
                     <ImageView
                         android:id="@+id/iconProfile"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_user"
                         app:tint="@color/muted_text"
@@ -127,10 +127,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="3dp"
                     android:text="Profile"
                     android:textColor="@color/muted_text"
-                    android:textSize="11sp"
+                    android:textSize="10.5sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -150,15 +150,15 @@
 
                 <FrameLayout
                     android:id="@+id/pillLogout"
-                    android:layout_width="56dp"
-                    android:layout_height="30dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:background="@drawable/bg_nav_pill_inactive">
+                    android:background="@android:color/transparent">
 
                     <ImageView
                         android:id="@+id/iconLogout"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_nav_logout"
                         app:tint="@color/muted_text"
@@ -170,10 +170,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="3dp"
                     android:text="Logout"
                     android:textColor="@color/muted_text"
-                    android:textSize="11sp"
+                    android:textSize="10.5sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -199,7 +199,7 @@
                 android:orientation="vertical"
                 android:paddingHorizontal="20dp"
                 android:paddingTop="4dp"
-                android:paddingBottom="20dp"
+                android:paddingBottom="100dp"
                 android:clipToPadding="false">
 
                 <!-- Main Election Tab Section (Visible by Default) -->
@@ -1668,6 +1668,148 @@
                     android:textColor="@color/title_text"
                     android:textSize="15sp"
                     android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Item: App Theme Expandable Section -->
+            <LinearLayout
+                android:id="@+id/drawerItemTheme"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="52dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp"
+                android:layout_marginTop="4dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/drawerIconTheme"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_moon"
+                    app:tint="@color/muted_text"
+                    tools:ignore="ContentDescription" />
+
+                <TextView
+                    android:id="@+id/drawerLabelTheme"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="16dp"
+                    android:text="App theme"
+                    android:textColor="@color/title_text"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/drawerChevronTheme"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_chevron_down"
+                    app:tint="@color/muted_text"
+                    tools:ignore="ContentDescription" />
+            </LinearLayout>
+
+            <!-- Expandable Sub-container for Glassy Theme Options -->
+            <LinearLayout
+                android:id="@+id/containerTeacherThemeOptions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="12dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/btnTeacherThemeLight"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/bg_glassy_option_unselected"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_theme_light"
+                        app:tint="@color/brand_blue"
+                        tools:ignore="ContentDescription" />
+
+                    <TextView
+                        android:id="@+id/txtTeacherThemeLight"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Light"
+                        android:textColor="@color/title_text"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnTeacherThemeDark"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/bg_glassy_option_unselected"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_theme_dark"
+                        app:tint="@color/brand_blue"
+                        tools:ignore="ContentDescription" />
+
+                    <TextView
+                        android:id="@+id/txtTeacherThemeDark"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Dark"
+                        android:textColor="@color/title_text"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnTeacherThemeSystem"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/bg_glassy_option_unselected"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_theme_system"
+                        app:tint="@color/brand_blue"
+                        tools:ignore="ContentDescription" />
+
+                    <TextView
+                        android:id="@+id/txtTeacherThemeSystem"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="System"
+                        android:textColor="@color/title_text"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
             </LinearLayout>
 
             <View

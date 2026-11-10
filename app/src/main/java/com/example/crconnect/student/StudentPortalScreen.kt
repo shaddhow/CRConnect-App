@@ -1,5 +1,16 @@
 package com.example.crconnect.student
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.activity.result.contract.ActivityResultContracts
+import com.yalantis.ucrop.UCrop
+import java.io.File
+import java.io.FileOutputStream
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -7,6 +18,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,6 +58,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -58,10 +72,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import com.example.crconnect.CustomToast
 import com.example.crconnect.SessionManager
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StudentPortalScreen(
     viewModel: StudentPortalViewModel,
@@ -72,6 +88,34 @@ fun StudentPortalScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    var selectedImageForCrop by remember { mutableStateOf<Uri?>(null) }
+    var isSecurityDialogOpen by remember { mutableStateOf(false) }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val sourceUri = result.data?.data
+            if (sourceUri != null) {
+                selectedImageForCrop = sourceUri
+            } else {
+                viewModel.showToast("Could not load selected image")
+            }
+        }
+    }
+
+    if (selectedImageForCrop != null) {
+        ProfileCropDialog(
+            context = context,
+            imageUri = selectedImageForCrop!!,
+            onDismiss = { selectedImageForCrop = null },
+            onCropSuccess = { croppedUri ->
+                selectedImageForCrop = null
+                viewModel.updateProfileImage(croppedUri, context)
+            }
+        )
+    }
 
     LaunchedEffect(uiState.snackbarMessage) {
         uiState.snackbarMessage?.let { msg ->
@@ -114,14 +158,6 @@ fun StudentPortalScreen(
             .fillMaxSize()
             .background(brush = portalGradient)
     ) {
-        val headerTitle = when (uiState.selectedTab) {
-            0 -> "Class Routine"
-            1 -> "CR Candidates"
-            2 -> "Election Status"
-            3 -> "My Profile"
-            else -> "Class Routine"
-        }
-
         ModalNavigationDrawer(
             drawerState = drawerState,
             scrimColor = Color(0x660F172A),
@@ -129,6 +165,7 @@ fun StudentPortalScreen(
                 StudentPortalDrawerContent(
                     profile = uiState.profile,
                     selectedTab = uiState.selectedTab,
+                    isGateOpen = uiState.isGateOpen,
                     onTabSelected = { tab ->
                         coroutineScope.launch {
                             drawerState.close()
@@ -136,11 +173,18 @@ fun StudentPortalScreen(
                             viewModel.selectTab(tab)
                         }
                     },
+                    onLockedItemClicked = {
+                        CustomToast.show(context, "Election is currently locked by teacher")
+                    },
                     onSignOut = {
                         coroutineScope.launch {
                             drawerState.close()
                             onSignOut()
                         }
+                    },
+                    currentThemeMode = uiState.themeMode,
+                    onThemeModeSelected = { mode ->
+                        viewModel.setThemeMode(context, mode)
                     }
                 )
             }
@@ -148,17 +192,18 @@ fun StudentPortalScreen(
             Scaffold(
                 topBar = {
                     TopHeader(
-                        title = headerTitle,
+                        title = uiState.profile.name.ifBlank { "Student" },
                         name = uiState.profile.name,
                         department = uiState.profile.department,
                         initials = uiState.profile.initials,
+                        profileImageUrl = uiState.profile.profileImageUrl,
                         isCr = uiState.isCr,
                         onMenuClick = {
                             coroutineScope.launch { drawerState.open() }
                         },
                         onAvatarClick = {
                             isNavVisible = true
-                            viewModel.selectTab(3) // Profile Tab
+                            viewModel.selectTab(2) // Profile Tab
                         },
                         onSignOutClick = onSignOut
                     )
@@ -176,12 +221,28 @@ fun StudentPortalScreen(
                             .fillMaxSize()
                             .padding(top = paddingValues.calculateTopPadding())
                     ) {
-                        Crossfade(
-                            targetState = uiState.selectedTab,
-                            animationSpec = tween(durationMillis = 200),
-                            label = "StudentPortalTabTransition"
-                        ) { tab ->
-                            when (tab) {
+                        val pagerState = rememberPagerState(
+                            initialPage = uiState.selectedTab,
+                            pageCount = { 3 }
+                        )
+
+                        LaunchedEffect(uiState.selectedTab) {
+                            if (pagerState.currentPage != uiState.selectedTab) {
+                                pagerState.scrollToPage(uiState.selectedTab)
+                            }
+                        }
+
+                        LaunchedEffect(pagerState.currentPage) {
+                            if (uiState.selectedTab != pagerState.currentPage) {
+                                viewModel.selectTab(pagerState.currentPage)
+                            }
+                        }
+
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize()
+                        ) { page ->
+                            when (page) {
                                 0 -> RoutineTab(
                                     uiState = uiState,
                                     onDaySelected = { day -> viewModel.selectScheduleDay(day) },
@@ -197,36 +258,56 @@ fun StudentPortalScreen(
                                     onScannedEntriesAdded = { entries ->
                                         viewModel.saveScannedEntries(entries, context)
                                     },
+                                    onLoadSampleRoutine = {
+                                        viewModel.loadSampleRoutine(context)
+                                    },
+                                    onNavigateWeek = { delta -> viewModel.navigateWeek(delta) },
+                                    onToggleAttendance = { classId, state -> viewModel.toggleAttendance(classId, state) },
                                     onShowToast = { msg -> viewModel.showToast(msg) }
                                 )
-                                1 -> CandidatesTab(
+                                1 -> ElectionTab(
                                     uiState = uiState,
                                     onCastVote = { candidateId -> viewModel.castVote(candidateId) }
                                 )
-                                2 -> StatusTab(
-                                    uiState = uiState,
-                                    onGoToCandidates = {
-                                        isNavVisible = true
-                                        viewModel.selectTab(1)
-                                    }
-                                )
-                                3 -> ProfileTab(
+                                2 -> ProfileTab(
                                     profile = uiState.profile,
+                                    classMap = uiState.classMap,
                                     themeMode = uiState.themeMode,
                                     onThemeModeSelected = { mode -> viewModel.setThemeMode(context, mode) },
-                                    onEditProfilePicture = { viewModel.showToast("Edit profile picture (demo)") },
-                                    onSecuritySettings = { viewModel.showToast("Security settings (demo)") },
+                                    onEditProfilePicture = {
+                                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                                            type = "image/*"
+                                        }
+                                        galleryLauncher.launch(intent)
+                                    },
+                                    onUpdateCgpa = { newCgpa -> viewModel.updateCgpa(newCgpa, context) },
+                                    onUpdateAdvisorInfo = { name, email -> viewModel.updateAdvisorInfo(name, email, context) },
+                                    onUpdateCurrentTerm = { term -> viewModel.updateCurrentTerm(term, context) },
+                                    onSecuritySettings = { isSecurityDialogOpen = true },
                                     onSignOut = onSignOut
                                 )
                             }
                         }
                     }
 
+                    if (isSecurityDialogOpen) {
+                        SecuritySettingsDialog(
+                            profile = uiState.profile,
+                            onDismiss = { isSecurityDialogOpen = false },
+                            onResetPassword = { viewModel.sendPasswordResetEmail(context) },
+                            onShowToast = { msg -> viewModel.showToast(msg) }
+                        )
+                    }
+
                     StudentBottomNavigation(
                         selectedTab = uiState.selectedTab,
+                        isGateOpen = uiState.isGateOpen,
                         onTabSelected = { tab ->
                             isNavVisible = true
                             viewModel.selectTab(tab)
+                        },
+                        onLockedTabClicked = {
+                            CustomToast.show(context, "Election is currently locked by teacher")
                         },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
@@ -299,13 +380,13 @@ fun GlassNoticeBottomSheet(
                             fontFamily = PlusJakartaSansFontFamily,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Send instant alert to all classmates",
                             fontFamily = PlusJakartaSansFontFamily,
                             fontSize = 12.sp,
-                            color = Color(0xFF64748B)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

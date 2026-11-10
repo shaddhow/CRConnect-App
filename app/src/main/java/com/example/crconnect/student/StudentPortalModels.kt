@@ -39,7 +39,11 @@ data class UserProfileModel(
     val attendancePct: Int = 92,
     val cgpa: String = "3.85",
     val initials: String = "ST",
-    val isCr: Boolean = false
+    val profileImageUrl: String = "",
+    val isCr: Boolean = false,
+    val advisorName: String = "Dr. Md. Mamunur Rashid",
+    val advisorEmail: String = "mamunur@bubt.edu.bd",
+    val currentTerm: String = "Spring 2025 (Year 3)"
 )
 
 fun computeInitials(name: String): String {
@@ -68,8 +72,11 @@ fun getTodayDayIndex(): Int {
     }
 }
 
-fun calculateCurrentWeekDays(): Pair<String, List<DayModel>> {
+fun calculateCurrentWeekDays(weekOffset: Int = 0): Pair<String, List<DayModel>> {
     val cal = Calendar.getInstance()
+    if (weekOffset != 0) {
+        cal.add(Calendar.WEEK_OF_YEAR, weekOffset)
+    }
     val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
     val daysFromSaturday = when (dayOfWeek) {
         Calendar.SATURDAY -> 0
@@ -111,8 +118,38 @@ fun calculateCurrentWeekDays(): Pair<String, List<DayModel>> {
         cal.add(Calendar.DAY_OF_YEAR, 1)
     }
 
-    val weekLabel = "This week · $startDayNum–$endDayNum $monthStr"
+    val weekPrefix = when (weekOffset) {
+        0 -> "This week"
+        1 -> "Next week"
+        -1 -> "Last week"
+        else -> "Week"
+    }
+    val weekLabel = "$weekPrefix · $startDayNum–$endDayNum $monthStr"
     return Pair(weekLabel, daysList)
+}
+
+fun parseClassDuration(timeSlot: String): String {
+    val parts = timeSlot.split("-", "–")
+    if (parts.size < 2) return "1h 30m"
+    val startMin = startMinutes(parts[0].trim())
+    val endMin = startMinutes(parts[1].trim())
+    if (startMin < 0 || endMin <= startMin) return "1h 30m"
+    val diff = endMin - startMin
+    val h = diff / 60
+    val m = diff % 60
+    return when {
+        h > 0 && m > 0 -> "${h}h ${m}m"
+        h > 0 -> "${h}h"
+        else -> "${m}m"
+    }
+}
+
+fun formatTimeRangeForDay(classes: List<ClassModel>): String {
+    if (classes.isEmpty()) return "No classes"
+    val first = classes.first().timeSlot.split("-", "–").firstOrNull()?.trim() ?: ""
+    val last = classes.last().timeSlot.split("-", "–").lastOrNull()?.trim() ?: ""
+    if (first.isBlank() || last.isBlank()) return "${classes.size} classes scheduled"
+    return "$first – $last"
 }
 
 private val defaultWeekData = calculateCurrentWeekDays()
@@ -124,6 +161,7 @@ data class StudentPortalUiState(
     val votedCandidateId: String? = null,
     val receiptId: String = "CR-839201",
     val selectedDayIndex: Int = getTodayDayIndex(),
+    val currentWeekOffset: Int = 0,
     val candidates: List<CandidateModel> = emptyList(),
     val isGateOpen: Boolean = false,
     val timerText: String = "00:00",
@@ -133,6 +171,7 @@ data class StudentPortalUiState(
     val classMap: Map<Int, List<ClassModel>> = emptyMap(),
     val profile: UserProfileModel = UserProfileModel(),
     val isAddClassSheetOpen: Boolean = false,
+    val isAddClassManualMode: Boolean = true,
     val isNoticeSheetOpen: Boolean = false,
     val isCr: Boolean = false,
     val snackbarMessage: String? = null

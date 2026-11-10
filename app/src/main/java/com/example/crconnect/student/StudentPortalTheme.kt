@@ -8,6 +8,8 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -156,13 +158,15 @@ fun getPortalGradient(darkTheme: Boolean): Brush {
     } else {
         Brush.verticalGradient(
             colors = listOf(
-                Color(0xFF70D6FF), // Top
-                Color(0xFFC2EFFF), // Middle
-                Color(0xFFFFFFFF)  // Bottom
+                Color(0xFFE0F2FE), // Soft Sky Blue tint
+                Color(0xFFF0F9FF), // Very light soft blue
+                Color(0xFFF8FAFC)  // Clean off-white surface
             )
         )
     }
 }
+
+val LocalIsDarkTheme = staticCompositionLocalOf { false }
 
 @Composable
 fun StudentPortalTheme(
@@ -170,10 +174,12 @@ fun StudentPortalTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = StudentPortalTypography,
-        shapes = StudentPortalShapes,
-        content = content
-    )
+    CompositionLocalProvider(LocalIsDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = StudentPortalTypography,
+            shapes = StudentPortalShapes,
+            content = content
+        )
+    }
 }

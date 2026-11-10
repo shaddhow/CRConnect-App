@@ -9,6 +9,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -19,6 +21,8 @@ import androidx.compose.runtime.remember
 import com.example.crconnect.student.StudentPortalScreen
 import com.example.crconnect.student.StudentPortalTheme
 import com.example.crconnect.student.StudentPortalViewModel
+import com.google.firebase.auth.FirebaseAuth
+import java.util.concurrent.Executor
 
 class StudentDashboardActivity : FragmentActivity() {
 
@@ -47,6 +51,48 @@ class StudentDashboardActivity : FragmentActivity() {
             window.isNavigationBarContrastEnforced = false
         }
 
+        val sessionManager = SessionManager(this)
+        if (sessionManager.isBiometricLockEnabled()) {
+            checkBiometricLock()
+        } else {
+            loadDashboardContent()
+        }
+    }
+
+    private fun checkBiometricLock() {
+        val executor: Executor = ContextCompat.getMainExecutor(this)
+        val biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                loadDashboardContent()
+            }
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                CustomToast.show(this@StudentDashboardActivity, "Authentication required: $errString")
+                if (errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON || errorCode == BiometricPrompt.ERROR_USER_CANCELED) {
+                    finish()
+                } else {
+                    checkBiometricLock()
+                }
+            }
+
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+                CustomToast.show(this@StudentDashboardActivity, "Fingerprint not recognized. Try again.")
+            }
+        })
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("CRConnect Biometric Lock")
+            .setSubtitle("Authenticate to access Student Portal")
+            .setNegativeButtonText("Cancel")
+            .build()
+
+        biometricPrompt.authenticate(promptInfo)
+    }
+
+    private fun loadDashboardContent() {
         setContent {
             val uiState by viewModel.uiState.collectAsState()
             val isSystemDark = isSystemInDarkTheme()
@@ -73,7 +119,10 @@ class StudentDashboardActivity : FragmentActivity() {
                             "Are you sure you want to log out of Student Portal?",
                             "Logout"
                         ) {
-                            val intent = Intent(this, MainActivity::class.java)
+                            val sessionManager = SessionManager(this@StudentDashboardActivity)
+                            sessionManager.logoutUser()
+                            FirebaseAuth.getInstance().signOut()
+                            val intent = Intent(this@StudentDashboardActivity, MainActivity::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             startActivity(intent)
                             finish()

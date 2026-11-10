@@ -109,6 +109,13 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- uCrop Activity for Profile Picture Cropping -->
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light" />
+
     </application>
 
 </manifest>

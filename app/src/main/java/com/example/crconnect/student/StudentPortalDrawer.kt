@@ -1,21 +1,39 @@
 package com.example.crconnect.student
 
+import android.graphics.BitmapFactory
+import android.widget.ImageView
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.viewinterop.AndroidView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.signature.ObjectKey
+import java.io.File
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,11 +42,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -39,16 +59,22 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.crconnect.R
+import com.example.crconnect.SessionManager
 
 @Composable
 fun StudentPortalDrawerContent(
     profile: UserProfileModel,
     selectedTab: Int,
+    isGateOpen: Boolean = true,
     onTabSelected: (Int) -> Unit,
-    onSignOut: () -> Unit
+    onLockedItemClicked: () -> Unit = {},
+    onSignOut: () -> Unit,
+    currentThemeMode: String = SessionManager.THEME_SYSTEM,
+    onThemeModeSelected: (String) -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
     var localSelectedTab by remember(selectedTab) { mutableIntStateOf(selectedTab) }
+    var isThemeExpanded by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
     ModalDrawerSheet(
@@ -75,8 +101,8 @@ fun StudentPortalDrawerContent(
                     .fillMaxWidth()
                     .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        localSelectedTab = 3
-                        onTabSelected(3)
+                        localSelectedTab = 2
+                        onTabSelected(2)
                     }
                     .padding(start = 24.dp, end = 20.dp, top = 24.dp, bottom = 20.dp)
             ) {
@@ -84,16 +110,64 @@ fun StudentPortalDrawerContent(
                 Box(
                     modifier = Modifier
                         .size(52.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_nav_profile),
-                        contentDescription = "Profile",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(26.dp)
-                    )
+                    val bitmap = remember(profile.profileImageUrl) {
+                        val path = profile.profileImageUrl
+                        if (path.isNotBlank() && !path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
+                            try {
+                                val file = File(path)
+                                if (file.exists()) BitmapFactory.decodeFile(file.absolutePath) else null
+                            } catch (e: Exception) {
+                                null
+                            }
+                        } else {
+                            null
+                        }
+                    }
+
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Profile",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                        )
+                    } else if (profile.profileImageUrl.isNotBlank()) {
+                        AndroidView(
+                            factory = { ctx ->
+                                ImageView(ctx).apply {
+                                    scaleType = ImageView.ScaleType.CENTER_CROP
+                                    Glide.with(ctx)
+                                        .load(profile.profileImageUrl)
+                                        .circleCrop()
+                                        .signature(ObjectKey(profile.profileImageUrl))
+                                        .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                                        .into(this)
+                                }
+                            },
+                            update = { view ->
+                                Glide.with(view.context)
+                                    .load(profile.profileImageUrl)
+                                    .circleCrop()
+                                    .signature(ObjectKey(profile.profileImageUrl))
+                                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                                    .into(view)
+                            },
+                            modifier = Modifier.fillMaxSize().clip(CircleShape)
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_nav_profile),
+                            contentDescription = "Profile",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -105,12 +179,12 @@ fun StudentPortalDrawerContent(
                     Text(
                         text = profile.name.ifBlank { "Student" },
                         fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 18.sp,
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
+                        lineHeight = 22.sp
                     )
                     if (profile.isCr) {
                         Spacer(modifier = Modifier.width(8.dp))
@@ -147,24 +221,12 @@ fun StudentPortalDrawerContent(
                     .padding(horizontal = 14.dp)
             ) {
                 DrawerNavItem(
-                    label = "Candidates",
-                    iconRes = R.drawable.ic_people,
-                    isSelected = localSelectedTab == 1,
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        localSelectedTab = 1
-                        onTabSelected(1)
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                DrawerNavItem(
                     label = "Class routine",
                     iconRes = R.drawable.ic_nav_routine,
                     isSelected = localSelectedTab == 0,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        isThemeExpanded = false
                         localSelectedTab = 0
                         onTabSelected(0)
                     }
@@ -172,14 +234,21 @@ fun StudentPortalDrawerContent(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
+                val isElectionLocked = !isGateOpen
                 DrawerNavItem(
-                    label = "Vote status",
-                    iconRes = R.drawable.ic_nav_timer,
-                    isSelected = localSelectedTab == 2,
+                    label = "Election portal",
+                    iconRes = R.drawable.ic_people,
+                    isSelected = localSelectedTab == 1,
+                    isLocked = isElectionLocked,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        localSelectedTab = 2
-                        onTabSelected(2)
+                        isThemeExpanded = false
+                        if (isElectionLocked) {
+                            onLockedItemClicked()
+                        } else {
+                            localSelectedTab = 1
+                            onTabSelected(1)
+                        }
                     }
                 )
 
@@ -188,13 +257,141 @@ fun StudentPortalDrawerContent(
                 DrawerNavItem(
                     label = "My profile",
                     iconRes = R.drawable.ic_nav_profile,
-                    isSelected = localSelectedTab == 3,
+                    isSelected = localSelectedTab == 2,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        localSelectedTab = 3
-                        onTabSelected(3)
+                        isThemeExpanded = false
+                        localSelectedTab = 2
+                        onTabSelected(2)
                     }
                 )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // App Theme Expandable Menu Item
+                val rotationDegrees by animateFloatAsState(
+                    targetValue = if (isThemeExpanded) 180f else 0f,
+                    label = "themeChevronRotation"
+                )
+
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                if (isThemeExpanded) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                else Color.Transparent
+                            )
+                            .clickable {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                isThemeExpanded = !isThemeExpanded
+                            }
+                            .padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_moon),
+                            contentDescription = "App Theme",
+                            tint = if (isThemeExpanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Text(
+                            text = "App theme",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_chevron_down),
+                            contentDescription = "Expand theme options",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .rotate(rotationDegrees)
+                        )
+                    }
+
+                    AnimatedVisibility(visible = isThemeExpanded) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 8.dp, end = 8.dp, bottom = 8.dp, top = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            val themes = listOf(
+                                Triple(SessionManager.THEME_LIGHT, "Light", R.drawable.ic_theme_light),
+                                Triple(SessionManager.THEME_DARK, "Dark", R.drawable.ic_theme_dark),
+                                Triple(SessionManager.THEME_SYSTEM, "System", R.drawable.ic_theme_system)
+                            )
+
+                            themes.forEach { (mode, label, iconRes) ->
+                                val isSelected = currentThemeMode.equals(mode, ignoreCase = true)
+                                val glassBg = if (isSelected) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                }
+                                val glassBorderColor = if (isSelected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.outline
+                                }
+                                val textColor = if (isSelected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(glassBg)
+                                        .border(
+                                            width = if (isSelected) 1.5.dp else 1.dp,
+                                            color = glassBorderColor,
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                        .clickable {
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                            isThemeExpanded = false
+                                            onThemeModeSelected(mode)
+                                        }
+                                        .padding(vertical = 10.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = iconRes),
+                                        contentDescription = label,
+                                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    Text(
+                                        text = label,
+                                        fontFamily = PlusJakartaSansFontFamily,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                        color = textColor
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -234,17 +431,23 @@ private fun DrawerNavItem(
     label: String,
     iconRes: Int,
     isSelected: Boolean,
+    isLocked: Boolean = false,
     onClick: () -> Unit,
     isDanger: Boolean = false
 ) {
     val bg = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+    val isDark = LocalIsDarkTheme.current
+    val dangerText = if (isDark) Color(0xFFFCA5A5) else Color(0xFFDC2626)
+    val dangerBg = if (isDark) Color(0xFF450A0A) else Color(0xFFFEE2E2)
     val tintColor = when {
-        isDanger -> Color(0xFFEF4444)
+        isLocked -> DisabledText
+        isDanger -> dangerText
         isSelected -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val textColor = when {
-        isDanger -> Color(0xFFEF4444)
+        isLocked -> DisabledText
+        isDanger -> dangerText
         isSelected -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.onSurface
     }
@@ -264,23 +467,43 @@ private fun DrawerNavItem(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Color(0xFF3B1319)),
+                    .background(dangerBg),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(id = iconRes),
                     contentDescription = label,
-                    tint = Color(0xFFEF4444),
+                    tint = dangerText,
                     modifier = Modifier.size(20.dp)
                 )
             }
         } else {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = label,
-                tint = tintColor,
-                modifier = Modifier.size(22.dp)
-            )
+            Box {
+                Icon(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = label,
+                    tint = tintColor,
+                    modifier = Modifier.size(22.dp)
+                )
+                if (isLocked) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 6.dp, y = (-4).dp)
+                            .size(14.dp)
+                            .clip(CircleShape)
+                            .background(ErrorColor),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Locked",
+                            tint = Color.White,
+                            modifier = Modifier.size(9.dp)
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.width(16.dp))

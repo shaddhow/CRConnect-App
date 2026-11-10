@@ -135,16 +135,12 @@ public class KeyboardUtils {
     public static void smoothScrollToFocusedView(@NonNull View scrollView, @NonNull View focusedView) {
         scrollView.post(() -> {
             View targetView = focusedView;
+            float density = scrollView.getResources().getDisplayMetrics().density;
             if (focusedView.getParent() instanceof View) {
                 View parent = (View) focusedView.getParent();
-                if (parent.getMeasuredHeight() < 300 * scrollView.getResources().getDisplayMetrics().density) {
+                // Target the immediate input container if its height is <= 90dp
+                if (parent.getMeasuredHeight() > 0 && parent.getMeasuredHeight() <= 90 * density) {
                     targetView = parent;
-                }
-                if (parent.getParent() instanceof View) {
-                    View grandParent = (View) parent.getParent();
-                    if (grandParent.getMeasuredHeight() < 300 * scrollView.getResources().getDisplayMetrics().density) {
-                        targetView = grandParent;
-                    }
                 }
             }
 
@@ -154,7 +150,8 @@ public class KeyboardUtils {
                 ((ViewGroup) scrollView).offsetDescendantRectToMyCoords(targetView, rect);
             }
 
-            int offset = (int) (120 * scrollView.getResources().getDisplayMetrics().density);
+            // Scroll so target input container is positioned near the top of the visible screen area
+            int offset = (int) (60 * density);
             int targetY = Math.max(0, rect.top - offset);
 
             if (scrollView instanceof NestedScrollView) {

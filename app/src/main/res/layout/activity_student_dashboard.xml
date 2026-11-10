@@ -25,30 +25,23 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Top Divider Line -->
-        <View
-            android:id="@+id/dividerBottomNav"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/slate_border_light"
-            app:layout_constraintBottom_toTopOf="@id/bottomNavStudent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <!-- Bottom Navigation Bar -->
+        <!-- Bottom Navigation Bar (Floating Glassy Capsule) -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottomNavStudent"
             android:layout_width="0dp"
-            android:layout_height="64dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="12dp"
             android:hapticFeedbackEnabled="true"
-            android:background="@color/surface"
+            android:background="@drawable/bg_glassy_floating_nav"
             app:itemIconTint="@color/nav_item_color"
             app:itemTextColor="@color/nav_item_color"
             app:itemRippleColor="@color/card_stroke"
             app:itemActiveIndicatorStyle="@null"
             app:labelVisibilityMode="labeled"
-            app:itemIconSize="24dp"
-            app:elevation="0dp"
+            app:itemIconSize="22dp"
+            app:elevation="8dp"
             app:menu="@menu/bottom_nav_menu_student"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"

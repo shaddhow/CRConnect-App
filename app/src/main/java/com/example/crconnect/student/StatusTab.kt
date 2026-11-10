@@ -40,6 +40,7 @@ fun StatusTab(
     onGoToCandidates: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+    val isDark = LocalIsDarkTheme.current
 
     Column(
         modifier = Modifier
@@ -50,14 +51,19 @@ fun StatusTab(
     ) {
         if (uiState.hasVoted) {
             // Success Banner (.banner)
+            val bannerBg = if (isDark) Color(0xFF0D3B24) else SuccessTint
+            val bannerBorder = if (isDark) Color(0xFF15803D).copy(alpha = 0.5f) else SuccessBorder
+            val bannerTitleColor = if (isDark) Color.White else TitleText
+            val bannerSubColor = if (isDark) Color(0xFF4ADE80) else SuccessText
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFF0D3B24))
-                    .border(1.dp, Color(0xFF15803D).copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                    .background(bannerBg)
+                    .border(1.dp, bannerBorder, RoundedCornerShape(16.dp))
                     .padding(18.dp)
             ) {
                 // Circle Icon Box (.ib)
@@ -82,7 +88,7 @@ fun StatusTab(
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = bannerTitleColor,
                         lineHeight = 22.sp
                     )
                     Spacer(modifier = Modifier.height(3.dp))
@@ -91,7 +97,7 @@ fun StatusTab(
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF4ADE80)
+                        color = bannerSubColor
                     )
                 }
             }
@@ -138,7 +144,7 @@ fun StatusTab(
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF4ADE80)
+                        color = if (isDark) Color(0xFF4ADE80) else SuccessText
                     )
                 }
 
@@ -152,15 +158,20 @@ fun StatusTab(
                 StepItem(title = "Vote cast", isCompleted = true)
             }
         } else {
-            // Warning Banner (.banner.w) - Dark Amber/Orange Container matching target mockup
+            // Warning Banner (.banner.w)
+            val warningBg = if (isDark) Color(0xFF381500) else WarningTint
+            val warningBorder = if (isDark) Color(0xFF92400E).copy(alpha = 0.5f) else WarningBorder
+            val warningTitleColor = if (isDark) Color.White else TitleText
+            val warningSubColor = if (isDark) Color(0xFFF59E0B) else WarningText
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFF381500))
-                    .border(1.dp, Color(0xFF92400E).copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                    .background(warningBg)
+                    .border(1.dp, warningBorder, RoundedCornerShape(16.dp))
                     .padding(18.dp)
             ) {
                 // Circle Icon Box (.ib)
@@ -185,7 +196,7 @@ fun StatusTab(
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = warningTitleColor,
                         lineHeight = 22.sp
                     )
                     Spacer(modifier = Modifier.height(3.dp))
@@ -194,7 +205,7 @@ fun StatusTab(
                         fontFamily = PlusJakartaSansFontFamily,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFF59E0B)
+                        color = warningSubColor
                     )
                 }
             }

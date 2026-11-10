@@ -1160,6 +1160,63 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 showLogoutConfirmationDialog();
             });
         }
+
+        // Expandable Theme Selection Menu Item & Buttons
+        View drawerItemTheme = findViewById(R.id.drawerItemTheme);
+        View containerTeacherThemeOptions = findViewById(R.id.containerTeacherThemeOptions);
+        ImageView drawerChevronTheme = findViewById(R.id.drawerChevronTheme);
+
+        if (drawerItemTheme != null && containerTeacherThemeOptions != null) {
+            drawerItemTheme.setOnClickListener(v -> {
+                boolean isExpanded = containerTeacherThemeOptions.getVisibility() == View.VISIBLE;
+                containerTeacherThemeOptions.setVisibility(isExpanded ? View.GONE : View.VISIBLE);
+                if (drawerChevronTheme != null) {
+                    drawerChevronTheme.animate().rotation(isExpanded ? 0f : 180f).setDuration(200).start();
+                }
+            });
+        }
+
+        View btnThemeLight = findViewById(R.id.btnTeacherThemeLight);
+        View btnThemeDark = findViewById(R.id.btnTeacherThemeDark);
+        View btnThemeSystem = findViewById(R.id.btnTeacherThemeSystem);
+
+        updateTeacherThemeButtons(btnThemeLight, btnThemeDark, btnThemeSystem);
+
+        if (btnThemeLight != null) {
+            btnThemeLight.setOnClickListener(v -> changeTeacherTheme(SessionManager.THEME_LIGHT));
+        }
+        if (btnThemeDark != null) {
+            btnThemeDark.setOnClickListener(v -> changeTeacherTheme(SessionManager.THEME_DARK));
+        }
+        if (btnThemeSystem != null) {
+            btnThemeSystem.setOnClickListener(v -> changeTeacherTheme(SessionManager.THEME_SYSTEM));
+        }
+    }
+
+    private void updateTeacherThemeButtons(View btnLight, View btnDark, View btnSystem) {
+        if (sessionManager == null) sessionManager = new SessionManager(this);
+        String currentMode = sessionManager.getTeacherThemeMode();
+
+        applyThemeButtonStyle(btnLight, SessionManager.THEME_LIGHT.equalsIgnoreCase(currentMode));
+        applyThemeButtonStyle(btnDark, SessionManager.THEME_DARK.equalsIgnoreCase(currentMode));
+        applyThemeButtonStyle(btnSystem, SessionManager.THEME_SYSTEM.equalsIgnoreCase(currentMode));
+    }
+
+    private void applyThemeButtonStyle(View btn, boolean isSelected) {
+        if (btn == null) return;
+        if (isSelected) {
+            btn.setBackgroundResource(R.drawable.bg_glassy_option_selected);
+        } else {
+            btn.setBackgroundResource(R.drawable.bg_glassy_option_unselected);
+        }
+    }
+
+    private void changeTeacherTheme(String mode) {
+        if (sessionManager == null) sessionManager = new SessionManager(this);
+        if (mode.equalsIgnoreCase(sessionManager.getTeacherThemeMode())) return;
+        sessionManager.setTeacherThemeMode(mode);
+        if (drawerLayoutTeacher != null) drawerLayoutTeacher.closeDrawer(GravityCompat.START);
+        recreate();
     }
 
     private void updateDrawerActiveState(int activeIndex) {
@@ -1187,7 +1244,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         boolean isDark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
         int inactiveColor = isDark ? Color.parseColor("#94A3B8") : Color.parseColor("#64748B");
-        int activeColor = Color.parseColor("#0066FF");
+        int activeColor = ContextCompat.getColor(this, R.color.primary);
         int titleColor = isDark ? Color.parseColor("#F1F5F9") : Color.parseColor("#0F172A");
 
         if (itemStats != null) itemStats.setBackgroundColor(Color.TRANSPARENT);
@@ -1258,7 +1315,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         MaterialButton btnSubToggleCandidates = findViewById(R.id.btnSubToggleCandidates);
         MaterialButton btnSubToggleExport = findViewById(R.id.btnSubToggleExport);
 
-        int activeBg = Color.parseColor("#0066FF");
+        int activeBg = ContextCompat.getColor(this, R.color.primary);
         int activeText = Color.parseColor("#FFFFFF");
         int inactiveBg = Color.TRANSPARENT;
         int inactiveText = Color.parseColor("#64748B");
@@ -1309,12 +1366,13 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         View layoutTabControls = findViewById(R.id.layoutTabControls);
         View layoutTabProfile = findViewById(R.id.layoutTabProfile);
 
-        int inactiveColor = ContextCompat.getColor(this, R.color.muted_text);
-        int activeColor = Color.parseColor("#0066FF");
+        boolean isDark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        int activeColor = isDark ? Color.parseColor("#3B82F6") : Color.parseColor("#0066FF");
+        int inactiveColor = isDark ? Color.parseColor("#2A3A52") : Color.parseColor("#B0BCCF");
 
-        if (pillControls != null) pillControls.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
-        if (pillProfile != null) pillProfile.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
-        if (pillLogout != null) pillLogout.setBackgroundResource(R.drawable.bg_nav_pill_inactive);
+        if (pillControls != null) pillControls.setBackgroundResource(android.R.color.transparent);
+        if (pillProfile != null) pillProfile.setBackgroundResource(android.R.color.transparent);
+        if (pillLogout != null) pillLogout.setBackgroundResource(android.R.color.transparent);
 
         if (iconControls != null) iconControls.setColorFilter(inactiveColor);
         if (iconProfile != null) iconProfile.setColorFilter(inactiveColor);
@@ -1332,7 +1390,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 if (layoutTabControls != null) layoutTabControls.setVisibility(View.VISIBLE);
                 if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.GONE);
 
-                if (pillControls != null) pillControls.setBackgroundResource(R.drawable.bg_nav_pill_active);
                 if (iconControls != null) iconControls.setColorFilter(activeColor);
                 if (labelControls != null) labelControls.setTextColor(activeColor);
                 if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
@@ -1343,9 +1400,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 updateDrawerActiveState(-1);
                 if (layoutTabControls != null) layoutTabControls.setVisibility(View.GONE);
                 if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.VISIBLE);
-                if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.VISIBLE);
 
-                if (pillProfile != null) pillProfile.setBackgroundResource(R.drawable.bg_nav_pill_active);
                 if (iconProfile != null) iconProfile.setColorFilter(activeColor);
                 if (labelProfile != null) labelProfile.setTextColor(activeColor);
                 if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
@@ -1353,7 +1408,6 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             case 2: // Logout tab
             case 3:
-                if (pillLogout != null) pillLogout.setBackgroundResource(R.drawable.bg_nav_pill_active);
                 if (iconLogout != null) iconLogout.setColorFilter(activeColor);
                 if (labelLogout != null) labelLogout.setTextColor(activeColor);
                 if (triggerAction) {

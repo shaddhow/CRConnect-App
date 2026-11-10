@@ -2,14 +2,26 @@ package com.example.crconnect.student
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.crconnect.SessionManager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.util.Locale
 
-class RoutineRepository(context: Context) {
+class RoutineRepository(private val context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
     private val gson = Gson()
+
+    private fun getCurrentUserId(): String {
+        val session = SessionManager(context)
+        val email = session.userEmail
+        val id = session.userID
+        return when {
+            email.isNotBlank() -> email
+            id.isNotBlank() -> id
+            else -> ""
+        }
+    }
 
     fun saveClassEntries(newEntries: List<ClassEntry>) {
         val existing = getClassEntries().toMutableList()
@@ -28,7 +40,15 @@ class RoutineRepository(context: Context) {
 
         val sortedList = existing.sortedBy { startMinutes(it.startTime) }
         val json = gson.toJson(sortedList)
-        prefs.edit().putString(KEY_ENTRIES_JSON, json).apply()
+        val currentUserId = getCurrentUserId()
+        val editor = prefs.edit()
+            .putString(KEY_ENTRIES_JSON, json)
+            .putString(KEY_OWNER_ID, currentUserId)
+        if (currentUserId.isNotBlank()) {
+            val sanitizedUser = currentUserId.replace(Regex("[^a-zA-Z0-9_]"), "_")
+            editor.putString(KEY_USER_ENTRIES_PREFIX + sanitizedUser, json)
+        }
+        editor.apply()
     }
 
     fun replaceClassEntries(newEntries: List<ClassEntry>) {
@@ -37,11 +57,35 @@ class RoutineRepository(context: Context) {
             newEntry.copy(day = normDay)
         }.sortedBy { startMinutes(it.startTime) }
         val json = gson.toJson(normalizedList)
-        prefs.edit().putString(KEY_ENTRIES_JSON, json).apply()
+        val currentUserId = getCurrentUserId()
+        val editor = prefs.edit()
+            .putString(KEY_ENTRIES_JSON, json)
+            .putString(KEY_OWNER_ID, currentUserId)
+        if (currentUserId.isNotBlank()) {
+            val sanitizedUser = currentUserId.replace(Regex("[^a-zA-Z0-9_]"), "_")
+            editor.putString(KEY_USER_ENTRIES_PREFIX + sanitizedUser, json)
+        }
+        editor.apply()
     }
 
     fun getClassEntries(): List<ClassEntry> {
-        val json = prefs.getString(KEY_ENTRIES_JSON, null) ?: return emptyList()
+        val currentUserId = getCurrentUserId()
+        val sanitizedUser = if (currentUserId.isNotBlank()) currentUserId.replace(Regex("[^a-zA-Z0-9_]"), "_") else ""
+
+        var json: String? = null
+        if (sanitizedUser.isNotBlank()) {
+            json = prefs.getString(KEY_USER_ENTRIES_PREFIX + sanitizedUser, null)
+        }
+
+        if (json.isNullOrBlank()) {
+            val storedOwner = prefs.getString(KEY_OWNER_ID, null)
+            if (storedOwner.isNullOrBlank() || currentUserId.isBlank() || storedOwner == currentUserId) {
+                json = prefs.getString(KEY_ENTRIES_JSON, null)
+            }
+        }
+
+        if (json.isNullOrBlank()) return emptyList()
+
         return try {
             val type = object : TypeToken<List<ClassEntry>>() {}.type
             gson.fromJson<List<ClassEntry>>(json, type) ?: emptyList()
@@ -51,7 +95,17 @@ class RoutineRepository(context: Context) {
     }
 
     fun getDefaultSampleEntries(): List<ClassEntry> {
-        return emptyList()
+        return listOf(
+            ClassEntry("SUN", "CSE 101", "MDSS", "Room 602", "08:15 AM", "09:45 AM"),
+            ClassEntry("SUN", "CSE 102", "AAN", "Room 603", "10:00 AM", "11:30 AM"),
+            ClassEntry("MON", "CSE 201", "MHR", "Room 504", "08:15 AM", "09:45 AM"),
+            ClassEntry("MON", "CSE 202", "MKA", "Room 505", "11:45 AM", "01:15 PM"),
+            ClassEntry("TUE", "CSE 301", "JAB", "Room 401", "09:45 AM", "11:15 AM"),
+            ClassEntry("TUE", "CSE 302", "NSR", "Room 402", "01:30 PM", "03:00 PM"),
+            ClassEntry("WED", "CSE 401", "TAK", "Room 308", "08:15 AM", "09:45 AM"),
+            ClassEntry("WED", "CSE 402", "SAH", "Room 309", "10:00 AM", "11:30 AM"),
+            ClassEntry("THR", "CSE 405", "FHM", "Room 207", "11:45 AM", "01:15 PM")
+        )
     }
 
     fun getEntriesForDay(day: String): List<ClassEntry> {
@@ -64,7 +118,17 @@ class RoutineRepository(context: Context) {
     }
 
     fun clearEntries() {
-        prefs.edit().remove(KEY_ENTRIES_JSON).apply()
+        val currentUserId = getCurrentUserId()
+        val editor = prefs.edit().remove(KEY_ENTRIES_JSON).remove(KEY_OWNER_ID)
+        if (currentUserId.isNotBlank()) {
+            val sanitizedUser = currentUserId.replace(Regex("[^a-zA-Z0-9_]"), "_")
+            editor.remove(KEY_USER_ENTRIES_PREFIX + sanitizedUser)
+        }
+        editor.apply()
+    }
+
+    fun clearActiveSessionOnly() {
+        prefs.edit().remove(KEY_ENTRIES_JSON).remove(KEY_OWNER_ID).apply()
     }
 
     fun normalizeDay(day: String): String {
@@ -84,5 +148,7 @@ class RoutineRepository(context: Context) {
     companion object {
         private const val PREF_NAME = "crconnect_routine_preferences"
         private const val KEY_ENTRIES_JSON = "key_parsed_class_entries"
+        private const val KEY_USER_ENTRIES_PREFIX = "key_user_entries_"
+        private const val KEY_OWNER_ID = "key_routine_owner_id"
     }
 }

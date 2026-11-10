@@ -2,7 +2,11 @@ package com.example.crconnect;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
+
 import androidx.appcompat.app.AppCompatDelegate;
+
+import com.example.crconnect.student.RoutineRepository;
 
 public class SessionManager {
     public static final String THEME_SYSTEM = "system";
@@ -24,11 +28,26 @@ public class SessionManager {
     private static final String KEY_THEME_MODE = "themeMode";
     private static final String KEY_STUDENT_THEME_MODE = "studentThemeMode";
     private static final String KEY_TEACHER_THEME_MODE = "teacherThemeMode";
+    private static final String KEY_CGPA = "student_cgpa";
+    private static final String KEY_ADVISOR_NAME = "advisor_name";
+    private static final String KEY_ADVISOR_EMAIL = "advisor_email";
+    private static final String KEY_CURRENT_TERM = "student_current_term";
+    private static final String KEY_BIOMETRIC_LOCK = "biometric_lock_enabled";
+
+    private static final String KEY_REMEMBER_STUDENT_ENABLED = "remember_student_enabled";
+    private static final String KEY_REMEMBER_STUDENT_ID = "remember_student_id";
+    private static final String KEY_REMEMBER_STUDENT_PASS = "remember_student_pass";
+
+    private static final String KEY_REMEMBER_TEACHER_ENABLED = "remember_teacher_enabled";
+    private static final String KEY_REMEMBER_TEACHER_ID = "remember_teacher_id";
+    private static final String KEY_REMEMBER_TEACHER_PASS = "remember_teacher_pass";
 
     private final SharedPreferences pref;
     private final SharedPreferences.Editor editor;
+    private final Context context;
 
     public SessionManager(Context context) {
+        this.context = context != null ? context.getApplicationContext() : null;
         pref = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         editor = pref.edit();
     }
@@ -99,6 +118,61 @@ public class SessionManager {
         editor.commit();
     }
 
+    public String getStudentCgpa() {
+        return pref.getString(KEY_CGPA, "3.72");
+    }
+
+    public void setStudentCgpa(String cgpa) {
+        editor.putString(KEY_CGPA, cgpa);
+        editor.commit();
+    }
+
+    public String getAdvisorName() {
+        String intake = getUserIntake();
+        String section = getUserSection();
+        if (intake != null && intake.contains("55") && section != null && section.contains("6")) {
+            return pref.getString(KEY_ADVISOR_NAME, "Nasrin Akter");
+        }
+        return pref.getString(KEY_ADVISOR_NAME, "Dr. Md. Mamunur Rashid");
+    }
+
+    public void setAdvisorName(String name) {
+        editor.putString(KEY_ADVISOR_NAME, name);
+        editor.commit();
+    }
+
+    public String getAdvisorEmail() {
+        String intake = getUserIntake();
+        String section = getUserSection();
+        if (intake != null && intake.contains("55") && section != null && section.contains("6")) {
+            return pref.getString(KEY_ADVISOR_EMAIL, "nasrinshipa@bubt.edu.bd");
+        }
+        return pref.getString(KEY_ADVISOR_EMAIL, "mamunur@bubt.edu.bd");
+    }
+
+    public void setAdvisorEmail(String email) {
+        editor.putString(KEY_ADVISOR_EMAIL, email);
+        editor.commit();
+    }
+
+    public String getCurrentTerm() {
+        return pref.getString(KEY_CURRENT_TERM, "Spring 2025 (Year 3)");
+    }
+
+    public void setCurrentTerm(String term) {
+        editor.putString(KEY_CURRENT_TERM, term);
+        editor.commit();
+    }
+
+    public boolean isBiometricLockEnabled() {
+        return pref.getBoolean(KEY_BIOMETRIC_LOCK, false);
+    }
+
+    public void setBiometricLockEnabled(boolean enabled) {
+        editor.putBoolean(KEY_BIOMETRIC_LOCK, enabled);
+        editor.commit();
+    }
+
     public String getThemeMode() {
         return pref.getString(KEY_THEME_MODE, THEME_SYSTEM);
     }
@@ -154,8 +228,84 @@ public class SessionManager {
         return pref.getBoolean(KEY_DARK_MODE, false);
     }
 
+    public void saveStudentCredentials(String idOrEmail, String password) {
+        editor.putBoolean(KEY_REMEMBER_STUDENT_ENABLED, true);
+        editor.putString(KEY_REMEMBER_STUDENT_ID, idOrEmail);
+        editor.putString(KEY_REMEMBER_STUDENT_PASS, password);
+        editor.commit();
+    }
+
+    public void clearStudentCredentials() {
+        editor.putBoolean(KEY_REMEMBER_STUDENT_ENABLED, false);
+        editor.remove(KEY_REMEMBER_STUDENT_ID);
+        editor.remove(KEY_REMEMBER_STUDENT_PASS);
+        editor.commit();
+    }
+
+    public void saveTeacherCredentials(String idOrEmail, String password) {
+        editor.putBoolean(KEY_REMEMBER_TEACHER_ENABLED, true);
+        editor.putString(KEY_REMEMBER_TEACHER_ID, idOrEmail);
+        editor.putString(KEY_REMEMBER_TEACHER_PASS, password);
+        editor.commit();
+    }
+
+    public void clearTeacherCredentials() {
+        editor.putBoolean(KEY_REMEMBER_TEACHER_ENABLED, false);
+        editor.remove(KEY_REMEMBER_TEACHER_ID);
+        editor.remove(KEY_REMEMBER_TEACHER_PASS);
+        editor.commit();
+    }
+
+    public boolean isRememberMeEnabled(String role) {
+        if ("Teacher".equalsIgnoreCase(role) || "Teacher/Admin".equalsIgnoreCase(role)) {
+            return pref.getBoolean(KEY_REMEMBER_TEACHER_ENABLED, false);
+        }
+        return pref.getBoolean(KEY_REMEMBER_STUDENT_ENABLED, false);
+    }
+
+    public String getSavedStudentId() {
+        return pref.getString(KEY_REMEMBER_STUDENT_ID, "");
+    }
+
+    public String getSavedStudentPassword() {
+        return pref.getString(KEY_REMEMBER_STUDENT_PASS, "");
+    }
+
+    public String getSavedTeacherId() {
+        return pref.getString(KEY_REMEMBER_TEACHER_ID, "");
+    }
+
+    public String getSavedTeacherPassword() {
+        return pref.getString(KEY_REMEMBER_TEACHER_PASS, "");
+    }
+
     public void logoutUser() {
+        boolean rememberStudent = isRememberMeEnabled("Student");
+        String savedStudentId = getSavedStudentId();
+        String savedStudentPass = getSavedStudentPassword();
+
+        boolean rememberTeacher = isRememberMeEnabled("Teacher");
+        String savedTeacherId = getSavedTeacherId();
+        String savedTeacherPass = getSavedTeacherPassword();
+
         editor.clear();
         editor.commit();
+
+        if (rememberStudent) {
+            saveStudentCredentials(savedStudentId, savedStudentPass);
+        }
+        if (rememberTeacher) {
+            saveTeacherCredentials(savedTeacherId, savedTeacherPass);
+        }
+
+        if (context != null) {
+            try {
+                RoutineRepository repo = new RoutineRepository(context);
+                repo.clearActiveSessionOnly();
+                RoutineLocalCache.clearRoutineLocally(context);
+            } catch (Exception e) {
+                Log.e("SessionManager", "Error clearing routine cache on logout", e);
+            }
+        }
     }
 }

@@ -25,6 +25,7 @@
 
     <string name="password">Password</string>
     <string name="password_placeholder">Enter your password</string>
+    <string name="remember_me">Remember login info</string>
     <string name="forgot_password">Forgot password?</string>
     <string name="sign_in">Sign in</string>
     <string name="new_here">New here?</string>
@@ -40,7 +41,7 @@
     <string name="sect_personal">Personal</string>
     <string name="full_name">Full name</string>
 
-    <string name="student_email">Student email</string>
+    <string name="student_email">Enter your email address</string>
     <string name="teacher_email">Teacher email</string>
     <string name="student_email_help">Use an email you check often</string>
     <string name="teacher_email_help">\@bubt.edu.bd required</string>

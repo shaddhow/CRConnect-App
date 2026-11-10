@@ -396,7 +396,7 @@ public class RoutineActivity extends AppCompatActivity {
             if (tvNoRoutineClasses != null) tvNoRoutineClasses.setVisibility(View.GONE);
 
             if (tvEmptyStateTitle != null) {
-                tvEmptyStateTitle.setText("Nothing on " + selectedDay);
+                tvEmptyStateTitle.setText("No classes on " + selectedDay);
             }
 
             if (btnAddClassEmptyState != null) {
@@ -1122,10 +1122,8 @@ public class RoutineActivity extends AppCompatActivity {
                     Matcher intakeMatcher = Pattern.compile("(?i)(Intake|Int|Sec|Section)[: ]*([0-9]{1,3})[ _/,:-]*([0-9]{1,3})").matcher(fullText);
                     if (intakeMatcher.find()) {
                         String intakeStr = intakeMatcher.group(2);
-                        String secStr = intakeMatcher.group(3);
-                        if (intakeStr != null && secStr != null) {
+                        if (intakeStr != null) {
                             sessionManager.setUserIntake(intakeStr.trim());
-                            sessionManager.setUserSection(secStr.trim());
                         }
                     }
                 } catch (PatternSyntaxException e) {
@@ -1618,10 +1616,8 @@ public class RoutineActivity extends AppCompatActivity {
                     Matcher m = Pattern.compile("(?i)Intake[^0-9]*([0-9]+)[^0-9]*([0-9]+)").matcher(ocrText);
                     if (m.find()) {
                         String intakeStr = m.group(1);
-                        String secStr = m.group(2);
-                        if (intakeStr != null && secStr != null) {
+                        if (intakeStr != null) {
                             sessionManager.setUserIntake(intakeStr);
-                            sessionManager.setUserSection(secStr);
                         }
                     }
                 } catch (PatternSyntaxException e) {

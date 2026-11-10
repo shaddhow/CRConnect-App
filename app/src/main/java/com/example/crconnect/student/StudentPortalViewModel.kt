@@ -1,6 +1,7 @@
 package com.example.crconnect.student
 
 import android.content.Context
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -22,6 +23,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.io.File
+import java.io.FileOutputStream
 import java.util.Calendar
 import java.util.Locale
 
@@ -79,7 +82,12 @@ class StudentPortalViewModel : ViewModel() {
             section = rawSec,
             department = rawDept,
             initials = initials,
-            isCr = isUserCr
+            cgpa = session.studentCgpa,
+            profileImageUrl = session.profileImageUrl,
+            isCr = isUserCr,
+            advisorName = session.advisorName,
+            advisorEmail = session.advisorEmail,
+            currentTerm = session.currentTerm
         )
 
         val todayIdx = getTodayDayIndex()
@@ -100,10 +108,9 @@ class StudentPortalViewModel : ViewModel() {
         if (savedEntries.isNotEmpty()) {
             repo.replaceClassEntries(savedEntries)
             loadRoutineEntriesIntoState(savedEntries)
-        } else {
-            repo.clearEntries()
-            loadFirestoreRoutineToCache(context)
         }
+        // Background sync: load latest cloud routine silently without blocking UI
+        loadFirestoreRoutineToCache(context)
 
         setupFirebaseRealtimeDatabase()
     }
@@ -537,6 +544,34 @@ class StudentPortalViewModel : ViewModel() {
         _uiState.update { it.copy(selectedDayIndex = dayIndex) }
     }
 
+    fun navigateWeek(delta: Int) {
+        val newOffset = _uiState.value.currentWeekOffset + delta
+        val weekData = calculateCurrentWeekDays(newOffset)
+        _uiState.update { currentState ->
+            currentState.copy(
+                currentWeekOffset = newOffset,
+                weekLabel = weekData.first,
+                scheduleDays = weekData.second.map { day ->
+                    day.copy(hasClasses = currentState.classMap[day.dayIndex]?.isNotEmpty() == true)
+                }
+            )
+        }
+    }
+
+    fun toggleAttendance(classId: String, targetState: String) {
+        _uiState.update { currentState ->
+            val updatedMap = currentState.classMap.mapValues { (_, classes) ->
+                classes.map { item ->
+                    if (item.id == classId) {
+                        val newState = if (item.attendanceState == targetState) null else targetState
+                        item.copy(attendanceState = newState)
+                    } else item
+                }
+            }
+            currentState.copy(classMap = updatedMap)
+        }
+    }
+
     fun castVote(candidateId: String) {
         if (_uiState.value.hasVoted) return
         if (!_uiState.value.isGateOpen) {
@@ -591,8 +626,8 @@ class StudentPortalViewModel : ViewModel() {
         }
     }
 
-    fun openAddClassSheet() {
-        _uiState.update { it.copy(isAddClassSheetOpen = true) }
+    fun openAddClassSheet(manualMode: Boolean = true) {
+        _uiState.update { it.copy(isAddClassSheetOpen = true, isAddClassManualMode = manualMode) }
     }
 
     fun closeAddClassSheet() {
@@ -721,6 +756,20 @@ class StudentPortalViewModel : ViewModel() {
         saveScannedClassesToFirestore(entries, ctx)
     }
 
+    fun loadSampleRoutine(context: Context? = null) {
+        val ctx = context ?: FirebaseDatabase.getInstance().app.applicationContext
+        val repo = RoutineRepository(ctx)
+        val sampleEntries = repo.getDefaultSampleEntries()
+        if (sampleEntries.isNotEmpty()) {
+            saveScannedEntries(sampleEntries, ctx)
+            _uiState.update { currentState ->
+                currentState.copy(
+                    snackbarMessage = "Loaded sample BUBT routine (${sampleEntries.size} classes)"
+                )
+            }
+        }
+    }
+
     fun deleteCurrentRoutine(context: Context? = null) {
         val ctx = context ?: FirebaseDatabase.getInstance().app.applicationContext
 
@@ -780,9 +829,11 @@ class StudentPortalViewModel : ViewModel() {
             val deptKey = getSanitizedKey(session.userDept.ifBlank { rawDept })
             val intakeKey = getSanitizedKey(session.userIntake.ifBlank { rawIntake })
             val secKey = getSanitizedKey(session.userSection.ifBlank { rawSec })
+            val uid = FirebaseAuth.getInstance().currentUser?.uid ?: session.userID
 
             val sortedEntries = entries.sortedBy { startMinutes(it.startTime) }
 
+            // 1. Sync to section schedule routines/{dept}/{intake}/{section}/schedule
             val scheduleRef = db.collection("routines")
                 .document(deptKey)
                 .collection(intakeKey)
@@ -815,6 +866,33 @@ class StudentPortalViewModel : ViewModel() {
             }.addOnFailureListener { e ->
                 Log.e("StudentPortalViewModel", "Error getting schedule docs for cleanup", e)
             }
+
+            // 2. Personal backup to users/{uid}/routine so user's routine reloads automatically on login
+            if (uid.isNotBlank()) {
+                val userRoutineRef = db.collection("users").document(uid).collection("routine")
+                userRoutineRef.get().addOnSuccessListener { userSnapshot ->
+                    val userBatch = db.batch()
+                    for (doc in userSnapshot.documents) {
+                        userBatch.delete(doc.reference)
+                    }
+                    for (entry in sortedEntries) {
+                        val newDocRef = userRoutineRef.document()
+                        val docData = hashMapOf(
+                            "courseCode" to entry.course,
+                            "subject" to entry.course,
+                            "faculty" to entry.faculty,
+                            "room" to entry.room,
+                            "day" to entry.day,
+                            "startTime" to entry.startTime,
+                            "endTime" to entry.endTime
+                        )
+                        userBatch.set(newDocRef, docData)
+                    }
+                    userBatch.commit().addOnFailureListener { e ->
+                        Log.e("StudentPortalViewModel", "Error saving user personal routine to Firestore", e)
+                    }
+                }
+            }
         } catch (e: Exception) {
             Log.e("StudentPortalViewModel", "Error in saveScannedClassesToFirestore", e)
         }
@@ -833,12 +911,197 @@ class StudentPortalViewModel : ViewModel() {
         _uiState.update { it.copy(themeMode = mode) }
     }
 
+    fun updateCgpa(newCgpa: String, context: Context) {
+        val session = SessionManager(context)
+        session.setStudentCgpa(newCgpa)
+        _uiState.update { currentState ->
+            currentState.copy(
+                profile = currentState.profile.copy(cgpa = newCgpa)
+            )
+        }
+        showToast("CGPA updated successfully")
+    }
+
+    fun updateAdvisorInfo(advisorName: String, advisorEmail: String, context: Context) {
+        if (!_uiState.value.profile.isCr) {
+            showToast("Only Class Representatives (CR) can update academic advisor")
+            return
+        }
+        val session = SessionManager(context)
+        session.setAdvisorName(advisorName)
+        session.setAdvisorEmail(advisorEmail)
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                profile = currentState.profile.copy(
+                    advisorName = advisorName,
+                    advisorEmail = advisorEmail
+                )
+            )
+        }
+
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+        if (uid != null) {
+            dbRef.child("users").child(uid).child("advisorName").setValue(advisorName)
+            dbRef.child("users").child(uid).child("advisorEmail").setValue(advisorEmail)
+        }
+        if (sanitizedStudentId.isNotBlank()) {
+            dbRef.child("users").child(sanitizedStudentId).child("advisorName").setValue(advisorName)
+            dbRef.child("users").child(sanitizedStudentId).child("advisorEmail").setValue(advisorEmail)
+        }
+
+        val firestore = FirebaseFirestore.getInstance()
+        if (uid != null) {
+            firestore.collection("users").document(uid).update(
+                mapOf(
+                    "advisorName" to advisorName,
+                    "advisorEmail" to advisorEmail
+                )
+            )
+        }
+        if (sanitizedStudentId.isNotBlank()) {
+            firestore.collection("users").document(sanitizedStudentId).update(
+                mapOf(
+                    "advisorName" to advisorName,
+                    "advisorEmail" to advisorEmail
+                )
+            )
+        }
+
+        showToast("Academic advisor updated successfully")
+    }
+
+    fun updateCurrentTerm(newTerm: String, context: Context) {
+        val session = SessionManager(context)
+        session.setCurrentTerm(newTerm)
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                profile = currentState.profile.copy(
+                    currentTerm = newTerm
+                )
+            )
+        }
+
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+        if (uid != null) {
+            dbRef.child("users").child(uid).child("currentTerm").setValue(newTerm)
+        }
+        if (sanitizedStudentId.isNotBlank()) {
+            dbRef.child("users").child(sanitizedStudentId).child("currentTerm").setValue(newTerm)
+        }
+
+        val firestore = FirebaseFirestore.getInstance()
+        if (uid != null) {
+            firestore.collection("users").document(uid).update("currentTerm", newTerm)
+        }
+        if (sanitizedStudentId.isNotBlank()) {
+            firestore.collection("users").document(sanitizedStudentId).update("currentTerm", newTerm)
+        }
+
+        showToast("Current term updated successfully")
+    }
+
+    fun updateProfileImage(uri: Uri, context: Context) {
+        try {
+            val file = if (uri.scheme == "file" && uri.path != null) {
+                File(uri.path!!)
+            } else {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val targetFile = File(context.filesDir, "profile_pic_${System.currentTimeMillis()}.jpg")
+                val outputStream = FileOutputStream(targetFile)
+                inputStream?.use { input ->
+                    outputStream.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                targetFile
+            }
+
+            val absolutePath = file.absolutePath
+            val session = SessionManager(context)
+            session.setProfileImageUrl(absolutePath)
+
+            val uid = FirebaseAuth.getInstance().currentUser?.uid
+            val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+            if (uid != null) {
+                dbRef.child("users").child(uid).child("profileImageUrl").setValue(absolutePath)
+            }
+            if (sanitizedStudentId.isNotBlank()) {
+                dbRef.child("users").child(sanitizedStudentId).child("profileImageUrl").setValue(absolutePath)
+            }
+
+            val firestore = FirebaseFirestore.getInstance()
+            if (uid != null) {
+                firestore.collection("users").document(uid).update("profileImageUrl", absolutePath)
+            }
+            if (sanitizedStudentId.isNotBlank()) {
+                firestore.collection("users").document(sanitizedStudentId).update("profileImageUrl", absolutePath)
+            }
+
+            _uiState.update { currentState ->
+                currentState.copy(
+                    profile = currentState.profile.copy(profileImageUrl = absolutePath)
+                )
+            }
+            showToast("Profile picture updated successfully")
+        } catch (e: Exception) {
+            showToast("Failed to update profile picture")
+        }
+    }
+
+    fun updateSection(newSection: String, context: Context) {
+        val session = SessionManager(context)
+        session.setUserSection(newSection)
+
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+        if (uid != null) {
+            dbRef.child("users").child(uid).child("section").setValue(newSection)
+        }
+        if (sanitizedStudentId.isNotBlank()) {
+            dbRef.child("users").child(sanitizedStudentId).child("section").setValue(newSection)
+        }
+
+        val firestore = FirebaseFirestore.getInstance()
+        if (uid != null) {
+            firestore.collection("users").document(uid).update("section", newSection)
+        }
+        if (sanitizedStudentId.isNotBlank()) {
+            firestore.collection("users").document(sanitizedStudentId).update("section", newSection)
+        }
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                profile = currentState.profile.copy(section = newSection)
+            )
+        }
+        showToast("Section updated successfully to $newSection")
+    }
+
     fun clearSnackbar() {
         _uiState.update { it.copy(snackbarMessage = null) }
     }
 
     fun showToast(message: String) {
         _uiState.update { it.copy(snackbarMessage = message) }
+    }
+
+    fun sendPasswordResetEmail(context: Context) {
+        val email = _uiState.value.profile.email
+        if (email.isBlank()) {
+            showToast("No email associated with profile")
+            return
+        }
+        FirebaseAuth.getInstance().sendPasswordResetEmail(email)
+            .addOnSuccessListener {
+                showToast("Password reset email sent to $email")
+            }
+            .addOnFailureListener { e ->
+                showToast("Failed to send reset email: ${e.localizedMessage}")
+            }
     }
 
     override fun onCleared() {

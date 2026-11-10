@@ -9,6 +9,7 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         try {
+            ToastHelper.init(this);
             SessionManager sessionManager = new SessionManager(this);
             SessionManager.applyThemeMode(sessionManager.getThemeMode());
 

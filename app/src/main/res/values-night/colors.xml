@@ -7,8 +7,8 @@
     <color name="brand_blue">#4D94FF</color>
     <color name="tint">#1A2E4A</color>
     <color name="tint_border">#1E3A6E</color>
-    <color name="nav_pill_active_bg">#1E293B</color>
-    <color name="floating_nav_bg">#EE131B2E</color>
+    <color name="nav_pill_active_bg">#1E3A6E</color>
+    <color name="floating_nav_bg">#111827</color>
 
     <!-- Text & Content Colors -->
     <color name="title">#F1F5F9</color>
@@ -101,4 +101,41 @@
     <color name="tp_chip_verified_text">#DCFCE7</color>
     <color name="tp_asg_stat_bg">#26FFFFFF</color>
     <color name="tp_asg_sw_unselected_stroke">#475569</color>
+
+    <!-- Toast Notification Colors (Dark Mode) -->
+    <!-- SUCCESS -->
+    <color name="toast_success_icon_bg_start">#5922C55E</color>
+    <color name="toast_success_icon_bg_end">#3310B981</color>
+    <color name="toast_success_icon_border">#4022C55E</color>
+    <color name="toast_success_icon_color">#4ADE80</color>
+    <color name="toast_success_title_color">#86EFAC</color>
+    <color name="toast_success_progress_bar_start">#22C55E</color>
+    <color name="toast_success_progress_bar_end">#10B981</color>
+
+    <!-- INFO -->
+    <color name="toast_info_icon_bg_start">#593B82F6</color>
+    <color name="toast_info_icon_bg_end">#336366F1</color>
+    <color name="toast_info_icon_border">#403B82F6</color>
+    <color name="toast_info_icon_color">#60A5FA</color>
+    <color name="toast_info_title_color">#93C5FD</color>
+    <color name="toast_info_progress_bar_start">#3B82F6</color>
+    <color name="toast_info_progress_bar_end">#6366F1</color>
+
+    <!-- WARNING -->
+    <color name="toast_warning_icon_bg_start">#59F59E0B</color>
+    <color name="toast_warning_icon_bg_end">#33EA580C</color>
+    <color name="toast_warning_icon_border">#40F59E0B</color>
+    <color name="toast_warning_icon_color">#FCD34D</color>
+    <color name="toast_warning_title_color">#FCD34D</color>
+    <color name="toast_warning_progress_bar_start">#F59E0B</color>
+    <color name="toast_warning_progress_bar_end">#EA580C</color>
+
+    <!-- ERROR -->
+    <color name="toast_error_icon_bg_start">#59EF4444</color>
+    <color name="toast_error_icon_bg_end">#33DC2626</color>
+    <color name="toast_error_icon_border">#40EF4444</color>
+    <color name="toast_error_icon_color">#FCA5A5</color>
+    <color name="toast_error_title_color">#FCA5A5</color>
+    <color name="toast_error_progress_bar_start">#EF4444</color>
+    <color name="toast_error_progress_bar_end">#DC2626</color>
 </resources>

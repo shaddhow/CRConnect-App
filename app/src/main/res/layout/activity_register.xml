@@ -14,7 +14,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/layoutStickyFooter"
-        android:background="@color/background"
         android:fillViewport="true"
         android:overScrollMode="ifContentScrolls"
         android:clipToPadding="false">
@@ -39,6 +38,7 @@
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:src="@drawable/ic_back_arrow"
+                    app:tint="@color/title_text"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/app_name" />
 
