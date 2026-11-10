@@ -13,7 +13,12 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.signature.ObjectKey
 import com.example.crconnect.ProfileImageCacheHelper
 import java.io.File
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -73,10 +78,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.crconnect.R
 import com.example.crconnect.SessionManager
+import com.example.crconnect.ToastHelper
 
 @Composable
 fun ProfileTab(
     profile: UserProfileModel,
+    uiState: StudentPortalUiState = StudentPortalUiState(),
     classMap: Map<Int, List<ClassModel>> = emptyMap(),
     themeMode: String = SessionManager.THEME_SYSTEM,
     onThemeModeSelected: (String) -> Unit = {},
@@ -85,6 +92,7 @@ fun ProfileTab(
     onUpdateAdvisorInfo: (String, String) -> Unit = { _, _ -> },
     onUpdateCurrentTerm: (String) -> Unit = {},
     onSecuritySettings: () -> Unit = {},
+    onCheckUpdate: () -> Unit = {},
     onSignOut: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
@@ -340,15 +348,13 @@ fun ProfileTab(
                         key(profile.profileImageUrl) {
                             val bitmap = remember(profile.profileImageUrl) {
                                 val path = profile.profileImageUrl
-                                val userKey = profile.studentId.ifBlank { profile.email }
                                 try {
-                                    if (path.isNotBlank() && !path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
-                                        val file = File(path)
-                                        if (file.exists() && file.length() > 0) BitmapFactory.decodeFile(file.absolutePath) else null
-                                    } else {
-                                        val cached = ProfileImageCacheHelper.getValidLocalProfilePath(context, userKey)
-                                        if (cached != null) BitmapFactory.decodeFile(cached) else null
-                                    }
+                                    if (path.isNotBlank()) {
+                                        if (!path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
+                                            val file = File(path)
+                                            if (file.exists() && file.length() > 0) BitmapFactory.decodeFile(file.absolutePath) else null
+                                        } else null
+                                    } else null
                                 } catch (e: Exception) {
                                     null
                                 }
@@ -612,7 +618,7 @@ fun ProfileTab(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = profile.cgpa.ifBlank { "3.72" },
+                            text = profile.cgpa.ifBlank { "--" },
                             fontFamily = PlusJakartaSansFontFamily,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
@@ -854,11 +860,91 @@ fun ProfileTab(
                     )
                 }
 
-                KeyValueRow(
-                    key = "App Version",
-                    value = "CRConnect v$versionName (BUBT)",
-                    valueColor = MaterialTheme.colorScheme.onSurfaceVariant
+                // App Version & Blinking Update Alert Row
+                val isUpdateAvailable = uiState.isUpdateAvailable
+                val updateUrl = uiState.updateUrl
+                val latestTag = uiState.latestVersionName.ifBlank { "v1.2.0" }
+
+                val infiniteTransition = rememberInfiniteTransition(label = "updatePulse")
+                val pulseAlpha by infiniteTransition.animateFloat(
+                    initialValue = 0.35f,
+                    targetValue = 1.0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(800, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "pulseAlpha"
                 )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            if (isUpdateAvailable) {
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateUrl))
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    ToastHelper.show(context, "Could not open update link")
+                                }
+                            } else {
+                                onCheckUpdate()
+                            }
+                        }
+                        .padding(vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "App Version",
+                        fontFamily = PlusJakartaSansFontFamily,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    if (isUpdateAvailable) {
+                        Surface(
+                            shape = RoundedCornerShape(999.dp),
+                            color = Color(0xFF0066FF).copy(alpha = pulseAlpha),
+                            border = BorderStroke(1.dp, Color(0xFF00E5FF))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "Update Available ($latestTag) ⚡",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                    contentDescription = "Update Now",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "CRConnect v$versionName (BUBT)",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
         }
 

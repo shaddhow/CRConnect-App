@@ -98,6 +98,11 @@ public class SessionManager {
         editor.commit();
     }
 
+    public void setUserDept(String dept) {
+        editor.putString(KEY_DEPT, dept);
+        editor.commit();
+    }
+
     public void setUserSection(String section) {
         editor.putString(KEY_SECTION, section);
         editor.commit();
@@ -119,7 +124,7 @@ public class SessionManager {
     }
 
     public String getStudentCgpa() {
-        return pref.getString(KEY_CGPA, "3.72");
+        return pref.getString(KEY_CGPA, "--");
     }
 
     public void setStudentCgpa(String cgpa) {

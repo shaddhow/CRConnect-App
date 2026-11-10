@@ -343,19 +343,15 @@ fun TopHeader(
             contentAlignment = Alignment.Center
         ) {
             key(profileImageUrl) {
-                val context = LocalContext.current
                 val bitmap = remember(profileImageUrl) {
                     val path = profileImageUrl
                     try {
-                        if (path.isNotBlank() && !path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
-                            val file = File(path)
-                            if (file.exists() && file.length() > 0) BitmapFactory.decodeFile(file.absolutePath) else null
-                        } else {
-                            val session = SessionManager(context)
-                            val userKey = session.userID.ifBlank { session.userEmail }
-                            val cached = ProfileImageCacheHelper.getValidLocalProfilePath(context, userKey)
-                            if (cached != null) BitmapFactory.decodeFile(cached) else null
-                        }
+                        if (path.isNotBlank()) {
+                            if (!path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
+                                val file = File(path)
+                                if (file.exists() && file.length() > 0) BitmapFactory.decodeFile(file.absolutePath) else null
+                            } else null
+                        } else null
                     } catch (e: Exception) {
                         null
                     }

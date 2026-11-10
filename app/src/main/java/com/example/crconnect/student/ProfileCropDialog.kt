@@ -136,10 +136,9 @@ fun ProfileCropDialog(
                         .pointerInput(Unit) {
                             detectTransformGestures { _, pan, zoom, _ ->
                                 scale.floatValue = (scale.floatValue * zoom).coerceIn(1f, 3f)
-                                // Not restricting drag boundary to allow free movement
                                 offset.value = Offset(
-                                    x = offset.value.x + pan.x * scale.floatValue,
-                                    y = offset.value.y + pan.y * scale.floatValue
+                                    x = offset.value.x + pan.x,
+                                    y = offset.value.y + pan.y
                                 )
                             }
                         },
@@ -159,9 +158,6 @@ fun ProfileCropDialog(
                             view.scaleY = scale.floatValue
                             view.translationX = offset.value.x
                             view.translationY = offset.value.y
-                            Glide.with(view.context)
-                                .load(imageUri)
-                                .into(view)
                         },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -266,33 +262,34 @@ private fun cropBitmapWithTransform(
             MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
         }
 
-        val outputBitmap = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(outputBitmap)
-        val matrix = Matrix()
+        val density = context.resources.displayMetrics.density
+        val containerPx = 300f * density
 
         val bitmapWidth = bitmap.width.toFloat()
         val bitmapHeight = bitmap.height.toFloat()
-        val targetWidth = targetSize.toFloat()
-        val targetHeight = targetSize.toFloat()
 
-        val scaleFactor: Float
-        var dx = 0f
-        var dy = 0f
+        // 1. Initial CENTER_CROP scale to fill the 300dp container
+        val baseScale = Math.max(containerPx / bitmapWidth, containerPx / bitmapHeight)
+        val initialDx = (containerPx - bitmapWidth * baseScale) / 2f
+        val initialDy = (containerPx - bitmapHeight * baseScale) / 2f
 
-        if (bitmapWidth * targetHeight > targetWidth * bitmapHeight) {
-            scaleFactor = targetHeight / bitmapHeight
-            dx = (targetWidth - bitmapWidth * scaleFactor) * 0.5f
-        } else {
-            scaleFactor = targetWidth / bitmapWidth
-            dy = (targetHeight - bitmapHeight * scaleFactor) * 0.5f
-        }
+        val matrix = Matrix()
+        matrix.setScale(baseScale, baseScale)
+        matrix.postTranslate(initialDx, initialDy)
 
-        matrix.setScale(scaleFactor, scaleFactor)
-        matrix.postTranslate(dx, dy)
-        matrix.postScale(scale, scale, targetWidth / 2f, targetHeight / 2f)
+        // 2. User zoom & pan applied in 300dp container space
+        matrix.postScale(scale, scale, containerPx / 2f, containerPx / 2f)
         matrix.postTranslate(offset.x, offset.y)
 
-        canvas.drawBitmap(bitmap, matrix, Paint(Paint.FILTER_BITMAP_FLAG))
+        // 3. Map container coordinate space to target 512x512 canvas coordinate space
+        val canvasRatio = targetSize.toFloat() / containerPx
+        matrix.postScale(canvasRatio, canvasRatio)
+
+        val outputBitmap = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(outputBitmap)
+        val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+
+        canvas.drawBitmap(bitmap, matrix, paint)
 
         val file = File(context.filesDir, "cropped_profile_${System.currentTimeMillis()}.jpg")
         val stream = FileOutputStream(file)

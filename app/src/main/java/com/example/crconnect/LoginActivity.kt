@@ -836,6 +836,11 @@ class LoginActivity : AppCompatActivity() {
 
         sessionManager.createLoginSession(name, email, id, role, section, assignedSection, intake, dept)
 
+        val cgpa = snapshot.child("cgpa").getValue(String::class.java) ?: ""
+        if (cgpa.isNotBlank() && cgpa != "--") {
+            sessionManager.setStudentCgpa(cgpa)
+        }
+
         var profileImg = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
         if (profileImg.isBlank() && googlePhotoUrl.isNotBlank()) {
             profileImg = googlePhotoUrl
@@ -1090,6 +1095,11 @@ class LoginActivity : AppCompatActivity() {
         val dept = doc.getString("dept") ?: "Department of CSE, BUBT"
 
         sessionManager.createLoginSession(name, email, id, role, section, assignedSection, intake, dept)
+
+        val cgpa = doc.getString("cgpa") ?: ""
+        if (cgpa.isNotBlank() && cgpa != "--") {
+            sessionManager.setStudentCgpa(cgpa)
+        }
 
         var profileImg = doc.getString("profileImageUrl") ?: ""
         if (profileImg.isBlank() && googlePhotoUrl.isNotBlank()) {

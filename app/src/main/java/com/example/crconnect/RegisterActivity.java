@@ -664,13 +664,21 @@ public class RegisterActivity extends AppCompatActivity {
 
             if (extractedDept == null) {
                 String lowerLine = line.toLowerCase();
-                if (lowerLine.contains("cse") || lowerLine.contains("computer science")) {
-                    extractedDept = "Computer Science & Engineering (CSE)";
+                if (lowerLine.contains("cse") || lowerLine.contains("computer science") || lowerLine.contains("engineering")) {
+                    if (lowerLine.contains("eee") || lowerLine.contains("electrical")) {
+                        extractedDept = "Electrical & Electronic Engineering (EEE)";
+                    } else if (lowerLine.contains("civil") || lowerLine.contains("ce")) {
+                        extractedDept = "Civil Engineering (CE)";
+                    } else if (lowerLine.contains("textile") || lowerLine.contains("te")) {
+                        extractedDept = "Textile Engineering (TE)";
+                    } else {
+                        extractedDept = "Computer Science & Engineering (CSE)";
+                    }
                 } else if (lowerLine.contains("bba") || lowerLine.contains("business administration") || lowerLine.contains("bachelor of business")) {
                     extractedDept = "Bachelor of Business Administration (BBA)";
                 } else if (lowerLine.contains("eee") || lowerLine.contains("electrical")) {
                     extractedDept = "Electrical & Electronic Engineering (EEE)";
-                } else if (lowerLine.contains("eng") || lowerLine.contains("english")) {
+                } else if (lowerLine.contains("english") || (lowerLine.matches(".*\\beng\\b.*") && !lowerLine.contains("engineering"))) {
                     extractedDept = "English (ENG)";
                 } else if (lowerLine.contains("law") || lowerLine.contains("justice")) {
                     extractedDept = "Law & Justice (L&J)";

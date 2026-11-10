@@ -46,10 +46,18 @@ object ProfileImageCacheHelper {
             return
         }
 
-        // If it's already a valid local file on disk, return it immediately
+        // If it's already a valid local file on disk, update the cache target and return it immediately
         if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("content://")) {
             val localFile = File(trimmed)
             if (localFile.exists() && localFile.length() > 0) {
+                try {
+                    val targetFile = getCachedProfileFile(context, userIdentifier)
+                    if (localFile.absolutePath != targetFile.absolutePath) {
+                        localFile.copyTo(targetFile, overwrite = true)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to update target cache file", e)
+                }
                 onResult(localFile.absolutePath)
                 return
             }

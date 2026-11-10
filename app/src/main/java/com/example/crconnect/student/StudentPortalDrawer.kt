@@ -116,18 +116,15 @@ fun StudentPortalDrawerContent(
                         .background(MaterialTheme.colorScheme.surface),
                     contentAlignment = Alignment.Center
                 ) {
-                    val context = LocalContext.current
                     val bitmap = remember(profile.profileImageUrl) {
                         val path = profile.profileImageUrl
-                        val userKey = profile.studentId.ifBlank { profile.email }
                         try {
-                            if (path.isNotBlank() && !path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
-                                val file = File(path)
-                                if (file.exists() && file.length() > 0) BitmapFactory.decodeFile(file.absolutePath) else null
-                            } else {
-                                val cached = ProfileImageCacheHelper.getValidLocalProfilePath(context, userKey)
-                                if (cached != null) BitmapFactory.decodeFile(cached) else null
-                            }
+                            if (path.isNotBlank()) {
+                                if (!path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
+                                    val file = File(path)
+                                    if (file.exists() && file.length() > 0) BitmapFactory.decodeFile(file.absolutePath) else null
+                                } else null
+                            } else null
                         } catch (e: Exception) {
                             null
                         }

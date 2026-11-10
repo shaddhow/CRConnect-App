@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.crconnect.ProfileImageCacheHelper
 import com.example.crconnect.RoutineLocalCache
 import com.example.crconnect.SessionManager
@@ -21,12 +22,18 @@ import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Calendar
 import java.util.Locale
 
@@ -62,7 +69,25 @@ class StudentPortalViewModel : ViewModel() {
         isInitialized = true
 
         val session = SessionManager(context)
-        rawDept = session.userDept.ifBlank { "Dept. of CSE" }
+        val storedDept = session.userDept.ifBlank { "Department of CSE, BUBT" }
+        rawDept = if (storedDept.equals("English (ENG)", ignoreCase = true) || storedDept.equals("ENG", ignoreCase = true)) {
+            val correctedDept = "Department of CSE, BUBT"
+            session.setUserDept(correctedDept)
+            val uid = FirebaseAuth.getInstance().currentUser?.uid
+            val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+            if (uid != null) {
+                dbRef.child("users").child(uid).child("dept").setValue(correctedDept)
+                dbRef.child("users").child(uid).child("department").setValue(correctedDept)
+            }
+            val rawId = session.userID.ifBlank { "student" }.replace(Regex("[^a-zA-Z0-9_]"), "_")
+            if (rawId.isNotBlank()) {
+                dbRef.child("users").child(rawId).child("dept").setValue(correctedDept)
+                dbRef.child("users").child(rawId).child("department").setValue(correctedDept)
+            }
+            correctedDept
+        } else {
+            storedDept
+        }
         rawIntake = session.userIntake.ifBlank { "55" }
         val secStr = if (session.userRole.contains("Teacher", ignoreCase = true)) session.assignedSection else session.userSection
         rawSec = if (secStr.isNotBlank() && secStr != "--") secStr else "6"
@@ -102,6 +127,9 @@ class StudentPortalViewModel : ViewModel() {
                 themeMode = currentThemeMode
             )
         }
+
+        // Check for app updates on GitHub Releases in background
+        checkForAppUpdates(context, forceCheck = false)
 
         // Background caching of profile image if it's a remote URL
         val rawPhotoUrl = session.profileImageUrl
@@ -381,6 +409,22 @@ class StudentPortalViewModel : ViewModel() {
                                         profile = currentState.profile.copy(profileImageUrl = finalPath)
                                     )
                                 }
+                            }
+                        }
+                    }
+                    override fun onCancelled(error: DatabaseError) {}
+                })
+
+                dbRef?.child("users")?.child(authUser.uid)?.child("cgpa")?.addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val dbCgpa = snapshot.getValue(String::class.java) ?: ""
+                        if (dbCgpa.isNotBlank() && dbCgpa != "--" && dbCgpa != _uiState.value.profile.cgpa) {
+                            val context = FirebaseDatabase.getInstance().app.applicationContext
+                            SessionManager(context).setStudentCgpa(dbCgpa)
+                            _uiState.update { currentState ->
+                                currentState.copy(
+                                    profile = currentState.profile.copy(cgpa = dbCgpa)
+                                )
                             }
                         }
                     }
@@ -1007,6 +1051,24 @@ class StudentPortalViewModel : ViewModel() {
     fun updateCgpa(newCgpa: String, context: Context) {
         val session = SessionManager(context)
         session.setStudentCgpa(newCgpa)
+
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+        if (uid != null) {
+            dbRef.child("users").child(uid).child("cgpa").setValue(newCgpa)
+        }
+        if (sanitizedStudentId.isNotBlank()) {
+            dbRef.child("users").child(sanitizedStudentId).child("cgpa").setValue(newCgpa)
+        }
+
+        val firestore = FirebaseFirestore.getInstance()
+        if (uid != null) {
+            firestore.collection("users").document(uid).update("cgpa", newCgpa)
+        }
+        if (sanitizedStudentId.isNotBlank()) {
+            firestore.collection("users").document(sanitizedStudentId).update("cgpa", newCgpa)
+        }
+
         _uiState.update { currentState ->
             currentState.copy(
                 profile = currentState.profile.copy(cgpa = newCgpa)
@@ -1117,6 +1179,9 @@ class StudentPortalViewModel : ViewModel() {
             val session = SessionManager(context)
             session.setProfileImageUrl(absolutePath)
 
+            // Sync with local cache manager
+            ProfileImageCacheHelper.saveAndCacheProfileImage(context, absolutePath, session.userID.ifBlank { session.userEmail }) {}
+
             val uid = FirebaseAuth.getInstance().currentUser?.uid
             val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
             if (uid != null) {
@@ -1180,6 +1245,91 @@ class StudentPortalViewModel : ViewModel() {
 
     fun showToast(message: String) {
         _uiState.update { it.copy(snackbarMessage = message) }
+    }
+
+    private var lastUpdateCheckTime: Long = 0L
+
+    fun checkForAppUpdates(context: Context, forceCheck: Boolean = false) {
+        val currentTime = System.currentTimeMillis()
+        if (!forceCheck && (currentTime - lastUpdateCheckTime) < 60 * 60 * 1000L) {
+            return
+        }
+
+        if (forceCheck) {
+            showToast("Checking for updates...")
+        }
+
+        lastUpdateCheckTime = currentTime
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val url = URL("https://api.github.com/repos/shaddhow/CRConnect-App/releases/latest")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.connectTimeout = 8000
+                conn.readTimeout = 8000
+                conn.setRequestProperty("User-Agent", "CRConnect-AndroidApp")
+                conn.setRequestProperty("Accept", "application/vnd.github.v3+json")
+
+                if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+                    val responseText = conn.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(responseText)
+                    val tagName = json.optString("tag_name", "").trim()
+                    val htmlUrl = json.optString("html_url", "https://github.com/shaddhow/CRConnect-App/releases/latest")
+
+                    val cleanTag = tagName.removePrefix("v").removePrefix("V")
+                    val currentVersion = "1.1.0"
+
+                    val isNewer = isVersionNewer(cleanTag, currentVersion)
+
+                    withContext(Dispatchers.Main) {
+                        _uiState.update { currentState ->
+                            currentState.copy(
+                                isUpdateAvailable = isNewer,
+                                latestVersionName = if (tagName.isNotBlank()) tagName else "v$cleanTag",
+                                updateUrl = if (htmlUrl.isNotBlank()) htmlUrl else "https://github.com/shaddhow/CRConnect-App/releases/latest",
+                                isCheckingUpdate = false
+                            )
+                        }
+
+                        if (forceCheck) {
+                            if (isNewer) {
+                                showToast("New update available: $tagName! Tap App Version to update.")
+                            } else {
+                                showToast("CRConnect is up to date (v$currentVersion)")
+                            }
+                        }
+                    }
+                } else {
+                    if (forceCheck) {
+                        withContext(Dispatchers.Main) {
+                            showToast("Could not check for updates. Try again later.")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("StudentPortalViewModel", "Update check failed", e)
+                if (forceCheck) {
+                    withContext(Dispatchers.Main) {
+                        showToast("Unable to connect to GitHub releases.")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun isVersionNewer(latest: String, current: String): Boolean {
+        if (latest.isBlank()) return false
+        val latestParts = latest.split(".").mapNotNull { it.toIntOrNull() }
+        val currentParts = current.split(".").mapNotNull { it.toIntOrNull() }
+
+        val maxLength = Math.max(latestParts.size, currentParts.size)
+        for (i in 0 until maxLength) {
+            val l = latestParts.getOrElse(i) { 0 }
+            val c = currentParts.getOrElse(i) { 0 }
+            if (l > c) return true
+            if (l < c) return false
+        }
+        return false
     }
 
     fun sendPasswordResetEmail(context: Context) {

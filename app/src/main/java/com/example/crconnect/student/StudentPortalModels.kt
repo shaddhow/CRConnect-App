@@ -91,7 +91,7 @@ data class UserProfileModel(
     val section: String = "--",
     val department: String = "Dept. of CSE",
     val attendancePct: Int = 92,
-    val cgpa: String = "3.85",
+    val cgpa: String = "--",
     val initials: String = "ST",
     val profileImageUrl: String = "",
     val isCr: Boolean = false,
@@ -228,5 +228,9 @@ data class StudentPortalUiState(
     val isAddClassManualMode: Boolean = true,
     val isNoticeSheetOpen: Boolean = false,
     val isCr: Boolean = false,
-    val snackbarMessage: String? = null
+    val snackbarMessage: String? = null,
+    val isUpdateAvailable: Boolean = false,
+    val latestVersionName: String = "",
+    val updateUrl: String = "https://github.com/shaddhow/CRConnect-App/releases/latest",
+    val isCheckingUpdate: Boolean = false
 )

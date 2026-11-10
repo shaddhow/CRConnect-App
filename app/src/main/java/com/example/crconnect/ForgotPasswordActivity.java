@@ -1,37 +1,27 @@
 package com.example.crconnect;
 
-import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.transition.AutoTransition;
 import android.transition.TransitionManager;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
-import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.core.widget.NestedScrollView;
+
 
 import com.example.crconnect.core.utils.HapticUtils;
 import com.example.crconnect.core.utils.KeyboardUtils;
@@ -50,12 +40,12 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     private ImageButton fBack;
     private View badgeContainer;
     private ViewGroup paneContainer;
-    private LinearLayout p1, p2, p3;
-    private TextInputLayout fId, fPw;
-    private TextInputEditText fid, npw;
-    private MaterialButton send, reset, done;
+    private LinearLayout p1, p2;
+    private TextInputLayout fId;
+    private TextInputEditText fid;
+    private MaterialButton send, done, btnResend;
     private TextView sentTo, again;
-    private final EditText[] otpInputs = new EditText[6];
+    private String lastSentEmail = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,44 +90,34 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         paneContainer = findViewById(R.id.paneContainer);
         p1 = findViewById(R.id.p1);
         p2 = findViewById(R.id.p2);
-        p3 = findViewById(R.id.p3);
         fId = findViewById(R.id.fId);
-        fPw = findViewById(R.id.fPw);
         fid = findViewById(R.id.fid);
-        npw = findViewById(R.id.npw);
         send = findViewById(R.id.send);
-        reset = findViewById(R.id.reset);
         done = findViewById(R.id.done);
+        btnResend = findViewById(R.id.btnResend);
         sentTo = findViewById(R.id.sentTo);
         again = findViewById(R.id.again);
 
-        otpInputs[0] = findViewById(R.id.otp1);
-        otpInputs[1] = findViewById(R.id.otp2);
-        otpInputs[2] = findViewById(R.id.otp3);
-        otpInputs[3] = findViewById(R.id.otp4);
-        otpInputs[4] = findViewById(R.id.otp5);
-        otpInputs[5] = findViewById(R.id.otp6);
-
-        setupOtpListeners();
-
         fBack.setOnClickListener(v -> {
             HapticUtils.lightClick(v);
-            v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(90).withEndAction(() -> {
-                v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).withEndAction(() -> {
-                    finish();
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                }).start();
-            }).start();
+            finish();
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
         send.setOnClickListener(v -> handleSendCode());
+
+        btnResend.setOnClickListener(v -> {
+            HapticUtils.mediumClick(v);
+            if (!lastSentEmail.isEmpty()) {
+                sendPasswordReset(lastSentEmail, true);
+            }
+        });
+
         again.setOnClickListener(v -> {
             HapticUtils.lightClick(v);
-            v.animate().scaleX(0.93f).scaleY(0.93f).setDuration(90).withEndAction(() -> {
-                v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).withEndAction(() -> switchPane(p2, p1, false)).start();
-            }).start();
+            switchPane(p2, p1);
         });
-        reset.setOnClickListener(v -> handleResetPassword());
+
         done.setOnClickListener(v -> {
             finish();
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
@@ -148,54 +128,25 @@ public class ForgotPasswordActivity extends AppCompatActivity {
 
     private void setupHapticFeedback() {
         if (send != null) HapticUtils.attachMedium(send);
-        if (reset != null) HapticUtils.attachMedium(reset);
         if (done != null) HapticUtils.attachMedium(done);
+        if (btnResend != null) HapticUtils.attachMedium(btnResend);
         if (fBack != null) HapticUtils.attachLight(fBack);
         if (again != null) HapticUtils.attachLight(again);
-    }
-
-    private void setupOtpListeners() {
-        for (int i = 0; i < otpInputs.length; i++) {
-            final int index = i;
-            if (otpInputs[index] == null) continue;
-            otpInputs[index].addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    if (s.length() == 1 && index < otpInputs.length - 1 && otpInputs[index + 1] != null) {
-                        otpInputs[index + 1].requestFocus();
-                    }
-                }
-
-                @Override
-                public void afterTextChanged(Editable s) {}
-            });
-
-            otpInputs[index].setOnKeyListener((v, keyCode, event) -> {
-                if (keyCode == KeyEvent.KEYCODE_DEL && event.getAction() == KeyEvent.ACTION_DOWN) {
-                    if (otpInputs[index].getText().length() == 0 && index > 0 && otpInputs[index - 1] != null) {
-                        otpInputs[index - 1].requestFocus();
-                    }
-                }
-                return false;
-            });
-        }
     }
 
     private void handleSendCode() {
         String input = fid.getText() != null ? fid.getText().toString().trim() : "";
         if (input.isEmpty()) {
-            showFieldError(fId, "Enter your email");
+            showFieldError(fId, "Enter your student email");
             return;
         }
 
         clearFieldError(fId);
         send.setEnabled(false);
+        send.setText("Sending...");
 
         if (input.contains("@")) {
-            sendPasswordReset(input);
+            sendPasswordReset(input, false);
         } else {
             String sanitizedId = input.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
             DatabaseReference dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db");
@@ -205,73 +156,52 @@ public class ForgotPasswordActivity extends AppCompatActivity {
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     String registeredEmail = snapshot.exists() ? snapshot.child("email").getValue(String.class) : null;
                     if (registeredEmail != null && !registeredEmail.isEmpty()) {
-                        sendPasswordReset(registeredEmail);
+                        sendPasswordReset(registeredEmail, false);
                     } else {
-                        sendPasswordReset(input);
+                        sendPasswordReset(input, false);
                     }
                 }
 
                 @Override
                 public void onCancelled(@NonNull DatabaseError error) {
-                    sendPasswordReset(input);
+                    sendPasswordReset(input, false);
                 }
             });
         }
     }
 
-    private void sendPasswordReset(String email) {
+    private void sendPasswordReset(String email, boolean isResend) {
         FirebaseAuth.getInstance().sendPasswordResetEmail(email)
             .addOnSuccessListener(unused -> {
                 send.setEnabled(true);
-                String masked = email.contains("@") ? email.replaceAll("^(.).*(@.*)$", "$1•••$2") : email;
-                sentTo.setText(getString(R.string.enter_code_sub) + " (" + masked + ")");
-                switchPane(p1, p2, false);
-                if (otpInputs[0] != null) otpInputs[0].requestFocus();
+                send.setText(R.string.send_reset_link);
+                lastSentEmail = email;
+
+                if (isResend) {
+                    CustomToast.show(ForgotPasswordActivity.this, "Password reset email resent to " + email);
+                } else {
+                    CustomToast.show(ForgotPasswordActivity.this, "Reset link sent successfully!");
+                    String masked = email.contains("@") ? email.replaceAll("^(.).*(@.*)$", "$1•••$2") : email;
+                    sentTo.setText(getString(R.string.check_email_sub, masked));
+                    switchPane(p1, p2);
+                }
             })
             .addOnFailureListener(e -> {
                 send.setEnabled(true);
+                send.setText(R.string.send_reset_link);
                 Log.e("ForgotPasswordActivity", "Failed to send reset email", e);
                 showFieldError(fId, "Error: " + e.getLocalizedMessage());
+                CustomToast.show(ForgotPasswordActivity.this, "Failed to send email: " + e.getLocalizedMessage());
             });
     }
 
-    private void handleResetPassword() {
-        StringBuilder sb = new StringBuilder();
-        for (EditText et : otpInputs) {
-            if (et != null) sb.append(et.getText().toString().trim());
-        }
-        String otpCode = sb.toString();
-
-        if (otpCode.length() < 6) {
-            return;
-        }
-
-        String password = npw.getText() != null ? npw.getText().toString().trim() : "";
-        if (password.length() < 8 || !password.matches(".*[0-9].*")) {
-            showFieldError(fPw, "Use 8+ characters with at least 1 number");
-            return;
-        }
-
-        clearFieldError(fPw);
-        reset.setEnabled(false);
-
-        // Transition to Step 3: Success
-        switchPane(p2, p3, true);
-    }
-
-    private void switchPane(View currentPane, View nextPane, boolean hideBadge) {
+    private void switchPane(View currentPane, View nextPane) {
         AutoTransition transition = new AutoTransition();
         transition.setDuration(250);
         TransitionManager.beginDelayedTransition(paneContainer, transition);
 
         currentPane.setVisibility(View.GONE);
         nextPane.setVisibility(View.VISIBLE);
-
-        if (hideBadge) {
-            badgeContainer.setVisibility(View.GONE);
-        } else {
-            badgeContainer.setVisibility(View.VISIBLE);
-        }
     }
 
     private void showFieldError(TextInputLayout til, String message) {

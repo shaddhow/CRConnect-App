@@ -276,6 +276,7 @@ fun StudentPortalScreen(
                                 )
                                 2 -> ProfileTab(
                                     profile = uiState.profile,
+                                    uiState = uiState,
                                     classMap = uiState.classMap,
                                     themeMode = uiState.themeMode,
                                     onThemeModeSelected = { mode -> viewModel.setThemeMode(context, mode) },
@@ -289,6 +290,7 @@ fun StudentPortalScreen(
                                     onUpdateAdvisorInfo = { name, email -> viewModel.updateAdvisorInfo(name, email, context) },
                                     onUpdateCurrentTerm = { term -> viewModel.updateCurrentTerm(term, context) },
                                     onSecuritySettings = { isSecurityDialogOpen = true },
+                                    onCheckUpdate = { viewModel.checkForAppUpdates(context, forceCheck = true) },
                                     onSignOut = onSignOut
                                 )
                             }
