@@ -6,5 +6,5 @@
         android:startColor="@color/tp_asg_start"
         android:endColor="@color/tp_asg_end"
         android:type="linear" />
-    <corners android:radius="20dp" />
+    <corners android:radius="28dp" />
 </shape>

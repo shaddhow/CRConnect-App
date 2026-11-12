@@ -52,11 +52,11 @@
     <color name="btn_danger_solid_bg">#DC2626</color>
 
     <!-- Borders & Strokes -->
-    <color name="border">#E2E8F0</color>
+    <color name="border">#E5E7EB</color>
     <color name="input_border">#CBD5E1</color>
-    <color name="slate_border">#E2E8F0</color>
-    <color name="slate_border_light">#F1F5F9</color>
-    <color name="card_stroke">#E2E8F0</color>
+    <color name="slate_border">#E5E7EB</color>
+    <color name="slate_border_light">#E5E7EB</color>
+    <color name="card_stroke">#E5E7EB</color>
 
     <!-- Gradients -->
     <color name="gradient_start">#70D6FF</color>

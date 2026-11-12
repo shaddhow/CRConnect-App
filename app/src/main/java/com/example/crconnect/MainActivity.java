@@ -646,7 +646,9 @@ public class MainActivity extends AppCompatActivity {
         String userEmail = snapshot.child("email").getValue(String.class);
         String section = snapshot.child("section").getValue(String.class);
         String assignedSection = snapshot.child("assignedSection").getValue(String.class);
+        String assignedSections = snapshot.child("assignedSections").getValue(String.class);
         String intake = snapshot.child("intake").getValue(String.class);
+        String assignedIntakes = snapshot.child("assignedIntakes").getValue(String.class);
         String dept = snapshot.child("dept").getValue(String.class);
 
         if (name == null) name = "User";
@@ -657,10 +659,18 @@ public class MainActivity extends AppCompatActivity {
         if (id == null) id = "";
         if (section == null) section = "--";
         if (assignedSection == null) assignedSection = section;
+        if (assignedSections == null) assignedSections = assignedSection;
         if (intake == null) intake = "--";
+        if (assignedIntakes == null) assignedIntakes = intake;
         if (dept == null) dept = "Department of CSE, BUBT";
 
-        sessionManager.createLoginSession(name, userEmail, id, role, section, assignedSection, intake, dept);
+        sessionManager.createLoginSession(name, userEmail, id, role, section, assignedSection, assignedSections, intake, assignedIntakes, dept);
+        if (assignedSections != null && !assignedSections.isEmpty() && !assignedSections.equals("--")) {
+            sessionManager.setAssignedSections(assignedSections);
+        }
+        if (assignedIntakes != null && !assignedIntakes.isEmpty() && !assignedIntakes.equals("--")) {
+            sessionManager.setAssignedIntakes(assignedIntakes);
+        }
         navigateBasedOnRole(role, userEmail);
     }
 

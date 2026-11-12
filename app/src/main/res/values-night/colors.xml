@@ -28,23 +28,23 @@
     <color name="success">#4ADE80</color>
 
     <!-- Backgrounds & Surfaces -->
-    <color name="screen_bg">#0A0F1A</color>
-    <color name="background">#0A0F1A</color>
-    <color name="surface">#111827</color>
-    <color name="card_bg">#1A2234</color>
-    <color name="input_bg">#1E293B</color>
-    <color name="device_bg">#0A0F1A</color>
-    <color name="seg_bg">#1E293B</color>
-    <color name="segmented_bg">#1E293B</color>
-    <color name="disabled_bg">#1E293B</color>
-    <color name="disabled_text">#475569</color>
-    <color name="btn_disabled_bg">#1E293B</color>
-    <color name="badge_bg">#1A2E4A</color>
-    <color name="badge_border">#1E3A6E</color>
+    <color name="screen_bg">#0A0E1A</color>
+    <color name="background">#0A0E1A</color>
+    <color name="surface">#131B2E</color>
+    <color name="card_bg">#131B2E</color>
+    <color name="input_bg">#1C273E</color>
+    <color name="device_bg">#0A0E1A</color>
+    <color name="seg_bg">#1C273E</color>
+    <color name="segmented_bg">#1C273E</color>
+    <color name="disabled_bg">#1C273E</color>
+    <color name="disabled_text">#94A3B8</color>
+    <color name="btn_disabled_bg">#1C273E</color>
+    <color name="badge_bg">#1E293B</color>
+    <color name="badge_border">#24354D</color>
 
     <!-- Sheet Specific Colors (from CRConnect - Dark Mode Bottom Sheets specification) -->
-    <color name="sheet_bg">#141B2D</color>
-    <color name="grab_handle">#2D3A52</color>
+    <color name="sheet_bg">#131B2E</color>
+    <color name="grab_handle">#334155</color>
     <color name="icon_badge_red_bg">#26DC2626</color>
     <color name="btn_outline_bg">#144D94FF</color>
     <color name="btn_outline_stroke">#594D94FF</color>
@@ -52,11 +52,11 @@
     <color name="btn_danger_solid_bg">#DC2626</color>
 
     <!-- Borders & Strokes -->
-    <color name="border">#1E293B</color>
+    <color name="border">#24354D</color>
     <color name="input_border">#334155</color>
-    <color name="slate_border">#1E293B</color>
-    <color name="slate_border_light">#1E293B</color>
-    <color name="card_stroke">#1E293B</color>
+    <color name="slate_border">#24354D</color>
+    <color name="slate_border_light">#24354D</color>
+    <color name="card_stroke">#24354D</color>
 
     <!-- Gradients -->
     <color name="gradient_start">#0D1B3E</color>

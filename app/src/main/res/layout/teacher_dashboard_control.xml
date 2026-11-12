@@ -9,10 +9,10 @@
     android:layout_marginBottom="16dp"
     android:hapticFeedbackEnabled="true"
     app:cardBackgroundColor="@color/card_bg"
-    app:cardCornerRadius="20dp"
+    app:cardCornerRadius="28dp"
     app:cardElevation="2dp"
     app:strokeColor="@color/card_stroke"
-    app:strokeWidth="1dp">
+    app:strokeWidth="1.5dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -133,7 +133,7 @@
                 android:maxLines="1"
                 app:strokeColor="@color/primary"
                 app:strokeWidth="1.5dp"
-                app:cornerRadius="12dp"
+                app:cornerRadius="16dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:padding="0dp" />
@@ -153,7 +153,7 @@
                 android:maxLines="1"
                 app:strokeColor="@color/primary"
                 app:strokeWidth="1.5dp"
-                app:cornerRadius="12dp"
+                app:cornerRadius="16dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:padding="0dp" />
@@ -172,7 +172,7 @@
                 android:maxLines="1"
                 app:strokeColor="@color/primary"
                 app:strokeWidth="1.5dp"
-                app:cornerRadius="12dp"
+                app:cornerRadius="16dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:padding="0dp" />
@@ -203,7 +203,7 @@
                 app:iconPadding="6dp"
                 app:strokeColor="@color/primary"
                 app:strokeWidth="1.5dp"
-                app:cornerRadius="12dp"
+                app:cornerRadius="16dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp" />
 
@@ -227,7 +227,7 @@
                 app:strokeColor="@color/btn_danger_stroke_color"
                 app:strokeWidth="1.5dp"
                 app:backgroundTint="@color/btn_danger_bg_color"
-                app:cornerRadius="12dp"
+                app:cornerRadius="16dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp" />
         </LinearLayout>
@@ -249,7 +249,7 @@
             app:iconTint="#FFFFFF"
             app:iconGravity="textStart"
             app:iconPadding="8dp"
-            app:cornerRadius="12dp"
+            app:cornerRadius="16dp"
             android:insetTop="0dp"
             android:insetBottom="0dp" />
 

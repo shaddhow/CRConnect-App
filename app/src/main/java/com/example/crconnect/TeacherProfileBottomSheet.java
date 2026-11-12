@@ -128,18 +128,30 @@ public class TeacherProfileBottomSheet extends BottomSheetDialogFragment {
 
         if (tvName != null) tvName.setText(name);
         if (tvEmail != null) tvEmail.setText(email);
-        if (tvTeacherCode != null) tvTeacherCode.setText(!id.isEmpty() ? id : "T-0142");
+        if (id.isEmpty() || id.equalsIgnoreCase("T1001") || id.equalsIgnoreCase("T-0142")) {
+            if (!email.isEmpty() && email.contains("@")) {
+                id = email.substring(0, email.indexOf("@"));
+            } else {
+                id = "--";
+            }
+        }
+        if (tvTeacherCode != null) tvTeacherCode.setText(id);
         if (tvRole != null) tvRole.setText(role);
         if (tvDepartment != null) tvDepartment.setText(dept);
         if (tvAssignedSection != null) {
             String sectionsStr = sessionManager.getAssignedSections();
+            String intakesStr = sessionManager.getAssignedIntakes();
             if (sectionsStr == null || sectionsStr.trim().isEmpty() || sectionsStr.equals("--")) {
                 sectionsStr = assignedSec;
             }
-            if (sectionsStr == null || sectionsStr.trim().isEmpty() || sectionsStr.equals("--")) {
+            boolean hasSec = sectionsStr != null && !sectionsStr.trim().isEmpty() && !sectionsStr.equals("--");
+            boolean hasIntake = intakesStr != null && !intakesStr.trim().isEmpty() && !intakesStr.equals("--");
+
+            if (!hasSec && !hasIntake) {
                 tvAssignedSection.setText("Not Assigned (Tap to Edit)");
             } else {
-                tvAssignedSection.setText("Sec: " + sectionsStr + " (Tap to Edit)");
+                String label = (hasSec ? "Sec: " + sectionsStr : "") + (hasIntake ? (hasSec ? " · " : "") + "Intake: " + intakesStr : "") + " (Tap to Edit)";
+                tvAssignedSection.setText(label);
             }
             tvAssignedSection.setOnClickListener(v -> {
                 dismissAllowingStateLoss();
@@ -151,14 +163,16 @@ public class TeacherProfileBottomSheet extends BottomSheetDialogFragment {
         if (tvDept != null) tvDept.setText("Verified teacher · Department of " + dept);
 
         if (tvAvatarText != null) {
-            String initials = "TT";
-            if (name != null && !name.trim().isEmpty()) {
+            String initials = "T";
+            if (name != null && !name.trim().isEmpty() && !name.equalsIgnoreCase("Test Teacher (Dev)")) {
                 String[] parts = name.trim().split("\\s+");
                 if (parts.length >= 2) {
                     initials = ("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
                 } else if (parts.length == 1 && parts[0].length() >= 2) {
                     initials = parts[0].substring(0, 2).toUpperCase();
                 }
+            } else if (!email.isEmpty() && email.contains("@")) {
+                initials = ("" + email.charAt(0)).toUpperCase();
             }
             tvAvatarText.setText(initials);
         }

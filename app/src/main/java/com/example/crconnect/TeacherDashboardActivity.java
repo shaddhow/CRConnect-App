@@ -19,13 +19,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -101,6 +104,7 @@ import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 public class TeacherDashboardActivity extends AppCompatActivity {
 
@@ -125,10 +129,22 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         "#8B5CF6"  // Violet
     };
     private View customBottomNavAdmin;
-    private View navTabStats, navTabControls, navTabProfile, navTabLogout;
-    private View pillStats, pillControls, pillProfile, pillLogout;
-    private ImageView iconStats, iconControls, iconProfile, iconLogout;
-    private TextView labelStats, labelControls, labelProfile, labelLogout;
+    private View navTabControls, navTabStudents, navTabProfile;
+    private View pillControls, pillStudents, pillProfile;
+    private ImageView iconControls, iconStudents, iconProfile;
+    private TextView labelControls, labelStudents, labelProfile;
+
+    // Students Directory Tab Views & State
+    private View layoutTabStudents;
+    private TextView tvStudentDirectorySectionPill, tvStudentDirectoryCount, tvEmptyStudentsMessage, tvEmptyStudentsSubMessage;
+    private MaterialButton btnEmptyAssignIntake;
+    private TextInputEditText etSearchStudents;
+    private MaterialButton btnFilterAllStudents, btnFilterVotedStudents, btnFilterPendingStudents;
+    private ProgressBar pbLoadingStudents;
+    private View layoutEmptyStudents;
+    private RecyclerView rvStudentsDirectory;
+    private StudentDirectoryAdapter studentDirectoryAdapter;
+    private final List<StudentItem> currentStudentList = new ArrayList<>();
     private int currentActiveTab = 0; // Default active tab: Stats (index 0)
     private int currentActiveDrawerIndex = 0;
     private boolean isBottomNavVisible = true;
@@ -143,8 +159,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private final List<Button> dynamicSectionButtons = new ArrayList<>();
     private DatabaseReference activeCandidateRef, activeVotersRef, activeGateRef;
     private ValueEventListener activeCandidateListener, activeVotersListener, activeGateListener;
-    private int activeSectionStudentCount = 48;
+    private int activeSectionStudentCount = 0;
     private TextView tvTpBigSecNumber, tvTpSecName, tvTpStudents, tvTpVotes, tvTpTurnout;
+    private TextView tvTpAvatar, tvTpName, tvTpEmail, tvTpChipDept, tvTpTeacherCode, tvTpRole, tvTpDepartment, tvTpElectionStatus, tvNavHeaderName, tvNavHeaderRole;
+    private View btnReleaseTeacherSection;
     private MaterialButton btnTpEditProfile, btnTpSecurity, btnTpLogout;
 
     // Live Election Control Views & State
@@ -201,10 +219,10 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     }
 
     private String getSanitizedSection(String sec) {
-        if (sec == null || sec.trim().isEmpty() || sec.equals("--") || sec.equalsIgnoreCase("5A")) return "6";
+        if (sec == null || sec.trim().isEmpty() || sec.equals("--") || sec.equalsIgnoreCase("5A")) return "";
         String digitsOnly = sec.replaceAll("(?i)^section\\s*|^sec\\.?\\s*", "").trim();
         String clean = digitsOnly.replaceAll("[^a-zA-Z0-9_]", "_");
-        return clean.isEmpty() ? "6" : clean;
+        return clean;
     }
 
     private String getSanitizedDepartment(String dept) {
@@ -231,11 +249,35 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private void createDefaultTeacherProfileAndProceed() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         String uid = currentUser != null ? currentUser.getUid() : "";
-        String userEmail = currentUser != null && currentUser.getEmail() != null ? currentUser.getEmail() : (sessionManager != null && sessionManager.getUserEmail() != null ? sessionManager.getUserEmail() : "teacher@bubt.edu.bd");
-        String name = sessionManager != null && sessionManager.getUserName() != null ? sessionManager.getUserName() : "Test Teacher (Dev)";
-        String id = sessionManager != null && sessionManager.getUserID() != null ? sessionManager.getUserID() : "T1001";
-        String assignedSection = sessionManager != null && sessionManager.getAssignedSection() != null ? sessionManager.getAssignedSection() : "6";
-        String dept = sessionManager != null && sessionManager.getUserDept() != null ? sessionManager.getUserDept() : "Department of CSE, BUBT";
+        String userEmail = currentUser != null && currentUser.getEmail() != null && !currentUser.getEmail().isEmpty() ?
+                currentUser.getEmail() : (sessionManager != null ? sessionManager.getUserEmail() : "");
+        String name = sessionManager != null && !sessionManager.getUserName().equalsIgnoreCase("Test Teacher (Dev)") && !sessionManager.getUserName().equalsIgnoreCase("User") ?
+                sessionManager.getUserName() : "";
+        if (name.isEmpty() && currentUser != null && currentUser.getDisplayName() != null && !currentUser.getDisplayName().isEmpty()) {
+            name = currentUser.getDisplayName();
+        }
+        if (name.isEmpty() && !userEmail.isEmpty() && userEmail.contains("@")) {
+            String prefix = userEmail.substring(0, userEmail.indexOf("@"));
+            name = Character.toUpperCase(prefix.charAt(0)) + (prefix.length() > 1 ? prefix.substring(1) : "");
+        }
+        if (name.isEmpty()) name = "Teacher";
+
+        String id = sessionManager != null && !sessionManager.getUserID().isEmpty() && !sessionManager.getUserID().equals("T1001") ?
+                sessionManager.getUserID() : "";
+        if (id.isEmpty() && !userEmail.isEmpty() && userEmail.contains("@")) {
+            id = userEmail.substring(0, userEmail.indexOf("@"));
+        } else if (id.isEmpty() && currentUser != null) {
+            id = currentUser.getUid().substring(0, Math.min(6, currentUser.getUid().length())).toUpperCase();
+        }
+
+        String assignedSection = sessionManager != null && !sessionManager.getAssignedSection().equals("--") && !sessionManager.getAssignedSection().equalsIgnoreCase("5A") ?
+                sessionManager.getAssignedSection() : "";
+        String assignedIntakes = sessionManager != null ? sessionManager.getAssignedIntakes() : "";
+        if (assignedIntakes.equals("--")) assignedIntakes = "";
+        String assignedSections = sessionManager != null && !sessionManager.getAssignedSections().equals("--") ?
+                sessionManager.getAssignedSections() : assignedSection;
+        String dept = sessionManager != null && !sessionManager.getUserDept().equals("--") ?
+                sessionManager.getUserDept() : "Department of CSE, BUBT";
 
         Map<String, Object> userMap = new HashMap<>();
         userMap.put("name", name);
@@ -244,7 +286,9 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         userMap.put("role", "Teacher/Admin");
         userMap.put("section", "--");
         userMap.put("assignedSection", assignedSection);
-        userMap.put("intake", "--");
+        userMap.put("assignedSections", assignedSections);
+        userMap.put("intake", assignedIntakes);
+        userMap.put("assignedIntakes", assignedIntakes);
         userMap.put("dept", dept);
         userMap.put("registeredAt", System.currentTimeMillis());
 
@@ -253,17 +297,25 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         String sanitizedId = id.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
 
         if (!uid.isEmpty()) {
-            dbRef.child("users").child(uid).setValue(userMap);
+            dbRef.child("users").child(uid).updateChildren(userMap);
         }
-        dbRef.child("users").child(sanitizedEmail).setValue(userMap);
-        dbRef.child("users").child(sanitizedId).setValue(userMap);
+        if (!sanitizedEmail.isEmpty()) {
+            dbRef.child("users").child(sanitizedEmail).updateChildren(userMap);
+        }
+        if (!sanitizedId.isEmpty()) {
+            dbRef.child("users").child(sanitizedId).updateChildren(userMap);
+        }
 
         FirebaseFirestore firestore = FirebaseFirestore.getInstance();
         if (!uid.isEmpty()) {
-            firestore.collection("users").document(uid).set(userMap);
+            firestore.collection("users").document(uid).set(userMap, SetOptions.merge());
         }
-        firestore.collection("users").document(sanitizedEmail).set(userMap);
-        firestore.collection("users").document(sanitizedId).set(userMap);
+        if (!sanitizedId.isEmpty()) {
+            firestore.collection("users").document(sanitizedId).set(userMap, SetOptions.merge());
+        }
+        if (!sanitizedEmail.isEmpty()) {
+            firestore.collection("users").document(sanitizedEmail).set(userMap, SetOptions.merge());
+        }
 
         if (tvHeaderSubtitle != null) {
             tvHeaderSubtitle.setText(name + " (" + dept + " | Sec: " + assignedSection + ")");
@@ -273,7 +325,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         }
         
         if (sessionManager != null) {
-            sessionManager.createLoginSession(name, userEmail, id, "Teacher/Admin", "--", assignedSection, "--", dept);
+            sessionManager.createLoginSession(name, userEmail, id, "Teacher/Admin", "--", assignedSection, assignedSections, assignedIntakes, assignedIntakes, dept);
         }
     }
 
@@ -437,23 +489,23 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
         setupVotingControlListener();
 
-        // Custom Bottom Navigation Bar Bindings (3 main tabs: Election, Profile, Logout)
+        // Custom Bottom Navigation Bar Bindings (3 main tabs: Election, Students, Profile)
         customBottomNavAdmin = findViewById(R.id.customBottomNavAdmin);
         navTabControls = findViewById(R.id.navTabControls);
+        navTabStudents = findViewById(R.id.navTabStudents);
         navTabProfile = findViewById(R.id.navTabProfile);
-        navTabLogout = findViewById(R.id.navTabLogout);
 
         pillControls = findViewById(R.id.pillControls);
+        pillStudents = findViewById(R.id.pillStudents);
         pillProfile = findViewById(R.id.pillProfile);
-        pillLogout = findViewById(R.id.pillLogout);
 
         iconControls = findViewById(R.id.iconControls);
+        iconStudents = findViewById(R.id.iconStudents);
         iconProfile = findViewById(R.id.iconProfile);
-        iconLogout = findViewById(R.id.iconLogout);
 
         labelControls = findViewById(R.id.labelControls);
+        labelStudents = findViewById(R.id.labelStudents);
         labelProfile = findViewById(R.id.labelProfile);
-        labelLogout = findViewById(R.id.labelLogout);
 
         setupHapticFeedback();
 
@@ -463,18 +515,20 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 selectAdminTab(0, true);
             });
         }
-        if (navTabProfile != null) {
-            navTabProfile.setOnClickListener(v -> {
+        if (navTabStudents != null) {
+            navTabStudents.setOnClickListener(v -> {
                 HapticUtils.lightClick(v);
                 selectAdminTab(1, true);
             });
         }
-        if (navTabLogout != null) {
-            navTabLogout.setOnClickListener(v -> {
+        if (navTabProfile != null) {
+            navTabProfile.setOnClickListener(v -> {
                 HapticUtils.lightClick(v);
                 selectAdminTab(2, true);
             });
         }
+
+        setupStudentsDirectoryTab();
 
         // Sub-toggle button bindings for Election tab
         MaterialButton btnSubToggleTiming = findViewById(R.id.btnSubToggleTiming);
@@ -532,13 +586,16 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                     String profileImg = snapshot.child("profileImageUrl").getValue(String.class);
                     String assignedSections = snapshot.child("assignedSections").getValue(String.class);
                     String assignedIntakes = snapshot.child("assignedIntakes").getValue(String.class);
+                    if (assignedIntakes == null || assignedIntakes.isEmpty() || assignedIntakes.equals("--")) {
+                        assignedIntakes = snapshot.child("intake").getValue(String.class);
+                    }
                     String assignedSection = snapshot.child("assignedSection").getValue(String.class);
                     if (name == null) name = sessionManager.getUserName();
                     if (dept == null) dept = sessionManager.getUserDept();
-                    if (assignedSections != null && !assignedSections.isEmpty()) {
+                    if (assignedSections != null && !assignedSections.isEmpty() && !assignedSections.equals("--")) {
                         sessionManager.setAssignedSections(assignedSections);
                     }
-                    if (assignedIntakes != null && !assignedIntakes.isEmpty()) {
+                    if (assignedIntakes != null && !assignedIntakes.isEmpty() && !assignedIntakes.equals("--")) {
                         sessionManager.setAssignedIntakes(assignedIntakes);
                     }
                     if (assignedSection != null && !assignedSection.isEmpty() && !assignedSection.equalsIgnoreCase("5A") && !assignedSection.equals("--")) {
@@ -555,6 +612,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                         loadProfileImage(TeacherDashboardActivity.this, profileImg, imgUserProfile);
                     }
 
+                    String effectiveIntake = sessionManager.getAssignedIntakes();
+                    if (effectiveIntake == null || effectiveIntake.equals("--")) {
+                        effectiveIntake = (assignedIntakes != null && !assignedIntakes.equals("--")) ? assignedIntakes : "";
+                    }
+
                     sessionManager.createLoginSession(
                         name,
                         snapshot.child("email").getValue(String.class) != null ? snapshot.child("email").getValue(String.class) : sessionManager.getUserEmail(),
@@ -562,9 +624,12 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                         "Teacher/Admin",
                         "--",
                         sessionManager.getAssignedSection(),
-                        sessionManager.getAssignedIntakes(),
+                        sessionManager.getAssignedSections(),
+                        effectiveIntake,
+                        effectiveIntake,
                         dept
                     );
+                    bindTeacherProfileInfo();
                 } else if (!uid.isEmpty()) {
                     FirebaseFirestore.getInstance()
                         .collection("users")
@@ -577,13 +642,16 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                 String profileImg = doc.getString("profileImageUrl");
                                 String assignedSections = doc.getString("assignedSections");
                                 String assignedIntakes = doc.getString("assignedIntakes");
+                                if (assignedIntakes == null || assignedIntakes.isEmpty() || assignedIntakes.equals("--")) {
+                                    assignedIntakes = doc.getString("intake");
+                                }
                                 String assignedSection = doc.getString("assignedSection");
                                 if (name == null) name = sessionManager.getUserName();
                                 if (dept == null) dept = sessionManager.getUserDept();
-                                if (assignedSections != null && !assignedSections.isEmpty()) {
+                                if (assignedSections != null && !assignedSections.isEmpty() && !assignedSections.equals("--")) {
                                     sessionManager.setAssignedSections(assignedSections);
                                 }
-                                if (assignedIntakes != null && !assignedIntakes.isEmpty()) {
+                                if (assignedIntakes != null && !assignedIntakes.isEmpty() && !assignedIntakes.equals("--")) {
                                     sessionManager.setAssignedIntakes(assignedIntakes);
                                 }
                                 if (assignedSection != null && !assignedSection.isEmpty() && !assignedSection.equalsIgnoreCase("5A") && !assignedSection.equals("--")) {
@@ -600,6 +668,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                     Glide.with(TeacherDashboardActivity.this).load(profileImg).placeholder(R.drawable.ic_app_main).error(R.drawable.ic_app_main).circleCrop().into(imgUserProfile);
                                 }
 
+                                String effectiveIntake = sessionManager.getAssignedIntakes();
+                                if (effectiveIntake == null || effectiveIntake.equals("--")) {
+                                    effectiveIntake = (assignedIntakes != null && !assignedIntakes.equals("--")) ? assignedIntakes : "";
+                                }
+
                                 sessionManager.createLoginSession(
                                     name,
                                     doc.getString("email") != null ? doc.getString("email") : sessionManager.getUserEmail(),
@@ -607,9 +680,12 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                     "Teacher/Admin",
                                     "--",
                                     sessionManager.getAssignedSection(),
-                                    sessionManager.getAssignedIntakes(),
+                                    sessionManager.getAssignedSections(),
+                                    effectiveIntake,
+                                    effectiveIntake,
                                     dept
                                 );
+                                bindTeacherProfileInfo();
                             } else {
                                 createDefaultTeacherProfileAndProceed();
                             }
@@ -667,6 +743,15 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         tvTpStudents = findViewById(R.id.tvTpStudents);
         tvTpVotes = findViewById(R.id.tvTpVotes);
         tvTpTurnout = findViewById(R.id.tvTpTurnout);
+        tvTpAvatar = findViewById(R.id.tvTpAvatar);
+        tvTpName = findViewById(R.id.tvTpName);
+        tvTpEmail = findViewById(R.id.tvTpEmail);
+        tvTpChipDept = findViewById(R.id.tvTpChipDept);
+        tvTpTeacherCode = findViewById(R.id.tvTpTeacherCode);
+        tvTpRole = findViewById(R.id.tvTpRole);
+        tvTpDepartment = findViewById(R.id.tvTpDepartment);
+        tvTpElectionStatus = findViewById(R.id.tvTpElectionStatus);
+        btnReleaseTeacherSection = findViewById(R.id.btnReleaseTeacherSection);
         btnTpEditProfile = findViewById(R.id.btnTpEditProfile);
         btnTpSecurity = findViewById(R.id.btnTpSecurity);
         btnTpLogout = findViewById(R.id.btnTpLogout);
@@ -674,6 +759,14 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (btnEditTeacherSections != null) {
             btnEditTeacherSections.setOnClickListener(v -> showManageTeacherSectionsDialog());
         }
+        if (btnReleaseTeacherSection != null) {
+            btnReleaseTeacherSection.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                showReleaseSectionConfirmationDialog();
+            });
+        }
+
+        bindTeacherProfileInfo();
 
         setupDynamicSectionButtons();
 
@@ -1318,7 +1411,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         int activeBg = ContextCompat.getColor(this, R.color.primary);
         int activeText = Color.parseColor("#FFFFFF");
         int inactiveBg = Color.TRANSPARENT;
-        int inactiveText = Color.parseColor("#64748B");
+        int inactiveText = ContextCompat.getColor(this, R.color.muted_text);
 
         if (btnSubToggleTiming != null) {
             btnSubToggleTiming.setBackgroundTintList(ColorStateList.valueOf(subIndex == 0 ? activeBg : inactiveBg));
@@ -1364,6 +1457,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     private void selectAdminTab(int tabIndex, boolean triggerAction) {
         showCustomBottomNav();
         View layoutTabControls = findViewById(R.id.layoutTabControls);
+        View layoutTabStudents = findViewById(R.id.layoutTabStudents);
         View layoutTabProfile = findViewById(R.id.layoutTabProfile);
 
         boolean isDark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
@@ -1371,16 +1465,16 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         int inactiveColor = isDark ? Color.parseColor("#2A3A52") : Color.parseColor("#B0BCCF");
 
         if (pillControls != null) pillControls.setBackgroundResource(android.R.color.transparent);
+        if (pillStudents != null) pillStudents.setBackgroundResource(android.R.color.transparent);
         if (pillProfile != null) pillProfile.setBackgroundResource(android.R.color.transparent);
-        if (pillLogout != null) pillLogout.setBackgroundResource(android.R.color.transparent);
 
         if (iconControls != null) iconControls.setColorFilter(inactiveColor);
+        if (iconStudents != null) iconStudents.setColorFilter(inactiveColor);
         if (iconProfile != null) iconProfile.setColorFilter(inactiveColor);
-        if (iconLogout != null) iconLogout.setColorFilter(inactiveColor);
 
         if (labelControls != null) labelControls.setTextColor(inactiveColor);
+        if (labelStudents != null) labelStudents.setTextColor(inactiveColor);
         if (labelProfile != null) labelProfile.setTextColor(inactiveColor);
-        if (labelLogout != null) labelLogout.setTextColor(inactiveColor);
 
         NestedScrollView scrollViewAdmin = findViewById(R.id.scrollViewAdmin);
 
@@ -1388,6 +1482,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             case 0: // Election tab (Live Election Stats + Timing + Candidates + Export)
                 currentActiveTab = 0;
                 if (layoutTabControls != null) layoutTabControls.setVisibility(View.VISIBLE);
+                if (layoutTabStudents != null) layoutTabStudents.setVisibility(View.GONE);
                 if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.GONE);
 
                 if (iconControls != null) iconControls.setColorFilter(activeColor);
@@ -1395,24 +1490,30 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
                 break;
 
-            case 1: // Profile tab
+            case 1: // Students Directory tab
                 currentActiveTab = 1;
                 updateDrawerActiveState(-1);
                 if (layoutTabControls != null) layoutTabControls.setVisibility(View.GONE);
+                if (layoutTabStudents != null) layoutTabStudents.setVisibility(View.VISIBLE);
+                if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.GONE);
+
+                if (iconStudents != null) iconStudents.setColorFilter(activeColor);
+                if (labelStudents != null) labelStudents.setTextColor(activeColor);
+                if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
+
+                loadStudentsForCurrentSection();
+                break;
+
+            case 2: // Profile tab
+                currentActiveTab = 2;
+                updateDrawerActiveState(-1);
+                if (layoutTabControls != null) layoutTabControls.setVisibility(View.GONE);
+                if (layoutTabStudents != null) layoutTabStudents.setVisibility(View.GONE);
                 if (layoutTabProfile != null) layoutTabProfile.setVisibility(View.VISIBLE);
 
                 if (iconProfile != null) iconProfile.setColorFilter(activeColor);
                 if (labelProfile != null) labelProfile.setTextColor(activeColor);
                 if (scrollViewAdmin != null) scrollViewAdmin.scrollTo(0, 0);
-                break;
-
-            case 2: // Logout tab
-            case 3:
-                if (iconLogout != null) iconLogout.setColorFilter(activeColor);
-                if (labelLogout != null) labelLogout.setTextColor(activeColor);
-                if (triggerAction) {
-                    showLogoutConfirmationDialog();
-                }
                 break;
         }
     }
@@ -1427,6 +1528,426 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
         bottomSheet.showAllowingStateLoss(getSupportFragmentManager(), LogoutBottomSheet.TAG);
+    }
+
+    private void setupStudentsDirectoryTab() {
+        layoutTabStudents = findViewById(R.id.layoutTabStudents);
+        tvStudentDirectorySectionPill = findViewById(R.id.tvStudentDirectorySectionPill);
+        tvStudentDirectoryCount = findViewById(R.id.tvStudentDirectoryCount);
+        tvEmptyStudentsMessage = findViewById(R.id.tvEmptyStudentsMessage);
+        tvEmptyStudentsSubMessage = findViewById(R.id.tvEmptyStudentsSubMessage);
+        btnEmptyAssignIntake = findViewById(R.id.btnEmptyAssignIntake);
+        etSearchStudents = findViewById(R.id.etSearchStudents);
+        btnFilterAllStudents = findViewById(R.id.btnFilterAllStudents);
+        btnFilterVotedStudents = findViewById(R.id.btnFilterVotedStudents);
+        btnFilterPendingStudents = findViewById(R.id.btnFilterPendingStudents);
+        pbLoadingStudents = findViewById(R.id.pbLoadingStudents);
+        layoutEmptyStudents = findViewById(R.id.layoutEmptyStudents);
+        rvStudentsDirectory = findViewById(R.id.rvStudentsDirectory);
+
+        if (btnEmptyAssignIntake != null) {
+            btnEmptyAssignIntake.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                showManageTeacherSectionsDialog();
+            });
+        }
+
+        if (rvStudentsDirectory != null) {
+            rvStudentsDirectory.setLayoutManager(new LinearLayoutManager(this));
+            studentDirectoryAdapter = new StudentDirectoryAdapter(this);
+            rvStudentsDirectory.setAdapter(studentDirectoryAdapter);
+        }
+
+        if (etSearchStudents != null) {
+            etSearchStudents.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    if (studentDirectoryAdapter != null) {
+                        studentDirectoryAdapter.filter(s != null ? s.toString() : "");
+                    }
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
+
+        if (btnFilterAllStudents != null) {
+            btnFilterAllStudents.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                setStudentFilterMode("ALL");
+            });
+        }
+        if (btnFilterVotedStudents != null) {
+            btnFilterVotedStudents.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                setStudentFilterMode("VOTED");
+            });
+        }
+        if (btnFilterPendingStudents != null) {
+            btnFilterPendingStudents.setOnClickListener(v -> {
+                HapticUtils.lightClick(v);
+                setStudentFilterMode("PENDING");
+            });
+        }
+
+        if (tvStatTotalVoters != null) {
+            View parentVotersBox = (View) tvStatTotalVoters.getParent();
+            if (parentVotersBox != null) {
+                parentVotersBox.setOnClickListener(v -> {
+                    HapticUtils.lightClick(v);
+                    selectAdminTab(1, true);
+                });
+            }
+        }
+    }
+
+    private void setStudentFilterMode(String mode) {
+        if (studentDirectoryAdapter != null) {
+            studentDirectoryAdapter.setFilterMode(mode);
+        }
+        int activeBg = ContextCompat.getColor(this, R.color.primary);
+        int activeText = Color.parseColor("#FFFFFF");
+        int inactiveBg = Color.TRANSPARENT;
+        int inactiveText = ContextCompat.getColor(this, R.color.muted_text);
+
+        if (btnFilterAllStudents != null) {
+            boolean active = "ALL".equalsIgnoreCase(mode);
+            btnFilterAllStudents.setBackgroundTintList(ColorStateList.valueOf(active ? activeBg : inactiveBg));
+            btnFilterAllStudents.setTextColor(active ? activeText : inactiveText);
+        }
+        if (btnFilterVotedStudents != null) {
+            boolean active = "VOTED".equalsIgnoreCase(mode);
+            btnFilterVotedStudents.setBackgroundTintList(ColorStateList.valueOf(active ? activeBg : inactiveBg));
+            btnFilterVotedStudents.setTextColor(active ? activeText : inactiveText);
+        }
+        if (btnFilterPendingStudents != null) {
+            boolean active = "PENDING".equalsIgnoreCase(mode);
+            btnFilterPendingStudents.setBackgroundTintList(ColorStateList.valueOf(active ? activeBg : inactiveBg));
+            btnFilterPendingStudents.setTextColor(active ? activeText : inactiveText);
+        }
+    }
+
+    private void loadStudentsForCurrentSection() {
+        String sec = getTeacherAssignedSection();
+        String cleanSec = getSanitizedSection(sec);
+        String dept = getTeacherDepartment();
+        String sanitizedDept = getSanitizedDepartment(dept);
+        String intake = sessionManager != null ? sessionManager.getAssignedIntakes() : "";
+        if (intake != null && (intake.equals("--") || intake.trim().isEmpty())) {
+            intake = "";
+        }
+
+        // Logical Requirement: If intake is not set in teacher profile, DO NOT SHOW ANY STUDENTS!
+        if (intake.isEmpty()) {
+            if (pbLoadingStudents != null) pbLoadingStudents.setVisibility(View.GONE);
+            if (rvStudentsDirectory != null) rvStudentsDirectory.setVisibility(View.GONE);
+            if (layoutEmptyStudents != null) layoutEmptyStudents.setVisibility(View.VISIBLE);
+            if (tvEmptyStudentsMessage != null) {
+                tvEmptyStudentsMessage.setText("No Intake Assigned to Profile");
+            }
+            if (tvEmptyStudentsSubMessage != null) {
+                tvEmptyStudentsSubMessage.setText("Please set your assigned Intake in Manage Sections / Profile to view enrolled students.");
+            }
+            if (btnEmptyAssignIntake != null) {
+                btnEmptyAssignIntake.setVisibility(View.VISIBLE);
+            }
+            if (tvStudentDirectorySectionPill != null) {
+                tvStudentDirectorySectionPill.setText(sanitizedDept + " · Sec " + (cleanSec.isEmpty() || cleanSec.equals("--") ? "None" : cleanSec) + " · No Intake");
+            }
+            if (studentDirectoryAdapter != null) {
+                studentDirectoryAdapter.setStudentList(new ArrayList<>());
+            }
+            currentStudentList.clear();
+            updateStudentDirectoryStats(0, 0, 0);
+            return;
+        }
+
+        if (cleanSec.isEmpty() || cleanSec.equals("--")) {
+            if (pbLoadingStudents != null) pbLoadingStudents.setVisibility(View.GONE);
+            if (rvStudentsDirectory != null) rvStudentsDirectory.setVisibility(View.GONE);
+            if (layoutEmptyStudents != null) layoutEmptyStudents.setVisibility(View.VISIBLE);
+            if (tvEmptyStudentsMessage != null) {
+                tvEmptyStudentsMessage.setText("No Section Selected");
+            }
+            if (tvEmptyStudentsSubMessage != null) {
+                tvEmptyStudentsSubMessage.setText("Please select or assign a section from your Profile to view students.");
+            }
+            if (btnEmptyAssignIntake != null) {
+                btnEmptyAssignIntake.setVisibility(View.VISIBLE);
+            }
+            if (studentDirectoryAdapter != null) {
+                studentDirectoryAdapter.setStudentList(new ArrayList<>());
+            }
+            currentStudentList.clear();
+            updateStudentDirectoryStats(0, 0, 0);
+            return;
+        }
+
+        // Intake and section are both present!
+        if (btnEmptyAssignIntake != null) {
+            btnEmptyAssignIntake.setVisibility(View.GONE);
+        }
+        if (tvEmptyStudentsSubMessage != null) {
+            tvEmptyStudentsSubMessage.setText("Ensure students register with the same Department, Intake and Section.");
+        }
+        if (pbLoadingStudents != null) pbLoadingStudents.setVisibility(View.VISIBLE);
+        if (layoutEmptyStudents != null) layoutEmptyStudents.setVisibility(View.GONE);
+
+        if (tvStudentDirectorySectionPill != null) {
+            String pillText = sanitizedDept + " · Sec " + cleanSec + " · Int " + intake;
+            tvStudentDirectorySectionPill.setText(pillText);
+        }
+
+        final String finalIntake = intake;
+        DatabaseReference votersRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com")
+                .getReference("crconnect_db").child("voting_controls").child(sanitizedDept).child(cleanSec).child("voters");
+
+        votersRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot voterSnapshot) {
+                Set<String> votedIds = new HashSet<>();
+                if (voterSnapshot.exists()) {
+                    for (DataSnapshot child : voterSnapshot.getChildren()) {
+                        votedIds.add(child.getKey());
+                        String studentId = child.child("studentId").getValue(String.class);
+                        if (studentId != null) votedIds.add(studentId);
+                        String id = child.child("id").getValue(String.class);
+                        if (id != null) votedIds.add(id);
+                        String email = child.child("email").getValue(String.class);
+                        if (email != null) votedIds.add(email.replace(".", "_").replace("@", "_"));
+                    }
+                }
+                fetchStudentsDualSources(sanitizedDept, cleanSec, finalIntake, votedIds);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                fetchStudentsDualSources(sanitizedDept, cleanSec, finalIntake, new HashSet<>());
+            }
+        });
+    }
+
+    private void fetchStudentsDualSources(String sanitizedDept, String targetSec, String targetIntake, Set<String> votedIds) {
+        Map<String, StudentItem> studentMap = new HashMap<>();
+        final boolean[] rtdbDone = new boolean[]{false};
+        final boolean[] firestoreDone = new boolean[]{false};
+
+        Runnable checkAndApplyResults = () -> {
+            if (isFinishing() || isDestroyed()) return;
+            if (rtdbDone[0] && firestoreDone[0]) {
+                if (pbLoadingStudents != null) pbLoadingStudents.setVisibility(View.GONE);
+                List<StudentItem> studentList = new ArrayList<>(studentMap.values());
+                Collections.sort(studentList, (a, b) -> a.getId().compareToIgnoreCase(b.getId()));
+
+                currentStudentList.clear();
+                currentStudentList.addAll(studentList);
+
+                if (studentDirectoryAdapter != null) {
+                    studentDirectoryAdapter.setStudentList(studentList);
+                }
+
+                updateStudentDirectoryStats(studentList.size(), studentDirectoryAdapter != null ? studentDirectoryAdapter.getVotedCount() : 0, studentDirectoryAdapter != null ? studentDirectoryAdapter.getPendingCount() : 0);
+
+                if (studentList.isEmpty()) {
+                    if (layoutEmptyStudents != null) layoutEmptyStudents.setVisibility(View.VISIBLE);
+                    if (rvStudentsDirectory != null) rvStudentsDirectory.setVisibility(View.GONE);
+                    if (tvEmptyStudentsMessage != null) {
+                        tvEmptyStudentsMessage.setText("No students registered for Sec " + targetSec + " (Intake " + targetIntake + ") yet.");
+                    }
+                } else {
+                    if (layoutEmptyStudents != null) layoutEmptyStudents.setVisibility(View.GONE);
+                    if (rvStudentsDirectory != null) rvStudentsDirectory.setVisibility(View.VISIBLE);
+                }
+            }
+        };
+
+        // 1. Fetch from Firebase Realtime Database
+        dbRef.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    for (DataSnapshot userSnap : snapshot.getChildren()) {
+                        processUserRecord(
+                                userSnap.getKey(),
+                                userSnap.child("id").getValue(String.class),
+                                userSnap.child("name").getValue(String.class),
+                                userSnap.child("email").getValue(String.class),
+                                userSnap.child("intake").getValue(String.class),
+                                userSnap.child("section").getValue(String.class) != null ? userSnap.child("section").getValue(String.class) : userSnap.child("assignedSection").getValue(String.class),
+                                userSnap.child("dept").getValue(String.class) != null ? userSnap.child("dept").getValue(String.class) : userSnap.child("department").getValue(String.class),
+                                userSnap.child("role").getValue(String.class),
+                                userSnap.child("profileImageUrl").getValue(String.class),
+                                userSnap.child("isCr").getValue(Boolean.class),
+                                sanitizedDept, targetSec, targetIntake, votedIds, studentMap
+                        );
+                    }
+                }
+                rtdbDone[0] = true;
+                checkAndApplyResults.run();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                rtdbDone[0] = true;
+                checkAndApplyResults.run();
+            }
+        });
+
+        // 2. Fetch from Cloud Firestore
+        FirebaseFirestore.getInstance().collection("users").get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        for (DocumentSnapshot doc : task.getResult()) {
+                            processUserRecord(
+                                    doc.getId(),
+                                    doc.getString("id"),
+                                    doc.getString("name"),
+                                    doc.getString("email"),
+                                    doc.getString("intake"),
+                                    doc.getString("section") != null ? doc.getString("section") : doc.getString("assignedSection"),
+                                    doc.getString("dept") != null ? doc.getString("dept") : doc.getString("department"),
+                                    doc.getString("role"),
+                                    doc.getString("profileImageUrl"),
+                                    doc.getBoolean("isCr"),
+                                    sanitizedDept, targetSec, targetIntake, votedIds, studentMap
+                            );
+                        }
+                    }
+                    firestoreDone[0] = true;
+                    checkAndApplyResults.run();
+                });
+    }
+
+    private void processUserRecord(
+            String docOrKey,
+            String rawId,
+            String name,
+            String email,
+            String rawStudentIntake,
+            String rawStudentSec,
+            String rawStudentDept,
+            String role,
+            String photo,
+            Boolean isCr,
+            String teacherDept,
+            String teacherSec,
+            String teacherIntake,
+            Set<String> votedIds,
+            Map<String, StudentItem> studentMap
+    ) {
+        // Skip teachers and admins
+        if (role != null && (role.toLowerCase().contains("teacher") || role.toLowerCase().contains("admin"))) {
+            return;
+        }
+
+        // Strict Section Matching
+        String cleanStudentSec = getSanitizedSection(rawStudentSec);
+        if (!cleanStudentSec.equalsIgnoreCase(teacherSec)) {
+            return;
+        }
+
+        // Strict Intake Matching
+        if (!isMatchingIntake(teacherIntake, rawStudentIntake)) {
+            return;
+        }
+
+        // Department Matching (if student has specified department)
+        if (rawStudentDept != null && !rawStudentDept.trim().isEmpty() && !rawStudentDept.equals("--")) {
+            String cleanStudentDept = getSanitizedDepartment(rawStudentDept);
+            if (!cleanStudentDept.isEmpty() && !teacherDept.isEmpty() && !cleanStudentDept.equalsIgnoreCase(teacherDept)) {
+                return;
+            }
+        }
+
+        String studentId = rawId != null && !rawId.trim().isEmpty() ? rawId.trim() : (docOrKey != null ? docOrKey.trim() : "");
+        if (studentId.isEmpty()) return;
+
+        String sanitizedId = studentId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+        String sanitizedEmail = email != null ? email.replace(".", "_").replace("@", "_") : "";
+
+        boolean hasVoted = (votedIds != null) && (
+                votedIds.contains(studentId) ||
+                votedIds.contains(studentId.toLowerCase()) ||
+                votedIds.contains(sanitizedId) ||
+                (!sanitizedEmail.isEmpty() && votedIds.contains(sanitizedEmail)) ||
+                (docOrKey != null && votedIds.contains(docOrKey))
+        );
+
+        String displayIntake = extractFirstDigits(rawStudentIntake);
+        if (displayIntake.isEmpty()) displayIntake = rawStudentIntake != null ? rawStudentIntake.trim() : teacherIntake;
+
+        StudentItem studentItem = new StudentItem(
+                studentId,
+                name != null && !name.trim().isEmpty() ? name.trim() : "Student",
+                email != null ? email.trim() : "",
+                displayIntake,
+                cleanStudentSec,
+                rawStudentDept != null ? rawStudentDept : teacherDept,
+                photo != null ? photo : "",
+                hasVoted,
+                isCr != null && isCr
+        );
+
+        if (!studentMap.containsKey(studentId)) {
+            studentMap.put(studentId, studentItem);
+        } else {
+            StudentItem existing = studentMap.get(studentId);
+            if (existing != null) {
+                if (hasVoted) existing.setHasVoted(true);
+                if (isCr != null && isCr) existing.setCr(true);
+                if ((existing.getProfileImageUrl() == null || existing.getProfileImageUrl().isEmpty()) && (photo != null && !photo.isEmpty())) {
+                    existing.setProfileImageUrl(photo);
+                }
+                if (name != null && !name.isEmpty() && existing.getName().equals("Student")) {
+                    existing.setName(name);
+                }
+            }
+        }
+    }
+
+    private boolean isMatchingIntake(String teacherIntake, String studentIntake) {
+        if (teacherIntake == null || teacherIntake.trim().isEmpty()) return false;
+        if (studentIntake == null || studentIntake.trim().isEmpty() || studentIntake.equals("--")) return false;
+
+        String studentDigits = studentIntake.replaceAll("[^0-9]", "");
+        String[] teacherTokens = teacherIntake.split("[,;/\\s]+");
+
+        for (String token : teacherTokens) {
+            String tokenDigits = token.replaceAll("[^0-9]", "");
+            if (!tokenDigits.isEmpty() && !studentDigits.isEmpty()) {
+                if (tokenDigits.equals(studentDigits)) {
+                    return true;
+                }
+            } else if (token.trim().equalsIgnoreCase(studentIntake.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String extractFirstDigits(String input) {
+        if (input == null) return "";
+        String digits = input.replaceAll("[^0-9]", "");
+        return digits.isEmpty() ? input.trim() : digits;
+    }
+
+    private void updateStudentDirectoryStats(int total, int voted, int pending) {
+        if (tvStudentDirectoryCount != null) {
+            tvStudentDirectoryCount.setText(total + " student" + (total == 1 ? "" : "s") + " enrolled in this section");
+        }
+        if (btnFilterAllStudents != null) {
+            btnFilterAllStudents.setText("All (" + total + ")");
+        }
+        if (btnFilterVotedStudents != null) {
+            btnFilterVotedStudents.setText("Voted (" + voted + ")");
+        }
+        if (btnFilterPendingStudents != null) {
+            btnFilterPendingStudents.setText("Pending (" + pending + ")");
+        }
     }
 
     private List<Candidate> getDefaultCandidates() {
@@ -3217,7 +3738,7 @@ public class TeacherDashboardActivity extends AppCompatActivity {
     }
 
     private void showProfileTab() {
-        selectAdminTab(1, false);
+        selectAdminTab(2, false);
     }
 
     private void detachLiveFirebaseSectionListeners() {
@@ -3244,29 +3765,46 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
     private void fetchSectionStudentCount(String sec) {
         String sanitizedSec = getSanitizedSection(sec);
+        String intake = sessionManager != null ? sessionManager.getAssignedIntakes() : "";
+        if (intake.equals("--")) intake = "";
+
+        if (sanitizedSec.isEmpty() || sanitizedSec.equals("--") || intake.isEmpty()) {
+            activeSectionStudentCount = 0;
+            if (tvTpStudents != null) tvTpStudents.setText("0");
+            if (tvTpVotes != null) tvTpVotes.setText("0");
+            if (tvTpTurnout != null) tvTpTurnout.setText("0%");
+            return;
+        }
+
+        final String finalIntake = intake;
         dbRef.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (isFinishing() || isDestroyed()) return;
-                int count = 0;
+                Set<String> uniqueStudents = new HashSet<>();
                 for (DataSnapshot ds : snapshot.getChildren()) {
                     String uSec = ds.child("section").getValue(String.class);
                     if (uSec == null) uSec = ds.child("assignedSection").getValue(String.class);
                     String role = ds.child("role").getValue(String.class);
-
-                    if (role != null && role.equalsIgnoreCase("Teacher")) {
+                    if (role != null && (role.toLowerCase().contains("teacher") || role.toLowerCase().contains("admin"))) {
+                        continue;
+                    }
+                    String studentIntake = ds.child("intake").getValue(String.class);
+                    if (!isMatchingIntake(finalIntake, studentIntake)) {
                         continue;
                     }
 
                     if (uSec != null && !uSec.equals("--")) {
                         if (getSanitizedSection(uSec).equalsIgnoreCase(sanitizedSec)) {
-                            count++;
+                            String sId = ds.child("id").getValue(String.class);
+                            if (sId == null || sId.isEmpty()) sId = ds.getKey();
+                            if (sId != null && !sId.isEmpty()) {
+                                uniqueStudents.add(sId);
+                            }
                         }
-                    } else if (sec.equals("6")) {
-                        count++;
                     }
                 }
-                activeSectionStudentCount = Math.max(1, count);
+                activeSectionStudentCount = uniqueStudents.size();
                 if (tvTpStudents != null) {
                     tvTpStudents.setText(String.valueOf(activeSectionStudentCount));
                 }
@@ -3397,8 +3935,15 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             }
         }
 
+        String intakeStr = sessionManager != null ? sessionManager.getAssignedIntakes() : "";
+        if (intakeStr == null || intakeStr.equals("--") || intakeStr.isEmpty()) {
+            intakeStr = sessionManager != null ? sessionManager.getUserIntake() : "";
+        }
+        if (intakeStr != null && intakeStr.equals("--")) intakeStr = "";
+
         if (tvTpAssignedCount != null) {
-            tvTpAssignedCount.setText(sectionList.size() + (sectionList.size() == 1 ? " section" : " sections"));
+            String intakeSuffix = (intakeStr != null && !intakeStr.isEmpty()) ? " · Int: " + intakeStr : "";
+            tvTpAssignedCount.setText(sectionList.size() + (sectionList.size() == 1 ? " section" : " sections") + intakeSuffix);
         }
 
         if (sectionList.isEmpty()) {
@@ -3419,6 +3964,9 @@ public class TeacherDashboardActivity extends AppCompatActivity {
 
             if (tvTpBigSecNumber != null) tvTpBigSecNumber.setText("--");
             if (tvTpSecName != null) tvTpSecName.setText("No Section Assigned");
+            if (tvTpStudents != null) tvTpStudents.setText("0");
+            if (tvTpVotes != null) tvTpVotes.setText("0");
+            if (tvTpTurnout != null) tvTpTurnout.setText("0%");
             return;
         }
 
@@ -3441,7 +3989,11 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             if (i < total - 1) lp.rightMargin = dpToPx(4);
 
             button.setLayoutParams(lp);
-            button.setText("Sec " + sec);
+            if (total == 1 && intakeStr != null && !intakeStr.isEmpty()) {
+                button.setText("Sec " + sec + " · Intake " + intakeStr);
+            } else {
+                button.setText("Sec " + sec);
+            }
             button.setTextSize(13f);
             button.setTypeface(null, Typeface.BOLD);
             button.setCornerRadius(dpToPx(12));
@@ -3490,30 +4042,149 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         String currentSections = sessionManager != null ? sessionManager.getAssignedSections() : "";
         if (currentSections.equals("--")) currentSections = "";
         String currentIntakes = sessionManager != null ? sessionManager.getAssignedIntakes() : "";
+        if (currentIntakes.equals("--") || currentIntakes.isEmpty()) {
+            currentIntakes = sessionManager != null ? sessionManager.getUserIntake() : "";
+        }
         if (currentIntakes.equals("--")) currentIntakes = "";
 
         ManageSectionsBottomSheet bottomSheet = ManageSectionsBottomSheet.newInstance(
                 currentSections,
                 currentIntakes,
-                this::saveTeacherAssignedSectionsAndIntakes
+                this::saveTeacherAssignedSectionsAndIntakes,
+                this::showReleaseSectionConfirmationDialog
         );
         bottomSheet.show(getSupportFragmentManager(), ManageSectionsBottomSheet.TAG);
+    }
+
+    private void showReleaseSectionConfirmationDialog() {
+        String activeSec = getTeacherAssignedSection();
+        if (activeSec.isEmpty() || activeSec.equals("--")) {
+            CustomToast.show(this, "No active section to release.");
+            return;
+        }
+
+        String intake = sessionManager != null ? sessionManager.getAssignedIntakes() : "";
+        if (intake.equals("--")) intake = "";
+
+        String display = "Section " + activeSec + (!intake.isEmpty() ? " (Intake " + intake + ")" : "");
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Release " + display + "?")
+                .setMessage("Are you sure you want to release " + display + "?\n\nThis will unassign this section from your profile so that the next course teacher can claim and manage this section in the new semester.")
+                .setPositiveButton("Release Section", (dialog, which) -> {
+                    performReleaseSection(activeSec);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    private void performReleaseSection(String secToRelease) {
+        String currentSections = sessionManager != null ? sessionManager.getAssignedSections() : "";
+        List<String> remainingList = new ArrayList<>();
+        if (!currentSections.trim().isEmpty() && !currentSections.equals("--")) {
+            for (String s : currentSections.split("[,;\\s]+")) {
+                String clean = s.replaceAll("(?i)^section\\s*|^sec\\.?\\s*", "").trim();
+                if (!clean.isEmpty() && !clean.equalsIgnoreCase(secToRelease) && !remainingList.contains(clean)) {
+                    remainingList.add(clean);
+                }
+            }
+        }
+
+        StringBuilder newSecsBuilder = new StringBuilder();
+        for (int i = 0; i < remainingList.size(); i++) {
+            if (i > 0) newSecsBuilder.append(", ");
+            newSecsBuilder.append(remainingList.get(i));
+        }
+        String newSectionsStr = newSecsBuilder.toString();
+        String newActiveSec = remainingList.isEmpty() ? "" : remainingList.get(0);
+
+        if (sessionManager != null) {
+            sessionManager.setAssignedSections(newSectionsStr);
+            sessionManager.setAssignedSection(newActiveSec);
+            if (remainingList.isEmpty()) {
+                sessionManager.setAssignedIntakes("");
+                sessionManager.setUserIntake("");
+            }
+        }
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String uid = currentUser != null ? currentUser.getUid() : "";
+        String userEmail = currentUser != null && currentUser.getEmail() != null ? currentUser.getEmail() :
+                (sessionManager != null ? sessionManager.getUserEmail() : "");
+        String sanitizedEmail = !userEmail.isEmpty() ? userEmail.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "";
+        String rawTeacherId = sessionManager != null ? sessionManager.getUserID() : "";
+        String sanitizedTeacherId = rawTeacherId != null ? rawTeacherId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "";
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("assignedSections", newSectionsStr);
+        updates.put("assignedSection", newActiveSec);
+        if (remainingList.isEmpty()) {
+            updates.put("assignedIntakes", "");
+            updates.put("intake", "");
+        }
+
+        if (!uid.isEmpty()) {
+            dbRef.child("users").child(uid).updateChildren(updates);
+        }
+        if (!sanitizedEmail.isEmpty()) {
+            dbRef.child("users").child(sanitizedEmail).updateChildren(updates);
+        }
+        if (!sanitizedTeacherId.isEmpty()) {
+            dbRef.child("users").child(sanitizedTeacherId).updateChildren(updates);
+        }
+
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+        SetOptions mergeOption = SetOptions.merge();
+        if (!uid.isEmpty()) {
+            firestore.collection("users").document(uid).set(updates, mergeOption);
+        }
+        if (!sanitizedEmail.isEmpty()) {
+            firestore.collection("users").document(sanitizedEmail).set(updates, mergeOption);
+        }
+        if (!sanitizedTeacherId.isEmpty()) {
+            firestore.collection("users").document(sanitizedTeacherId).set(updates, mergeOption);
+        }
+
+        String teacherDept = getTeacherDepartment();
+        String sanitizedDept = getSanitizedDepartment(teacherDept);
+        String sanitizedSec = getSanitizedSection(secToRelease);
+        if (!sanitizedSec.isEmpty() && !sanitizedSec.equals("--")) {
+            Map<String, Object> gateRelease = new HashMap<>();
+            gateRelease.put("managedByTeacherId", "");
+            gateRelease.put("managedByTeacherName", "");
+            gateRelease.put("isReleased", true);
+            gateRelease.put("releasedAt", System.currentTimeMillis());
+            dbRef.child("voting_controls").child(sanitizedDept).child(sanitizedSec).updateChildren(gateRelease);
+        }
+
+        setupDynamicSectionButtons();
+        if (currentActiveTab == 1) {
+            loadStudentsForCurrentSection();
+        }
+        bindTeacherProfileInfo();
+
+        CustomToast.show(this, "Section " + secToRelease + " released successfully! Open for next teacher.");
     }
 
     private void saveTeacherAssignedSectionsAndIntakes(String secInput, String intakeInput) {
         if (sessionManager != null) {
             sessionManager.setAssignedSections(secInput);
             sessionManager.setAssignedIntakes(intakeInput);
+            sessionManager.setUserIntake(intakeInput);
         }
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         String uid = currentUser != null ? currentUser.getUid() : "";
+        String userEmail = currentUser != null && currentUser.getEmail() != null ? currentUser.getEmail() :
+                (sessionManager != null ? sessionManager.getUserEmail() : "");
+        String sanitizedEmail = !userEmail.isEmpty() ? userEmail.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "";
         String rawTeacherId = sessionManager != null ? sessionManager.getUserID() : "";
         String sanitizedTeacherId = rawTeacherId != null ? rawTeacherId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_") : "";
 
         Map<String, Object> updates = new HashMap<>();
         updates.put("assignedSections", secInput);
         updates.put("assignedIntakes", intakeInput);
+        updates.put("intake", intakeInput);
 
         List<String> parsedSecs = new ArrayList<>();
         if (!secInput.trim().isEmpty()) {
@@ -3527,15 +4198,35 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (sessionManager != null) sessionManager.setAssignedSection(activeSec);
         updates.put("assignedSection", activeSec);
 
+        // Update RTDB under all keys (uid, email, teacherId)
         if (!uid.isEmpty()) {
             dbRef.child("users").child(uid).updateChildren(updates);
-            FirebaseFirestore.getInstance().collection("users").document(uid).update(updates);
+        }
+        if (!sanitizedEmail.isEmpty()) {
+            dbRef.child("users").child(sanitizedEmail).updateChildren(updates);
         }
         if (!sanitizedTeacherId.isEmpty()) {
             dbRef.child("users").child(sanitizedTeacherId).updateChildren(updates);
         }
 
+        // Update Cloud Firestore under all keys with merge
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+        SetOptions mergeOption = SetOptions.merge();
+        if (!uid.isEmpty()) {
+            firestore.collection("users").document(uid).set(updates, mergeOption);
+        }
+        if (!sanitizedEmail.isEmpty()) {
+            firestore.collection("users").document(sanitizedEmail).set(updates, mergeOption);
+        }
+        if (!sanitizedTeacherId.isEmpty()) {
+            firestore.collection("users").document(sanitizedTeacherId).set(updates, mergeOption);
+        }
+
         setupDynamicSectionButtons();
+        if (currentActiveTab == 1) {
+            loadStudentsForCurrentSection();
+        }
+        bindTeacherProfileInfo();
         CustomToast.show(this, "Assigned sections updated!");
     }
 
@@ -3545,23 +4236,99 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         }
 
         String intakeStr = sessionManager != null ? sessionManager.getAssignedIntakes() : "";
-        String name = sec.isEmpty() ? "No Section Selected" : "Section " + sec + (intakeStr.isEmpty() ? "" : " · Intake " + intakeStr);
+        if (intakeStr == null || intakeStr.equals("--") || intakeStr.isEmpty()) {
+            intakeStr = sessionManager != null ? sessionManager.getUserIntake() : "";
+        }
+        if (intakeStr != null && intakeStr.equals("--")) intakeStr = "";
 
-        if (tvTpBigSecNumber != null) tvTpBigSecNumber.setText(sec.isEmpty() ? "--" : sec);
+        boolean hasSec = !sec.isEmpty() && !sec.equals("--");
+        String name = !hasSec ? "No Section Selected" : "Section " + sec + (intakeStr != null && !intakeStr.isEmpty() ? " · Intake " + intakeStr : "");
+
+        if (tvTpBigSecNumber != null) tvTpBigSecNumber.setText(!hasSec ? "--" : sec);
         if (tvTpSecName != null) tvTpSecName.setText(name);
 
         if (tvHeaderTitle != null) {
-            tvHeaderTitle.setText("Admin Console" + (sec.isEmpty() ? "" : " · Sec " + sec));
+            tvHeaderTitle.setText("Admin Console" + (!hasSec ? "" : " · Sec " + sec));
         }
         if (tvHeaderSubtitle != null && sessionManager != null) {
-            tvHeaderSubtitle.setText(sessionManager.getUserName() + " (" + sessionManager.getUserDept() + (sec.isEmpty() ? "" : " | Sec: " + sec) + ")");
+            tvHeaderSubtitle.setText(sessionManager.getUserName() + " (" + sessionManager.getUserDept() + (!hasSec ? "" : " | Sec: " + sec) + (intakeStr != null && !intakeStr.isEmpty() ? " | Int: " + intakeStr : "") + ")");
         }
 
         refreshDynamicSectionButtonSelection(sec);
 
-        if (!sec.isEmpty()) {
+        if (hasSec) {
             attachLiveFirebaseSectionListeners(sec);
+            fetchSectionStudentCount(sec);
+        } else {
+            detachLiveFirebaseSectionListeners();
+            activeSectionStudentCount = 0;
+            if (tvTpStudents != null) tvTpStudents.setText("0");
+            if (tvTpVotes != null) tvTpVotes.setText("0");
+            if (tvTpTurnout != null) tvTpTurnout.setText("0%");
         }
+
+        if (currentActiveTab == 1) {
+            loadStudentsForCurrentSection();
+        }
+    }
+
+    private void bindTeacherProfileInfo() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String userEmail = currentUser != null && currentUser.getEmail() != null && !currentUser.getEmail().isEmpty() ?
+                currentUser.getEmail() : (sessionManager != null ? sessionManager.getUserEmail() : "");
+        String userName = sessionManager != null ? sessionManager.getUserName() : "";
+        if ((userName.isEmpty() || userName.equalsIgnoreCase("Test Teacher (Dev)") || userName.equalsIgnoreCase("User")) && currentUser != null && currentUser.getDisplayName() != null && !currentUser.getDisplayName().isEmpty()) {
+            userName = currentUser.getDisplayName();
+        }
+        if (userName.isEmpty() || userName.equalsIgnoreCase("Test Teacher (Dev)") || userName.equalsIgnoreCase("User")) {
+            if (!userEmail.isEmpty() && userEmail.contains("@")) {
+                String prefix = userEmail.substring(0, userEmail.indexOf("@"));
+                userName = Character.toUpperCase(prefix.charAt(0)) + (prefix.length() > 1 ? prefix.substring(1) : "");
+            } else {
+                userName = "Teacher";
+            }
+        }
+
+        String userId = sessionManager != null ? sessionManager.getUserID() : "";
+        if (userId.isEmpty() || userId.equalsIgnoreCase("T1001") || userId.equalsIgnoreCase("T-0142")) {
+            if (!userEmail.isEmpty() && userEmail.contains("@")) {
+                userId = userEmail.substring(0, userEmail.indexOf("@"));
+            } else if (currentUser != null) {
+                userId = currentUser.getUid().substring(0, Math.min(6, currentUser.getUid().length())).toUpperCase();
+            }
+        }
+
+        String userDept = sessionManager != null ? sessionManager.getUserDept() : "Department of CSE, BUBT";
+        if (userDept.isEmpty() || userDept.equals("--")) {
+            userDept = "Department of CSE, BUBT";
+        }
+
+        if (tvTpName != null) tvTpName.setText(userName);
+        if (tvTpEmail != null) tvTpEmail.setText(userEmail);
+        if (tvTpTeacherCode != null) tvTpTeacherCode.setText(userId);
+        if (tvTpDepartment != null) tvTpDepartment.setText(userDept.replace("Department of ", "").replace(", BUBT", "").trim());
+        if (tvTpChipDept != null) tvTpChipDept.setText(userDept);
+
+        if (tvTpAvatar != null) {
+            tvTpAvatar.setText(getInitials(userName));
+        }
+
+        if (tvNavHeaderName != null) tvNavHeaderName.setText(userName);
+        if (tvNavHeaderRole != null) tvNavHeaderRole.setText("Teacher / Admin · " + userDept);
+
+        String currentSec = getTeacherAssignedSection();
+        if (tvHeaderSubtitle != null) {
+            tvHeaderSubtitle.setText(userName + " (" + userDept + (currentSec.isEmpty() || currentSec.equals("--") ? "" : " | Sec: " + currentSec) + ")");
+        }
+    }
+
+    private String getInitials(String name) {
+        if (name == null || name.trim().isEmpty()) return "T";
+        String[] parts = name.trim().split("\\s+");
+        if (parts.length >= 2 && !parts[0].isEmpty() && !parts[1].isEmpty()) {
+            return ("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+        }
+        return ("" + parts[0].charAt(0)).toUpperCase();
     }
 
     private void updateSectionButtonState(Button button, boolean isSelected) {

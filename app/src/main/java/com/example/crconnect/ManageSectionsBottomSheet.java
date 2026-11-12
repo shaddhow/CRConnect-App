@@ -31,14 +31,20 @@ public class ManageSectionsBottomSheet extends BottomSheetDialogFragment {
     }
 
     private OnSaveListener listener;
+    private Runnable onReleaseListener;
     private String initialSections = "";
     private String initialIntakes = "";
 
     public static ManageSectionsBottomSheet newInstance(String sections, String intakes, OnSaveListener listener) {
+        return newInstance(sections, intakes, listener, null);
+    }
+
+    public static ManageSectionsBottomSheet newInstance(String sections, String intakes, OnSaveListener listener, Runnable onReleaseListener) {
         ManageSectionsBottomSheet fragment = new ManageSectionsBottomSheet();
         fragment.initialSections = sections != null ? sections : "";
         fragment.initialIntakes = intakes != null ? intakes : "";
         fragment.listener = listener;
+        fragment.onReleaseListener = onReleaseListener;
         return fragment;
     }
 
@@ -103,6 +109,16 @@ public class ManageSectionsBottomSheet extends BottomSheetDialogFragment {
 
         if (btnCancel != null) {
             btnCancel.setOnClickListener(v -> dismissAllowingStateLoss());
+        }
+
+        MaterialButton btnRelease = view.findViewById(R.id.btnReleaseActiveSectionSheet);
+        if (btnRelease != null) {
+            btnRelease.setOnClickListener(v -> {
+                dismissAllowingStateLoss();
+                if (onReleaseListener != null) {
+                    onReleaseListener.run();
+                }
+            });
         }
 
         if (btnSave != null) {

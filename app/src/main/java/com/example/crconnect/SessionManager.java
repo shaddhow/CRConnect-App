@@ -53,14 +53,35 @@ public class SessionManager {
     }
 
     public void createLoginSession(String name, String email, String id, String role, String section, String assignedSection, String intake, String dept) {
+        createLoginSession(name, email, id, role, section, assignedSection, null, intake, null, dept);
+    }
+
+    public void createLoginSession(String name, String email, String id, String role, String section, String assignedSection, String assignedSections, String intake, String assignedIntakes, String dept) {
         editor.putBoolean(KEY_IS_LOGGED_IN, true);
         editor.putString(KEY_NAME, name);
         editor.putString(KEY_EMAIL, email);
         editor.putString(KEY_ID, id);
         editor.putString(KEY_ROLE, role);
         editor.putString(KEY_SECTION, section);
-        editor.putString(KEY_ASSIGNED_SECTION, assignedSection);
-        editor.putString(KEY_INTAKE, intake);
+
+        String currentAssignedSec = pref.getString(KEY_ASSIGNED_SECTION, "--");
+        String currentAssignedSecs = pref.getString(KEY_ASSIGNED_SECTIONS, currentAssignedSec);
+        String finalSec = (assignedSection != null && !assignedSection.equals("--")) ? assignedSection : currentAssignedSec;
+        String finalSecs = (assignedSections != null && !assignedSections.isEmpty() && !assignedSections.equals("--")) ? assignedSections :
+                ((assignedSection != null && !assignedSection.equals("--") && !assignedSection.isEmpty()) ? assignedSection : currentAssignedSecs);
+
+        editor.putString(KEY_ASSIGNED_SECTION, finalSec);
+        editor.putString(KEY_ASSIGNED_SECTIONS, finalSecs);
+
+        String currentIntake = pref.getString(KEY_INTAKE, "--");
+        String currentIntakes = pref.getString(KEY_ASSIGNED_INTAKES, currentIntake);
+        String finalIntake = (intake != null && !intake.equals("--")) ? intake : currentIntake;
+        String finalIntakes = (assignedIntakes != null && !assignedIntakes.isEmpty() && !assignedIntakes.equals("--")) ? assignedIntakes :
+                ((intake != null && !intake.equals("--") && !intake.isEmpty()) ? intake : currentIntakes);
+
+        editor.putString(KEY_INTAKE, finalIntake);
+        editor.putString(KEY_ASSIGNED_INTAKES, finalIntakes);
+
         editor.putString(KEY_DEPT, dept);
         editor.commit();
     }
@@ -114,12 +135,26 @@ public class SessionManager {
     }
 
     public void setAssignedSections(String sections) {
-        editor.putString(KEY_ASSIGNED_SECTIONS, sections);
+        editor.putString(KEY_ASSIGNED_SECTIONS, sections != null ? sections : "");
+        if (sections != null && !sections.isEmpty() && !sections.equals("--")) {
+            String currentSec = getAssignedSection();
+            if (currentSec == null || currentSec.equals("--") || currentSec.isEmpty() || !sections.contains(currentSec)) {
+                String firstSec = sections.split("[,;\\s]+")[0].replaceAll("(?i)^section\\s*|^sec\\.?\\s*", "").trim();
+                editor.putString(KEY_ASSIGNED_SECTION, firstSec);
+            }
+        }
         editor.commit();
     }
 
     public void setAssignedIntakes(String intakes) {
-        editor.putString(KEY_ASSIGNED_INTAKES, intakes);
+        editor.putString(KEY_ASSIGNED_INTAKES, intakes != null ? intakes : "");
+        if (intakes != null && !intakes.isEmpty() && !intakes.equals("--")) {
+            String current = getUserIntake();
+            if (current == null || current.equals("--") || current.isEmpty() || !intakes.contains(current)) {
+                String firstIntake = intakes.split("[,;\\s]+")[0].trim();
+                editor.putString(KEY_INTAKE, firstIntake);
+            }
+        }
         editor.commit();
     }
 

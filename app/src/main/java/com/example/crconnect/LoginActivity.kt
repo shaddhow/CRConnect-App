@@ -766,6 +766,9 @@ class LoginActivity : AppCompatActivity() {
                     val intake = doc.getString("intake")
                     val dept = doc.getString("dept")
 
+                    val assignedSections = doc.getString("assignedSections") ?: assignedSection
+                    val assignedIntakes = doc.getString("assignedIntakes") ?: intake
+
                     val resolvedRole = role ?: if (selectedRole == "Teacher") "Teacher" else "Student"
                     sessionManager.createLoginSession(
                         name ?: email,
@@ -774,9 +777,17 @@ class LoginActivity : AppCompatActivity() {
                         resolvedRole,
                         section ?: "--",
                         assignedSection ?: (section ?: "--"),
+                        assignedSections,
                         intake ?: "--",
+                        assignedIntakes,
                         dept ?: "Department of CSE, BUBT"
                     )
+                    if (!assignedSections.isNullOrBlank() && assignedSections != "--") {
+                        sessionManager.setAssignedSections(assignedSections)
+                    }
+                    if (!assignedIntakes.isNullOrBlank() && assignedIntakes != "--") {
+                        sessionManager.setAssignedIntakes(assignedIntakes)
+                    }
                     val profileImg = doc.getString("profileImageUrl") ?: ""
                     if (profileImg.isNotBlank()) {
                         sessionManager.setProfileImageUrl(profileImg)
@@ -831,10 +842,18 @@ class LoginActivity : AppCompatActivity() {
         val role = snapshot.child("role").getValue(String::class.java) ?: "Student"
         val section = snapshot.child("section").getValue(String::class.java) ?: "--"
         val assignedSection = snapshot.child("assignedSection").getValue(String::class.java) ?: section
+        val assignedSections = snapshot.child("assignedSections").getValue(String::class.java) ?: assignedSection
         val intake = snapshot.child("intake").getValue(String::class.java) ?: "--"
+        val assignedIntakes = snapshot.child("assignedIntakes").getValue(String::class.java) ?: intake
         val dept = snapshot.child("dept").getValue(String::class.java) ?: "Department of CSE, BUBT"
 
-        sessionManager.createLoginSession(name, email, id, role, section, assignedSection, intake, dept)
+        sessionManager.createLoginSession(name, email, id, role, section, assignedSection, assignedSections, intake, assignedIntakes, dept)
+        if (!assignedSections.isNullOrBlank() && assignedSections != "--") {
+            sessionManager.setAssignedSections(assignedSections)
+        }
+        if (!assignedIntakes.isNullOrBlank() && assignedIntakes != "--") {
+            sessionManager.setAssignedIntakes(assignedIntakes)
+        }
 
         val cgpa = snapshot.child("cgpa").getValue(String::class.java) ?: ""
         if (cgpa.isNotBlank() && cgpa != "--") {
@@ -891,7 +910,10 @@ class LoginActivity : AppCompatActivity() {
     private fun createDefaultTeacherAndNavigate(uid: String, email: String, originalInput: String) {
         val rawName = if (email.contains("@")) email.split("@")[0] else "Teacher"
         val name = rawName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-        val assignedSection = "6"
+        val savedSec = sessionManager.assignedSection.let { if (it == "--" || it == "6") "" else it }
+        val savedSecs = sessionManager.assignedSections.let { if (it == "--") "" else it }
+        val savedIntake = sessionManager.userIntake.let { if (it == "--") "" else it }
+        val savedIntakes = sessionManager.assignedIntakes.let { if (it == "--") "" else it }
         val dept = "Department of CSE, BUBT"
 
         val userMap = HashMap<String, Any>()
@@ -900,8 +922,10 @@ class LoginActivity : AppCompatActivity() {
         userMap["id"] = if (originalInput.isNotEmpty()) originalInput else "T1001"
         userMap["role"] = "Teacher/Admin"
         userMap["section"] = "--"
-        userMap["assignedSection"] = assignedSection
-        userMap["intake"] = "--"
+        if (savedSec.isNotEmpty()) userMap["assignedSection"] = savedSec
+        if (savedSecs.isNotEmpty()) userMap["assignedSections"] = savedSecs
+        if (savedIntake.isNotEmpty()) userMap["intake"] = savedIntake
+        if (savedIntakes.isNotEmpty()) userMap["assignedIntakes"] = savedIntakes
         userMap["dept"] = dept
         userMap["deviceId"] = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID) ?: ""
         userMap["registeredAt"] = System.currentTimeMillis()
@@ -911,20 +935,21 @@ class LoginActivity : AppCompatActivity() {
         val sanitizedInput = sanitizeKey(originalInput)
 
         if (uid.isNotEmpty()) {
-            dbRef.child("users").child(uid).setValue(userMap)
+            dbRef.child("users").child(uid).updateChildren(userMap)
         }
-        dbRef.child("users").child(sanitizedEmail).setValue(userMap)
+        dbRef.child("users").child(sanitizedEmail).updateChildren(userMap)
         if (sanitizedInput.isNotEmpty()) {
-            dbRef.child("users").child(sanitizedInput).setValue(userMap)
+            dbRef.child("users").child(sanitizedInput).updateChildren(userMap)
         }
 
         val firestore = FirebaseFirestore.getInstance()
+        val mergeOption = com.google.firebase.firestore.SetOptions.merge()
         if (uid.isNotEmpty()) {
-            firestore.collection("users").document(uid).set(userMap)
+            firestore.collection("users").document(uid).set(userMap, mergeOption)
         }
-        firestore.collection("users").document(sanitizedEmail).set(userMap)
+        firestore.collection("users").document(sanitizedEmail).set(userMap, mergeOption)
         if (sanitizedInput.isNotEmpty()) {
-            firestore.collection("users").document(sanitizedInput).set(userMap)
+            firestore.collection("users").document(sanitizedInput).set(userMap, mergeOption)
         }
 
         sessionManager.createLoginSession(
@@ -933,8 +958,10 @@ class LoginActivity : AppCompatActivity() {
             if (originalInput.isNotEmpty()) originalInput else "T1001",
             "Teacher/Admin",
             "--",
-            assignedSection,
-            "--",
+            savedSec,
+            savedSecs,
+            savedIntake,
+            savedIntakes,
             dept
         )
         navigateBasedOnRole("Teacher/Admin", email)

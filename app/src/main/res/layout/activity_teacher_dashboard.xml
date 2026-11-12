@@ -91,7 +91,50 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Tab 2: Profile -->
+            <!-- Tab 2: Students -->
+            <LinearLayout
+                android:id="@+id/navTabStudents"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:paddingTop="0dp"
+                android:paddingBottom="0dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="@android:color/transparent">
+
+                <FrameLayout
+                    android:id="@+id/pillStudents"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:background="@android:color/transparent">
+
+                    <ImageView
+                        android:id="@+id/iconStudents"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_users"
+                        app:tint="@color/muted_text"
+                        tools:ignore="ContentDescription" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/labelStudents"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="3dp"
+                    android:text="Students"
+                    android:textColor="@color/muted_text"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Tab 3: Profile -->
             <LinearLayout
                 android:id="@+id/navTabProfile"
                 android:layout_width="0dp"
@@ -129,49 +172,6 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="3dp"
                     android:text="Profile"
-                    android:textColor="@color/muted_text"
-                    android:textSize="10.5sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- Tab 3: Logout -->
-            <LinearLayout
-                android:id="@+id/navTabLogout"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:paddingTop="0dp"
-                android:paddingBottom="0dp"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="@android:color/transparent">
-
-                <FrameLayout
-                    android:id="@+id/pillLogout"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:background="@android:color/transparent">
-
-                    <ImageView
-                        android:id="@+id/iconLogout"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_nav_logout"
-                        app:tint="@color/muted_text"
-                        tools:ignore="ContentDescription" />
-                </FrameLayout>
-
-                <TextView
-                    android:id="@+id/labelLogout"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="3dp"
-                    android:text="Logout"
                     android:textColor="@color/muted_text"
                     android:textSize="10.5sp"
                     android:textStyle="bold" />
@@ -235,8 +235,8 @@
                             android:textColor="#FFFFFF"
                             android:textSize="13sp"
                             android:textStyle="bold"
-                            app:backgroundTint="#0066FF"
-                            app:cornerRadius="12dp" />
+                            app:backgroundTint="@color/primary"
+                            app:cornerRadius="20dp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnSubToggleCandidates"
@@ -249,11 +249,11 @@
                             android:padding="0dp"
                             android:text="Candidates"
                             android:textAllCaps="false"
-                            android:textColor="#64748B"
+                            android:textColor="@color/muted_text"
                             android:textSize="13sp"
                             android:textStyle="bold"
                             app:backgroundTint="@android:color/transparent"
-                            app:cornerRadius="12dp" />
+                            app:cornerRadius="20dp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnSubToggleExport"
@@ -266,11 +266,11 @@
                             android:padding="0dp"
                             android:text="Export"
                             android:textAllCaps="false"
-                            android:textColor="#64748B"
+                            android:textColor="@color/muted_text"
                             android:textSize="13sp"
                             android:textStyle="bold"
                             app:backgroundTint="@android:color/transparent"
-                            app:cornerRadius="12dp" />
+                            app:cornerRadius="20dp" />
                     </LinearLayout>
 
                     <!-- SUB-VIEW 1: Election Timing & Live Monitor -->
@@ -289,10 +289,10 @@
                             android:layout_marginBottom="16dp"
                             android:hapticFeedbackEnabled="true"
                             app:cardBackgroundColor="@color/card_bg"
-                            app:cardCornerRadius="20dp"
+                            app:cardCornerRadius="28dp"
                             app:cardElevation="2dp"
                             app:strokeColor="@color/card_stroke"
-                            app:strokeWidth="1dp"
+                            app:strokeWidth="1.5dp"
                             android:outlineAmbientShadowColor="#1A0066FF"
                             android:outlineSpotShadowColor="#1A0066FF"
                             tools:ignore="UnusedAttribute">
@@ -440,7 +440,7 @@
                                     app:iconPadding="8dp"
                                     app:iconGravity="textStart"
                                     app:backgroundTint="@color/primary"
-                                    app:cornerRadius="12dp"
+                                    app:cornerRadius="16dp"
                                     app:elevation="8dp"
                                     android:outlineAmbientShadowColor="#800066FF"
                                     android:outlineSpotShadowColor="#800066FF"
@@ -457,10 +457,10 @@
                             android:layout_marginBottom="16dp"
                             android:hapticFeedbackEnabled="true"
                             app:cardBackgroundColor="@color/card_bg"
-                            app:cardCornerRadius="20dp"
+                            app:cardCornerRadius="28dp"
                             app:cardElevation="2dp"
                             app:strokeColor="@color/card_stroke"
-                            app:strokeWidth="1dp"
+                            app:strokeWidth="1.5dp"
                             android:outlineAmbientShadowColor="#1A0066FF"
                             android:outlineSpotShadowColor="#1A0066FF"
                             tools:ignore="UnusedAttribute">
@@ -543,10 +543,10 @@
                             android:layout_marginBottom="16dp"
                             android:hapticFeedbackEnabled="true"
                             app:cardBackgroundColor="@color/card_bg"
-                            app:cardCornerRadius="20dp"
+                            app:cardCornerRadius="28dp"
                             app:cardElevation="2dp"
                             app:strokeColor="@color/card_stroke"
-                            app:strokeWidth="1dp"
+                            app:strokeWidth="1.5dp"
                             android:outlineAmbientShadowColor="#14000000"
                             android:outlineSpotShadowColor="#14000000"
                             tools:ignore="UnusedAttribute">
@@ -604,10 +604,10 @@
                                     android:textColorHint="@color/muted_text"
                                     app:hintEnabled="false"
                                     app:boxBackgroundColor="@color/input_bg"
-                                    app:boxCornerRadiusBottomEnd="12dp"
-                                    app:boxCornerRadiusBottomStart="12dp"
-                                    app:boxCornerRadiusTopEnd="12dp"
-                                    app:boxCornerRadiusTopStart="12dp"
+                                    app:boxCornerRadiusBottomEnd="16dp"
+                                    app:boxCornerRadiusBottomStart="16dp"
+                                    app:boxCornerRadiusTopEnd="16dp"
+                                    app:boxCornerRadiusTopStart="16dp"
                                     app:boxStrokeColor="@color/input_box_stroke"
                                     app:startIconDrawable="@drawable/ic_user"
                                     app:startIconTint="@color/muted_text">
@@ -640,7 +640,7 @@
                                     android:textSize="15sp"
                                     android:textStyle="bold"
                                     app:backgroundTint="@color/primary"
-                                    app:cornerRadius="12dp" />
+                                    app:cornerRadius="16dp" />
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btnClearName"
@@ -709,10 +709,10 @@
                             android:layout_marginBottom="16dp"
                             android:hapticFeedbackEnabled="true"
                             app:cardBackgroundColor="@color/card_bg"
-                            app:cardCornerRadius="20dp"
+                            app:cardCornerRadius="28dp"
                             app:cardElevation="2dp"
                             app:strokeColor="@color/card_stroke"
-                            app:strokeWidth="1dp"
+                            app:strokeWidth="1.5dp"
                             android:outlineAmbientShadowColor="#14000000"
                             android:outlineSpotShadowColor="#14000000"
                             tools:ignore="UnusedAttribute">
@@ -756,7 +756,7 @@
                                         android:textSize="14sp"
                                         android:textStyle="bold"
                                         app:backgroundTint="@color/card_bg"
-                                        app:cornerRadius="12dp"
+                                        app:cornerRadius="16dp"
                                         app:strokeColor="@color/primary"
                                         app:strokeWidth="1.5dp" />
 
@@ -775,7 +775,7 @@
                                         android:textSize="14sp"
                                         android:textStyle="bold"
                                         app:backgroundTint="@color/btn_danger_bg_color"
-                                        app:cornerRadius="12dp"
+                                        app:cornerRadius="16dp"
                                         app:strokeColor="@color/btn_danger_stroke_color"
                                         app:strokeWidth="1.5dp" />
                                 </LinearLayout>
@@ -796,10 +796,10 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="16dp"
                             app:cardBackgroundColor="@color/card_bg"
-                            app:cardCornerRadius="20dp"
+                            app:cardCornerRadius="28dp"
                             app:cardElevation="2dp"
                             app:strokeColor="@color/card_stroke"
-                            app:strokeWidth="1dp">
+                            app:strokeWidth="1.5dp">
 
                             <LinearLayout
                                 android:layout_width="match_parent"
@@ -821,7 +821,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginBottom="16dp"
                                     android:text="Generate an official PDF summary report containing live votes, turnout statistics, and candidate rankings."
-                                    android:textColor="#64748B"
+                                    android:textColor="@color/muted_text"
                                     android:textSize="13sp" />
 
                                 <com.google.android.material.button.MaterialButton
@@ -835,8 +835,8 @@
                                     android:textColor="#FFFFFF"
                                     android:textSize="16sp"
                                     android:textStyle="bold"
-                                    app:backgroundTint="#0066FF"
-                                    app:cornerRadius="12dp"
+                                    app:backgroundTint="@color/primary"
+                                    app:cornerRadius="16dp"
                                     app:elevation="8dp"
                                     android:outlineAmbientShadowColor="#800066FF"
                                     android:outlineSpotShadowColor="#800066FF"
@@ -845,6 +845,256 @@
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
                     </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- TAB 2: Students Directory Section -->
+                <LinearLayout
+                    android:id="@+id/layoutTabStudents"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:paddingBottom="24dp">
+
+                    <!-- Search & Header Card (28dp capsule boxy) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardStudentsHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        app:cardBackgroundColor="@color/card_bg"
+                        app:cardCornerRadius="28dp"
+                        app:cardElevation="2dp"
+                        app:strokeColor="@color/card_stroke"
+                        app:strokeWidth="1.5dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="20dp">
+
+                            <!-- Title Row with Section Badge -->
+                            <RelativeLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="6dp">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentStart="true"
+                                    android:layout_centerVertical="true"
+                                    android:layout_toStartOf="@id/tvStudentDirectorySectionPill"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Enrolled students"
+                                        android:textColor="@color/title_text"
+                                        android:textSize="17sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvStudentDirectoryCount"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:text="0 students enrolled"
+                                        android:textColor="@color/muted_text"
+                                        android:textSize="12.5sp" />
+                                </LinearLayout>
+
+                                <TextView
+                                    android:id="@+id/tvStudentDirectorySectionPill"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentEnd="true"
+                                    android:layout_centerVertical="true"
+                                    android:background="@drawable/bg_chip_muted"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="5dp"
+                                    android:text="CSE · Sec 6"
+                                    android:textColor="@color/primary"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+                            </RelativeLayout>
+
+                            <!-- Capsule Search Bar -->
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:layout_marginBottom="12dp"
+                                android:textColorHint="@color/muted_text"
+                                app:hintEnabled="false"
+                                app:boxBackgroundColor="@color/input_bg"
+                                app:boxCornerRadiusBottomEnd="16dp"
+                                app:boxCornerRadiusBottomStart="16dp"
+                                app:boxCornerRadiusTopEnd="16dp"
+                                app:boxCornerRadiusTopStart="16dp"
+                                app:boxStrokeColor="@color/input_box_stroke"
+                                app:startIconDrawable="@drawable/ic_search"
+                                app:startIconTint="@color/muted_text"
+                                app:endIconMode="clear_text">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etSearchStudents"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="48dp"
+                                    android:gravity="center_vertical"
+                                    android:hint="Search by name, ID or email..."
+                                    android:paddingTop="0dp"
+                                    android:paddingBottom="0dp"
+                                    android:singleLine="true"
+                                    android:textColor="@color/title_text"
+                                    android:textColorHint="@color/muted_text"
+                                    android:textSize="14sp" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <!-- Sub-Filter Pills: All | Voted | Pending -->
+                            <LinearLayout
+                                android:id="@+id/containerStudentFilterPills"
+                                android:layout_width="match_parent"
+                                android:layout_height="44dp"
+                                android:background="@drawable/bg_sub_toggle_container"
+                                android:orientation="horizontal"
+                                android:padding="3dp"
+                                android:weightSum="3">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnFilterAllStudents"
+                                    style="@style/Widget.Material3.Button.TextButton"
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_weight="1"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:padding="0dp"
+                                    android:text="All (0)"
+                                    android:textAllCaps="false"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="12.5sp"
+                                    android:textStyle="bold"
+                                    app:backgroundTint="@color/primary"
+                                    app:cornerRadius="20dp" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnFilterVotedStudents"
+                                    style="@style/Widget.Material3.Button.TextButton"
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_weight="1"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:padding="0dp"
+                                    android:text="Voted (0)"
+                                    android:textAllCaps="false"
+                                    android:textColor="@color/muted_text"
+                                    android:textSize="12.5sp"
+                                    android:textStyle="bold"
+                                    app:backgroundTint="@android:color/transparent"
+                                    app:cornerRadius="20dp" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnFilterPendingStudents"
+                                    style="@style/Widget.Material3.Button.TextButton"
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_weight="1"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:padding="0dp"
+                                    android:text="Pending (0)"
+                                    android:textAllCaps="false"
+                                    android:textColor="@color/muted_text"
+                                    android:textSize="12.5sp"
+                                    android:textStyle="bold"
+                                    app:backgroundTint="@android:color/transparent"
+                                    app:cornerRadius="20dp" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Loading Indicator -->
+                    <ProgressBar
+                        android:id="@+id/pbLoadingStudents"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginVertical="24dp"
+                        android:indeterminateTint="@color/primary"
+                        android:visibility="gone" />
+
+                    <!-- Empty State View -->
+                    <LinearLayout
+                        android:id="@+id/layoutEmptyStudents"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:paddingVertical="36dp"
+                        android:paddingHorizontal="24dp"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:src="@drawable/ic_users"
+                            app:tint="@color/muted_text"
+                            android:alpha="0.6"
+                            tools:ignore="ContentDescription" />
+
+                        <TextView
+                            android:id="@+id/tvEmptyStudentsMessage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="No students found for this section."
+                            android:textColor="@color/title_text"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+
+                        <TextView
+                            android:id="@+id/tvEmptyStudentsSubMessage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Ensure students register with the same Department, Intake and Section."
+                            android:textColor="@color/muted_text"
+                            android:textSize="13sp"
+                            android:gravity="center" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnEmptyAssignIntake"
+                            android:layout_width="wrap_content"
+                            android:layout_height="44dp"
+                            android:layout_marginTop="16dp"
+                            android:text="Assign Intake / Sections"
+                            android:textColor="#FFFFFF"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            app:cornerRadius="22dp"
+                            app:backgroundTint="@color/primary"
+                            app:icon="@drawable/ic_edit"
+                            app:iconTint="#FFFFFF"
+                            app:iconSize="16dp"
+                            android:visibility="gone" />
+                    </LinearLayout>
+
+                    <!-- Student List RecyclerView -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvStudentsDirectory"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"
+                        android:clipToPadding="false"
+                        tools:listitem="@layout/item_student_directory" />
 
                 </LinearLayout>
 
@@ -863,10 +1113,10 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="16dp"
                         app:cardBackgroundColor="@color/card_bg"
-                        app:cardCornerRadius="20dp"
+                        app:cardCornerRadius="28dp"
                         app:cardElevation="2dp"
                         app:strokeColor="@color/card_stroke"
-                        app:strokeWidth="1dp">
+                        app:strokeWidth="1.5dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -882,7 +1132,7 @@
                                 android:layout_height="84dp"
                                 android:background="@drawable/bg_tp_avatar"
                                 android:gravity="center"
-                                android:text="TT"
+                                android:text="T"
                                 android:textColor="#FFFFFF"
                                 android:textSize="28sp"
                                 android:textStyle="bold" />
@@ -893,7 +1143,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="12dp"
-                                android:text="Test Teacher (Dev)"
+                                android:text="Teacher"
                                 android:textColor="@color/title_text"
                                 android:textSize="20sp"
                                 android:textStyle="bold" />
@@ -929,6 +1179,7 @@
                                     android:textStyle="bold" />
 
                                 <TextView
+                                    android:id="@+id/tvTpChipDept"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:background="@drawable/bg_tp_chip_dept"
@@ -949,7 +1200,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="16dp"
                         app:cardBackgroundColor="@android:color/transparent"
-                        app:cardCornerRadius="20dp"
+                        app:cardCornerRadius="28dp"
                         app:cardElevation="4dp"
                         app:strokeWidth="0dp">
 
@@ -1003,6 +1254,37 @@
                                         android:layout_height="wrap_content"
                                         android:layout_marginStart="4dp"
                                         android:text="Manage"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:id="@+id/btnReleaseTeacherSection"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="6dp"
+                                    android:background="@drawable/bg_glassy_pill"
+                                    android:clickable="true"
+                                    android:focusable="true"
+                                    android:foreground="?attr/selectableItemBackground"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="4dp">
+
+                                    <ImageView
+                                        android:layout_width="12dp"
+                                        android:layout_height="12dp"
+                                        android:contentDescription="Release"
+                                        android:src="@drawable/ic_logout"
+                                        app:tint="#FFFFFF" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="4dp"
+                                        android:text="Release"
                                         android:textColor="#FFFFFF"
                                         android:textSize="11sp"
                                         android:textStyle="bold" />
@@ -1228,10 +1510,10 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="16dp"
                         app:cardBackgroundColor="@color/card_bg"
-                        app:cardCornerRadius="20dp"
+                        app:cardCornerRadius="28dp"
                         app:cardElevation="2dp"
                         app:strokeColor="@color/card_stroke"
-                        app:strokeWidth="1dp">
+                        app:strokeWidth="1.5dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -1262,9 +1544,10 @@
                                     android:textColor="#64748B"
                                     android:textSize="14sp" />
                                 <TextView
+                                    android:id="@+id/tvTpTeacherCode"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="T-0142"
+                                    android:text="--"
                                     android:textColor="@color/title_text"
                                     android:textSize="14sp"
                                     android:textStyle="bold" />
@@ -1284,6 +1567,7 @@
                                     android:textColor="#64748B"
                                     android:textSize="14sp" />
                                 <TextView
+                                    android:id="@+id/tvTpRole"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="Teacher / Admin"
@@ -1306,9 +1590,10 @@
                                     android:textColor="#64748B"
                                     android:textSize="14sp" />
                                 <TextView
+                                    android:id="@+id/tvTpDepartment"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="CSE"
+                                    android:text="--"
                                     android:textColor="@color/title_text"
                                     android:textSize="14sp"
                                     android:textStyle="bold" />
@@ -1328,6 +1613,7 @@
                                     android:textColor="#64748B"
                                     android:textSize="14sp" />
                                 <TextView
+                                    android:id="@+id/tvTpElectionStatus"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="Closed"
@@ -1365,10 +1651,10 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:cardBackgroundColor="@color/card_bg"
-                        app:cardCornerRadius="20dp"
+                        app:cardCornerRadius="28dp"
                         app:cardElevation="2dp"
                         app:strokeColor="@color/card_stroke"
-                        app:strokeWidth="1dp">
+                        app:strokeWidth="1.5dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -1383,12 +1669,12 @@
                                 android:insetTop="0dp"
                                 android:insetBottom="0dp"
                                 android:text="Edit profile"
-                                android:textColor="#0066FF"
+                                android:textColor="@color/primary"
                                 android:textSize="14sp"
                                 android:textStyle="bold"
-                                app:backgroundTint="#FFFFFF"
-                                app:cornerRadius="12dp"
-                                app:strokeColor="#0066FF"
+                                app:backgroundTint="@color/card_bg"
+                                app:cornerRadius="16dp"
+                                app:strokeColor="@color/primary"
                                 app:strokeWidth="1.5dp" />
 
                             <com.google.android.material.button.MaterialButton
@@ -1399,12 +1685,12 @@
                                 android:insetTop="0dp"
                                 android:insetBottom="0dp"
                                 android:text="Security settings"
-                                android:textColor="#0066FF"
+                                android:textColor="@color/primary"
                                 android:textSize="14sp"
                                 android:textStyle="bold"
-                                app:backgroundTint="#FFFFFF"
-                                app:cornerRadius="12dp"
-                                app:strokeColor="#0066FF"
+                                app:backgroundTint="@color/card_bg"
+                                app:cornerRadius="16dp"
+                                app:strokeColor="@color/primary"
                                 app:strokeWidth="1.5dp" />
 
                             <com.google.android.material.button.MaterialButton
@@ -1419,9 +1705,9 @@
                                 android:textSize="14sp"
                                 android:textStyle="bold"
                                 app:backgroundTint="@color/btn_danger_bg_color"
-                                app:cornerRadius="12dp"
+                                app:cornerRadius="16dp"
                                 app:strokeColor="@color/btn_danger_stroke_color"
-                                app:strokeWidth="1dp" />
+                                app:strokeWidth="1.5dp" />
 
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>

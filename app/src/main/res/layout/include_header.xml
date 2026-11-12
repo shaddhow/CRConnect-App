@@ -85,7 +85,7 @@
             android:id="@+id/tvHeaderSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Test Teacher (Dev) · CSE"
+            android:text="Teacher · CSE"
             android:textColor="@color/muted_text"
             android:textSize="12sp"
             android:maxLines="1"

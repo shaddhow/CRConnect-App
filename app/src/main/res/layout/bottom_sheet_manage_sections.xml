@@ -136,4 +136,19 @@
         app:strokeColor="@color/btn_outline_stroke"
         app:strokeWidth="1.5dp" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnReleaseActiveSectionSheet"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="6dp"
+        android:text="Release Section (New Semester Handover)"
+        android:textAllCaps="false"
+        android:textColor="#EF4444"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:icon="@drawable/ic_logout"
+        app:iconTint="#EF4444"
+        app:iconSize="16dp" />
+
 </LinearLayout>
