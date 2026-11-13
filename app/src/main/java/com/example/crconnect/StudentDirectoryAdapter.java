@@ -25,12 +25,17 @@ public class StudentDirectoryAdapter extends RecyclerView.Adapter<StudentDirecto
         void onStudentClick(StudentItem student);
     }
 
+    public interface OnStudentMoreClickListener {
+        void onStudentMoreClick(StudentItem student, View anchorView);
+    }
+
     private final Context context;
     private final List<StudentItem> originalList = new ArrayList<>();
     private final List<StudentItem> filteredList = new ArrayList<>();
     private String currentSearchQuery = "";
     private String currentFilterMode = "ALL"; // "ALL", "VOTED", "PENDING"
     private OnStudentClickListener listener;
+    private OnStudentMoreClickListener moreListener;
 
     public StudentDirectoryAdapter(Context context) {
         this.context = context;
@@ -38,6 +43,10 @@ public class StudentDirectoryAdapter extends RecyclerView.Adapter<StudentDirecto
 
     public void setOnStudentClickListener(OnStudentClickListener listener) {
         this.listener = listener;
+    }
+
+    public void setOnStudentMoreClickListener(OnStudentMoreClickListener moreListener) {
+        this.moreListener = moreListener;
     }
 
     public void setStudentList(List<StudentItem> list) {
@@ -76,6 +85,42 @@ public class StudentDirectoryAdapter extends RecyclerView.Adapter<StudentDirecto
 
     public int getTotalCount() {
         return originalList.size();
+    }
+
+    public void removeStudent(StudentItem student) {
+        if (student == null) return;
+        String targetId = student.getId();
+        for (int i = 0; i < originalList.size(); i++) {
+            if (originalList.get(i).getId().equalsIgnoreCase(targetId)) {
+                originalList.remove(i);
+                break;
+            }
+        }
+        int removedIndex = -1;
+        for (int i = 0; i < filteredList.size(); i++) {
+            if (filteredList.get(i).getId().equalsIgnoreCase(targetId)) {
+                removedIndex = i;
+                break;
+            }
+        }
+        if (removedIndex != -1) {
+            filteredList.remove(removedIndex);
+            notifyItemRemoved(removedIndex);
+        } else {
+            notifyDataSetChanged();
+        }
+    }
+
+    public void updateStudent(StudentItem student) {
+        if (student == null) return;
+        String targetId = student.getId();
+        for (int i = 0; i < originalList.size(); i++) {
+            if (originalList.get(i).getId().equalsIgnoreCase(targetId)) {
+                originalList.set(i, student);
+                break;
+            }
+        }
+        applyFilters();
     }
 
     private void applyFilters() {
@@ -129,6 +174,7 @@ public class StudentDirectoryAdapter extends RecyclerView.Adapter<StudentDirecto
         private final ImageView imgStudentAvatar;
         private final TextView tvBadgeCr;
         private final TextView tvVoteStatusBadge;
+        private final ImageView btnStudentMore;
 
         public StudentViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -139,6 +185,7 @@ public class StudentDirectoryAdapter extends RecyclerView.Adapter<StudentDirecto
             imgStudentAvatar = itemView.findViewById(R.id.imgStudentAvatar);
             tvBadgeCr = itemView.findViewById(R.id.tvBadgeCr);
             tvVoteStatusBadge = itemView.findViewById(R.id.tvVoteStatusBadge);
+            btnStudentMore = itemView.findViewById(R.id.btnStudentMore);
 
             itemView.setOnClickListener(v -> {
                 int pos = getAdapterPosition();
@@ -146,6 +193,20 @@ public class StudentDirectoryAdapter extends RecyclerView.Adapter<StudentDirecto
                     listener.onStudentClick(filteredList.get(pos));
                 }
             });
+
+            if (btnStudentMore != null) {
+                btnStudentMore.setOnClickListener(v -> {
+                    int pos = getAdapterPosition();
+                    if (pos != RecyclerView.NO_POSITION) {
+                        StudentItem item = filteredList.get(pos);
+                        if (moreListener != null) {
+                            moreListener.onStudentMoreClick(item, v);
+                        } else if (listener != null) {
+                            listener.onStudentClick(item);
+                        }
+                    }
+                });
+            }
         }
 
         public void bind(StudentItem item) {

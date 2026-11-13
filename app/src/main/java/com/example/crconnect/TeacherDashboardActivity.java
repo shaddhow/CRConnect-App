@@ -1555,6 +1555,14 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (rvStudentsDirectory != null) {
             rvStudentsDirectory.setLayoutManager(new LinearLayoutManager(this));
             studentDirectoryAdapter = new StudentDirectoryAdapter(this);
+            studentDirectoryAdapter.setOnStudentClickListener(student -> {
+                HapticUtils.lightClick(rvStudentsDirectory);
+                showStudentActionDialog(student);
+            });
+            studentDirectoryAdapter.setOnStudentMoreClickListener((student, anchorView) -> {
+                HapticUtils.lightClick(anchorView);
+                showStudentActionDialog(student);
+            });
             rvStudentsDirectory.setAdapter(studentDirectoryAdapter);
         }
 
@@ -1782,7 +1790,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                 userSnap.child("role").getValue(String.class),
                                 userSnap.child("profileImageUrl").getValue(String.class),
                                 userSnap.child("isCr").getValue(Boolean.class),
-                                sanitizedDept, targetSec, targetIntake, votedIds, studentMap
+                                sanitizedDept, targetSec, targetIntake, votedIds, studentMap,
+                                true
                         );
                     }
                 }
@@ -1813,7 +1822,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                                     doc.getString("role"),
                                     doc.getString("profileImageUrl"),
                                     doc.getBoolean("isCr"),
-                                    sanitizedDept, targetSec, targetIntake, votedIds, studentMap
+                                    sanitizedDept, targetSec, targetIntake, votedIds, studentMap,
+                                    false
                             );
                         }
                     }
@@ -1837,7 +1847,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
             String teacherSec,
             String teacherIntake,
             Set<String> votedIds,
-            Map<String, StudentItem> studentMap
+            Map<String, StudentItem> studentMap,
+            boolean isFromRtdb
     ) {
         // Skip teachers and admins
         if (role != null && (role.toLowerCase().contains("teacher") || role.toLowerCase().contains("admin"))) {
@@ -1892,11 +1903,26 @@ public class TeacherDashboardActivity extends AppCompatActivity {
                 isCr != null && isCr
         );
 
+        if (isFromRtdb) {
+            studentItem.setRtdbKey(docOrKey);
+        } else {
+            studentItem.setFirestoreId(docOrKey);
+        }
+        studentItem.setRole(role != null ? role : "Student");
+
         if (!studentMap.containsKey(studentId)) {
             studentMap.put(studentId, studentItem);
         } else {
             StudentItem existing = studentMap.get(studentId);
             if (existing != null) {
+                if (isFromRtdb && (existing.getRtdbKey() == null || existing.getRtdbKey().isEmpty())) {
+                    existing.setRtdbKey(docOrKey);
+                } else if (!isFromRtdb && (existing.getFirestoreId() == null || existing.getFirestoreId().isEmpty())) {
+                    existing.setFirestoreId(docOrKey);
+                }
+                if ((existing.getRole() == null || existing.getRole().isEmpty()) && role != null) {
+                    existing.setRole(role);
+                }
                 if (hasVoted) existing.setHasVoted(true);
                 if (isCr != null && isCr) existing.setCr(true);
                 if ((existing.getProfileImageUrl() == null || existing.getProfileImageUrl().isEmpty()) && (photo != null && !photo.isEmpty())) {
@@ -2275,6 +2301,542 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         card.setOnClickListener(onClickListener);
 
         return card;
+    }
+
+    private void showStudentActionDialog(StudentItem student) {
+        if (student == null || isFinishing() || isDestroyed()) return;
+
+        try {
+            final String cleanSec = !student.getSection().isEmpty() && !student.getSection().equals("--")
+                    ? student.getSection() : getSanitizedSection(getTeacherAssignedSection());
+            boolean isDark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+            int titleTextColor = ContextCompat.getColor(this, R.color.title_text);
+            int mutedTextColor = ContextCompat.getColor(this, R.color.muted_text);
+            int borderColor = ContextCompat.getColor(this, R.color.slate_border_light);
+
+            Dialog dialog = new Dialog(this);
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+            LinearLayout layout = new LinearLayout(this);
+            layout.setOrientation(LinearLayout.VERTICAL);
+            layout.setPadding(dpToPx(20), dpToPx(20), dpToPx(20), dpToPx(20));
+            layout.setBackgroundResource(R.drawable.bg_dialog_rounded);
+
+            // 1. Header Row (Avatar + Details)
+            LinearLayout headerRow = new LinearLayout(this);
+            headerRow.setOrientation(LinearLayout.HORIZONTAL);
+            headerRow.setGravity(Gravity.CENTER_VERTICAL);
+
+            // Avatar Container
+            FrameLayout avatarBox = new FrameLayout(this);
+            int avatarSize = dpToPx(50);
+            LinearLayout.LayoutParams avatarLp = new LinearLayout.LayoutParams(avatarSize, avatarSize);
+            avatarLp.setMarginEnd(dpToPx(14));
+            avatarBox.setLayoutParams(avatarLp);
+
+            ImageView imgAvatar = new ImageView(this);
+            imgAvatar.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            imgAvatar.setLayoutParams(new FrameLayout.LayoutParams(avatarSize, avatarSize));
+
+            TextView tvInitials = new TextView(this);
+            tvInitials.setLayoutParams(new FrameLayout.LayoutParams(avatarSize, avatarSize));
+            tvInitials.setGravity(Gravity.CENTER);
+            tvInitials.setBackgroundResource(R.drawable.bg_icon_square_blue);
+            tvInitials.setTextColor(ContextCompat.getColor(this, R.color.primary));
+            tvInitials.setTextSize(18f);
+            tvInitials.setTypeface(null, Typeface.BOLD);
+            tvInitials.setText(student.getInitials());
+
+            String photo = student.getProfileImageUrl();
+            if (photo != null && !photo.trim().isEmpty() && (photo.startsWith("http") || photo.startsWith("content:"))) {
+                tvInitials.setVisibility(View.GONE);
+                imgAvatar.setVisibility(View.VISIBLE);
+                Glide.with(this)
+                        .load(photo)
+                        .circleCrop()
+                        .placeholder(R.drawable.bg_icon_square_blue)
+                        .into(imgAvatar);
+            } else {
+                imgAvatar.setVisibility(View.GONE);
+                tvInitials.setVisibility(View.VISIBLE);
+            }
+            avatarBox.addView(imgAvatar);
+            avatarBox.addView(tvInitials);
+            headerRow.addView(avatarBox);
+
+            // Name & ID Column
+            LinearLayout nameCol = new LinearLayout(this);
+            nameCol.setOrientation(LinearLayout.VERTICAL);
+            LinearLayout.LayoutParams nameLp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+            nameCol.setLayoutParams(nameLp);
+
+            TextView tvName = new TextView(this);
+            tvName.setText(student.getName());
+            tvName.setTextSize(17f);
+            tvName.setTypeface(null, Typeface.BOLD);
+            tvName.setTextColor(titleTextColor);
+            tvName.setSingleLine(true);
+            tvName.setEllipsize(TextUtils.TruncateAt.END);
+            nameCol.addView(tvName);
+
+            TextView tvId = new TextView(this);
+            tvId.setText("ID: " + student.getId());
+            tvId.setTextSize(13f);
+            tvId.setTypeface(null, Typeface.BOLD);
+            tvId.setTextColor(ContextCompat.getColor(this, R.color.primary));
+            tvId.setPadding(0, dpToPx(2), 0, 0);
+            nameCol.addView(tvId);
+
+            if (student.getEmail() != null && !student.getEmail().isEmpty()) {
+                TextView tvEmail = new TextView(this);
+                tvEmail.setText(student.getEmail());
+                tvEmail.setTextSize(12f);
+                tvEmail.setTextColor(mutedTextColor);
+                tvEmail.setSingleLine(true);
+                tvEmail.setEllipsize(TextUtils.TruncateAt.END);
+                nameCol.addView(tvEmail);
+            }
+
+            headerRow.addView(nameCol);
+            layout.addView(headerRow);
+
+            // Badges Row (CR, Intake · Sec, Voted/Pending)
+            LinearLayout badgeRow = new LinearLayout(this);
+            badgeRow.setOrientation(LinearLayout.HORIZONTAL);
+            badgeRow.setGravity(Gravity.CENTER_VERTICAL);
+            badgeRow.setPadding(0, dpToPx(12), 0, dpToPx(12));
+
+            // CR Badge
+            if (student.isCr()) {
+                TextView crPill = new TextView(this);
+                crPill.setText("CR");
+                crPill.setTextSize(11f);
+                crPill.setTypeface(null, Typeface.BOLD);
+                crPill.setPadding(dpToPx(8), dpToPx(3), dpToPx(8), dpToPx(3));
+                GradientDrawable crBg = new GradientDrawable();
+                crBg.setCornerRadius(dpToPx(6));
+                crBg.setColor(Color.parseColor(isDark ? "#381500" : "#FEF3C7"));
+                crBg.setStroke(dpToPx(1), Color.parseColor(isDark ? "#92400E" : "#FCD34D"));
+                crPill.setTextColor(Color.parseColor(isDark ? "#F59E0B" : "#92400E"));
+                crPill.setBackground(crBg);
+                LinearLayout.LayoutParams crLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                crLp.setMarginEnd(dpToPx(8));
+                crPill.setLayoutParams(crLp);
+                badgeRow.addView(crPill);
+            }
+
+            // Intake & Sec Pill
+            TextView secPill = new TextView(this);
+            secPill.setText(student.getDept() + " · Sec " + student.getSection() + " · Int " + student.getIntake());
+            secPill.setTextSize(11f);
+            secPill.setTypeface(null, Typeface.BOLD);
+            secPill.setPadding(dpToPx(8), dpToPx(3), dpToPx(8), dpToPx(3));
+            GradientDrawable secBg = new GradientDrawable();
+            secBg.setCornerRadius(dpToPx(6));
+            secBg.setColor(Color.parseColor(isDark ? "#1E293B" : "#F1F5F9"));
+            secBg.setStroke(dpToPx(1), Color.parseColor(isDark ? "#334155" : "#E2E8F0"));
+            secPill.setTextColor(mutedTextColor);
+            secPill.setBackground(secBg);
+            LinearLayout.LayoutParams secLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            secLp.setMarginEnd(dpToPx(8));
+            secPill.setLayoutParams(secLp);
+            badgeRow.addView(secPill);
+
+            // Vote status Pill
+            TextView votePill = new TextView(this);
+            votePill.setText(student.isHasVoted() ? "✓ Voted" : "Pending");
+            votePill.setTextSize(11f);
+            votePill.setTypeface(null, Typeface.BOLD);
+            votePill.setPadding(dpToPx(8), dpToPx(3), dpToPx(8), dpToPx(3));
+            GradientDrawable vBg = new GradientDrawable();
+            vBg.setCornerRadius(dpToPx(6));
+            if (student.isHasVoted()) {
+                vBg.setColor(Color.parseColor(isDark ? "#0D3B24" : "#DCFCE7"));
+                vBg.setStroke(dpToPx(1), Color.parseColor(isDark ? "#15803D" : "#BBF7D0"));
+                votePill.setTextColor(Color.parseColor(isDark ? "#4ADE80" : "#166534"));
+            } else {
+                vBg.setColor(Color.parseColor(isDark ? "#1E293B" : "#F1F5F9"));
+                vBg.setStroke(dpToPx(1), Color.parseColor(isDark ? "#334155" : "#E2E8F0"));
+                votePill.setTextColor(Color.parseColor(isDark ? "#94A3B8" : "#64748B"));
+            }
+            votePill.setBackground(vBg);
+            badgeRow.addView(votePill);
+
+            layout.addView(badgeRow);
+
+            // Divider
+            View divider = new View(this);
+            divider.setBackgroundColor(borderColor);
+            layout.addView(divider, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(1)));
+
+            // Box 1: Promote / Demote CR
+            final boolean isCr = student.isCr();
+            int pTitleColor = isCr ? (isDark ? Color.parseColor("#F59E0B") : Color.parseColor("#B45309"))
+                                   : (isDark ? Color.parseColor("#4ADE80") : Color.parseColor("#15803D"));
+            int pSubColor   = isCr ? (isDark ? Color.parseColor("#FCD34D") : Color.parseColor("#92400E"))
+                                   : (isDark ? Color.parseColor("#86EFAC") : Color.parseColor("#166534"));
+            int pBgColor    = isCr ? (isDark ? Color.parseColor("#26381500") : Color.parseColor("#FFFBEB"))
+                                   : (isDark ? Color.parseColor("#26052E16") : Color.parseColor("#F0FDF4"));
+            int pBorderColor= isCr ? (isDark ? Color.parseColor("#92400E") : Color.parseColor("#FDE68A"))
+                                   : (isDark ? Color.parseColor("#15803D") : Color.parseColor("#BBF7D0"));
+            int pIconBgColor= isCr ? (isDark ? Color.parseColor("#381500") : Color.parseColor("#FEF3C7"))
+                                   : (isDark ? Color.parseColor("#14532D") : Color.parseColor("#DCFCE7"));
+            int pIconTint   = isCr ? (isDark ? Color.parseColor("#F59E0B") : Color.parseColor("#D97706"))
+                                   : (isDark ? Color.parseColor("#4ADE80") : Color.parseColor("#16A34A"));
+
+            View boxPromote = createOptionBox(
+                    this,
+                    isCr ? "Demote from CR" : "Appoint as Class Representative",
+                    isCr ? "Revert role to general student" : "Grant official CR permissions for Section " + cleanSec,
+                    R.drawable.ic_users,
+                    pTitleColor, pSubColor, pBgColor, pBorderColor, pIconBgColor, pIconTint,
+                    v -> {
+                        dialog.dismiss();
+                        toggleStudentCrStatus(student);
+                    }
+            );
+            layout.addView(boxPromote);
+
+            // Box 2: Reset Vote Status (if student has voted)
+            if (student.isHasVoted()) {
+                int rTitleColor = isDark ? Color.parseColor("#60A5FA") : Color.parseColor("#1D4ED8");
+                int rSubColor   = isDark ? Color.parseColor("#93C5FD") : Color.parseColor("#1E40AF");
+                int rBgColor    = isDark ? Color.parseColor("#261E293B") : Color.parseColor("#EFF6FF");
+                int rBorderColor= isDark ? Color.parseColor("#334155") : Color.parseColor("#BFD7FF");
+                int rIconBgColor= isDark ? Color.parseColor("#1E293B") : Color.parseColor("#DBEAFE");
+                int rIconTint   = isDark ? Color.parseColor("#60A5FA") : Color.parseColor("#2563EB");
+
+                View boxResetVote = createOptionBox(
+                        this,
+                        "Reset Student Vote",
+                        "Allow " + student.getName() + " to cast their vote again",
+                        R.drawable.ic_sheet_reset,
+                        rTitleColor, rSubColor, rBgColor, rBorderColor, rIconBgColor, rIconTint,
+                        v -> {
+                            dialog.dismiss();
+                            LogoutBottomSheet.newInstance(
+                                    "Reset Student Vote",
+                                    "Are you sure you want to reset the vote status for " + student.getName() + " (ID: " + student.getId() + ")? This allows them to vote again in Section " + cleanSec + ".",
+                                    "Reset Vote",
+                                    () -> resetSingleStudentVote(student)
+                            ).show(getSupportFragmentManager(), "ResetSingleStudentVote");
+                        }
+                );
+                layout.addView(boxResetVote);
+            }
+
+            // Box 3: Delete Student (Danger Red)
+            int dTitleColor = isDark ? Color.parseColor("#F87171") : Color.parseColor("#B91C1C");
+            int dSubColor   = isDark ? Color.parseColor("#FCA5A5") : Color.parseColor("#991B1B");
+            int dBgColor    = isDark ? Color.parseColor("#26450A0A") : Color.parseColor("#FEF2F2");
+            int dBorderColor= isDark ? Color.parseColor("#991B1B") : Color.parseColor("#FECACA");
+            int dIconBgColor= isDark ? Color.parseColor("#450A0A") : Color.parseColor("#FEE2E2");
+            int dIconTint   = isDark ? Color.parseColor("#F87171") : Color.parseColor("#DC2626");
+
+            View boxDelete = createOptionBox(
+                    this,
+                    "Delete Student",
+                    "Remove " + student.getName() + " permanently from Section " + cleanSec,
+                    R.drawable.ic_delete,
+                    dTitleColor, dSubColor, dBgColor, dBorderColor, dIconBgColor, dIconTint,
+                    v -> {
+                        dialog.dismiss();
+                        LogoutBottomSheet.newInstance(
+                                "Delete Student",
+                                "Are you sure you want to remove " + student.getName() + " (ID: " + student.getId() + ") from Section " + cleanSec + "?\n\nThis will remove their enrollment and section access.",
+                                "Delete",
+                                () -> deleteStudent(student, false)
+                        ).show(getSupportFragmentManager(), "DeleteStudentBottomSheet");
+                    }
+            );
+            layout.addView(boxDelete);
+
+            // Close / Cancel Button
+            MaterialButton btnClose = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
+            btnClose.setText("Cancel");
+            btnClose.setCornerRadius(dpToPx(12));
+            btnClose.setStrokeWidth(dpToPx(1));
+            btnClose.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.card_stroke)));
+            btnClose.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.input_bg)));
+            btnClose.setTextColor(titleTextColor);
+            btnClose.setTextSize(14f);
+            btnClose.setTypeface(null, Typeface.BOLD);
+            LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, (int) (44 * getResources().getDisplayMetrics().density));
+            closeLp.setMargins(0, dpToPx(16), 0, 0);
+            btnClose.setLayoutParams(closeLp);
+            btnClose.setOnClickListener(vClose -> dialog.dismiss());
+            layout.addView(btnClose);
+
+            dialog.setContentView(layout);
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                dialog.getWindow().setLayout(
+                        (int) (getResources().getDisplayMetrics().widthPixels * 0.92),
+                        WindowManager.LayoutParams.WRAP_CONTENT
+                );
+                dialog.getWindow().setDimAmount(0.45f);
+            }
+            dialog.show();
+        } catch (Exception e) {
+            Log.e("TeacherDashboard", "Error showing student action dialog", e);
+        }
+    }
+
+    private void toggleStudentCrStatus(StudentItem student) {
+        if (student == null) return;
+        final boolean newIsCr = !student.isCr();
+        final String newRole = newIsCr ? "CR" : "Student";
+        final String studentId = student.getId();
+        final String sName = student.getName();
+        final String targetSec = !student.getSection().isEmpty() && !student.getSection().equals("--")
+                ? student.getSection() : getSanitizedSection(getTeacherAssignedSection());
+        final String targetDept = !student.getDept().isEmpty() && !student.getDept().equals("--")
+                ? getSanitizedDepartment(student.getDept()) : getSanitizedDepartment(getTeacherDepartment());
+
+        CustomToast.show(this, (newIsCr ? "Promoting " : "Demoting ") + sName + "...");
+
+        dbRef.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Map<String, Object> updates = new HashMap<>();
+                String foundUid = student.getRtdbKey();
+
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    String id = ds.child("id").getValue(String.class);
+                    String email = ds.child("email").getValue(String.class);
+                    String key = ds.getKey();
+
+                    if ((id != null && id.equalsIgnoreCase(studentId)) ||
+                            (key != null && key.equalsIgnoreCase(studentId)) ||
+                            (foundUid != null && !foundUid.isEmpty() && key != null && key.equalsIgnoreCase(foundUid)) ||
+                            (email != null && !email.isEmpty() && email.equalsIgnoreCase(student.getEmail()))) {
+                        foundUid = key;
+                        updates.put("users/" + key + "/isCr", newIsCr);
+                        updates.put("users/" + key + "/role", newRole);
+                        updates.put("sections/" + targetDept + "/" + targetSec + "/students/" + key + "/isCr", newIsCr);
+                        updates.put("sections/" + targetDept + "/" + targetSec + "/students/" + key + "/role", newRole);
+                    }
+                }
+
+                if (foundUid != null && !foundUid.isEmpty()) {
+                    updates.put("users/" + foundUid + "/isCr", newIsCr);
+                    updates.put("users/" + foundUid + "/role", newRole);
+                    updates.put("sections/" + targetDept + "/" + targetSec + "/students/" + foundUid + "/isCr", newIsCr);
+                    updates.put("sections/" + targetDept + "/" + targetSec + "/students/" + foundUid + "/role", newRole);
+                }
+                if (!studentId.isEmpty()) {
+                    updates.put("users/" + studentId + "/isCr", newIsCr);
+                    updates.put("users/" + studentId + "/role", newRole);
+                    updates.put("sections/" + targetDept + "/" + targetSec + "/students/" + studentId + "/isCr", newIsCr);
+                    updates.put("sections/" + targetDept + "/" + targetSec + "/students/" + studentId + "/role", newRole);
+                }
+
+                if (!updates.isEmpty()) {
+                    dbRef.updateChildren(updates).addOnSuccessListener(unused -> {
+                        // Firestore update
+                        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+                        String fsDocId = student.getFirestoreId();
+                        if (fsDocId != null && !fsDocId.isEmpty()) {
+                            Map<String, Object> fsUpdates = new HashMap<>();
+                            fsUpdates.put("isCr", newIsCr);
+                            fsUpdates.put("role", newRole);
+                            firestore.collection("users").document(fsDocId).update(fsUpdates);
+                        } else if (!studentId.isEmpty()) {
+                            firestore.collection("users").whereEqualTo("id", studentId).get()
+                                    .addOnSuccessListener(querySnap -> {
+                                        if (querySnap != null) {
+                                            for (DocumentSnapshot doc : querySnap.getDocuments()) {
+                                                doc.getReference().update("isCr", newIsCr, "role", newRole);
+                                            }
+                                        }
+                                    });
+                        }
+
+                        student.setCr(newIsCr);
+                        student.setRole(newRole);
+                        if (studentDirectoryAdapter != null) {
+                            studentDirectoryAdapter.updateStudent(student);
+                        }
+
+                        String msg = (newIsCr ? "Promoted " : "Demoted ") + sName + " to " + newRole + " successfully!";
+                        CustomToast.show(TeacherDashboardActivity.this, msg);
+                        logAdminAction(msg + " in Section " + targetSec);
+                    }).addOnFailureListener(e -> {
+                        CustomToast.show(TeacherDashboardActivity.this, "Error updating role: " + e.getMessage());
+                    });
+                } else {
+                    CustomToast.show(TeacherDashboardActivity.this, "Student record not found in database");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                CustomToast.show(TeacherDashboardActivity.this, "Error: " + error.getMessage());
+            }
+        });
+    }
+
+    private void resetSingleStudentVote(StudentItem student) {
+        if (student == null) return;
+        final String studentId = student.getId();
+        final String sName = student.getName();
+        final String targetSec = !student.getSection().isEmpty() && !student.getSection().equals("--")
+                ? student.getSection() : getSanitizedSection(getTeacherAssignedSection());
+        final String targetDept = !student.getDept().isEmpty() && !student.getDept().equals("--")
+                ? getSanitizedDepartment(student.getDept()) : getSanitizedDepartment(getTeacherDepartment());
+
+        CustomToast.show(this, "Resetting vote for " + sName + "...");
+
+        Map<String, Object> updates = new HashMap<>();
+        if (!studentId.isEmpty()) {
+            updates.put("voting_controls/" + targetDept + "/" + targetSec + "/voters/" + studentId, null);
+            String sanitizedId = studentId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+            updates.put("voting_controls/" + targetDept + "/" + targetSec + "/voters/" + sanitizedId, null);
+        }
+        String rtdbKey = student.getRtdbKey();
+        if (rtdbKey != null && !rtdbKey.isEmpty()) {
+            updates.put("voting_controls/" + targetDept + "/" + targetSec + "/voters/" + rtdbKey, null);
+        }
+        if (student.getEmail() != null && !student.getEmail().isEmpty()) {
+            String sanitizedEmail = student.getEmail().replace(".", "_").replace("@", "_");
+            updates.put("voting_controls/" + targetDept + "/" + targetSec + "/voters/" + sanitizedEmail, null);
+        }
+
+        dbRef.updateChildren(updates).addOnSuccessListener(unused -> {
+            student.setHasVoted(false);
+            if (studentDirectoryAdapter != null) {
+                studentDirectoryAdapter.updateStudent(student);
+                updateStudentDirectoryStats(
+                        studentDirectoryAdapter.getTotalCount(),
+                        studentDirectoryAdapter.getVotedCount(),
+                        studentDirectoryAdapter.getPendingCount()
+                );
+            }
+            String msg = "Vote reset for " + sName + ". They can now vote again.";
+            CustomToast.show(TeacherDashboardActivity.this, msg);
+            logAdminAction("Reset vote for student: " + sName + " (ID: " + studentId + ") in Section " + targetSec);
+        }).addOnFailureListener(e -> {
+            CustomToast.show(TeacherDashboardActivity.this, "Failed to reset vote: " + e.getMessage());
+        });
+    }
+
+    private void deleteStudent(StudentItem student, boolean deleteAccountCompletely) {
+        if (student == null) return;
+        final String studentId = student.getId();
+        final String sName = student.getName();
+        final String targetSec = !student.getSection().isEmpty() && !student.getSection().equals("--")
+                ? student.getSection() : getSanitizedSection(getTeacherAssignedSection());
+        final String targetDept = !student.getDept().isEmpty() && !student.getDept().equals("--")
+                ? getSanitizedDepartment(student.getDept()) : getSanitizedDepartment(getTeacherDepartment());
+
+        CustomToast.show(this, "Removing " + sName + "...");
+
+        dbRef.child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Map<String, Object> rtdbUpdates = new HashMap<>();
+                String foundUid = student.getRtdbKey();
+
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    String id = ds.child("id").getValue(String.class);
+                    String email = ds.child("email").getValue(String.class);
+                    String key = ds.getKey();
+
+                    if ((id != null && id.equalsIgnoreCase(studentId)) ||
+                            (key != null && key.equalsIgnoreCase(studentId)) ||
+                            (foundUid != null && !foundUid.isEmpty() && key != null && key.equalsIgnoreCase(foundUid)) ||
+                            (email != null && !email.isEmpty() && email.equalsIgnoreCase(student.getEmail()))) {
+                        foundUid = key;
+                        if (deleteAccountCompletely) {
+                            rtdbUpdates.put("users/" + key, null);
+                        } else {
+                            rtdbUpdates.put("users/" + key + "/section", "");
+                            rtdbUpdates.put("users/" + key + "/assignedSection", "");
+                        }
+                        rtdbUpdates.put("sections/" + targetDept + "/" + targetSec + "/students/" + key, null);
+                    }
+                }
+
+                if (foundUid != null && !foundUid.isEmpty()) {
+                    rtdbUpdates.put("sections/" + targetDept + "/" + targetSec + "/students/" + foundUid, null);
+                    if (deleteAccountCompletely) {
+                        rtdbUpdates.put("users/" + foundUid, null);
+                    } else {
+                        rtdbUpdates.put("users/" + foundUid + "/section", "");
+                        rtdbUpdates.put("users/" + foundUid + "/assignedSection", "");
+                    }
+                }
+
+                if (!studentId.isEmpty()) {
+                    rtdbUpdates.put("sections/" + targetDept + "/" + targetSec + "/students/" + studentId, null);
+                    if (deleteAccountCompletely) {
+                        rtdbUpdates.put("users/" + studentId, null);
+                    } else {
+                        rtdbUpdates.put("users/" + studentId + "/section", "");
+                        rtdbUpdates.put("users/" + studentId + "/assignedSection", "");
+                    }
+
+                    String sanitizedId = studentId.replace(".", "_").replace("@", "_").replace("#", "_").replace("$", "_").replace("[", "_").replace("]", "_");
+                    rtdbUpdates.put("voting_controls/" + targetDept + "/" + targetSec + "/voters/" + studentId, null);
+                    rtdbUpdates.put("voting_controls/" + targetDept + "/" + targetSec + "/voters/" + sanitizedId, null);
+                }
+
+                if (student.getEmail() != null && !student.getEmail().isEmpty()) {
+                    String sanitizedEmail = student.getEmail().replace(".", "_").replace("@", "_");
+                    rtdbUpdates.put("voting_controls/" + targetDept + "/" + targetSec + "/voters/" + sanitizedEmail, null);
+                }
+
+                dbRef.updateChildren(rtdbUpdates).addOnCompleteListener(task -> {
+                    // Update Firestore
+                    FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+                    String fsDocId = student.getFirestoreId();
+                    if (fsDocId != null && !fsDocId.isEmpty()) {
+                        if (deleteAccountCompletely) {
+                            firestore.collection("users").document(fsDocId).delete();
+                        } else {
+                            Map<String, Object> fsUpdates = new HashMap<>();
+                            fsUpdates.put("section", "");
+                            fsUpdates.put("assignedSection", "");
+                            firestore.collection("users").document(fsDocId).update(fsUpdates);
+                        }
+                    } else if (!studentId.isEmpty()) {
+                        firestore.collection("users").whereEqualTo("id", studentId).get()
+                                .addOnSuccessListener(querySnap -> {
+                                    if (querySnap != null) {
+                                        for (DocumentSnapshot doc : querySnap.getDocuments()) {
+                                            if (deleteAccountCompletely) {
+                                                doc.getReference().delete();
+                                            } else {
+                                                doc.getReference().update("section", "", "assignedSection", "");
+                                            }
+                                        }
+                                    }
+                                });
+                    }
+
+                    // Remove from adapter and local list
+                    currentStudentList.removeIf(s -> s.getId().equalsIgnoreCase(studentId));
+                    if (studentDirectoryAdapter != null) {
+                        studentDirectoryAdapter.removeStudent(student);
+                        updateStudentDirectoryStats(
+                                studentDirectoryAdapter.getTotalCount(),
+                                studentDirectoryAdapter.getVotedCount(),
+                                studentDirectoryAdapter.getPendingCount()
+                        );
+                    }
+
+                    String actionMsg = deleteAccountCompletely ? "Student account deleted permanently" : "Student " + sName + " removed from Section " + targetSec;
+                    CustomToast.show(TeacherDashboardActivity.this, actionMsg);
+                    logAdminAction((deleteAccountCompletely ? "Permanently deleted student: " : "Removed student: ") + sName + " (ID: " + studentId + ") from Section " + targetSec);
+                });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                CustomToast.show(TeacherDashboardActivity.this, "Database error: " + error.getMessage());
+            }
+        });
     }
 
     private void showEditCandidateNameDialog(Candidate candidate) {

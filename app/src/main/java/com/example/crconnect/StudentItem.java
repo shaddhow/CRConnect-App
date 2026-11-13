@@ -12,6 +12,10 @@ public class StudentItem {
     private String profileImageUrl;
     private boolean hasVoted;
     private boolean isCr;
+    private String rtdbKey;
+    private String firestoreId;
+    private String phone;
+    private String role;
 
     public StudentItem() {
     }
@@ -98,6 +102,38 @@ public class StudentItem {
 
     public void setCr(boolean cr) {
         isCr = cr;
+    }
+
+    public String getRtdbKey() {
+        return rtdbKey != null ? rtdbKey : "";
+    }
+
+    public void setRtdbKey(String rtdbKey) {
+        this.rtdbKey = rtdbKey;
+    }
+
+    public String getFirestoreId() {
+        return firestoreId != null ? firestoreId : "";
+    }
+
+    public void setFirestoreId(String firestoreId) {
+        this.firestoreId = firestoreId;
+    }
+
+    public String getPhone() {
+        return phone != null ? phone : "";
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getRole() {
+        return role != null ? role : "";
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public String getInitials() {
