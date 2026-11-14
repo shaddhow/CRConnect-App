@@ -47,11 +47,14 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -70,7 +73,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -89,6 +94,8 @@ fun ProfileTab(
     onThemeModeSelected: (String) -> Unit = {},
     onEditProfilePicture: () -> Unit = {},
     onUpdateCgpa: (String) -> Unit = {},
+    onUpdateStudentId: (String) -> Unit = {},
+    onUpdateSection: (String) -> Unit = {},
     onUpdateAdvisorInfo: (String, String) -> Unit = { _, _ -> },
     onUpdateCurrentTerm: (String) -> Unit = {},
     onSecuritySettings: () -> Unit = {},
@@ -96,6 +103,11 @@ fun ProfileTab(
     onSignOut: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
+    var showStudentIdDialog by remember { mutableStateOf(false) }
+
+    var showSectionDialog by remember { mutableStateOf(false) }
+    var sectionInput by remember(profile.section) { mutableStateOf(profile.section) }
+
     var showCgpaDialog by remember { mutableStateOf(false) }
     var cgpaInput by remember(profile.cgpa) { mutableStateOf(profile.cgpa) }
 
@@ -317,6 +329,476 @@ fun ProfileTab(
         )
     }
 
+    if (showStudentIdDialog) {
+        val clipboardManager = LocalClipboardManager.current
+        val rawId = profile.studentId
+        val isValidId = rawId.isNotBlank() && rawId != "--" && !rawId.contains("@") && !rawId.equals(profile.email, ignoreCase = true)
+
+        AlertDialog(
+            onDismissRequest = {
+                showStudentIdDialog = false
+            },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF0066FF).copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Badge,
+                            contentDescription = "ID Card",
+                            tint = Color(0xFF0066FF),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = "Student ID & Email",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Academic Credentials & Details",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // --- 1. Student ID Capsule Box ---
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isDark) Color(0xFF161F30) else Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = "STUDENT ID",
+                                        fontFamily = PlusJakartaSansFontFamily,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF0066FF),
+                                        letterSpacing = 0.5.sp
+                                    )
+                                    if (isValidId) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = Color(0xFF10B981).copy(alpha = 0.15f)
+                                        ) {
+                                            Text(
+                                                text = "Verified",
+                                                fontFamily = PlusJakartaSansFontFamily,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF10B981),
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    } else {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = Color(0xFFEF4444).copy(alpha = 0.15f)
+                                        ) {
+                                            Text(
+                                                text = "Not Set",
+                                                fontFamily = PlusJakartaSansFontFamily,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFFEF4444),
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                Text(
+                                    text = if (isValidId) rawId else "Not Set",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isValidId) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            if (isValidId) {
+                                IconButton(
+                                    onClick = {
+                                        clipboardManager.setText(AnnotatedString(rawId))
+                                        ToastHelper.show(context, "Student ID copied to clipboard")
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ContentCopy,
+                                        contentDescription = "Copy ID",
+                                        tint = Color(0xFF0066FF),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // --- 2. Email Address Capsule Box ---
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isDark) Color(0xFF161F30) else Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = "REGISTERED EMAIL",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0066FF),
+                                    letterSpacing = 0.5.sp
+                                )
+                                Text(
+                                    text = profile.email.ifBlank { "student@bubt.edu.bd" },
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    clipboardManager.setText(AnnotatedString(profile.email))
+                                    ToastHelper.show(context, "Email copied to clipboard")
+                                },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = "Copy Email",
+                                    tint = Color(0xFF0066FF),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // --- 3. Academic Details Chips ---
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = if (isDark) Color(0xFF1E293B) else Color(0xFFF8FAFC),
+                            border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "Intake ${profile.intake.ifBlank { "--" }}",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Surface(
+                            shape = CircleShape,
+                            color = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
+                            border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "Section ${profile.section.ifBlank { "--" }}",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Surface(
+                            shape = CircleShape,
+                            color = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
+                            border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = if (profile.department.contains("CSE", true)) "CSE" else profile.department,
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showStudentIdDialog = false },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0066FF))
+                ) {
+                    Text("Done", fontFamily = PlusJakartaSansFontFamily, fontWeight = FontWeight.Bold)
+                }
+            },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = if (isDark) Color(0xFF121622) else Color(0xFFFFFFFF)
+        )
+    }
+
+    if (showSectionDialog) {
+        AlertDialog(
+            onDismissRequest = { showSectionDialog = false },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF0066FF).copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Section",
+                            tint = Color(0xFF0066FF),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = "Edit Class Section",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Intake ${profile.intake.ifBlank { "--" }} • Current Section ${profile.section.ifBlank { "--" }}",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Full section & academic info card
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isDark) Color(0xFF161F30) else Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "CURRENT ACADEMIC ASSIGNMENT",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0066FF),
+                                letterSpacing = 0.5.sp
+                            )
+                            Text(
+                                text = if (profile.department.contains("CSE", true)) "Department of CSE, BUBT" else profile.department,
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isDark) Color(0xFF1E293B) else Color.White,
+                                    border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(modifier = Modifier.padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = "Intake: ${profile.intake.ifBlank { "--" }}",
+                                            fontFamily = PlusJakartaSansFontFamily,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isDark) Color(0xFF1E293B) else Color.White,
+                                    border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(modifier = Modifier.padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = "Section: ${profile.section.ifBlank { "--" }}",
+                                            fontFamily = PlusJakartaSansFontFamily,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF0066FF)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Section input field
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = "New Section Number:",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        OutlinedTextField(
+                            value = sectionInput,
+                            onValueChange = { sectionInput = it.trim() },
+                            singleLine = true,
+                            placeholder = { Text("e.g. 6, 5, 5A, 1", fontFamily = PlusJakartaSansFontFamily, fontSize = 14.sp) },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = if (isDark) Color(0xFF1E293B) else Color(0xFFF8FAFC),
+                                unfocusedContainerColor = if (isDark) Color(0xFF1E293B) else Color(0xFFF8FAFC),
+                                focusedBorderColor = Color(0xFF0066FF),
+                                unfocusedBorderColor = if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    // Quick Section Selector chips (1, 2, 3, 4, 5, 6, 7, 8)
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = "Quick Select:",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            listOf("1", "2", "3", "4", "5", "6", "7", "8").forEach { secChoice ->
+                                val isSelected = sectionInput.trim() == secChoice
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isSelected) Color(0xFF0066FF) else (if (isDark) Color(0xFF1E293B) else Color(0xFFF8FAFC)),
+                                    border = BorderStroke(1.dp, if (isSelected) Color(0xFF0066FF) else (if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0))),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { sectionInput = secChoice }
+                                ) {
+                                    Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = secChoice,
+                                            fontFamily = PlusJakartaSansFontFamily,
+                                            fontSize = 13.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val cleanSec = sectionInput.trim()
+                        if (cleanSec.isNotBlank()) {
+                            onUpdateSection(cleanSec)
+                            showSectionDialog = false
+                        } else {
+                            ToastHelper.show(context, "Please enter a valid section")
+                        }
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0066FF))
+                ) {
+                    Text("Save Section", fontFamily = PlusJakartaSansFontFamily, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = {
+                        sectionInput = profile.section
+                        showSectionDialog = false
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0))
+                ) {
+                    Text("Cancel", fontFamily = PlusJakartaSansFontFamily, fontWeight = FontWeight.Bold)
+                }
+            },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = if (isDark) Color(0xFF121622) else Color(0xFFFFFFFF)
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -476,10 +958,19 @@ fun ProfileTab(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    val displayStudentId = if (profile.studentId.isBlank() || profile.studentId == "--" || profile.studentId.contains("@") || profile.studentId.equals(profile.email, ignoreCase = true)) {
+                        "Tap to set"
+                    } else {
+                        profile.studentId
+                    }
+
                     InfoTile(
                         label = "Student ID",
-                        value = profile.studentId,
-                        modifier = Modifier.weight(1f)
+                        value = displayStudentId,
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            showStudentIdDialog = true
+                        }
                     )
                     InfoTile(
                         label = "Intake",
@@ -489,7 +980,12 @@ fun ProfileTab(
                     InfoTile(
                         label = "Section",
                         value = profile.section,
-                        modifier = Modifier.weight(1f)
+                        showEditIcon = true,
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            sectionInput = profile.section
+                            showSectionDialog = true
+                        }
                     )
                 }
             }
@@ -1038,6 +1534,7 @@ private fun InfoTile(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
+    showEditIcon: Boolean = false,
     onClick: (() -> Unit)? = null
 ) {
     Box(
@@ -1060,15 +1557,29 @@ private fun InfoTile(
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Text(
-                text = value.ifBlank { "--" },
-                fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = value.ifBlank { "--" },
+                    fontFamily = PlusJakartaSansFontFamily,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (value == "Tap to set" || value == "Not Set") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (showEditIcon) {
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
+            }
         }
     }
 }

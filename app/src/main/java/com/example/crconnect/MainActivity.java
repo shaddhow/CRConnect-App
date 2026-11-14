@@ -541,10 +541,12 @@ public class MainActivity extends AppCompatActivity {
                                                                     String dept = doc.getString("dept");
 
                                                                     String resolvedRole = role != null ? role : ((rbTeacher != null && rbTeacher.isChecked()) ? "Teacher" : "Student");
+                                                                    String rawDbId = id != null ? id : (doc.getString("studentId") != null ? doc.getString("studentId") : "");
+                                                                    String resolvedId = (rawDbId != null && !rawDbId.trim().isEmpty() && !rawDbId.contains("@")) ? rawDbId.trim() : (!originalInput.contains("@") ? originalInput : "--");
                                                                     sessionManager.createLoginSession(
                                                                         name != null ? name : email,
                                                                         dbEmail != null ? dbEmail : email,
-                                                                        id != null ? id : originalInput,
+                                                                        resolvedId,
                                                                         resolvedRole,
                                                                         section != null ? section : "--",
                                                                         assignedSection != null ? assignedSection : (section != null ? section : "--"),
@@ -558,10 +560,11 @@ public class MainActivity extends AppCompatActivity {
                                                                         createDefaultTeacherAndNavigate(uid, userEmail != null ? userEmail : email, originalInput);
                                                                     } else {
                                                                         String studentName = (userEmail != null && userEmail.contains("@")) ? userEmail.split("@")[0] : "Student";
+                                                                        String fallbackId = !originalInput.contains("@") ? originalInput : "--";
                                                                         sessionManager.createLoginSession(
                                                                             studentName,
                                                                             userEmail != null ? userEmail : email,
-                                                                            originalInput,
+                                                                            fallbackId,
                                                                             "Student",
                                                                             "--",
                                                                             "--",
@@ -578,10 +581,11 @@ public class MainActivity extends AppCompatActivity {
                                                                     createDefaultTeacherAndNavigate(uid, userEmail != null ? userEmail : email, originalInput);
                                                                 } else {
                                                                     String studentName = (userEmail != null && userEmail.contains("@")) ? userEmail.split("@")[0] : "Student";
+                                                                    String fallbackId = !originalInput.contains("@") ? originalInput : "--";
                                                                     sessionManager.createLoginSession(
                                                                         studentName,
                                                                         userEmail != null ? userEmail : email,
-                                                                        originalInput,
+                                                                        fallbackId,
                                                                         "Student",
                                                                         "--",
                                                                         "--",
@@ -656,7 +660,7 @@ public class MainActivity extends AppCompatActivity {
         if (role == null || role.trim().isEmpty()) {
             role = (rbTeacher != null && rbTeacher.isChecked()) ? "Teacher" : "Student";
         }
-        if (id == null) id = "";
+        if (id == null || id.contains("@")) id = "--";
         if (section == null) section = "--";
         if (assignedSection == null) assignedSection = section;
         if (assignedSections == null) assignedSections = assignedSection;

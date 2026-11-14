@@ -770,10 +770,16 @@ class LoginActivity : AppCompatActivity() {
                     val assignedIntakes = doc.getString("assignedIntakes") ?: intake
 
                     val resolvedRole = role ?: if (selectedRole == "Teacher") "Teacher" else "Student"
+                    val validDbId = if (!id.isNullOrBlank() && !id.contains("@")) {
+                        id
+                    } else {
+                        val altId = doc.getString("studentId") ?: doc.getString("student_id")
+                        if (!altId.isNullOrBlank() && !altId.contains("@")) altId else (if (!originalInput.contains("@")) originalInput else "--")
+                    }
                     sessionManager.createLoginSession(
                         name ?: email,
                         dbEmail ?: email,
-                        id ?: originalInput,
+                        validDbId,
                         resolvedRole,
                         section ?: "--",
                         assignedSection ?: (section ?: "--"),
@@ -799,10 +805,11 @@ class LoginActivity : AppCompatActivity() {
                         createDefaultTeacherAndNavigate(uid, userEmail ?: email, originalInput)
                     } else {
                         val studentName = if (!userEmail.isNullOrEmpty() && userEmail.contains("@")) userEmail.split("@")[0] else "Student"
+                        val fallbackId = if (!originalInput.contains("@")) originalInput else "--"
                         sessionManager.createLoginSession(
                             studentName,
                             userEmail ?: email,
-                            originalInput,
+                            fallbackId,
                             "Student",
                             "--",
                             "--",
@@ -819,10 +826,11 @@ class LoginActivity : AppCompatActivity() {
                     createDefaultTeacherAndNavigate(uid, userEmail ?: email, originalInput)
                 } else {
                     val studentName = if (!userEmail.isNullOrEmpty() && userEmail.contains("@")) userEmail.split("@")[0] else "Student"
+                    val fallbackId = if (!originalInput.contains("@")) originalInput else "--"
                     sessionManager.createLoginSession(
                         studentName,
                         userEmail ?: email,
-                        originalInput,
+                        fallbackId,
                         "Student",
                         "--",
                         "--",
@@ -838,7 +846,10 @@ class LoginActivity : AppCompatActivity() {
         showSignInLoading(false)
         val name = snapshot.child("name").getValue(String::class.java) ?: "User"
         val email = snapshot.child("email").getValue(String::class.java) ?: ""
-        val id = snapshot.child("id").getValue(String::class.java) ?: ""
+        val rawId = snapshot.child("id").getValue(String::class.java)
+            ?: snapshot.child("studentId").getValue(String::class.java)
+            ?: snapshot.child("student_id").getValue(String::class.java) ?: ""
+        val id = if (!rawId.contains("@") && rawId.isNotBlank()) rawId else "--"
         val role = snapshot.child("role").getValue(String::class.java) ?: "Student"
         val section = snapshot.child("section").getValue(String::class.java) ?: "--"
         val assignedSection = snapshot.child("assignedSection").getValue(String::class.java) ?: section
@@ -1129,7 +1140,8 @@ class LoginActivity : AppCompatActivity() {
         showSignInLoading(false)
         val name = doc.getString("name") ?: fallbackName
         val email = doc.getString("email") ?: fallbackEmail
-        val id = doc.getString("id") ?: ""
+        val rawId = doc.getString("id") ?: doc.getString("studentId") ?: doc.getString("student_id") ?: ""
+        val id = if (!rawId.contains("@") && rawId.isNotBlank()) rawId else "--"
         val role = doc.getString("role") ?: "Student"
         val section = doc.getString("section") ?: "--"
         val assignedSection = doc.getString("assignedSection") ?: section

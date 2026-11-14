@@ -91,7 +91,13 @@ class StudentPortalViewModel : ViewModel() {
         rawIntake = session.userIntake.ifBlank { "55" }
         val secStr = if (session.userRole.contains("Teacher", ignoreCase = true)) session.assignedSection else session.userSection
         rawSec = if (secStr.isNotBlank() && secStr != "--") secStr else "6"
-        val rawId = session.userID.ifBlank { "student" }
+        val storedId = session.userID
+        val validStudentId = if (storedId.isNotBlank() && storedId != "--" && !storedId.contains("@") && !storedId.equals(session.userEmail, ignoreCase = true)) {
+            storedId
+        } else {
+            "--"
+        }
+        val rawId = if (validStudentId != "--") validStudentId else "student"
 
         sanitizedDept = sanitizeDepartment(rawDept)
         sanitizedSec = sanitizeSection(rawSec)
@@ -110,7 +116,7 @@ class StudentPortalViewModel : ViewModel() {
         val profileModel = UserProfileModel(
             name = studentName,
             email = session.userEmail.ifBlank { "student@bubt.edu.bd" },
-            studentId = session.userID.ifBlank { "--" },
+            studentId = validStudentId,
             intake = session.userIntake.ifBlank { "--" },
             section = rawSec,
             department = rawDept,
@@ -436,6 +442,70 @@ class StudentPortalViewModel : ViewModel() {
                     }
                     override fun onCancelled(error: DatabaseError) {}
                 })
+
+                // 6. Live Student Profile & ID Sync
+                val userEmail = _uiState.value.profile.email
+                val sanitizedEmailKey = userEmail.replace("@", "_").replace(".", "_")
+
+                val liveProfileListener = object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        if (!snapshot.exists()) return
+                        val rawId = snapshot.child("id").getValue(String::class.java)
+                            ?: snapshot.child("studentId").getValue(String::class.java)
+                            ?: snapshot.child("student_id").getValue(String::class.java)
+
+                        if (!rawId.isNullOrBlank() && !rawId.contains("@") && rawId != "--") {
+                            val context = FirebaseDatabase.getInstance().app.applicationContext
+                            SessionManager(context).setUserID(rawId)
+                            sanitizedStudentId = rawId.replace(Regex("[^a-zA-Z0-9_]"), "_")
+                            _uiState.update { currentState ->
+                                currentState.copy(
+                                    profile = currentState.profile.copy(studentId = rawId)
+                                )
+                            }
+                        }
+                    }
+                    override fun onCancelled(error: DatabaseError) {}
+                }
+
+                dbRef?.child("users")?.child(authUser.uid)?.addValueEventListener(liveProfileListener)
+                if (sanitizedEmailKey.isNotBlank()) {
+                    dbRef?.child("users")?.child(sanitizedEmailKey)?.addListenerForSingleValueEvent(liveProfileListener)
+                }
+
+                FirebaseFirestore.getInstance().collection("users").document(authUser.uid).get().addOnSuccessListener { doc ->
+                    if (doc != null && doc.exists()) {
+                        val rawId = doc.getString("id") ?: doc.getString("studentId") ?: doc.getString("student_id")
+                        if (!rawId.isNullOrBlank() && !rawId.contains("@") && rawId != "--") {
+                            val context = FirebaseDatabase.getInstance().app.applicationContext
+                            SessionManager(context).setUserID(rawId)
+                            sanitizedStudentId = rawId.replace(Regex("[^a-zA-Z0-9_]"), "_")
+                            _uiState.update { currentState ->
+                                currentState.copy(
+                                    profile = currentState.profile.copy(studentId = rawId)
+                                )
+                            }
+                        }
+                    } else if (userEmail.isNotBlank()) {
+                        FirebaseFirestore.getInstance().collection("users").whereEqualTo("email", userEmail.trim()).get()
+                            .addOnSuccessListener { querySnap ->
+                                if (querySnap != null && !querySnap.isEmpty) {
+                                    val d = querySnap.documents[0]
+                                    val rawId = d.getString("id") ?: d.getString("studentId") ?: d.getString("student_id")
+                                    if (!rawId.isNullOrBlank() && !rawId.contains("@") && rawId != "--") {
+                                        val context = FirebaseDatabase.getInstance().app.applicationContext
+                                        SessionManager(context).setUserID(rawId)
+                                        sanitizedStudentId = rawId.replace(Regex("[^a-zA-Z0-9_]"), "_")
+                                        _uiState.update { currentState ->
+                                            currentState.copy(
+                                                profile = currentState.profile.copy(studentId = rawId)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                    }
+                }
             }
 
         } catch (e: Exception) {
@@ -1243,6 +1313,56 @@ class StudentPortalViewModel : ViewModel() {
             )
         }
         showToast("Section updated successfully to $newSection")
+    }
+
+    fun updateStudentId(newId: String, context: Context) {
+        val cleanId = newId.trim()
+        if (cleanId.isBlank() || cleanId.contains("@")) {
+            showToast("Invalid Student ID format")
+            return
+        }
+
+        val session = SessionManager(context)
+        session.setUserID(cleanId)
+        sanitizedStudentId = cleanId.replace(Regex("[^a-zA-Z0-9_]"), "_")
+
+        _uiState.update { currentState ->
+            currentState.copy(
+                profile = currentState.profile.copy(studentId = cleanId)
+            )
+        }
+
+        val authUser = FirebaseAuth.getInstance().currentUser
+        val uid = authUser?.uid
+        val email = _uiState.value.profile.email
+        val sanitizedEmail = email.replace("@", "_").replace(".", "_")
+        val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+
+        if (uid != null) {
+            dbRef.child("users").child(uid).child("id").setValue(cleanId)
+            dbRef.child("users").child(uid).child("studentId").setValue(cleanId)
+        }
+        if (sanitizedEmail.isNotBlank()) {
+            dbRef.child("users").child(sanitizedEmail).child("id").setValue(cleanId)
+            dbRef.child("users").child(sanitizedEmail).child("studentId").setValue(cleanId)
+        }
+        dbRef.child("users").child(sanitizedStudentId).child("id").setValue(cleanId)
+
+        val firestore = FirebaseFirestore.getInstance()
+        val updateMap = mapOf<String, Any>(
+            "id" to cleanId,
+            "studentId" to cleanId
+        )
+        val mergeOpt = com.google.firebase.firestore.SetOptions.merge()
+        if (uid != null) {
+            firestore.collection("users").document(uid).set(updateMap, mergeOpt)
+        }
+        if (sanitizedEmail.isNotBlank()) {
+            firestore.collection("users").document(sanitizedEmail).set(updateMap, mergeOpt)
+        }
+        firestore.collection("users").document(sanitizedStudentId).set(updateMap, mergeOpt)
+
+        showToast("Student ID updated successfully")
     }
 
     fun clearSnackbar() {

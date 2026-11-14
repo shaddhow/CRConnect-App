@@ -100,6 +100,10 @@ public class SessionManager {
 
     public String getUserEmail() { return pref.getString(KEY_EMAIL, ""); }
     public String getUserID() { return pref.getString(KEY_ID, ""); }
+    public void setUserID(String id) {
+        editor.putString(KEY_ID, id);
+        editor.commit();
+    }
     public String getUserRole() { return pref.getString(KEY_ROLE, "Student"); }
     public String getUserSection() { return pref.getString(KEY_SECTION, "--"); }
     public String getAssignedSection() { return pref.getString(KEY_ASSIGNED_SECTION, "--"); }
