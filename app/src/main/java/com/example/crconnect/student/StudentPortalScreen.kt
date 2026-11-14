@@ -287,6 +287,8 @@ fun StudentPortalScreen(
                                         galleryLauncher.launch(intent)
                                     },
                                     onUpdateCgpa = { newCgpa -> viewModel.updateCgpa(newCgpa, context) },
+                                    onUpdateStudentId = { newId -> viewModel.updateStudentId(newId, context) },
+                                    onUpdateSection = { newSection -> viewModel.updateSection(newSection, context) },
                                     onUpdateAdvisorInfo = { name, email -> viewModel.updateAdvisorInfo(name, email, context) },
                                     onUpdateCurrentTerm = { term -> viewModel.updateCurrentTerm(term, context) },
                                     onSecuritySettings = { isSecurityDialogOpen = true },
