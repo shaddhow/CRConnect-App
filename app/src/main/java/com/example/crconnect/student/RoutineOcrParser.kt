@@ -325,11 +325,21 @@ object RoutineOcrParser {
                     }
                 }
 
-                for ((match, blockText) in blocks) {
-                    if (seenSlots.contains(bucketKey)) {
-                        error("Multiple entries share same slot ($row, $col)")
+                for ((idx, blockPair) in blocks.withIndex()) {
+                    val (match, blockText) = blockPair
+                    // If multiple courses were somehow binned into the same column cell (e.g. adjacent double lab cells),
+                    // the subsequent course belongs to the next consecutive available time slot
+                    var targetCol = if (idx == 0) col else minOf(5, col + idx)
+                    if (seenSlots.contains(Pair(row, targetCol))) {
+                        var nextCol = targetCol + 1
+                        while (nextCol < 6 && seenSlots.contains(Pair(row, nextCol))) {
+                            nextCol++
+                        }
+                        if (nextCol < 6) {
+                            targetCol = nextCol
+                        }
                     }
-                    seenSlots.add(bucketKey)
+                    seenSlots.add(Pair(row, targetCol))
 
                     val dept = match.groupValues[1].uppercase(Locale.ROOT)
                     val num = match.groupValues[2].uppercase(Locale.ROOT)
@@ -349,7 +359,7 @@ object RoutineOcrParser {
 
                     val needsReview = (faculty == null || room == null)
 
-                    val timePair = TIME_SLOT_PAIRS[col]
+                    val timePair = TIME_SLOT_PAIRS[targetCol]
 
                     resultList.add(
                         ClassEntry(

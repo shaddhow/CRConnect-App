@@ -1239,6 +1239,11 @@ public class RoutineActivity extends AppCompatActivity {
                     if (!slotToAnchorMap.containsKey(slotIdx)) {
                         for (String kw : timeKeywordsJava[slotIdx]) {
                             if (txt.contains(kw)) {
+                                // Prevent false matching on end-times (e.g. 02:45 matching inside '01:15 PM to 02:45 PM')
+                                if (slotIdx == 1 && txt.contains("08:15")) continue;
+                                if (slotIdx == 2 && txt.contains("09:45")) continue;
+                                if (slotIdx == 4 && txt.contains("01:15")) continue;
+                                if (slotIdx == 5 && txt.contains("02:45")) continue;
                                 slotToAnchorMap.put(slotIdx, new TimeAnchor(slotIdx, lineItem.centerX, lineItem.centerY, lineItem.box));
                                 break;
                             }
@@ -1358,7 +1363,16 @@ public class RoutineActivity extends AppCompatActivity {
                         if (rawRoom == null) rawRoom = "TBA";
 
                         String formattedRoom = formatRoomWithBuilding(rawRoom);
-                        String key = dayName + "_" + courseCode + "_" + timeSlot;
+                        int currentSlotIdx = bestTimeSlotIndex;
+                        String currentSlot = timeSlot;
+                        String key = dayName + "_" + courseCode + "_" + currentSlot;
+
+                        // If slot already taken by this course (e.g. consecutive double lab session), advance to next slot
+                        if (seenKeys.contains(key) && currentSlotIdx + 1 < BUBT_TIME_SLOTS.length) {
+                            currentSlotIdx++;
+                            currentSlot = BUBT_TIME_SLOTS[currentSlotIdx];
+                            key = dayName + "_" + courseCode + "_" + currentSlot;
+                        }
 
                         if (!seenKeys.contains(key)) {
                             seenKeys.add(key);
@@ -1367,12 +1381,12 @@ public class RoutineActivity extends AppCompatActivity {
                             item.day = dayName;
                             item.courseCode = courseCode;
                             item.subject = courseCode;
-                            item.timeSlot = timeSlot;
+                            item.timeSlot = currentSlot;
                             item.room = formattedRoom;
                             item.faculty = faculty;
                             item.teacher = faculty;
 
-                            String[] timeParts = timeSlot.split("-");
+                            String[] timeParts = currentSlot.split("-");
                             if (timeParts.length == 2) {
                                 item.startTime = timeParts[0].trim();
                                 item.endTime = timeParts[1].trim();
@@ -1910,12 +1924,12 @@ public class RoutineActivity extends AppCompatActivity {
                         itemMap.put("timestamp", System.currentTimeMillis());
                         rtdbMap.put(key, itemMap);
                     }
-                    FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com")
+                    DatabaseReference userRoutineRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com")
                             .getReference("crconnect_db")
                             .child("users")
                             .child(uid)
-                            .child("routine")
-                            .setValue(rtdbMap);
+                            .child("routine");
+                    userRoutineRef.removeValue().addOnCompleteListener(t -> userRoutineRef.setValue(rtdbMap));
                 }
             } catch (Exception e) {
                 Log.e("RoutineActivity", "Error saving to RTDB", e);

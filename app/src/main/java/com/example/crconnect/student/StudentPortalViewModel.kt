@@ -364,6 +364,11 @@ class StudentPortalViewModel : ViewModel() {
             fun applyLoadedEntries(entries: List<ClassEntry>) {
                 if (entries.isNotEmpty()) {
                     val repo = RoutineRepository(context)
+                    val localEntries = repo.getClassEntries()
+                    // Never overwrite if local routine has more classes (protecting against truncated or older cloud data)
+                    if (localEntries.size > entries.size) {
+                        return
+                    }
                     repo.replaceClassEntries(entries)
                     loadRoutineEntriesIntoState(entries, context)
                 }
@@ -1314,21 +1319,39 @@ class StudentPortalViewModel : ViewModel() {
                 rtdbEntriesMap[itemKey] = docData
             }
 
+            // 1. Primary Sync: Firebase Realtime Database (wipe clean previous routine before writing new data)
             if (session.userID.isNotBlank() && session.userID != "--") {
                 val rawId = session.userID.replace(Regex("[^a-zA-Z0-9_]"), "_")
-                rtdbRef.child("users").child(rawId).child("routine").setValue(rtdbEntriesMap)
+                val userRoutineRef = rtdbRef.child("users").child(rawId).child("routine")
+                userRoutineRef.removeValue().addOnCompleteListener {
+                    userRoutineRef.setValue(rtdbEntriesMap)
+                }
             }
             if (!authUid.isNullOrBlank()) {
                 val sanitizedAuthUid = authUid.replace(Regex("[^a-zA-Z0-9_]"), "_")
-                rtdbRef.child("users").child(sanitizedAuthUid).child("routine").setValue(rtdbEntriesMap)
+                val authRoutineRef = rtdbRef.child("users").child(sanitizedAuthUid).child("routine")
+                authRoutineRef.removeValue().addOnCompleteListener {
+                    authRoutineRef.setValue(rtdbEntriesMap)
+                }
             }
             val emailKey = session.userEmail.trim()
             if (emailKey.isNotBlank()) {
                 val sanitizedEmail = emailKey.replace(Regex("[^a-zA-Z0-9_]"), "_")
-                rtdbRef.child("users").child(sanitizedEmail).child("routine").setValue(rtdbEntriesMap)
+                val emailRoutineRef = rtdbRef.child("users").child(sanitizedEmail).child("routine")
+                emailRoutineRef.removeValue().addOnCompleteListener {
+                    emailRoutineRef.setValue(rtdbEntriesMap)
+                }
             }
 
-            rtdbRef.child("routines").child(deptKey).child(intakeKey).child(secKey).child("schedule").setValue(rtdbEntriesMap)
+            // Also cleanly wipe and update section schedules so stale classes are wiped out
+            val sectionRoutineRef = rtdbRef.child("routines").child(deptKey).child(intakeKey).child(secKey).child("schedule")
+            sectionRoutineRef.removeValue().addOnCompleteListener {
+                sectionRoutineRef.setValue(rtdbEntriesMap)
+            }
+            val legacySectionRef = rtdbRef.child("sections").child(deptKey).child(secKey).child("schedule")
+            legacySectionRef.removeValue().addOnCompleteListener {
+                legacySectionRef.setValue(rtdbEntriesMap)
+            }
 
             // 2. Secondary Sync: Cloud Firestore (with graceful fallback)
             try {

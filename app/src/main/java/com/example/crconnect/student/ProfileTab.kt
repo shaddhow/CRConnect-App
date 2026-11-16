@@ -131,7 +131,6 @@ fun ProfileTab(
     var showSettingsPage by remember { mutableStateOf(false) }
     var showAttendanceSubPage by remember { mutableStateOf(false) }
     var notificationsEnabled by remember { mutableStateOf(true) }
-    var showStudentIdDialog by remember { mutableStateOf(false) }
 
     var showSectionDialog by remember { mutableStateOf(false) }
     var sectionInput by remember(profile.section) { mutableStateOf(profile.section) }
@@ -147,6 +146,7 @@ fun ProfileTab(
     var termInput by remember(profile.currentTerm) { mutableStateOf(profile.currentTerm) }
 
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     val versionName = remember(context) {
         try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
@@ -354,269 +354,6 @@ fun ProfileTab(
                 }
             },
             shape = RoundedCornerShape(20.dp)
-        )
-    }
-
-    if (showStudentIdDialog) {
-        val clipboardManager = LocalClipboardManager.current
-        val rawId = profile.studentId
-        val isValidId = rawId.isNotBlank() && rawId != "--" && !rawId.contains("@") && !rawId.equals(profile.email, ignoreCase = true)
-
-        AlertDialog(
-            onDismissRequest = {
-                showStudentIdDialog = false
-            },
-            title = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFF0066FF).copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Badge,
-                            contentDescription = "ID Card",
-                            tint = Color(0xFF0066FF),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Column {
-                        Text(
-                            text = "Student ID & Email",
-                            fontFamily = PlusJakartaSansFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Academic Credentials & Details",
-                            fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    // --- 1. Student ID Capsule Box ---
-                    Surface(
-                        shape = CircleShape,
-                        color = if (isDark) Color(0xFF161F30) else Color(0xFFF8FAFC),
-                        border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(2.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(
-                                        text = "STUDENT ID",
-                                        fontFamily = PlusJakartaSansFontFamily,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF0066FF),
-                                        letterSpacing = 0.5.sp
-                                    )
-                                    if (isValidId) {
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = Color(0xFF10B981).copy(alpha = 0.15f)
-                                        ) {
-                                            Text(
-                                                text = "Verified",
-                                                fontFamily = PlusJakartaSansFontFamily,
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF10B981),
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                            )
-                                        }
-                                    } else {
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = Color(0xFFEF4444).copy(alpha = 0.15f)
-                                        ) {
-                                            Text(
-                                                text = "Not Set",
-                                                fontFamily = PlusJakartaSansFontFamily,
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFFEF4444),
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                                Text(
-                                    text = if (isValidId) rawId else "Not Set",
-                                    fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isValidId) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-
-                            if (isValidId) {
-                                IconButton(
-                                    onClick = {
-                                        clipboardManager.setText(AnnotatedString(rawId))
-                                        ToastHelper.show(context, "Student ID copied to clipboard")
-                                    },
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.ContentCopy,
-                                        contentDescription = "Copy ID",
-                                        tint = Color(0xFF0066FF),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // --- 2. Email Address Capsule Box ---
-                    Surface(
-                        shape = CircleShape,
-                        color = if (isDark) Color(0xFF161F30) else Color(0xFFF8FAFC),
-                        border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(2.dp)
-                            ) {
-                                Text(
-                                    text = "REGISTERED EMAIL",
-                                    fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF0066FF),
-                                    letterSpacing = 0.5.sp
-                                )
-                                Text(
-                                    text = profile.email.ifBlank { "student@gmail.com" },
-                                    fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    clipboardManager.setText(AnnotatedString(profile.email))
-                                    ToastHelper.show(context, "Email copied to clipboard")
-                                },
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ContentCopy,
-                                    contentDescription = "Copy Email",
-                                    tint = Color(0xFF0066FF),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    // --- 3. Academic Details Chips ---
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = if (isDark) Color(0xFF1E293B) else Color(0xFFF8FAFC),
-                            border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "Intake ${profile.intake.ifBlank { "--" }}",
-                                    fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        Surface(
-                            shape = CircleShape,
-                            color = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
-                            border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "Section ${profile.section.ifBlank { "--" }}",
-                                    fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        Surface(
-                            shape = CircleShape,
-                            color = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
-                            border = BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0xFFE2E8F0)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = if (profile.department.contains("CSE", true)) "CSE" else profile.department,
-                                    fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = { showStudentIdDialog = false },
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0066FF))
-                ) {
-                    Text("Done", fontFamily = PlusJakartaSansFontFamily, fontWeight = FontWeight.Bold)
-                }
-            },
-            shape = RoundedCornerShape(24.dp),
-            containerColor = if (isDark) Color(0xFF121622) else Color(0xFFFFFFFF)
         )
     }
 
@@ -2002,8 +1739,8 @@ fun ProfileTab(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Card 1: Smart Student ID Badge (Apple Wallet / Physical Card style)
-        val displayStudentId = if (profile.studentId.isBlank() || profile.studentId == "--" || profile.studentId.contains("@") || profile.studentId.equals(profile.email, ignoreCase = true)) {
-            "Tap to set"
+        val studentIdText = if (profile.studentId.isBlank() || profile.studentId == "--" || profile.studentId.contains("@") || profile.studentId.equals(profile.email, ignoreCase = true)) {
+            "--"
         } else {
             profile.studentId
         }
@@ -2241,30 +1978,35 @@ fun ProfileTab(
                             overflow = TextOverflow.Ellipsis
                         )
 
-                        // Student ID Pill (Clickable to edit)
+                        // Student ID Pill (Permanent & Read-only, click to copy)
                         Row(
                             modifier = Modifier
                                 .padding(top = 2.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(if (isDark) Color(0x243B82F6) else Color(0x140066FF))
                                 .border(1.dp, if (isDark) Color(0x403B82F6) else Color(0x2E0066FF), RoundedCornerShape(8.dp))
-                                .clickable { showStudentIdDialog = true }
+                                .clickable {
+                                    if (studentIdText != "--") {
+                                        clipboardManager.setText(AnnotatedString(studentIdText))
+                                        ToastHelper.show(context, "Student ID copied to clipboard")
+                                    }
+                                }
                                 .padding(horizontal = 8.dp, vertical = 3.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = "ID: $displayStudentId",
+                                text = "ID: $studentIdText",
                                 fontFamily = PlusJakartaSansFontFamily,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF)
                             )
                             Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = null,
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Copy ID",
                                 tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF),
-                                modifier = Modifier.size(10.dp)
+                                modifier = Modifier.size(11.dp)
                             )
                         }
 
@@ -2374,7 +2116,7 @@ fun ProfileTab(
                         }
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = displayStudentId,
+                            text = studentIdText,
                             fontFamily = PlusJakartaSansFontFamily,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
