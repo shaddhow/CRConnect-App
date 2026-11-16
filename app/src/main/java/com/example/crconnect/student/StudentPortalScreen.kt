@@ -19,8 +19,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -238,87 +236,60 @@ fun StudentPortalScreen(
                             .fillMaxSize()
                             .padding(top = paddingValues.calculateTopPadding())
                     ) {
-                        val pagerState = rememberPagerState(
-                            initialPage = uiState.selectedTab,
-                            pageCount = { 4 }
-                        )
-
-                        LaunchedEffect(uiState.selectedTab) {
-                            if (pagerState.currentPage != uiState.selectedTab) {
-                                pagerState.scrollToPage(uiState.selectedTab)
-                            }
-                        }
-
-                        LaunchedEffect(pagerState.currentPage, uiState.isGateOpen) {
-                            if (pagerState.currentPage == 2 && !uiState.isGateOpen) {
-                                val fallbackPage = if (uiState.selectedTab != 2) uiState.selectedTab else 0
-                                pagerState.scrollToPage(fallbackPage)
-                                CustomToast.show(context, "Election is currently locked by teacher")
-                            } else if (uiState.selectedTab != pagerState.currentPage) {
-                                viewModel.selectTab(pagerState.currentPage)
-                            }
-                        }
-
-                        HorizontalPager(
-                            state = pagerState,
-                            userScrollEnabled = false,
-                            modifier = Modifier.fillMaxSize()
-                        ) { page ->
-                            when (page) {
-                                0 -> RoutineTab(
-                                    uiState = uiState,
-                                    onDaySelected = { day -> viewModel.selectScheduleDay(day) },
-                                    onOpenAddClass = { viewModel.openAddClassSheet() },
-                                    onCloseAddClass = { viewModel.closeAddClassSheet() },
-                                    onAddClass = { course, time, room ->
-                                        viewModel.addClass(course, time, room)
-                                    },
-                                    onOpenNoticeSheet = { viewModel.openNoticeSheet() },
-                                    onDeleteRoutine = {
-                                        viewModel.deleteCurrentRoutine(context)
-                                    },
-                                    onScannedEntriesAdded = { entries ->
-                                        viewModel.saveScannedEntries(entries, context)
-                                    },
-                                    onLoadSampleRoutine = {
-                                        viewModel.loadSampleRoutine(context)
-                                    },
-                                    onNavigateWeek = { delta -> viewModel.navigateWeek(delta) },
-                                    onToggleAttendance = { classId, state, dayIdx -> viewModel.toggleAttendance(classId, state, dayIdx, context) },
-                                    onShowToast = { msg -> viewModel.showToast(msg) }
-                                )
-                                1 -> AttendanceTab(
-                                    uiState = uiState,
-                                    onRefreshHistory = { viewModel.loadAttendanceHistory(context) }
-                                )
-                                2 -> ElectionTab(
-                                    uiState = uiState,
-                                    onCastVote = { candidateId -> viewModel.castVote(candidateId) }
-                                )
-                                3 -> ProfileTab(
-                                    profile = uiState.profile,
-                                    uiState = uiState,
-                                    classMap = uiState.classMap,
-                                    themeMode = uiState.themeMode,
-                                    onThemeModeSelected = { mode -> viewModel.setThemeMode(context, mode) },
-                                    onEditProfilePicture = {
-                                        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                                            type = "image/*"
-                                        }
-                                        galleryLauncher.launch(intent)
-                                    },
-                                    onUpdateCgpa = { newCgpa -> viewModel.updateCgpa(newCgpa, context) },
-                                    onUpdateStudentId = { newId -> viewModel.updateStudentId(newId, context) },
-                                    onUpdateSection = { newSection -> viewModel.updateSection(newSection, context) },
-                                    onUpdateAdvisorInfo = { name, email -> viewModel.updateAdvisorInfo(name, email, context) },
-                                    onUpdateCurrentTerm = { term -> viewModel.updateCurrentTerm(term, context) },
-                                    onSecuritySettings = { isSecurityDialogOpen = true },
-                                    onCheckUpdate = { viewModel.checkForAppUpdates(context, forceCheck = true) },
-                                    onNavigateToAttendance = { viewModel.selectTab(1) },
-                                    onSignOut = onSignOut,
-                                    onLogout = onSignOut
-                                )
-                            }
+                        when (uiState.selectedTab) {
+                            0 -> RoutineTab(
+                                uiState = uiState,
+                                onDaySelected = { day -> viewModel.selectScheduleDay(day) },
+                                onOpenAddClass = { viewModel.openAddClassSheet() },
+                                onCloseAddClass = { viewModel.closeAddClassSheet() },
+                                onAddClass = { course, time, room ->
+                                    viewModel.addClass(course, time, room)
+                                },
+                                onOpenNoticeSheet = { viewModel.openNoticeSheet() },
+                                onDeleteRoutine = {
+                                    viewModel.deleteCurrentRoutine(context)
+                                },
+                                onScannedEntriesAdded = { entries ->
+                                    viewModel.saveScannedEntries(entries, context)
+                                },
+                                onLoadSampleRoutine = {
+                                    viewModel.loadSampleRoutine(context)
+                                },
+                                onNavigateWeek = { delta -> viewModel.navigateWeek(delta) },
+                                onToggleAttendance = { classId, state, dayIdx -> viewModel.toggleAttendance(classId, state, dayIdx, context) },
+                                onShowToast = { msg -> viewModel.showToast(msg) }
+                            )
+                            1 -> AttendanceTab(
+                                uiState = uiState,
+                                onRefreshHistory = { viewModel.loadAttendanceHistory(context) }
+                            )
+                            2 -> ElectionTab(
+                                uiState = uiState,
+                                onCastVote = { candidateId -> viewModel.castVote(candidateId) }
+                            )
+                            3 -> ProfileTab(
+                                profile = uiState.profile,
+                                uiState = uiState,
+                                classMap = uiState.classMap,
+                                themeMode = uiState.themeMode,
+                                onThemeModeSelected = { mode -> viewModel.setThemeMode(context, mode) },
+                                onEditProfilePicture = {
+                                    val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                                        type = "image/*"
+                                    }
+                                    galleryLauncher.launch(intent)
+                                },
+                                onUpdateCgpa = { newCgpa -> viewModel.updateCgpa(newCgpa, context) },
+                                onUpdateStudentId = { newId -> viewModel.updateStudentId(newId, context) },
+                                onUpdateSection = { newSection -> viewModel.updateSection(newSection, context) },
+                                onUpdateAdvisorInfo = { name, email -> viewModel.updateAdvisorInfo(name, email, context) },
+                                onUpdateCurrentTerm = { term -> viewModel.updateCurrentTerm(term, context) },
+                                onSecuritySettings = { isSecurityDialogOpen = true },
+                                onCheckUpdate = { viewModel.checkForAppUpdates(context, forceCheck = true) },
+                                onNavigateToAttendance = { viewModel.selectTab(1) },
+                                onSignOut = onSignOut,
+                                onLogout = onSignOut
+                            )
                         }
                     }
 
@@ -336,7 +307,11 @@ fun StudentPortalScreen(
                         isGateOpen = uiState.isGateOpen,
                         onTabSelected = { tab ->
                             isNavVisible = true
-                            viewModel.selectTab(tab)
+                            if (tab == 2 && !uiState.isGateOpen) {
+                                CustomToast.show(context, "Election is currently locked by teacher")
+                            } else {
+                                viewModel.selectTab(tab)
+                            }
                         },
                         onLockedTabClicked = {
                             CustomToast.show(context, "Election is currently locked by teacher")

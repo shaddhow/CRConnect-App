@@ -71,6 +71,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -1999,16 +2001,48 @@ fun ProfileTab(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Card 1: Digital Student Identity Pass (.card.c)
-        DesignCard(padding = 20.dp) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Top Header Ribbon: University Branding + Active Verification Pill
+        // Card 1: Smart Student ID Badge (Apple Wallet / Physical Card style)
+        val displayStudentId = if (profile.studentId.isBlank() || profile.studentId == "--" || profile.studentId.contains("@") || profile.studentId.equals(profile.email, ignoreCase = true)) {
+            "Tap to set"
+        } else {
+            profile.studentId
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(
+                    elevation = if (isDark) 0.dp else 8.dp,
+                    shape = RoundedCornerShape(22.dp),
+                    ambientColor = Color(0x12000000),
+                    spotColor = Color(0x12000000)
+                )
+                .clip(RoundedCornerShape(22.dp))
+                .background(if (isDark) Color(0xFF131B2E) else Color(0xFFFFFFFF))
+                .border(
+                    width = 1.dp,
+                    color = if (isDark) Color(0xFF24354D) else Color(0xFFE2E8F0),
+                    shape = RoundedCornerShape(22.dp)
+                )
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Top Accent Stripe
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.5.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color(0xFF0052CC), Color(0xFF3B82F6), Color(0xFF06B6D4))
+                            )
+                        )
+                )
+
+                // 1. Header Ribbon: University Identity + Status
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -2020,223 +2054,342 @@ fun ProfileTab(
                             modifier = Modifier
                                 .size(22.dp)
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                                .background(if (isDark) Color(0x263B82F6) else Color(0x140066FF)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Badge,
+                                imageVector = Icons.Default.School,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF),
                                 modifier = Modifier.size(13.dp)
                             )
                         }
                         Text(
-                            text = "BUBT DIGITAL ID",
+                            text = "BUBT · STUDENT PASS",
                             fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.primary,
-                            letterSpacing = 1.2.sp
+                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                            letterSpacing = 1.sp
                         )
                     }
 
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .background(if (isDark) Color(0xFF0D3B24) else Color(0xFFDCFCE7))
-                            .border(
-                                1.dp,
-                                if (isDark) Color(0xFF15803D).copy(alpha = 0.5f) else Color(0xFFBBF7D0),
-                                CircleShape
-                            )
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                            .background(if (isDark) Color(0x2622C55E) else Color(0x1422C55E))
+                            .border(1.dp, if (isDark) Color(0x4022C55E) else Color(0x3322C55E), CircleShape)
+                            .padding(horizontal = 9.dp, vertical = 3.5.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(6.dp)
+                                    .size(5.dp)
                                     .clip(CircleShape)
-                                    .background(if (isDark) Color(0xFF4ADE80) else Color(0xFF16A34A))
+                                    .background(Color(0xFF22C55E))
                             )
                             Text(
-                                text = "Verified · Active",
+                                text = "Active",
                                 fontFamily = PlusJakartaSansFontFamily,
-                                fontSize = 11.sp,
+                                fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isDark) Color(0xFF4ADE80) else Color(0xFF166534)
+                                color = if (isDark) Color(0xFF4ADE80) else Color(0xFF15803D)
                             )
                         }
                     }
                 }
 
-                // Avatar with Gradient Glow Ring + Upload Camera Badge
+                // Hairline Divider
                 Box(
                     modifier = Modifier
-                        .size(90.dp)
-                        .clickable { onEditProfilePicture() },
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(if (isDark) Color(0x1AFFFFFF) else Color(0x0F000000))
+                )
+
+                // 2. Horizontal Student ID Body (Photo on Left, Details on Right)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Circular Photo on Left
                     Box(
                         modifier = Modifier
                             .size(86.dp)
-                            .clip(CircleShape)
-                            .border(
-                                2.5.dp,
-                                Brush.linearGradient(
-                                    listOf(
-                                        Color(0xFF0066FF),
-                                        Color(0xFF60A5FA),
-                                        Color(0xFF38BDF8)
-                                    )
-                                ),
-                                CircleShape
-                            )
-                            .padding(3.dp)
-                            .clip(CircleShape)
-                            .background(Color.Transparent),
+                            .clickable { onEditProfilePicture() },
                         contentAlignment = Alignment.Center
                     ) {
-                        key(profile.profileImageUrl) {
-                            val bitmap = remember(profile.profileImageUrl) {
-                                val path = profile.profileImageUrl
-                                try {
-                                    if (path.isNotBlank()) {
-                                        if (!path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
-                                            val file = File(path)
-                                            if (file.exists() && file.length() > 0) BitmapFactory.decodeFile(file.absolutePath) else null
-                                        } else null
-                                    } else null
-                                } catch (e: Exception) {
-                                    null
-                                }
-                            }
-
-                            if (bitmap != null) {
-                                Image(
-                                    bitmap = bitmap.asImageBitmap(),
-                                    contentDescription = "Profile Picture",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape)
-                                        .clickable { onEditProfilePicture() }
+                        Box(
+                            modifier = Modifier
+                                .size(82.dp)
+                                .clip(CircleShape)
+                                .background(if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9))
+                                .border(
+                                    2.dp,
+                                    if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1),
+                                    CircleShape
                                 )
-                            } else if (profile.profileImageUrl.isNotBlank()) {
-                                AndroidView(
-                                    factory = { ctx ->
-                                        ImageView(ctx).apply {
-                                            scaleType = ImageView.ScaleType.CENTER_CROP
-                                            setOnClickListener { onEditProfilePicture() }
-                                            Glide.with(ctx)
+                                .padding(2.dp)
+                                .clip(CircleShape)
+                        ) {
+                            key(profile.profileImageUrl) {
+                                val bitmap = remember(profile.profileImageUrl) {
+                                    val path = profile.profileImageUrl
+                                    try {
+                                        if (path.isNotBlank()) {
+                                            if (!path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
+                                                val file = File(path)
+                                                if (file.exists() && file.length() > 0) BitmapFactory.decodeFile(file.absolutePath) else null
+                                            } else null
+                                        } else null
+                                    } catch (e: Exception) {
+                                        null
+                                    }
+                                }
+
+                                if (bitmap != null) {
+                                    Image(
+                                        bitmap = bitmap.asImageBitmap(),
+                                        contentDescription = "Profile Picture",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape)
+                                    )
+                                } else if (profile.profileImageUrl.isNotBlank()) {
+                                    AndroidView(
+                                        factory = { ctx ->
+                                            ImageView(ctx).apply {
+                                                scaleType = ImageView.ScaleType.CENTER_CROP
+                                                setOnClickListener { onEditProfilePicture() }
+                                                Glide.with(ctx)
+                                                    .load(profile.profileImageUrl)
+                                                    .circleCrop()
+                                                    .signature(ObjectKey(profile.profileImageUrl))
+                                                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                                                    .into(this)
+                                            }
+                                        },
+                                        update = { view ->
+                                            view.setOnClickListener { onEditProfilePicture() }
+                                            Glide.with(view.context)
                                                 .load(profile.profileImageUrl)
                                                 .circleCrop()
                                                 .signature(ObjectKey(profile.profileImageUrl))
                                                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                                                .into(this)
-                                        }
-                                    },
-                                    update = { view ->
-                                        view.setOnClickListener { onEditProfilePicture() }
-                                        Glide.with(view.context)
-                                            .load(profile.profileImageUrl)
-                                            .circleCrop()
-                                            .signature(ObjectKey(profile.profileImageUrl))
-                                            .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                                            .into(view)
-                                    },
-                                    modifier = Modifier.fillMaxSize()
+                                                .into(view)
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape)
+                                    )
+                                } else {
+                                    AnimatedAvatarPlaceholder(size = 80.dp, iconSize = 38.dp)
+                                }
+                            }
+                        }
+
+                        // Camera Badge Overlay
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .offset(x = 1.dp, y = 1.dp)
+                                .size(24.dp)
+                                .shadow(2.dp, CircleShape)
+                                .clip(CircleShape)
+                                .background(if (isDark) Color(0xFF0F172A) else Color.White)
+                                .border(1.5.dp, Color(0xFF0066FF), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = "Edit photo",
+                                tint = Color(0xFF0066FF),
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
+                    }
+
+                    // Student Details on Right
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = profile.name.ifBlank { "Student" },
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 16.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isDark) Color(0xFFE8F0FE) else Color(0xFF0F172A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Text(
+                            text = profile.email.ifBlank { "student@gmail.com" },
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (isDark) Color(0xFF8898B0) else Color(0xFF64748B),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        // Student ID Pill (Clickable to edit)
+                        Row(
+                            modifier = Modifier
+                                .padding(top = 2.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isDark) Color(0x243B82F6) else Color(0x140066FF))
+                                .border(1.dp, if (isDark) Color(0x403B82F6) else Color(0x2E0066FF), RoundedCornerShape(8.dp))
+                                .clickable { showStudentIdDialog = true }
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "ID: $displayStudentId",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF)
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF),
+                                modifier = Modifier.size(10.dp)
+                            )
+                        }
+
+                        // Intake & Section Row
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 2.dp)
+                        ) {
+                            // Intake Tag
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(if (isDark) Color(0x1AFFFFFF) else Color(0x0A000000))
+                                    .border(1.dp, if (isDark) Color(0x14FFFFFF) else Color(0x10000000), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 7.dp, vertical = 2.5.dp)
+                            ) {
+                                Text(
+                                    text = "Intake ${profile.intake}",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569)
                                 )
-                            } else {
-                                AnimatedAvatarPlaceholder(size = 80.dp, iconSize = 40.dp)
+                            }
+
+                            // Section Tag (Clickable to edit)
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(if (isDark) Color(0x1AFFFFFF) else Color(0x0A000000))
+                                    .border(1.dp, if (isDark) Color(0x14FFFFFF) else Color(0x10000000), RoundedCornerShape(6.dp))
+                                    .clickable {
+                                        sectionInput = profile.section
+                                        showSectionDialog = true
+                                    }
+                                    .padding(horizontal = 7.dp, vertical = 2.5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Text(
+                                    text = "Sec ${profile.section}",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569)
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = null,
+                                    tint = if (isDark) Color(0xFF8898B0) else Color(0xFF64748B),
+                                    modifier = Modifier.size(10.dp)
+                                )
+                            }
+
+                            // CR Badge (if applicable)
+                            if (profile.isCr) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(Color(0x26F59E0B))
+                                        .border(1.dp, Color(0x66F59E0B), RoundedCornerShape(6.dp))
+                                        .padding(horizontal = 6.dp, vertical = 2.5.dp)
+                                ) {
+                                    Text(
+                                        text = "⚡ CR",
+                                        fontFamily = PlusJakartaSansFontFamily,
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color(0xFFD97706)
+                                    )
+                                }
                             }
                         }
                     }
+                }
 
-                    // Camera Badge Overlay
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .offset(x = 2.dp, y = 2.dp)
-                            .size(30.dp)
-                            .shadow(4.dp, CircleShape)
-                            .clip(CircleShape)
-                            .background(Color.White)
-                            .border(2.dp, Color(0xFF0066FF), CircleShape)
-                            .clickable { onEditProfilePicture() },
-                        contentAlignment = Alignment.Center
+                // Hairline Divider
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(if (isDark) Color(0x1AFFFFFF) else Color(0x0F000000))
+                )
+
+                // 3. Footer Barcode & Official Branding Strip
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(if (isDark) Color(0x0AFFFFFF) else Color(0x05000000))
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Edit photo",
-                            tint = Color(0xFF0066FF),
-                            modifier = Modifier.size(15.dp)
+                        val barWidths = listOf(2, 3, 1, 4, 1, 3, 2, 1, 4, 2, 3, 1, 2, 4, 1, 3, 2)
+                        barWidths.forEach { w ->
+                            Box(
+                                modifier = Modifier
+                                    .width(w.dp)
+                                    .height(13.dp)
+                                    .background(if (isDark) Color(0xFF475569) else Color(0xFF94A3B8))
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = displayStudentId,
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8),
+                            letterSpacing = 0.8.sp
                         )
                     }
-                }
-
-                // Name & Email
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
-                ) {
-                    Text(
-                        text = profile.name.ifBlank { "Student" },
-                        fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 19.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
 
                     Text(
-                        text = profile.email.ifBlank { "student@gmail.com" },
+                        text = "CSE · BUBT DIGITAL ID",
                         fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 13.5.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                // 3 Stat Tiles (Student ID, Intake, Section)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val displayStudentId = if (profile.studentId.isBlank() || profile.studentId == "--" || profile.studentId.contains("@") || profile.studentId.equals(profile.email, ignoreCase = true)) {
-                        "Tap to set"
-                    } else {
-                        profile.studentId
-                    }
-
-                    InfoTile(
-                        label = "Student ID",
-                        value = displayStudentId,
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            showStudentIdDialog = true
-                        }
-                    )
-                    InfoTile(
-                        label = "Intake",
-                        value = profile.intake,
-                        modifier = Modifier.weight(1f)
-                    )
-                    InfoTile(
-                        label = "Section",
-                        value = profile.section,
-                        showEditIcon = true,
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            sectionInput = profile.section
-                            showSectionDialog = true
-                        }
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) Color(0xFF475569) else Color(0xFFA0AEC0),
+                        letterSpacing = 0.5.sp
                     )
                 }
             }
