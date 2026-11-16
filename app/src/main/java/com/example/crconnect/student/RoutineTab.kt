@@ -122,6 +122,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -2317,11 +2318,12 @@ private fun AddClassBottomSheetContent(
 
     val popularTimeSlots = remember {
         listOf(
-            "08:30 AM - 10:00 AM",
-            "10:05 AM - 11:35 AM",
-            "11:40 AM - 01:10 PM",
-            "01:45 PM - 03:15 PM",
-            "03:20 PM - 04:50 PM"
+            "08:15 AM - 09:45 AM",
+            "09:45 AM - 11:15 AM",
+            "11:15 AM - 12:45 PM",
+            "01:15 PM - 02:45 PM",
+            "02:45 PM - 04:15 PM",
+            "04:15 PM - 05:45 PM"
         )
     }
 
@@ -2383,161 +2385,192 @@ private fun AddClassBottomSheetContent(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Top Row: Modern Segmented Switcher & Safe Delete Action
+        // Top Row: Sleek Apple-style Segmented Switcher & Safe Options
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Mode Switcher Pills
-            Row(
+            // Segmented Control Pill Container
+            Box(
                 modifier = Modifier
                     .weight(1f)
+                    .height(46.dp)
                     .clip(RoundedCornerShape(14.dp))
                     .background(if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9))
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    .border(
+                        1.dp,
+                        if (isDark) Color(0x33FFFFFF) else Color(0x1F000000),
+                        RoundedCornerShape(14.dp)
+                    )
+                    .padding(4.dp)
             ) {
-                // Manual Entry Tab
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(
-                            if (isManualMode) {
-                                if (isDark) Color(0xFF334155) else Color.White
-                            } else Color.Transparent
-                        )
-                        .then(
-                            if (isManualMode) Modifier.shadow(2.dp, RoundedCornerShape(10.dp))
-                            else Modifier
-                        )
-                        .clickable { isManualMode = true }
-                        .padding(vertical = 8.dp),
-                    contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    // Manual Entry Tab
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (isManualMode) {
+                                    if (isDark) Color(0xFF334155) else Color.White
+                                } else Color.Transparent
+                            )
+                            .then(
+                                if (isManualMode) {
+                                    Modifier.border(
+                                        1.dp,
+                                        if (isDark) Color(0x33FFFFFF) else Color(0x1A000000),
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                } else Modifier
+                            )
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { isManualMode = true },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            tint = if (isManualMode) (if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF))
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = "Manual Entry",
-                            fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 13.sp,
-                            fontWeight = if (isManualMode) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isManualMode) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = if (isManualMode) Color(0xFF2563EB)
+                                else if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Manual Entry",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isManualMode) FontWeight.Bold else FontWeight.SemiBold,
+                                color = if (isManualMode) (if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A))
+                                else if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                            )
+                        }
                     }
-                }
 
-                // AI Routine Scan Tab
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(
-                            if (!isManualMode) {
-                                if (isDark) Color(0xFF334155) else Color.White
-                            } else Color.Transparent
-                        )
-                        .then(
-                            if (!isManualMode) Modifier.shadow(2.dp, RoundedCornerShape(10.dp))
-                            else Modifier
-                        )
-                        .clickable { isManualMode = false }
-                        .padding(vertical = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    // AI Routine Scan Tab
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (!isManualMode) {
+                                    if (isDark) Color(0xFF334155) else Color.White
+                                } else Color.Transparent
+                            )
+                            .then(
+                                if (!isManualMode) {
+                                    Modifier.border(
+                                        1.dp,
+                                        if (isDark) Color(0x33FFFFFF) else Color(0x1A000000),
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                } else Modifier
+                            )
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { isManualMode = false },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = null,
-                            tint = if (!isManualMode) Color(0xFF0284C7)
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Text(
-                            text = "AI Routine Scan",
-                            fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 13.sp,
-                            fontWeight = if (!isManualMode) FontWeight.Bold else FontWeight.Medium,
-                            color = if (!isManualMode) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = if (!isManualMode) Color(0xFF0284C7)
+                                else if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Text(
+                                text = "AI Routine Scan",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (!isManualMode) FontWeight.Bold else FontWeight.SemiBold,
+                                color = if (!isManualMode) (if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A))
+                                else if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                            )
+                        }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            // Delete Routine Action Button
+            // Subtle Delete/Reset Routine Action Button
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isDark) Color(0x24EF4444) else Color(0xFFFEE2E2))
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (isDark) Color(0x1FEF4444) else Color(0x14EF4444))
                     .border(
                         1.dp,
-                        if (isDark) Color(0x40EF4444) else Color(0xFFFCA5A5),
-                        RoundedCornerShape(12.dp)
+                        if (isDark) Color(0x33EF4444) else Color(0x26EF4444),
+                        RoundedCornerShape(14.dp)
                     )
-                    .clickable { showDeleteConfirmDialog = true },
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { showDeleteConfirmDialog = true },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete Routine",
-                    tint = if (isDark) Color(0xFFFCA5A5) else Color(0xFFDC2626),
+                    tint = if (isDark) Color(0xFFF87171) else Color(0xFFDC2626),
                     modifier = Modifier.size(18.dp)
                 )
             }
         }
 
-        // Horizontal Day Selector Chips
+        // Symmetrical 7-Day Week Strip (No horizontal cutoff, evenly distributed)
         if (scheduleDays.isNotEmpty()) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 scheduleDays.forEach { day ->
                     val isSelected = day.dayIndex == selectedDayIndex
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
+                            .weight(1f)
+                            .height(40.dp)
+                            .clip(RoundedCornerShape(11.dp))
                             .background(
                                 if (isSelected) {
-                                    Brush.horizontalGradient(colors = currentPalette)
+                                    Brush.linearGradient(colors = currentPalette)
                                 } else {
-                                    SolidColor(if (isDark) Color(0xFF1E293B) else Color(0xFFF8FAFC))
+                                    SolidColor(if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9))
                                 }
                             )
                             .border(
                                 width = 1.dp,
                                 color = if (isSelected) Color.Transparent
-                                else if (isDark) Color(0x26FFFFFF) else Color(0x1F000000),
-                                shape = RoundedCornerShape(12.dp)
+                                else if (isDark) Color(0x26FFFFFF) else Color(0x14000000),
+                                shape = RoundedCornerShape(11.dp)
                             )
-                            .clickable { onSelectDay(day.dayIndex) }
-                            .padding(horizontal = 14.dp, vertical = 7.dp),
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { onSelectDay(day.dayIndex) },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = day.shortName,
                             fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 12.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
                             color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -2563,10 +2596,20 @@ private fun AddClassBottomSheetContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(18.dp))
-                            .background(if (isDark) Color(0xFF182234) else Color(0xFFF8FAFD))
+                            .background(
+                                brush = Brush.linearGradient(
+                                    colors = if (isDark) listOf(
+                                        Color(0xFF131D2E),
+                                        Color(0xFF0F172A)
+                                    ) else listOf(
+                                        Color(0xFFF8FAFD),
+                                        Color(0xFFEEF4FF)
+                                    )
+                                )
+                            )
                             .border(
                                 width = 1.2.dp,
-                                color = currentPalette.first().copy(alpha = if (isDark) 0.4f else 0.3f),
+                                color = currentPalette.first().copy(alpha = if (isDark) 0.45f else 0.35f),
                                 shape = RoundedCornerShape(18.dp)
                             )
                             .padding(14.dp),
@@ -2601,6 +2644,11 @@ private fun AddClassBottomSheetContent(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(currentPalette.first().copy(alpha = 0.12f))
+                                    .border(
+                                        0.8.dp,
+                                        currentPalette.first().copy(alpha = 0.25f),
+                                        RoundedCornerShape(8.dp)
+                                    )
                                     .padding(horizontal = 8.dp, vertical = 3.dp)
                             ) {
                                 Text(
@@ -2628,7 +2676,7 @@ private fun AddClassBottomSheetContent(
 
                             Column(
                                 modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                verticalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
                                 Text(
                                     text = if (courseName.isNotBlank()) {
@@ -2639,49 +2687,68 @@ private fun AddClassBottomSheetContent(
                                     fontWeight = FontWeight.Bold,
                                     color = if (courseName.isNotBlank()) MaterialTheme.colorScheme.onSurface
                                     else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                    maxLines = 1
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
 
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    // Time Chip
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(if (isDark) Color(0x1FFFFFFF) else Color(0x0A000000))
+                                            .padding(horizontal = 7.dp, vertical = 3.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.AccessTime,
-                                            contentDescription = null,
-                                            tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
-                                            modifier = Modifier.size(13.dp)
-                                        )
-                                        Text(
-                                            text = timeSlot.ifBlank { "08:15 AM - 09:45 AM" },
-                                            fontFamily = PlusJakartaSansFontFamily,
-                                            fontSize = 12.sp,
-                                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.AccessTime,
+                                                contentDescription = null,
+                                                tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                            Text(
+                                                text = timeSlot.ifBlank { "08:15 AM - 09:45 AM" },
+                                                fontFamily = PlusJakartaSansFontFamily,
+                                                fontSize = 11.5.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                                            )
+                                        }
                                     }
 
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    // Room Chip
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(if (isDark) Color(0x1FFFFFFF) else Color(0x0A000000))
+                                            .padding(horizontal = 7.dp, vertical = 3.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Home,
-                                            contentDescription = null,
-                                            tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
-                                            modifier = Modifier.size(13.dp)
-                                        )
-                                        Text(
-                                            text = if (room.isNotBlank()) {
-                                                if (room.startsWith("Room", ignoreCase = true)) room else "Room $room"
-                                            } else "Room TBA",
-                                            fontFamily = PlusJakartaSansFontFamily,
-                                            fontSize = 12.sp,
-                                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Home,
+                                                contentDescription = null,
+                                                tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                            Text(
+                                                text = if (room.isNotBlank()) {
+                                                    if (room.startsWith("Room", ignoreCase = true)) room else "Room $room"
+                                                } else "Room TBA",
+                                                fontFamily = PlusJakartaSansFontFamily,
+                                                fontSize = 11.5.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -2702,17 +2769,17 @@ private fun AddClassBottomSheetContent(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             accentPalettes.forEachIndexed { index, palette ->
                                 val isSelected = selectedAccentIndex == index
                                 Box(
                                     modifier = Modifier
-                                        .size(24.dp)
+                                        .size(26.dp)
                                         .clip(CircleShape)
                                         .background(Brush.linearGradient(palette))
                                         .then(
                                             if (isSelected) {
-                                                Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                                Modifier.border(2.5.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
                                             } else Modifier
                                         )
                                         .clickable { selectedAccentIndex = index },
@@ -2723,7 +2790,7 @@ private fun AddClassBottomSheetContent(
                                             imageVector = Icons.Default.Check,
                                             contentDescription = null,
                                             tint = Color.White,
-                                            modifier = Modifier.size(13.dp)
+                                            modifier = Modifier.size(14.dp)
                                         )
                                     }
                                 }
@@ -2967,11 +3034,12 @@ private fun AddClassBottomSheetContent(
                             .shadow(
                                 elevation = 6.dp,
                                 shape = RoundedCornerShape(14.dp),
-                                ambientColor = currentPalette.first().copy(alpha = 0.35f),
-                                spotColor = currentPalette.first().copy(alpha = 0.35f)
+                                ambientColor = currentPalette.first().copy(alpha = 0.45f),
+                                spotColor = currentPalette.first().copy(alpha = 0.45f)
                             )
                             .clip(RoundedCornerShape(14.dp))
                             .background(brush = Brush.linearGradient(colors = currentPalette))
+                            .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(14.dp))
                             .clickable {
                                 if (courseName.isBlank()) {
                                     courseError = true
