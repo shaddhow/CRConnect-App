@@ -80,6 +80,9 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.RemoveRedEye
+import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -176,8 +179,8 @@ fun RoutineTab(
         Calendar.getInstance().apply { timeInMillis = currentTimeMillis }
     }
 
-    val greetingTitle = remember(cal) {
-        getDynamicGreetingTitle(cal)
+    val greetingTheme = remember(cal, uiState.profile.name) {
+        getDynamicGreetingTheme(cal, uiState.profile.name)
     }
 
     val greetingSubtitle = remember(cal, uiState.classMap) {
@@ -298,55 +301,95 @@ fun RoutineTab(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 4.dp),
+                .padding(top = 4.dp, bottom = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
             ) {
-                // Calendar icon container
+                // Glassy Dynamic Time-of-Day Icon Badge
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(13.dp))
-                        .background(if (isDark) Color(0x263B82F6) else Color(0x1A3B82F6)),
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = if (isDark) {
+                                    listOf(greetingTheme.bgDarkStart, greetingTheme.bgDarkEnd)
+                                } else {
+                                    listOf(greetingTheme.bgLightStart, greetingTheme.bgLightEnd)
+                                }
+                            )
+                        )
+                        .border(
+                            width = 1.dp,
+                            brush = Brush.linearGradient(
+                                colors = if (isDark) {
+                                    listOf(greetingTheme.borderDarkStart, greetingTheme.borderDarkEnd)
+                                } else {
+                                    listOf(greetingTheme.borderLightStart, greetingTheme.borderLightEnd)
+                                }
+                            ),
+                            shape = RoundedCornerShape(14.dp)
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CalendarToday,
+                        imageVector = greetingTheme.icon,
                         contentDescription = null,
-                        tint = Color(0xFF3B82F6),
-                        modifier = Modifier.size(20.dp)
+                        tint = if (isDark) greetingTheme.iconTintDark else greetingTheme.iconTintLight,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
-                // Greeting & Date
-                Column {
+                // Title & Subtitle (Clean Glassy Aesthetic, No cartoon emojis)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
                     Text(
-                        text = greetingTitle,
+                        text = greetingTheme.title,
                         fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 20.sp,
+                        fontSize = 19.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isDark) Color(0xFFE8F0FE) else Color(0xFF1A2540)
+                        color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
+                        letterSpacing = (-0.2).sp
                     )
                     Text(
                         text = greetingSubtitle,
                         fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 13.5.sp,
-                        color = if (isDark) Color(0xFF6B7F9E) else Color(0xFF8898B0)
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
                     )
                 }
             }
 
-            // Circular Add Button (+)
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Modern Quick Add (+) Glass Button
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .shadow(elevation = 6.dp, shape = CircleShape, ambientColor = Color(0x663B82F6), spotColor = Color(0x663B82F6))
+                    .size(42.dp)
+                    .shadow(
+                        elevation = 6.dp,
+                        shape = CircleShape,
+                        ambientColor = if (isDark) Color(0x663B82F6) else Color(0x402563EB),
+                        spotColor = if (isDark) Color(0x663B82F6) else Color(0x402563EB)
+                    )
                     .clip(CircleShape)
-                    .background(Color(0xFF3B82F6))
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(Color(0xFF2563EB), Color(0xFF1D4ED8))
+                        )
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = Color(0x4DFFFFFF),
+                        shape = CircleShape
+                    )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
@@ -357,7 +400,7 @@ fun RoutineTab(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Add class",
                     tint = Color.White,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
@@ -1689,8 +1732,8 @@ private fun TimelineRowItem(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(top = 4.dp)
-                                    .height(32.dp)
+                                    .padding(top = 5.dp)
+                                    .heightIn(min = 34.dp)
                                     .clip(RoundedCornerShape(11.dp))
                                     .background(
                                         if (isAttended) (if (isDark) Color(0x1F22C55E) else Color(0x1422C55E))
@@ -1701,7 +1744,8 @@ private fun TimelineRowItem(
                                         color = if (isAttended) Color(0x5922C55E) else Color(0x4DEF4444),
                                         shape = RoundedCornerShape(11.dp)
                                     )
-                                    .clickable { onAttendanceChanged(if (isAttended) "attended" else "missed") },
+                                    .clickable { onAttendanceChanged(if (isAttended) "attended" else "missed") }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
@@ -1735,35 +1779,105 @@ private fun TimelineRowItem(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(top = 4.dp)
-                                    .height(32.dp)
+                                    .padding(top = 5.dp)
+                                    .heightIn(min = 34.dp)
                                     .clip(RoundedCornerShape(11.dp))
-                                    .background(if (isDark) Color(0x12FFFFFF) else Color(0x0A000000))
+                                    .background(
+                                        brush = Brush.linearGradient(
+                                            colors = if (isDark) listOf(
+                                                Color(0x181E293B),
+                                                Color(0x0F0F172A)
+                                            ) else listOf(
+                                                Color(0x0C000000),
+                                                Color(0x05000000)
+                                            )
+                                        )
+                                    )
                                     .border(
                                         width = 1.dp,
-                                        color = if (isDark) Color(0x22FFFFFF) else Color(0x15000000),
+                                        brush = Brush.linearGradient(
+                                            colors = if (isDark) listOf(
+                                                Color(0x3394A3B8),
+                                                Color(0x1464748B)
+                                            ) else listOf(
+                                                Color(0x1F000000),
+                                                Color(0x0D000000)
+                                            )
+                                        ),
                                         shape = RoundedCornerShape(11.dp)
                                     )
-                                    .clickable { onAttendanceChanged("attended") },
+                                    .clickable { onAttendanceChanged("attended") }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
+                                    modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Lock,
-                                        contentDescription = "Locked",
-                                        tint = if (isDark) Color(0xFF8898B0) else Color(0xFF6B7F9E),
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Text(
-                                        text = "Locked · Available during class (${timeRange.fullFormattedRange})",
-                                        fontFamily = PlusJakartaSansFontFamily,
-                                        fontSize = 11.5.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (isDark) Color(0xFF8898B0) else Color(0xFF6B7F9E)
-                                    )
+                                    // Left: Frosted lock micro-badge + status
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(18.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    if (isDark) Color(0x3364748B) else Color(0x1A475569)
+                                                )
+                                                .border(
+                                                    width = 0.8.dp,
+                                                    color = if (isDark) Color(0x4094A3B8) else Color(0x26475569),
+                                                    shape = CircleShape
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Lock,
+                                                contentDescription = "Locked",
+                                                tint = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569),
+                                                modifier = Modifier.size(9.5.dp)
+                                            )
+                                        }
+
+                                        Text(
+                                            text = "Attendance Locked",
+                                            fontFamily = PlusJakartaSansFontFamily,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                                        )
+                                    }
+
+                                    // Right: Glassy capsule indicating unlock time
+                                    val unlockTimeText = if (timeRange.startHour.isNotBlank()) {
+                                        "Opens ${timeRange.startHour} ${timeRange.startAmPm}".trim()
+                                    } else {
+                                        "Opens during class"
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(7.dp))
+                                            .background(
+                                                if (isDark) Color(0x2638BDF8) else Color(0x1A0284C7)
+                                            )
+                                            .border(
+                                                width = 0.8.dp,
+                                                color = if (isDark) Color(0x4038BDF8) else Color(0x330284C7),
+                                                shape = RoundedCornerShape(7.dp)
+                                            )
+                                            .padding(horizontal = 7.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = unlockTimeText,
+                                            fontFamily = PlusJakartaSansFontFamily,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1793,13 +1907,102 @@ private data class UpNextInfo(
     val nextStatusPill: String = ""
 )
 
-private fun getDynamicGreetingTitle(cal: Calendar): String {
+private fun getStudentShortName(fullName: String): String {
+    val clean = fullName.trim()
+    if (clean.isBlank() || clean.equals("Student", ignoreCase = true) || clean.equals("--", ignoreCase = true)) {
+        return ""
+    }
+    val tokens = clean.split(Regex("[\\s\\-_.]+")).filter { it.isNotBlank() }
+    if (tokens.isEmpty()) return ""
+    val candidate = if (tokens.last().length > 2) {
+        tokens.last()
+    } else {
+        tokens.firstOrNull { it.length > 2 } ?: tokens.first()
+    }
+    return candidate.lowercase(Locale.ROOT).replaceFirstChar { it.uppercase(Locale.ROOT) }
+}
+
+private data class GreetingTheme(
+    val title: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val bgDarkStart: Color,
+    val bgDarkEnd: Color,
+    val bgLightStart: Color,
+    val bgLightEnd: Color,
+    val borderDarkStart: Color,
+    val borderDarkEnd: Color,
+    val borderLightStart: Color,
+    val borderLightEnd: Color,
+    val iconTintDark: Color,
+    val iconTintLight: Color
+)
+
+private fun getDynamicGreetingTheme(cal: Calendar, fullName: String = ""): GreetingTheme {
     val hour = cal.get(Calendar.HOUR_OF_DAY)
+    val shortName = getStudentShortName(fullName)
+    val nameSuffix = if (shortName.isNotBlank()) ", $shortName" else ""
+
     return when {
-        hour in 5..11 -> "Good morning"
-        hour in 12..16 -> "Good afternoon"
-        hour in 17..20 -> "Good evening"
-        else -> "Good night"
+        // Morning (5:00 AM - 11:59 AM): Golden/Amber Glass
+        hour in 5..11 -> GreetingTheme(
+            title = "Good morning$nameSuffix",
+            icon = Icons.Default.WbSunny,
+            bgDarkStart = Color(0x33F59E0B),
+            bgDarkEnd = Color(0x14D97706),
+            bgLightStart = Color(0x26F59E0B),
+            bgLightEnd = Color(0x12FEF3C7),
+            borderDarkStart = Color(0x59FBBF24),
+            borderDarkEnd = Color(0x1FF59E0B),
+            borderLightStart = Color(0x4DF59E0B),
+            borderLightEnd = Color(0x20FDE68A),
+            iconTintDark = Color(0xFFFBBF24),
+            iconTintLight = Color(0xFFD97706)
+        )
+        // Afternoon (12:00 PM - 4:59 PM): Sky Blue / Cyan Glass
+        hour in 12..16 -> GreetingTheme(
+            title = "Good afternoon$nameSuffix",
+            icon = Icons.Default.LocalCafe,
+            bgDarkStart = Color(0x330EA5E9),
+            bgDarkEnd = Color(0x140284C7),
+            bgLightStart = Color(0x260284C7),
+            bgLightEnd = Color(0x12E0F2FE),
+            borderDarkStart = Color(0x5938BDF8),
+            borderDarkEnd = Color(0x1F0EA5E9),
+            borderLightStart = Color(0x4D0284C7),
+            borderLightEnd = Color(0x20BAE6FD),
+            iconTintDark = Color(0xFF38BDF8),
+            iconTintLight = Color(0xFF0284C7)
+        )
+        // Evening (5:00 PM - 8:59 PM): Sunset Rose / Purple Glass
+        hour in 17..20 -> GreetingTheme(
+            title = "Good evening$nameSuffix",
+            icon = Icons.Default.WbTwilight,
+            bgDarkStart = Color(0x33EC4899),
+            bgDarkEnd = Color(0x148B5CF6),
+            bgLightStart = Color(0x26EC4899),
+            bgLightEnd = Color(0x12FDF2F8),
+            borderDarkStart = Color(0x59F472B6),
+            borderDarkEnd = Color(0x1FA855F7),
+            borderLightStart = Color(0x4DEC4899),
+            borderLightEnd = Color(0x20FBCFE8),
+            iconTintDark = Color(0xFFF472B6),
+            iconTintLight = Color(0xFFDB2777)
+        )
+        // Night (9:00 PM - 4:59 AM): Starry Indigo / Violet Glass
+        else -> GreetingTheme(
+            title = "Good night$nameSuffix",
+            icon = Icons.Default.Bedtime,
+            bgDarkStart = Color(0x336366F1),
+            bgDarkEnd = Color(0x144338CA),
+            bgLightStart = Color(0x264F46E5),
+            bgLightEnd = Color(0x12EEF2FF),
+            borderDarkStart = Color(0x59818CF8),
+            borderDarkEnd = Color(0x1F6366F1),
+            borderLightStart = Color(0x4D6366F1),
+            borderLightEnd = Color(0x20C7D2FE),
+            iconTintDark = Color(0xFFA5B4FC),
+            iconTintLight = Color(0xFF4F46E5)
+        )
     }
 }
 
@@ -1813,29 +2016,41 @@ private fun getDynamicGreetingSubtitle(cal: Calendar, uiState: StudentPortalUiSt
     }
 
     val currentMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+    val firstClass = todayClasses.first()
+    val firstStartMins = startMinutes(firstClass.timeSlot)
 
-    var hasClassInProgress = false
-    var remainingClassesCount = 0
-
-    for (item in todayClasses) {
-        val startMins = startMinutes(item.timeSlot)
-        val endMins = endMinutes(item.timeSlot)
-
-        if (currentMinutes in startMins..endMins) {
-            hasClassInProgress = true
-        } else if (currentMinutes < startMins) {
-            remainingClassesCount++
+    // 1. Before first class of the day
+    if (currentMinutes < firstStartMins) {
+        val firstTimeStr = firstClass.timeSlot.split("-", "–").firstOrNull()?.trim() ?: ""
+        val countText = if (todayClasses.size == 1) "1 class today" else "${todayClasses.size} classes today"
+        return if (firstTimeStr.isNotBlank()) {
+            "$dateFormatted · Starts at $firstTimeStr · $countText"
+        } else {
+            "$dateFormatted · $countText"
         }
     }
 
-    return when {
-        hasClassInProgress -> "$dateFormatted · Class in progress"
-        remainingClassesCount > 0 -> {
-            val label = if (remainingClassesCount == 1) "1 class remaining" else "$remainingClassesCount classes remaining"
-            "$dateFormatted · $label"
-        }
-        else -> dateFormatted
+    // 2. Check if a class is happening right now
+    val isClassNow = todayClasses.any { cls ->
+        val s = startMinutes(cls.timeSlot)
+        val e = endMinutes(cls.timeSlot)
+        currentMinutes in s..e
     }
+    if (isClassNow) {
+        return "$dateFormatted · Class in progress"
+    }
+
+    // 3. During the day: how many classes remain?
+    val remainingClassesCount = todayClasses.count { cls ->
+        startMinutes(cls.timeSlot) > currentMinutes
+    }
+    if (remainingClassesCount > 0) {
+        val label = if (remainingClassesCount == 1) "1 class remaining" else "$remainingClassesCount classes remaining"
+        return "$dateFormatted · $label"
+    }
+
+    // 4. After all classes have ended
+    return "$dateFormatted · All classes completed"
 }
 
 private fun getUpNextClassInfo(uiState: StudentPortalUiState, currentTimeMillis: Long = System.currentTimeMillis()): UpNextInfo? {

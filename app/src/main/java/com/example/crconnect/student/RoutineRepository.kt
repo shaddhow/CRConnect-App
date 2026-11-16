@@ -125,25 +125,7 @@ class RoutineRepository(private val context: Context) {
     }
 
     fun getDefaultSampleEntries(): List<ClassEntry> {
-        return listOf(
-            // SUN (3h double lab)
-            ClassEntry("SUN", "CSE 210", "MDSS", "2517", "08:15 AM", "09:45 AM", intake = "55", section = "6"),
-            ClassEntry("SUN", "CSE 210", "MDSS", "2517", "09:45 AM", "11:15 AM", intake = "55", section = "6"),
-            // MON
-            ClassEntry("MON", "CSE 207", "AAG", "2810", "01:15 PM", "02:45 PM", intake = "55", section = "6"),
-            ClassEntry("MON", "CSE 341", "MJ", "2810", "02:45 PM", "04:15 PM", intake = "55", section = "6"),
-            ClassEntry("MON", "CSE 209", "MDSS", "2808", "04:15 PM", "05:45 PM", intake = "55", section = "6"),
-            // TUE
-            ClassEntry("TUE", "CSE 341", "MJ", "2808", "09:45 AM", "11:15 AM", intake = "55", section = "6"),
-            ClassEntry("TUE", "CSE 207", "AAG", "2808", "11:15 AM", "12:45 PM", intake = "55", section = "6"),
-            // WED (3h double lab - both slots guaranteed!)
-            ClassEntry("WED", "CSE 208", "AAG", "2517", "11:15 AM", "12:45 PM", intake = "55", section = "6"),
-            ClassEntry("WED", "CSE 208", "AAG", "2517", "01:15 PM", "02:45 PM", intake = "55", section = "6"),
-            // THR (3h double lab + theory)
-            ClassEntry("THR", "CSE 342", "MJ", "2419", "01:15 PM", "02:45 PM", intake = "55", section = "6"),
-            ClassEntry("THR", "CSE 342", "MJ", "2419", "02:45 PM", "04:15 PM", intake = "55", section = "6"),
-            ClassEntry("THR", "CSE 209", "MDSS", "2318", "04:15 PM", "05:45 PM", intake = "55", section = "6")
-        )
+        return emptyList()
     }
 
     fun getEntriesForDay(day: String): List<ClassEntry> {
