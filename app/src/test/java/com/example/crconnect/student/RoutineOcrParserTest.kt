@@ -162,6 +162,16 @@ class RoutineOcrParserTest {
     }
 
     @Test
+    fun testParseCourseCodeWithConfusables() {
+        val rawText = "WED\nCSE 20s FC: AAG R: 2517 Intake: 55-6 01:15 PM to 02:45 PM"
+        val entries = RoutineOcrParser.parseRoutineOCR(rawText)
+        assertEquals(1, entries.size)
+        assertEquals("CSE 208", entries[0].course)
+        assertEquals("AAG", entries[0].faculty)
+        assertEquals("2517", entries[0].room)
+    }
+
+    @Test
     fun testStartMinutesParsing() {
         assertEquals(15, startMinutes("12:15 AM"))
         assertEquals(720, startMinutes("12:00 PM"))

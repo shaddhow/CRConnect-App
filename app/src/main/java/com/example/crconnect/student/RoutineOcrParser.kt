@@ -292,7 +292,7 @@ object RoutineOcrParser {
             cellWordBuckets.getOrPut(Pair(rowIndex, colIndex)) { mutableListOf() }.add(word)
         }
 
-        val courseRegex = Regex("""(?i)\b(CSE|EEE|MAT|ENG|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV)[\s\-_]*(\d{3}[A-Z]?)\b""")
+        val courseRegex = Regex("""(?i)\b(CSE|EEE|MAT|ENG|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV|[A-Z]{2,4})[\s\-_]*([0-9sSoOlIBZ]{3,4}[A-Za-z]?)\b""")
         val facultyRegex = Regex("""(?i)\bF\s*C\b\s*[:;.\-]?\s*([A-Za-z]{1,6})\b""")
         val roomRegex = Regex("""(?i)\b(?:R|Room|Rm)\b\s*[:.\-]?\s*(\d{3,4})\b""")
         val intakeRegex = Regex("""(?i)Intake\s*[:.]?\s*(\d{1,3})\s*[-–_/,]\s*(\d{1,3})""")
@@ -342,7 +342,14 @@ object RoutineOcrParser {
                     seenSlots.add(Pair(row, targetCol))
 
                     val dept = match.groupValues[1].uppercase(Locale.ROOT)
-                    val num = match.groupValues[2].uppercase(Locale.ROOT)
+                    val rawNum = match.groupValues[2].uppercase(Locale.ROOT)
+                    val num = rawNum
+                        .replace('O', '0')
+                        .replace('I', '1')
+                        .replace('L', '1')
+                        .replace('Z', '2')
+                        .replace('B', '8')
+                        .replace('S', '8')
                     val course = "$dept $num"
 
                     val facultyMatch = facultyRegex.find(blockText)
@@ -513,7 +520,7 @@ object RoutineOcrParser {
         var currentDay = "SAT"
         var slotIndex = 0
 
-        val coursePattern = Pattern.compile("(?i)((?:CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV|[A-Z]{2,4})[-_ ]*[0-9]{3,4}[A-Z]?)")
+        val coursePattern = Pattern.compile("(?i)((?:CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV|[A-Z]{2,4})[-_ ]*[0-9sSoOlIBZ]{3,4}[A-Za-z]?)")
 
         for (line in lines) {
             val trimmed = line.trim()
@@ -588,10 +595,17 @@ object RoutineOcrParser {
     }
 
     private fun formatCourseCode(raw: String): String {
-        val m = Pattern.compile("(?i)([A-Z]{2,4})[-_ ]*([0-9]{3,4}[A-Z]?)").matcher(raw.trim())
+        val m = Pattern.compile("(?i)([A-Z]{2,4})[-_ ]*([0-9sSoOlIBZ]{3,4}[A-Za-z]?)").matcher(raw.trim())
         if (m.find()) {
             val dept = m.group(1)?.uppercase(Locale.ROOT) ?: ""
-            val num = m.group(2)?.uppercase(Locale.ROOT) ?: ""
+            val rawNum = m.group(2)?.uppercase(Locale.ROOT) ?: ""
+            val num = rawNum
+                .replace('O', '0')
+                .replace('I', '1')
+                .replace('L', '1')
+                .replace('Z', '2')
+                .replace('B', '8')
+                .replace('S', '8')
             return "$dept $num"
         }
         return raw.trim().uppercase(Locale.ROOT)

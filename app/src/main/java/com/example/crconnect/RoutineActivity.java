@@ -59,6 +59,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.CollectionReference;
@@ -1139,7 +1140,7 @@ public class RoutineActivity extends AppCompatActivity {
 
             // 2. Collect all text lines with bounding boxes (Decomposing multi-column lines into elements)
             List<TextLineItem> allLines = new ArrayList<>();
-            Pattern coursePattern = Pattern.compile("(?i)((?:CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV|[A-Z]{2,4})[-_ ]*[0-9]{3,4}[A-Z]?)");
+            Pattern coursePattern = Pattern.compile("(?i)((?:CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV|[A-Z]{2,4})[-_ ]*[0-9sSoOlIBZ]{3,4}[A-Za-z]?)");
 
             for (Text.TextBlock block : visionText.getTextBlocks()) {
                 for (Text.Line line : block.getLines()) {
@@ -1363,7 +1364,13 @@ public class RoutineActivity extends AppCompatActivity {
                         if (rawRoom == null) rawRoom = "TBA";
 
                         String formattedRoom = formatRoomWithBuilding(rawRoom);
-                        int currentSlotIdx = bestTimeSlotIndex;
+                        int currentSlotIdx = 0;
+                        for (int s = 0; s < BUBT_TIME_SLOTS.length; s++) {
+                            if (BUBT_TIME_SLOTS[s].equalsIgnoreCase(timeSlot)) {
+                                currentSlotIdx = s;
+                                break;
+                            }
+                        }
                         String currentSlot = timeSlot;
                         String key = dayName + "_" + courseCode + "_" + currentSlot;
 
@@ -1458,11 +1465,19 @@ public class RoutineActivity extends AppCompatActivity {
     private String extractCourseCode(String text) {
         if (text == null) return null;
         try {
-            Matcher m = Pattern.compile("(?i)((?:CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV|[A-Z]{2,4})[-_ ]*[0-9]{3,4}[A-Z]?)").matcher(text);
+            Matcher m = Pattern.compile("(?i)((?:CSE|MAT|ENG|EEE|PHY|CHEM|BUS|STA|ACT|FIN|LAW|GED|TEX|CIV|[A-Z]{2,4})[-_ ]*([0-9sSoOlIBZ]{3,4})[A-Za-z]?)").matcher(text);
             if (m.find()) {
-                String matched = m.group(1);
-                if (matched != null) {
-                    return matched.toUpperCase().replaceAll("[ \t\n\r]+", " ");
+                String dept = m.group(1);
+                String rawNum = m.group(2);
+                if (dept != null && rawNum != null) {
+                    String num = rawNum.toUpperCase()
+                            .replace('O', '0')
+                            .replace('I', '1')
+                            .replace('L', '1')
+                            .replace('Z', '2')
+                            .replace('B', '8')
+                            .replace('S', '8');
+                    return (dept.replaceAll("[ \t\n\r]+", " ").trim() + " " + num).toUpperCase();
                 }
             }
         } catch (PatternSyntaxException e) {
