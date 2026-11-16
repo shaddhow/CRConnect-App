@@ -402,16 +402,26 @@ fun TopHeader(
 
         // 3. Title & Subtitle Column
         Column(
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             if (isProfileTab) {
-                // When Profile tab is active: Hide profile picture and user name, show only registered department name!
+                // When Profile tab is active: Show balanced screen title & university department subtitle
+                Text(
+                    text = "Student Profile",
+                    fontFamily = PlusJakartaSansFontFamily,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Text(
                     text = displayDepartment,
                     fontFamily = PlusJakartaSansFontFamily,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -444,47 +454,49 @@ fun TopHeader(
             }
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        if (!isProfileTab) {
+            Spacer(modifier = Modifier.width(10.dp))
 
-        // 4. Secure Chip
-        Box(
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(if (isDark) Color(0xFF0D3B24) else Color(0xFFDCFCE7))
-                .border(
-                    1.dp,
-                    if (isDark) Color(0xFF15803D).copy(alpha = 0.5f) else Color(0xFFBBF7D0),
-                    CircleShape
+            // 4. Secure Chip
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(if (isDark) Color(0xFF0D3B24) else Color(0xFFDCFCE7))
+                    .border(
+                        1.dp,
+                        if (isDark) Color(0xFF15803D).copy(alpha = 0.5f) else Color(0xFFBBF7D0),
+                        CircleShape
+                    )
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "Secure",
+                    fontFamily = PlusJakartaSansFontFamily,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDark) Color(0xFF4ADE80) else Color(0xFF166534)
                 )
-                .padding(horizontal = 10.dp, vertical = 4.dp)
-        ) {
-            Text(
-                text = "Secure",
-                fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isDark) Color(0xFF4ADE80) else Color(0xFF166534)
-            )
-        }
+            }
 
-        Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
-        // 5. Power / Sign Out Button: 44dp x 44dp, 24dp ic_power icon
-        Surface(
-            modifier = Modifier.size(44.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            shadowElevation = 0.dp,
-            onClick = onSignOutClick
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_power),
-                    contentDescription = "Sign out",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp)
-                )
+            // 5. Power / Sign Out Button: 44dp x 44dp, 24dp ic_power icon
+            Surface(
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                shadowElevation = 0.dp,
+                onClick = onSignOutClick
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_power),
+                        contentDescription = "Sign out",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }

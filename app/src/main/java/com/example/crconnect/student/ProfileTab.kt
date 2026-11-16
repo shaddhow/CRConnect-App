@@ -1954,12 +1954,15 @@ fun ProfileTab(
                     }
 
                     // Student Details on Right
+                    val formattedName = remember(profile.name) {
+                        profile.name.replace(Regex("\\s*-\\s*"), "-").trim().ifBlank { "Student" }
+                    }
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = profile.name.ifBlank { "Student" },
+                            text = formattedName,
                             fontFamily = PlusJakartaSansFontFamily,
                             fontSize = 16.5.sp,
                             fontWeight = FontWeight.Bold,
@@ -2252,6 +2255,7 @@ fun ProfileTab(
                             modifier = Modifier.size(22.dp)
                         )
                     }
+                    val hasAdvisor = profile.advisorName.isNotBlank() && profile.advisorName.trim() != "--"
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                             text = "Academic Advisor",
@@ -2261,7 +2265,7 @@ fun ProfileTab(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = profile.advisorName.ifBlank { "Advisor details & contact info" },
+                            text = if (hasAdvisor) profile.advisorName.trim() else "Advisor details & contact info",
                             fontFamily = PlusJakartaSansFontFamily,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Normal,
@@ -2276,17 +2280,18 @@ fun ProfileTab(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    val hasAdvisor = profile.advisorName.isNotBlank() && profile.advisorName.trim() != "--"
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFF10B981).copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.3f))
+                        color = if (hasAdvisor) Color(0xFF10B981).copy(alpha = 0.12f) else if (isDark) Color(0x1FFFFFFF) else Color(0x0F000000),
+                        border = BorderStroke(1.dp, if (hasAdvisor) Color(0xFF10B981).copy(alpha = 0.3f) else if (isDark) Color(0x33FFFFFF) else Color(0x1F000000))
                     ) {
                         Text(
-                            text = "Assigned",
+                            text = if (hasAdvisor) "Assigned" else "Not Set",
                             fontFamily = PlusJakartaSansFontFamily,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isDark) Color(0xFF4ADE80) else Color(0xFF059669),
+                            color = if (hasAdvisor) (if (isDark) Color(0xFF4ADE80) else Color(0xFF059669)) else (if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
