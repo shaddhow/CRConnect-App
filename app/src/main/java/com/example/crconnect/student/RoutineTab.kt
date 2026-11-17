@@ -15,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -22,6 +23,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -119,7 +121,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -129,6 +134,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.compose.material.icons.filled.Star
+import com.example.crconnect.R
 import com.example.crconnect.RoutineCameraActivity
 import com.example.crconnect.core.utils.HapticUtils
 import kotlinx.coroutines.delay
@@ -152,6 +158,7 @@ fun RoutineTab(
 ) {
     val context = LocalContext.current
     val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
     val scrollState = rememberScrollState()
     val isDark = LocalIsDarkTheme.current
     var dragOffsetX by remember { mutableFloatStateOf(0f) }
@@ -409,6 +416,75 @@ fun RoutineTab(
         // 3. "UP NEXT" HERO CARD
         upNextInfo?.let { info ->
             val hasTwoPages = info.isTodayCompleted && info.nextClassModel != null
+            val heroGradients = if (info.isTodayCompleted) {
+                if (isDark) listOf(Color(0xFF1E1035), Color(0xFF311042), Color(0xFF4C1D95))
+                else listOf(Color(0xFF4F46E5), Color(0xFF6366F1), Color(0xFF818CF8))
+            } else if (info.classModel == null) {
+                if (isDark) listOf(Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF312E81))
+                else listOf(Color(0xFF4338CA), Color(0xFF6366F1), Color(0xFF818CF8))
+            } else if (info.isHappeningNow) {
+                if (isDark) CardColorVariant.GREEN.heroGradientsDark else CardColorVariant.GREEN.heroGradientsLight
+            } else {
+                if (isDark) CardColorVariant.BLUE.heroGradientsDark else CardColorVariant.BLUE.heroGradientsLight
+            }
+            val heroAccent = if (info.isTodayCompleted) Color(0xFF6366F1)
+            else if (info.classModel == null) Color(0xFF818CF8)
+            else if (info.isHappeningNow) CardColorVariant.GREEN.heroAccentColor
+            else CardColorVariant.BLUE.heroAccentColor
+
+            // Dynamic "Live" Floating Glass Bubbles Animation
+            val infiniteTransition = rememberInfiniteTransition(label = "heroLiveBubbles")
+
+            // Motion 1: Primary right bubble drift
+            val floatY1 by infiniteTransition.animateFloat(
+                initialValue = -8f,
+                targetValue = 10f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 3200, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "floatY1"
+            )
+            val floatScale1 by infiniteTransition.animateFloat(
+                initialValue = 0.96f,
+                targetValue = 1.05f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 3200, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "floatScale1"
+            )
+
+            // Motion 2: Bottom floating bubble drift
+            val floatY2 by infiniteTransition.animateFloat(
+                initialValue = 8f,
+                targetValue = -9f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 3900, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "floatY2"
+            )
+
+            // Motion 3: Top-left small bubble drift
+            val floatY3 by infiniteTransition.animateFloat(
+                initialValue = -6f,
+                targetValue = 7f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 2800, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "floatY3"
+            )
+            val floatX3 by infiniteTransition.animateFloat(
+                initialValue = -5f,
+                targetValue = 6f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 3400, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "floatX3"
+            )
 
             Card(
                 modifier = Modifier
@@ -416,8 +492,8 @@ fun RoutineTab(
                     .shadow(
                         elevation = 10.dp,
                         shape = RoundedCornerShape(26.dp),
-                        ambientColor = if (isDark) Color(0x66000000) else Color(0x400052CC),
-                        spotColor = if (isDark) Color(0x66000000) else Color(0x400052CC)
+                        ambientColor = if (isDark) Color(0x66000000) else heroAccent.copy(alpha = 0.4f),
+                        spotColor = if (isDark) Color(0x66000000) else heroAccent.copy(alpha = 0.4f)
                     ),
                 shape = RoundedCornerShape(26.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent)
@@ -428,38 +504,81 @@ fun RoutineTab(
                         .heightIn(min = 185.dp)
                         .clip(RoundedCornerShape(26.dp))
                         .background(
-                            brush = if (isDark) {
-                                Brush.linearGradient(
-                                    colors = listOf(Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF2563EB))
-                                )
-                            } else {
-                                Brush.linearGradient(
-                                    colors = listOf(Color(0xFF0052CC), Color(0xFF0066FF), Color(0xFF2563EB))
-                                )
-                            }
+                            brush = Brush.linearGradient(colors = heroGradients)
                         )
                 ) {
-                    // Layered Background Decorative Circles
+                    // Layered Background: Clearly Visible "Live" Floating Glass Bubbles
                     Box(
                         modifier = Modifier
                             .matchParentSize()
                             .clip(RoundedCornerShape(26.dp))
                     ) {
+                        // 1. Primary Big Glass Bubble (Right / Behind Room 2808 Badge)
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .offset(x = 35.dp, y = (-25).dp)
-                                .size(185.dp)
+                                .offset(x = 55.dp, y = (-25).dp)
+                                .graphicsLayer {
+                                    translationY = floatY1
+                                    scaleX = floatScale1
+                                    scaleY = floatScale1
+                                }
+                                .size(210.dp)
                                 .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.09f))
+                                .background(Color.White.copy(alpha = 0.12f))
+                                .border(1.dp, Color.White.copy(alpha = 0.22f), CircleShape)
                         )
+
+                        // 2. Secondary Floating Glass Bubble (Bottom-Center / Left Depth)
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .offset(x = 35.dp, y = 35.dp)
+                                .graphicsLayer {
+                                    translationY = floatY2
+                                }
+                                .size(130.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.10f))
+                                .border(1.dp, Color.White.copy(alpha = 0.18f), CircleShape)
+                        )
+
+                        // 3. Mini Floating Bubble (Top-Left above category label)
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .offset(x = (-10).dp, y = (-12).dp)
+                                .graphicsLayer {
+                                    translationX = floatX3
+                                    translationY = floatY3
+                                }
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.08f))
+                                .border(1.dp, Color.White.copy(alpha = 0.16f), CircleShape)
+                        )
+
+                        // 4. Accent Floating Bubble (Mid-Bottom Right Edge)
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
-                                .offset(x = 45.dp, y = 35.dp)
-                                .size(160.dp)
+                                .offset(x = 15.dp, y = 20.dp)
+                                .graphicsLayer {
+                                    translationY = -floatY1 * 0.7f
+                                    translationX = floatX3 * 0.6f
+                                }
+                                .size(85.dp)
                                 .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.06f))
+                                .background(
+                                    if (info.isHappeningNow) Color(0xFF4ADE80).copy(alpha = 0.22f)
+                                    else Color.White.copy(alpha = 0.11f)
+                                )
+                                .border(
+                                    1.dp,
+                                    if (info.isHappeningNow) Color(0xFF4ADE80).copy(alpha = 0.35f)
+                                    else Color.White.copy(alpha = 0.20f),
+                                    CircleShape
+                                )
                         )
                     }
 
@@ -496,8 +615,9 @@ fun RoutineTab(
                                     ) {
                                         // Card Top Row
                                         Row(
+                                            modifier = Modifier.fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
                                             Text(
                                                 text = info.statusLabel,
@@ -513,7 +633,7 @@ fun RoutineTab(
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(20.dp))
                                                     .background(Color.White.copy(alpha = 0.18f))
-                                                    .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(20.dp))
+                                                    .border(1.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(20.dp))
                                                     .padding(horizontal = 12.dp, vertical = 4.dp)
                                             ) {
                                                 Text(
@@ -567,7 +687,7 @@ fun RoutineTab(
                                                         fontFamily = PlusJakartaSansFontFamily,
                                                         fontSize = 10.sp,
                                                         fontWeight = FontWeight.Bold,
-                                                        color = Color(0xFF0052CC),
+                                                        color = heroAccent,
                                                         letterSpacing = 1.sp
                                                     )
                                                     Spacer(modifier = Modifier.height(2.dp))
@@ -597,8 +717,9 @@ fun RoutineTab(
                                     ) {
                                         // Card Top Row
                                         Row(
+                                            modifier = Modifier.fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
                                             Text(
                                                 text = cardStatusLabel,
@@ -609,18 +730,25 @@ fun RoutineTab(
                                                 letterSpacing = 1.2.sp
                                             )
 
+                                            val durationText = targetClass?.timeSlot?.let { parseClassDuration(it) }?.takeIf { it.isNotBlank() }
+                                            val pillText = if (durationText != null && !cardStatusPill.contains(durationText)) {
+                                                "$durationText · $cardStatusPill"
+                                            } else {
+                                                cardStatusPill
+                                            }
+
                                             // Status pill
                                             Box(
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(20.dp))
                                                     .background(Color.White.copy(alpha = 0.18f))
-                                                    .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(20.dp))
+                                                    .border(1.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(20.dp))
                                                     .padding(horizontal = 12.dp, vertical = 4.dp)
                                             ) {
                                                 Text(
-                                                    text = cardStatusPill,
+                                                    text = pillText,
                                                     fontFamily = PlusJakartaSansFontFamily,
-                                                    fontSize = 12.sp,
+                                                    fontSize = 11.sp,
                                                     fontWeight = FontWeight.SemiBold,
                                                     color = Color.White.copy(alpha = 0.95f)
                                                 )
@@ -668,7 +796,7 @@ fun RoutineTab(
                                                         fontFamily = PlusJakartaSansFontFamily,
                                                         fontSize = 10.sp,
                                                         fontWeight = FontWeight.Bold,
-                                                        color = Color(0xFF0052CC),
+                                                        color = heroAccent,
                                                         letterSpacing = 1.sp
                                                     )
                                                     Spacer(modifier = Modifier.height(2.dp))
@@ -720,41 +848,54 @@ fun RoutineTab(
                         ) {
                             // Card Top Row
                             Row(
+                                modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(
-                                    text = info.statusLabel,
-                                    fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color.White.copy(alpha = 0.8f),
-                                    letterSpacing = 1.2.sp
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    // Glowing green dot (only for LIVE class)
+                                    if (info.isHappeningNow) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .shadow(4.dp, CircleShape, ambientColor = Color(0xFF22C55E), spotColor = Color(0xFF22C55E))
+                                                .clip(CircleShape)
+                                                .background(Color(0xFF22C55E))
+                                        )
+                                    }
 
-                                // Glowing green dot (only for LIVE class)
-                                if (info.isHappeningNow) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(8.dp)
-                                            .shadow(4.dp, CircleShape, ambientColor = Color(0xFF22C55E), spotColor = Color(0xFF22C55E))
-                                            .clip(CircleShape)
-                                            .background(Color(0xFF22C55E))
+                                    Text(
+                                        text = info.statusLabel,
+                                        fontFamily = PlusJakartaSansFontFamily,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color.White.copy(alpha = 0.8f),
+                                        letterSpacing = 1.2.sp
                                     )
                                 }
 
-                                // Status pill
+                                val durationText = targetClass?.timeSlot?.let { parseClassDuration(it) }?.takeIf { it.isNotBlank() }
+                                val pillText = if (durationText != null && !info.isHappeningNow && !info.isTodayCompleted && !info.statusPill.contains(durationText)) {
+                                    "$durationText · ${info.statusPill}"
+                                } else {
+                                    info.statusPill
+                                }
+
+                                // Status pill aligned to top right
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(20.dp))
                                         .background(Color.White.copy(alpha = 0.18f))
-                                        .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(20.dp))
+                                        .border(1.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(20.dp))
                                         .padding(horizontal = 12.dp, vertical = 4.dp)
                                 ) {
                                     Text(
-                                        text = info.statusPill,
+                                        text = pillText,
                                         fontFamily = PlusJakartaSansFontFamily,
-                                        fontSize = 12.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = Color.White.copy(alpha = 0.95f)
                                     )
@@ -802,7 +943,7 @@ fun RoutineTab(
                                             fontFamily = PlusJakartaSansFontFamily,
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF0052CC),
+                                            color = heroAccent,
                                             letterSpacing = 1.sp
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
@@ -924,6 +1065,7 @@ fun RoutineTab(
                                 // Swipe Left -> Next Day
                                 val currentIndex = uiState.scheduleDays.indexOfFirst { it.dayIndex == uiState.selectedDayIndex }
                                 if (currentIndex >= 0 && currentIndex < uiState.scheduleDays.size - 1) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     HapticUtils.lightClick(view)
                                     onDaySelected(uiState.scheduleDays[currentIndex + 1].dayIndex)
                                     dragOffsetX = 0f
@@ -932,6 +1074,7 @@ fun RoutineTab(
                                 // Swipe Right -> Previous Day
                                 val currentIndex = uiState.scheduleDays.indexOfFirst { it.dayIndex == uiState.selectedDayIndex }
                                 if (currentIndex > 0) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     HapticUtils.lightClick(view)
                                     onDaySelected(uiState.scheduleDays[currentIndex - 1].dayIndex)
                                     dragOffsetX = 0f
@@ -967,6 +1110,7 @@ fun RoutineTab(
                                 .clip(RoundedCornerShape(9.dp))
                                 .background(if (isDark) Color(0xFF1A2234) else Color(0xFFF1F5FB))
                                 .clickable {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     HapticUtils.lightClick(view)
                                     onNavigateWeek(-1)
                                 },
@@ -986,6 +1130,7 @@ fun RoutineTab(
                                 .clip(RoundedCornerShape(9.dp))
                                 .background(if (isDark) Color(0xFF1A2234) else Color(0xFFF1F5FB))
                                 .clickable {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     HapticUtils.lightClick(view)
                                     onNavigateWeek(1)
                                 },
@@ -1011,6 +1156,7 @@ fun RoutineTab(
                             day = day,
                             isSelected = day.dayIndex == uiState.selectedDayIndex,
                             onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 HapticUtils.lightClick(view)
                                 onDaySelected(day.dayIndex)
                             },
@@ -1068,7 +1214,8 @@ fun RoutineTab(
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 classesForSelectedDay.forEachIndexed { index, classModel ->
-                    val colorVariant = CardColorVariant.forIndex(index)
+                    val isLive = getClassTimingStatus(uiState.selectedDayIndex, classModel.timeSlot) == ClassTimingStatus.LIVE_NOW
+                    val colorVariant = CardColorVariant.forCourse(classModel.courseName, isLive = isLive)
                     val isLastItem = index == classesForSelectedDay.size - 1
 
                     TimelineRowItem(
@@ -1093,10 +1240,30 @@ fun RoutineTab(
             )
         } else {
             // EMPTY STATE 1 — No classes on this specific day
+            val nextUpcomingClassText = remember(uiState.classMap, uiState.selectedDayIndex) {
+                val currentDay = uiState.selectedDayIndex
+                var foundText: String? = null
+                for (step in 1..6) {
+                    val nextDayIdx = (currentDay + step) % 7
+                    val classes = (uiState.classMap[nextDayIdx] ?: emptyList()).sortedBy { startMinutes(it.timeSlot) }
+                    if (classes.isNotEmpty()) {
+                        val nextDayObj = uiState.scheduleDays.find { it.dayIndex == nextDayIdx }
+                        val dName = nextDayObj?.shortName?.let { getDayFullName(it) } ?: "Next Day"
+                        val first = classes.first()
+                        val time = first.timeSlot.split("-", "–").firstOrNull()?.trim() ?: first.timeSlot
+                        val course = if (first.courseName.contains("(")) first.courseName.substringBefore("(").trim() else first.courseName
+                        foundText = "$dName at $time · $course"
+                        break
+                    }
+                }
+                foundText
+            }
+
             RoutineDayEmptyCard(
                 isDark = isDark,
                 dayName = getDayFullName(selectedDay.shortName),
                 shortDay = selectedDay.shortName,
+                nextUpcomingClassText = nextUpcomingClassText,
                 onAddClass = onOpenAddClass
             )
         }
@@ -1186,6 +1353,8 @@ private fun DayCellItem(
     modifier: Modifier = Modifier
 ) {
     val isDark = LocalIsDarkTheme.current
+    val haptic = LocalHapticFeedback.current
+    val view = LocalView.current
 
     val bgModifier = if (isSelected) {
         Modifier
@@ -1222,7 +1391,11 @@ private fun DayCellItem(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
-            ) { onClick() }
+            ) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                HapticUtils.lightClick(view)
+                onClick()
+            }
             .padding(vertical = 8.dp, horizontal = 4.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -1271,6 +1444,7 @@ private fun TimelineRowItem(
     onAttendanceChanged: (String) -> Unit
 ) {
     val isDark = LocalIsDarkTheme.current
+    val haptic = LocalHapticFeedback.current
     val timeRange = parseClassTimeRange(classModel.timeSlot)
     val timingStatus = getClassTimingStatus(dayIndex, classModel.timeSlot)
     val effectiveState = getEffectiveAttendanceState(dayIndex, classModel)
@@ -1552,11 +1726,12 @@ private fun TimelineRowItem(
                             lineHeight = 22.sp
                         )
                         if (facultyPart.isNotBlank()) {
+                            val badgeColor = colorVariant.dotColor
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
-                                    .background(if (isDark) Color(0x2638BDF8) else Color(0x1F0284C7))
-                                    .border(1.dp, if (isDark) Color(0x3338BDF8) else Color(0x260284C7), RoundedCornerShape(6.dp))
+                                    .background(badgeColor.copy(alpha = if (isDark) 0.20f else 0.12f))
+                                    .border(1.dp, badgeColor.copy(alpha = if (isDark) 0.38f else 0.24f), RoundedCornerShape(6.dp))
                                     .padding(horizontal = 6.dp, vertical = 1.5.dp)
                             ) {
                                 Text(
@@ -1564,7 +1739,7 @@ private fun TimelineRowItem(
                                     fontFamily = PlusJakartaSansFontFamily,
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isDark) Color(0xFF38BDF8) else Color(0xFF0369A1)
+                                    color = if (isDark) badgeColor else colorVariant.heroAccentColor
                                 )
                             }
                         }
@@ -1635,251 +1810,95 @@ private fun TimelineRowItem(
                         }
                     }
 
-                    // Attendance Section (Locked / Live aware)
-                    when (timingStatus) {
-                        ClassTimingStatus.LIVE_NOW -> {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 4.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                    // Attendance Self-Tracking Bar (Always Unlocked & Interactive)
+                    val isAttended = classModel.attendanceState == "attended"
+                    val isMissed = classModel.attendanceState == "missed"
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 6.dp)
+                    ) {
+                        // Attended Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(32.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(
+                                    if (isAttended) Color(0xFF10B981)
+                                    else if (isDark) Color(0x1F10B981) else Color(0x1410B981)
+                                )
+                                .border(
+                                    width = if (isAttended) 1.5.dp else 1.dp,
+                                    color = if (isAttended) Color(0xFF10B981) else Color(0x4010B981),
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .clickable {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    onAttendanceChanged("attended")
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    val isAttended = classModel.attendanceState == "attended"
-                                    val isMissed = classModel.attendanceState == "missed"
-
-                                    // Attended Button
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(32.dp)
-                                            .clip(RoundedCornerShape(11.dp))
-                                            .background(
-                                                if (isAttended) Color(0xFF22C55E) else if (isDark) Color(0x1F22C55E) else Color(0x1422C55E)
-                                            )
-                                            .border(
-                                                width = 1.5.dp,
-                                                color = if (isAttended) Color(0xFF22C55E) else Color(0x5922C55E),
-                                                shape = RoundedCornerShape(11.dp)
-                                            )
-                                            .clickable { onAttendanceChanged("attended") },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Check,
-                                                contentDescription = "Attended",
-                                                tint = if (isAttended) Color.White else Color(0xFF22C55E),
-                                                modifier = Modifier.size(13.dp)
-                                            )
-                                            Text(
-                                                text = "Attended",
-                                                fontFamily = PlusJakartaSansFontFamily,
-                                                fontSize = 12.5.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (isAttended) Color.White else Color(0xFF22C55E)
-                                            )
-                                        }
-                                    }
-
-                                    // Missed Button
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(32.dp)
-                                            .clip(RoundedCornerShape(11.dp))
-                                            .background(
-                                                if (isMissed) Color(0xFFEF4444) else if (isDark) Color(0x1FEF4444) else Color(0x12EF4444)
-                                            )
-                                            .border(
-                                                width = 1.5.dp,
-                                                color = if (isMissed) Color(0xFFEF4444) else Color(0x4DEF4444),
-                                                shape = RoundedCornerShape(11.dp)
-                                            )
-                                            .clickable { onAttendanceChanged("missed") },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Close,
-                                                contentDescription = "Missed",
-                                                tint = if (isMissed) Color.White else Color(0xFFEF4444),
-                                                modifier = Modifier.size(13.dp)
-                                            )
-                                            Text(
-                                                text = "Missed",
-                                                fontFamily = PlusJakartaSansFontFamily,
-                                                fontSize = 12.5.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (isMissed) Color.White else Color(0xFFEF4444)
-                                            )
-                                        }
-                                    }
-                                }
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Attended",
+                                    tint = if (isAttended) Color.White else Color(0xFF10B981),
+                                    modifier = Modifier.size(13.5.dp)
+                                )
+                                Text(
+                                    text = "Attended",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isAttended) FontWeight.Bold else FontWeight.SemiBold,
+                                    color = if (isAttended) Color.White else Color(0xFF10B981)
+                                )
                             }
                         }
 
-                        ClassTimingStatus.PAST -> {
-                            val isAttended = effectiveState == "attended"
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 5.dp)
-                                    .heightIn(min = 34.dp)
-                                    .clip(RoundedCornerShape(11.dp))
-                                    .background(
-                                        if (isAttended) (if (isDark) Color(0x1F22C55E) else Color(0x1422C55E))
-                                        else (if (isDark) Color(0x1FEF4444) else Color(0x12EF4444))
-                                    )
-                                    .border(
-                                        width = 1.dp,
-                                        color = if (isAttended) Color(0x5922C55E) else Color(0x4DEF4444),
-                                        shape = RoundedCornerShape(11.dp)
-                                    )
-                                    .clickable { onAttendanceChanged(if (isAttended) "attended" else "missed") }
-                                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                                contentAlignment = Alignment.Center
+                        // Missed Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(32.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(
+                                    if (isMissed) Color(0xFFEF4444)
+                                    else if (isDark) Color(0x1FEF4444) else Color(0x12EF4444)
+                                )
+                                .border(
+                                    width = if (isMissed) 1.5.dp else 1.dp,
+                                    color = if (isMissed) Color(0xFFEF4444) else Color(0x40EF4444),
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .clickable {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    onAttendanceChanged("missed")
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = if (isAttended) Icons.Default.Check else Icons.Default.Close,
-                                        contentDescription = null,
-                                        tint = if (isAttended) Color(0xFF22C55E) else Color(0xFFEF4444),
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Text(
-                                        text = if (isAttended) "Attended" else "Auto-Missed",
-                                        fontFamily = PlusJakartaSansFontFamily,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isAttended) Color(0xFF22C55E) else Color(0xFFEF4444)
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.Lock,
-                                        contentDescription = "Locked",
-                                        tint = (if (isAttended) Color(0xFF22C55E) else Color(0xFFEF4444)).copy(alpha = 0.7f),
-                                        modifier = Modifier.size(11.dp)
-                                    )
-                                }
-                            }
-                        }
-
-                        ClassTimingStatus.FUTURE -> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 5.dp)
-                                    .heightIn(min = 34.dp)
-                                    .clip(RoundedCornerShape(11.dp))
-                                    .background(
-                                        brush = Brush.linearGradient(
-                                            colors = if (isDark) listOf(
-                                                Color(0x181E293B),
-                                                Color(0x0F0F172A)
-                                            ) else listOf(
-                                                Color(0x0C000000),
-                                                Color(0x05000000)
-                                            )
-                                        )
-                                    )
-                                    .border(
-                                        width = 1.dp,
-                                        brush = Brush.linearGradient(
-                                            colors = if (isDark) listOf(
-                                                Color(0x3394A3B8),
-                                                Color(0x1464748B)
-                                            ) else listOf(
-                                                Color(0x1F000000),
-                                                Color(0x0D000000)
-                                            )
-                                        ),
-                                        shape = RoundedCornerShape(11.dp)
-                                    )
-                                    .clickable { onAttendanceChanged("attended") }
-                                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    // Left: Frosted lock micro-badge + status
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(18.dp)
-                                                .clip(CircleShape)
-                                                .background(
-                                                    if (isDark) Color(0x3364748B) else Color(0x1A475569)
-                                                )
-                                                .border(
-                                                    width = 0.8.dp,
-                                                    color = if (isDark) Color(0x4094A3B8) else Color(0x26475569),
-                                                    shape = CircleShape
-                                                ),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Lock,
-                                                contentDescription = "Locked",
-                                                tint = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569),
-                                                modifier = Modifier.size(9.5.dp)
-                                            )
-                                        }
-
-                                        Text(
-                                            text = "Attendance Locked",
-                                            fontFamily = PlusJakartaSansFontFamily,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
-                                        )
-                                    }
-
-                                    // Right: Glassy capsule indicating unlock time
-                                    val unlockTimeText = if (timeRange.startHour.isNotBlank()) {
-                                        "Opens ${timeRange.startHour} ${timeRange.startAmPm}".trim()
-                                    } else {
-                                        "Opens during class"
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(7.dp))
-                                            .background(
-                                                if (isDark) Color(0x2638BDF8) else Color(0x1A0284C7)
-                                            )
-                                            .border(
-                                                width = 0.8.dp,
-                                                color = if (isDark) Color(0x4038BDF8) else Color(0x330284C7),
-                                                shape = RoundedCornerShape(7.dp)
-                                            )
-                                            .padding(horizontal = 7.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = unlockTimeText,
-                                            fontFamily = PlusJakartaSansFontFamily,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7)
-                                        )
-                                    }
-                                }
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Missed",
+                                    tint = if (isMissed) Color.White else Color(0xFFEF4444),
+                                    modifier = Modifier.size(13.5.dp)
+                                )
+                                Text(
+                                    text = "Missed",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isMissed) FontWeight.Bold else FontWeight.SemiBold,
+                                    color = if (isMissed) Color.White else Color(0xFFEF4444)
+                                )
                             }
                         }
                     }
@@ -1905,7 +1924,8 @@ private data class UpNextInfo(
     val roomBadgeTitle: String = "ROOM",
     val roomBadgeValue: String = "TBA",
     val nextStatusLabel: String = "UP NEXT",
-    val nextStatusPill: String = ""
+    val nextStatusPill: String = "",
+    val colorVariant: CardColorVariant? = null
 )
 
 private fun getStudentShortName(fullName: String): String {
@@ -2094,7 +2114,8 @@ private fun getUpNextClassInfo(uiState: StudentPortalUiState, currentTimeMillis:
                     statusPill = pillText,
                     isHappeningNow = true,
                     roomBadgeTitle = "ROOM",
-                    roomBadgeValue = extractCleanRoomNumber(item.room)
+                    roomBadgeValue = extractCleanRoomNumber(item.room),
+                    colorVariant = CardColorVariant.GREEN
                 )
             } else if (currentMinutes < startMins) {
                 val diffMins = startMins - currentMinutes
@@ -2105,7 +2126,8 @@ private fun getUpNextClassInfo(uiState: StudentPortalUiState, currentTimeMillis:
                     statusPill = pillText,
                     isHappeningNow = false,
                     roomBadgeTitle = "ROOM",
-                    roomBadgeValue = extractCleanRoomNumber(item.room)
+                    roomBadgeValue = extractCleanRoomNumber(item.room),
+                    colorVariant = CardColorVariant.forCourse(item.courseName, isLive = false)
                 )
             }
         }
@@ -2182,20 +2204,22 @@ private fun getUpNextClassInfo(uiState: StudentPortalUiState, currentTimeMillis:
                 statusPill = "Day Off",
                 isHappeningNow = false,
                 displayTitle = "No classes scheduled for $dayName",
-                displayTime = "Free day",
+                displayTime = "Free day · Relax & recharge",
                 roomBadgeTitle = "STATUS",
-                roomBadgeValue = "OFF"
+                roomBadgeValue = "FREE"
             )
         }
 
         val firstClass = selectedClasses.first()
+        val variant = CardColorVariant.forCourse(firstClass.courseName, isLive = false)
         return UpNextInfo(
             classModel = firstClass,
             statusLabel = "SCHEDULED FOR ${dayName.uppercase(Locale.ROOT)}",
             statusPill = "${selectedClasses.size} ${if (selectedClasses.size == 1) "class" else "classes"}",
             isHappeningNow = false,
             roomBadgeTitle = "ROOM",
-            roomBadgeValue = extractCleanRoomNumber(firstClass.room)
+            roomBadgeValue = extractCleanRoomNumber(firstClass.room),
+            colorVariant = variant
         )
     }
 }
@@ -2220,49 +2244,96 @@ private enum class CardColorVariant(
     val cardBgDark: Color,
     val cardBgLight: Color,
     val borderDark: Color,
-    val borderLight: Color
+    val borderLight: Color,
+    val heroGradientsLight: List<Color>,
+    val heroGradientsDark: List<Color>,
+    val heroAccentColor: Color
 ) {
-    GREEN(
-        dotColor = Color(0xFF22C55E),
-        segmentColor = Color(0x3322C55E),
-        gradientColors = listOf(Color(0xFF22C55E), Color(0xFF10B981)),
-        cardBgDark = Color(0x1222C55E),
-        cardBgLight = Color(0x1222C55E),
-        borderDark = Color(0x2622C55E),
-        borderLight = Color(0x2622C55E)
-    ),
     BLUE(
         dotColor = Color(0xFF3B82F6),
         segmentColor = Color(0x333B82F6),
-        gradientColors = listOf(Color(0xFF3B82F6), Color(0xFF6366F1)),
+        gradientColors = listOf(Color(0xFF3B82F6), Color(0xFF2563EB)),
         cardBgDark = Color(0x123B82F6),
-        cardBgLight = Color(0x123B82F6),
+        cardBgLight = Color(0x0C3B82F6),
         borderDark = Color(0x263B82F6),
-        borderLight = Color(0x263B82F6)
+        borderLight = Color(0x263B82F6),
+        heroGradientsLight = listOf(Color(0xFF1D4ED8), Color(0xFF2563EB), Color(0xFF3B82F6)),
+        heroGradientsDark = listOf(Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF2563EB)),
+        heroAccentColor = Color(0xFF2563EB)
+    ),
+    PURPLE(
+        dotColor = Color(0xFF8B5CF6),
+        segmentColor = Color(0x338B5CF6),
+        gradientColors = listOf(Color(0xFF8B5CF6), Color(0xFF7C3AED)),
+        cardBgDark = Color(0x128B5CF6),
+        cardBgLight = Color(0x0C8B5CF6),
+        borderDark = Color(0x268B5CF6),
+        borderLight = Color(0x268B5CF6),
+        heroGradientsLight = listOf(Color(0xFF6D28D9), Color(0xFF7C3AED), Color(0xFF8B5CF6)),
+        heroGradientsDark = listOf(Color(0xFF1E1035), Color(0xFF3B1D6D), Color(0xFF5B21B6)),
+        heroAccentColor = Color(0xFF7C3AED)
     ),
     AMBER(
         dotColor = Color(0xFFF59E0B),
         segmentColor = Color(0x33F59E0B),
-        gradientColors = listOf(Color(0xFFF59E0B), Color(0xFFEA580C)),
+        gradientColors = listOf(Color(0xFFF59E0B), Color(0xFFD97706)),
         cardBgDark = Color(0x12F59E0B),
-        cardBgLight = Color(0x12F59E0B),
+        cardBgLight = Color(0x0CF59E0B),
         borderDark = Color(0x26F59E0B),
-        borderLight = Color(0x26F59E0B)
+        borderLight = Color(0x26F59E0B),
+        heroGradientsLight = listOf(Color(0xFFD97706), Color(0xFFF59E0B), Color(0xFFFB923C)),
+        heroGradientsDark = listOf(Color(0xFF451A03), Color(0xFF78350F), Color(0xFFB45309)),
+        heroAccentColor = Color(0xFFD97706)
     ),
-    RED(
-        dotColor = Color(0xFFEF4444),
-        segmentColor = Color(0x33EF4444),
-        gradientColors = listOf(Color(0xFFEF4444), Color(0xFFDC2626)),
-        cardBgDark = Color(0x12EF4444),
-        cardBgLight = Color(0x12EF4444),
-        borderDark = Color(0x26EF4444),
-        borderLight = Color(0x26EF4444)
+    CYAN(
+        dotColor = Color(0xFF06B6D4),
+        segmentColor = Color(0x3306B6D4),
+        gradientColors = listOf(Color(0xFF06B6D4), Color(0xFF0891B2)),
+        cardBgDark = Color(0x1206B6D4),
+        cardBgLight = Color(0x0C06B6D4),
+        borderDark = Color(0x2606B6D4),
+        borderLight = Color(0x2606B6D4),
+        heroGradientsLight = listOf(Color(0xFF0891B2), Color(0xFF06B6D4), Color(0xFF22D3EE)),
+        heroGradientsDark = listOf(Color(0xFF082F49), Color(0xFF0C4A6E), Color(0xFF0284C7)),
+        heroAccentColor = Color(0xFF0891B2)
+    ),
+    ROSE(
+        dotColor = Color(0xFFF43F5E),
+        segmentColor = Color(0x33F43F5E),
+        gradientColors = listOf(Color(0xFFF43F5E), Color(0xFFE11D48)),
+        cardBgDark = Color(0x12F43F5E),
+        cardBgLight = Color(0x0CF43F5E),
+        borderDark = Color(0x26F43F5E),
+        borderLight = Color(0x26F43F5E),
+        heroGradientsLight = listOf(Color(0xFFBE123C), Color(0xFFE11D48), Color(0xFFFB7185)),
+        heroGradientsDark = listOf(Color(0xFF4C0519), Color(0xFF881337), Color(0xFF9F1239)),
+        heroAccentColor = Color(0xFFE11D48)
+    ),
+    GREEN(
+        dotColor = Color(0xFF10B981),
+        segmentColor = Color(0x3310B981),
+        gradientColors = listOf(Color(0xFF10B981), Color(0xFF059669)),
+        cardBgDark = Color(0x1210B981),
+        cardBgLight = Color(0x0C10B981),
+        borderDark = Color(0x2610B981),
+        borderLight = Color(0x2610B981),
+        heroGradientsLight = listOf(Color(0xFF047857), Color(0xFF059669), Color(0xFF10B981)),
+        heroGradientsDark = listOf(Color(0xFF022C22), Color(0xFF064E3B), Color(0xFF059669)),
+        heroAccentColor = Color(0xFF059669)
     );
 
     companion object {
+        fun forCourse(courseName: String, isLive: Boolean = false): CardColorVariant {
+            if (isLive) return GREEN
+            val clean = courseName.trim().uppercase()
+            val scheduleVariants = listOf(BLUE, PURPLE, AMBER, CYAN, ROSE)
+            val hash = Math.abs(clean.hashCode())
+            return scheduleVariants[hash % scheduleVariants.size]
+        }
+
         fun forIndex(index: Int): CardColorVariant {
-            val values = values()
-            return values[index % values.size]
+            val scheduleVariants = listOf(BLUE, PURPLE, AMBER, CYAN, ROSE)
+            return scheduleVariants[index % scheduleVariants.size]
         }
     }
 }
@@ -3625,18 +3696,19 @@ fun RoutineDayEmptyCard(
     isDark: Boolean,
     dayName: String,
     shortDay: String,
+    nextUpcomingClassText: String? = null,
     onAddClass: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
-                elevation = if (isDark) 0.dp else 2.dp,
-                shape = RoundedCornerShape(22.dp),
-                ambientColor = Color(0x0F000000),
-                spotColor = Color(0x0F000000)
+                elevation = if (isDark) 0.dp else 3.dp,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = Color(0x0A000000),
+                spotColor = Color(0x0A000000)
             ),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isDark) Color(0xFF111827) else Color.White
         ),
@@ -3645,84 +3717,112 @@ fun RoutineDayEmptyCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 28.dp),
+                .padding(horizontal = 20.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(68.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(if (isDark) Color(0x260066FF) else Color(0x1A0066FF)),
-                contentAlignment = Alignment.Center
+            // Compact Header Row (Icon + Title & Subtitle)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.CalendarToday,
-                    contentDescription = null,
-                    tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF),
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            Text(
-                text = "No classes on $dayName",
-                fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 19.5.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isDark) Color(0xFFE8F0FE) else Color(0xFF1A2540),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Select another day or add a class to your schedule.",
-                fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 14.5.sp,
-                color = if (isDark) Color(0xFF6B7F9E) else Color(0xFF8898B0),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(22.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .shadow(
-                        elevation = 4.dp,
-                        shape = RoundedCornerShape(14.dp),
-                        ambientColor = Color(0x400066FF),
-                        spotColor = Color(0x400066FF)
-                    )
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(Color(0xFF0066FF), Color(0xFF0052CC))
-                        )
-                    )
-                    .clickable { onAddClass() },
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (isDark) Color(0x263B82F6) else Color(0x140066FF))
+                        .border(1.dp, if (isDark) Color(0x333B82F6) else Color(0x260066FF), RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
+                        imageVector = Icons.Default.CalendarToday,
                         contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(18.dp)
+                        tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF),
+                        modifier = Modifier.size(20.dp)
                     )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Add a class on ${shortDay.take(3)}",
+                        text = "No classes on $dayName",
                         fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 15.5.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = if (isDark) Color(0xFFE8F0FE) else Color(0xFF1A2540)
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Day off · Enjoy your free time",
+                        fontFamily = PlusJakartaSansFontFamily,
+                        fontSize = 12.5.sp,
+                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                    )
+                }
+            }
+
+            // Compact Next Class Pill (Single-line row, minimal space)
+            if (!nextUpcomingClassText.isNullOrBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isDark) Color(0xFF1E293B).copy(alpha = 0.6f) else Color(0xFFF8FAFC),
+                    border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccessTime,
+                            contentDescription = null,
+                            tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB),
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = "Next: $nextUpcomingClassText",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            // Sleek Compact Action
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9),
+                    border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1)),
+                    onClick = onAddClass
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = "Add class",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF334155)
+                        )
+                    }
                 }
             }
         }

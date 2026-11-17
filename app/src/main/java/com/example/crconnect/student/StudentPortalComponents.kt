@@ -47,7 +47,9 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.People
@@ -79,7 +81,9 @@ import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -282,8 +286,10 @@ fun TopHeader(
     profileImageUrl: String = "",
     isCr: Boolean = false,
     isProfileTab: Boolean = false,
+    unreadNotificationCount: Int = 0,
     onMenuClick: () -> Unit,
     onAvatarClick: () -> Unit,
+    onNotificationClick: () -> Unit = {},
     onSignOutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -478,9 +484,41 @@ fun TopHeader(
                 )
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-            // 5. Power / Sign Out Button: 44dp x 44dp, 24dp ic_power icon
+            // 5. Notification Bell Button with Unread Indicator
+            Surface(
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                shadowElevation = 0.dp,
+                onClick = onNotificationClick
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Notifications",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    if (unreadNotificationCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = (-8).dp, y = 8.dp)
+                                .size(9.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFEF4444))
+                                .border(1.5.dp, MaterialTheme.colorScheme.surface, CircleShape)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // 6. Power / Sign Out Button: 44dp x 44dp, 24dp ic_power icon
             Surface(
                 modifier = Modifier.size(44.dp),
                 shape = CircleShape,
@@ -516,6 +554,7 @@ fun StudentBottomNavigation(
     val surfaceColor = MaterialTheme.colorScheme.surface
     val borderStrokeColor = MaterialTheme.colorScheme.outline
     val view = LocalView.current
+    val haptic = LocalHapticFeedback.current
 
     Box(
         modifier = modifier
@@ -545,7 +584,7 @@ fun StudentBottomNavigation(
             ) {
                 val items = listOf(
                     Triple("Routine", R.drawable.ic_nav_routine, 0),
-                    Triple("Election", R.drawable.ic_nav_candidates, 2),
+                    Triple("Academics", R.drawable.ic_nav_attendance, 1),
                     Triple("Profile", R.drawable.ic_nav_profile, 3)
                 )
 
@@ -561,6 +600,7 @@ fun StudentBottomNavigation(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
                             ) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 HapticUtils.lightClick(view)
                                 if (isLocked) {
                                     onLockedTabClicked()
@@ -572,12 +612,21 @@ fun StudentBottomNavigation(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Box {
-                            Icon(
-                                painter = painterResource(id = iconRes),
-                                contentDescription = label,
-                                tint = itemColor,
-                                modifier = Modifier.size(22.dp)
-                            )
+                            if (index == 1) {
+                                Icon(
+                                    imageVector = Icons.Default.School,
+                                    contentDescription = label,
+                                    tint = itemColor,
+                                    modifier = Modifier.size(23.dp)
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(id = iconRes),
+                                    contentDescription = label,
+                                    tint = itemColor,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
                             if (isLocked) {
                                 Box(
                                     modifier = Modifier
@@ -684,4 +733,60 @@ fun AnimatedAvatarPlaceholder(
         )
     }
 }
+
+@Composable
+fun GlassySmoothSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    checkedTrackColor: Color = Color(0xFF0066FF),
+    uncheckedTrackColor: Color = if (isSystemInDarkTheme()) Color(0xFF24334B) else Color(0xFFCBD5E1),
+    thumbColor: Color = Color.White
+) {
+    val haptic = LocalHapticFeedback.current
+    val trackWidth = 44.dp
+    val trackHeight = 24.dp
+    val thumbSize = 18.dp
+    val thumbPadding = 3.dp
+
+    val thumbOffset by animateDpAsState(
+        targetValue = if (checked) trackWidth - thumbSize - thumbPadding else thumbPadding,
+        animationSpec = spring(
+            dampingRatio = 0.75f,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "thumbOffset"
+    )
+
+    val animatedTrackColor by animateColorAsState(
+        targetValue = if (checked) checkedTrackColor else uncheckedTrackColor,
+        animationSpec = tween(durationMillis = 250),
+        label = "trackColor"
+    )
+
+    Box(
+        modifier = modifier
+            .size(width = trackWidth, height = trackHeight)
+            .clip(RoundedCornerShape(12.dp))
+            .background(animatedTrackColor)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onCheckedChange(!checked)
+            },
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Box(
+            modifier = Modifier
+                .offset(x = thumbOffset)
+                .size(thumbSize)
+                .shadow(elevation = 2.dp, shape = CircleShape)
+                .clip(CircleShape)
+                .background(thumbColor)
+        )
+    }
+}
+
 

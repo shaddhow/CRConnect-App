@@ -9,6 +9,9 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
+import com.example.crconnect.student.notifications.NotificationCenterDialog
+import com.example.crconnect.student.notifications.NotificationRepository
+import com.example.crconnect.student.notifications.RoutineNotificationHelper
 import com.yalantis.ucrop.UCrop
 import java.io.File
 import java.io.FileOutputStream
@@ -51,6 +54,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -120,6 +124,20 @@ fun StudentPortalScreen(
         uiState.snackbarMessage?.let { msg ->
             CustomToast.show(context, msg)
             viewModel.clearSnackbar()
+        }
+    }
+
+    var isNotificationCenterOpen by remember { mutableStateOf(false) }
+    var unreadNotificationCount by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        RoutineNotificationHelper.initNotificationChannels(context)
+        unreadNotificationCount = NotificationRepository.getUnreadCount(context)
+    }
+
+    LaunchedEffect(uiState.classMap) {
+        if (uiState.classMap.isNotEmpty()) {
+            RoutineNotificationHelper.scheduleAllRoutines(context, uiState.classMap)
         }
     }
 
@@ -213,12 +231,16 @@ fun StudentPortalScreen(
                         profileImageUrl = uiState.profile.profileImageUrl,
                         isCr = uiState.isCr,
                         isProfileTab = isProfileTab,
+                        unreadNotificationCount = unreadNotificationCount,
                         onMenuClick = {
                             coroutineScope.launch { drawerState.open() }
                         },
                         onAvatarClick = {
                             isNavVisible = true
                             viewModel.selectTab(3) // Profile Tab
+                        },
+                        onNotificationClick = {
+                            isNotificationCenterOpen = true
                         },
                         onSignOutClick = onSignOut
                     )
@@ -259,8 +281,14 @@ fun StudentPortalScreen(
                                 onToggleAttendance = { classId, state, dayIdx -> viewModel.toggleAttendance(classId, state, dayIdx, context) },
                                 onShowToast = { msg -> viewModel.showToast(msg) }
                             )
-                            1 -> AttendanceTab(
+                            1 -> AcademicOverviewTab(
                                 uiState = uiState,
+                                profile = uiState.profile,
+                                classMap = uiState.classMap,
+                                onUpdateCgpa = { newCgpa -> viewModel.updateCgpa(newCgpa, context) },
+                                onUpdateSection = { newSection -> viewModel.updateSection(newSection, context) },
+                                onUpdateAdvisorInfo = { name, email -> viewModel.updateAdvisorInfo(name, email, context) },
+                                onUpdateCurrentTerm = { term -> viewModel.updateCurrentTerm(term, context) },
                                 onRefreshHistory = { viewModel.loadAttendanceHistory(context) }
                             )
                             2 -> ElectionTab(
@@ -287,6 +315,7 @@ fun StudentPortalScreen(
                                 onSecuritySettings = { isSecurityDialogOpen = true },
                                 onCheckUpdate = { viewModel.checkForAppUpdates(context, forceCheck = true) },
                                 onNavigateToAttendance = { viewModel.selectTab(1) },
+                                onNavigateToAcademics = { viewModel.selectTab(1) },
                                 onSignOut = onSignOut,
                                 onLogout = onSignOut
                             )
@@ -299,6 +328,17 @@ fun StudentPortalScreen(
                             onDismiss = { isSecurityDialogOpen = false },
                             onResetPassword = { viewModel.sendPasswordResetEmail(context) },
                             onShowToast = { msg -> viewModel.showToast(msg) }
+                        )
+                    }
+
+                    if (isNotificationCenterOpen) {
+                        NotificationCenterDialog(
+                            onDismiss = {
+                                isNotificationCenterOpen = false
+                                unreadNotificationCount = NotificationRepository.getUnreadCount(context)
+                            },
+                            onNavigateToRoutine = { viewModel.selectTab(0) },
+                            onNavigateToAcademics = { viewModel.selectTab(1) }
                         )
                     }
 

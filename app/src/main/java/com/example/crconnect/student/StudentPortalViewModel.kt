@@ -11,6 +11,7 @@ import com.example.crconnect.ProfileImageCacheHelper
 import com.example.crconnect.RoutineLocalCache
 import com.example.crconnect.SessionManager
 import com.example.crconnect.ToastHelper
+import com.example.crconnect.student.notifications.RoutineNotificationHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
@@ -561,6 +562,15 @@ class StudentPortalViewModel : ViewModel() {
 
                     val title = snapshot.child("title").getValue(String::class.java) ?: "Update"
                     val body = snapshot.child("body").getValue(String::class.java) ?: ""
+                    val postedBy = snapshot.child("postedBy").getValue(String::class.java) ?: ""
+
+                    val appCtx = FirebaseDatabase.getInstance().app.applicationContext
+                    RoutineNotificationHelper.showCrNoticeNotification(
+                        context = appCtx,
+                        title = title,
+                        body = body,
+                        postedBy = postedBy
+                    )
 
                     _uiState.update { currentState ->
                         currentState.copy(snackbarMessage = "$title: $body")
@@ -930,22 +940,6 @@ class StudentPortalViewModel : ViewModel() {
     }
 
     fun toggleAttendance(classId: String, targetState: String, dayIndex: Int, context: Context? = null) {
-        val currentState = _uiState.value
-        val targetClass = currentState.classMap[dayIndex]?.find { it.id == classId }
-        val timingStatus = targetClass?.let { getClassTimingStatus(dayIndex, it.timeSlot) } ?: ClassTimingStatus.PAST
-
-        if (timingStatus != ClassTimingStatus.LIVE_NOW) {
-            if (context != null) {
-                val timeRange = targetClass?.timeSlot ?: "class time"
-                ToastHelper.showWarning(
-                    context,
-                    "Attendance Locked",
-                    "Attendance can only be marked during class time ($timeRange)."
-                )
-            }
-            return
-        }
-
         var updatedCourseName: String? = null
         var finalState: String? = null
 
