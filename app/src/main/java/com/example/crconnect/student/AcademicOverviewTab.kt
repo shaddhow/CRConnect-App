@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -420,16 +421,33 @@ fun AcademicOverviewTab(
         }
 
         // 3. Enrolled Courses Breakdown Section
+       var isEnrolledCoursesExpanded by remember { mutableStateOf(true) }
+        val arrowRotation by animateFloatAsState(
+            targetValue = if (isEnrolledCoursesExpanded) 0f else -90f,
+            animationSpec = tween(durationMillis = 200),
+            label = "enrolledCoursesArrowRotation"
+        )
+
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        isEnrolledCoursesExpanded = !isEnrolledCoursesExpanded
+                    }
+                    .padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
                     Text(
                         text = "Enrolled Courses (${enrolledCourseList.size})",
                         fontFamily = PlusJakartaSansFontFamily,
@@ -447,178 +465,208 @@ fun AcademicOverviewTab(
                 }
 
                 Surface(
-                    modifier = Modifier.clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        showAddCourseDialog = true
-                    },
+                    modifier = Modifier.size(36.dp),
                     shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFF0066FF).copy(alpha = if (isDark) 0.18f else 0.1f),
-                    border = BorderStroke(1.dp, Color(0xFF0066FF).copy(alpha = 0.35f))
+                    color = if (isDark) Color(0xFF132242) else Color(0xFF0066FF).copy(alpha = 0.1f),
+                    border = BorderStroke(
+                        1.dp,
+                        if (isDark) Color(0xFF2563EB).copy(alpha = 0.45f) else Color(0xFF0066FF).copy(alpha = 0.3f)
+                    )
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
+                    Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Add Course",
-                            tint = Color(0xFF0066FF),
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Text(
-                            text = "Add Course",
-                            fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0066FF)
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (isEnrolledCoursesExpanded) "Collapse courses" else "Expand courses",
+                            tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF),
+                            modifier = Modifier
+                                .size(20.dp)
+                                .graphicsLayer { rotationZ = arrowRotation }
                         )
                     }
                 }
             }
 
-            if (enrolledCourseList.isNotEmpty()) {
-                val palette = listOf(
-                    Color(0xFF2563EB),
-                    Color(0xFF7C3AED),
-                    Color(0xFF059669),
-                    Color(0xFFD97706),
-                    Color(0xFFE11D48),
-                    Color(0xFF0891B2)
-                )
+            if (isEnrolledCoursesExpanded) {
+                if (enrolledCourseList.isNotEmpty()) {
+                    val palette = listOf(
+                        Color(0xFF2563EB),
+                        Color(0xFF7C3AED),
+                        Color(0xFF059669),
+                        Color(0xFFD97706),
+                        Color(0xFFE11D48),
+                        Color(0xFF0891B2)
+                    )
 
-                enrolledCourseList.forEachIndexed { index, item ->
-                    val color = palette[index % palette.size]
+                    enrolledCourseList.forEachIndexed { index, item ->
+                        val color = palette[index % palette.size]
 
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isDark) Color(0xFF131B2E) else Color.White,
-                        border = BorderStroke(1.dp, if (isDark) Color(0xFF24354D) else Color(0xFFE2E8F0)),
-                        shadowElevation = if (isDark) 0.dp else 2.dp
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            color = if (isDark) Color(0xFF131B2E) else Color.White,
+                            border = BorderStroke(1.dp, if (isDark) Color(0xFF24354D) else Color(0xFFE2E8F0)),
+                            shadowElevation = if (isDark) 0.dp else 2.dp
                         ) {
-                            // Left: Course Icon + Course Code
                             Row(
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .clip(RoundedCornerShape(11.dp))
-                                        .background(color.copy(alpha = if (isDark) 0.2f else 0.12f))
-                                        .border(1.dp, color.copy(alpha = 0.3f), RoundedCornerShape(11.dp)),
-                                    contentAlignment = Alignment.Center
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.School,
-                                        contentDescription = null,
-                                        tint = color,
-                                        modifier = Modifier.size(19.dp)
-                                    )
-                                }
-
-                                Text(
-                                    text = item.code,
-                                    fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-
-                            // Center/Right: Faculty Pill
-                            if (item.faculty.isNotBlank()) {
-                                Surface(
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = color.copy(alpha = if (isDark) 0.18f else 0.1f),
-                                    border = BorderStroke(1.dp, color.copy(alpha = 0.28f)),
-                                    modifier = Modifier.padding(horizontal = 8.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(38.dp)
+                                            .clip(RoundedCornerShape(11.dp))
+                                            .background(color.copy(alpha = if (isDark) 0.2f else 0.12f))
+                                            .border(1.dp, color.copy(alpha = 0.3f), RoundedCornerShape(11.dp)),
+                                        contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Person,
+                                            imageVector = Icons.Default.School,
                                             contentDescription = null,
                                             tint = color,
-                                            modifier = Modifier.size(13.dp)
-                                        )
-                                        Text(
-                                            text = "Faculty ${item.faculty}",
-                                            fontFamily = PlusJakartaSansFontFamily,
-                                            fontSize = 11.5.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = color
+                                            modifier = Modifier.size(19.dp)
                                         )
                                     }
-                                }
-                            }
 
-                            // Right: Load / Manual Badge
-                            if (item.isManual) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = Color(0xFF8B5CF6).copy(alpha = if (isDark) 0.2f else 0.12f),
-                                        border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.3f))
-                                    ) {
-                                        Text(
-                                            text = "Manual",
-                                            fontFamily = PlusJakartaSansFontFamily,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF8B5CF6),
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                    IconButton(
-                                        onClick = {
-                                            val updated = manualCoursesList.filter {
-                                                !it.startsWith(item.code, ignoreCase = true)
-                                            }
-                                            manualCoursesList = updated
-                                            coursePrefs.edit().putStringSet("manual_courses_list", updated.toSet()).apply()
-                                            ToastHelper.show(context, "Removed ${item.code}")
-                                        },
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.DeleteOutline,
-                                            contentDescription = "Remove",
-                                            tint = Color(0xFFEF4444),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
-                            } else {
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = if (isDark) Color(0x1AFFFFFF) else Color(0x0A000000)
-                                ) {
                                     Text(
-                                        text = "${item.weeklyClasses} cl/wk",
+                                        text = item.code,
                                         fontFamily = PlusJakartaSansFontFamily,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
+
+                                if (item.faculty.isNotBlank()) {
+                                    Surface(
+                                        shape = RoundedCornerShape(20.dp),
+                                        color = color.copy(alpha = if (isDark) 0.18f else 0.1f),
+                                        border = BorderStroke(1.dp, color.copy(alpha = 0.28f)),
+                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Person,
+                                                contentDescription = null,
+                                                tint = color,
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                            Text(
+                                                text = "Faculty ${item.faculty}",
+                                                fontFamily = PlusJakartaSansFontFamily,
+                                                fontSize = 11.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = color
+                                            )
+                                        }
+                                    }
+                                }
+
+                                if (item.isManual) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = Color(0xFF8B5CF6).copy(alpha = if (isDark) 0.2f else 0.12f),
+                                            border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.3f))
+                                        ) {
+                                            Text(
+                                                text = "Manual",
+                                                fontFamily = PlusJakartaSansFontFamily,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF8B5CF6),
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = {
+                                                val updated = manualCoursesList.filter {
+                                                    !it.startsWith(item.code, ignoreCase = true)
+                                                }
+                                                manualCoursesList = updated
+                                                coursePrefs.edit().putStringSet("manual_courses_list", updated.toSet()).apply()
+                                                ToastHelper.show(context, "Removed ${item.code}")
+                                            },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.DeleteOutline,
+                                                contentDescription = "Remove",
+                                                tint = Color(0xFFEF4444),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (isDark) Color(0x1AFFFFFF) else Color(0x0A000000)
+                                    ) {
+                                        Text(
+                                            text = "${item.weeklyClasses} cl/wk",
+                                            fontFamily = PlusJakartaSansFontFamily,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
                             }
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Surface(
+                        modifier = Modifier.clickable {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            showAddCourseDialog = true
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isDark) Color(0xFF131C36) else Color(0xFF0066FF).copy(alpha = 0.1f),
+                        border = BorderStroke(
+                            1.dp,
+                            if (isDark) Color(0xFF2563EB).copy(alpha = 0.35f) else Color(0xFF0066FF).copy(alpha = 0.35f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Course",
+                                tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF0066FF),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Add Course",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) Color(0xFF93C5FD) else Color(0xFF0066FF)
+                            )
                         }
                     }
                 }
