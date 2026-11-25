@@ -32,6 +32,7 @@ object RoutineNotificationHelper {
     const val EXTRA_CLASS_COUNT = "extra_class_count"
     const val EXTRA_DAY_NAME = "extra_day_name"
 
+    @JvmStatic
     fun initNotificationChannels(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = context.getSystemService(NotificationManager::class.java) ?: return

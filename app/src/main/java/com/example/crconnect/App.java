@@ -19,8 +19,9 @@ public class App extends Application {
             } catch (Exception e) {
                 Log.w("App", "Firebase Database persistence initialization notice: " + e.getMessage());
             }
-            // Initialize FCM notification channel
+            // Initialize notification channels
             MyFirebaseMessagingService.createNotificationChannel(this);
+            com.example.crconnect.student.notifications.RoutineNotificationHelper.initNotificationChannels(this);
         } catch (Exception e) {
             Log.e("App", "Failed to initialize App settings", e);
         }

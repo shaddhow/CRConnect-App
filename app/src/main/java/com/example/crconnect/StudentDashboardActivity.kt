@@ -1,5 +1,6 @@
 package com.example.crconnect
 
+import android.Manifest
 import android.content.Intent
 import android.graphics.Color
 import android.os.Build
@@ -7,6 +8,7 @@ import android.os.Bundle
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.biometric.BiometricPrompt
@@ -21,12 +23,22 @@ import androidx.compose.runtime.remember
 import com.example.crconnect.student.StudentPortalScreen
 import com.example.crconnect.student.StudentPortalTheme
 import com.example.crconnect.student.StudentPortalViewModel
+import com.example.crconnect.student.notifications.NotificationPermissionHelper
+import com.example.crconnect.student.notifications.RoutineNotificationHelper
 import com.google.firebase.auth.FirebaseAuth
 import java.util.concurrent.Executor
 
 class StudentDashboardActivity : FragmentActivity() {
 
     private val viewModel: StudentPortalViewModel by viewModels()
+
+    private val requestNotificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            RoutineNotificationHelper.initNotificationChannels(this)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
@@ -92,7 +104,20 @@ class StudentDashboardActivity : FragmentActivity() {
         biometricPrompt.authenticate(promptInfo)
     }
 
+    private fun checkAndRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (!NotificationPermissionHelper.hasNotificationPermission(this)) {
+                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                RoutineNotificationHelper.initNotificationChannels(this)
+            }
+        } else {
+            RoutineNotificationHelper.initNotificationChannels(this)
+        }
+    }
+
     private fun loadDashboardContent() {
+        checkAndRequestNotificationPermission()
         setContent {
             val uiState by viewModel.uiState.collectAsState()
             val isSystemDark = isSystemInDarkTheme()

@@ -37,6 +37,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.example.crconnect.student.notifications.NotificationPermissionHelper;
 
 import com.example.crconnect.core.utils.HapticUtils;
 import com.example.crconnect.core.utils.KeyboardUtils;
@@ -339,6 +340,8 @@ public class TeacherDashboardActivity extends AppCompatActivity {
         if (!checkUserAuthenticationAndRole()) {
             return;
         }
+
+        NotificationPermissionHelper.requestNotificationPermission(this);
         
         // --- STRICT EDGE-TO-EDGE FULL SCREEN ---
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);

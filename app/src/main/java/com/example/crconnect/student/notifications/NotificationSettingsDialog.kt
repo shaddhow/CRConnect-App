@@ -1,5 +1,6 @@
 package com.example.crconnect.student.notifications
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -120,6 +121,64 @@ fun NotificationSettingsDialog(
                     thickness = 1.dp
                 )
 
+                // Warning Banner if System Notifications are blocked
+                val hasSystemPermission = remember {
+                    NotificationPermissionHelper.hasNotificationPermission(context)
+                }
+                if (!hasSystemPermission) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isDark) Color(0xFF7F1D1D).copy(alpha = 0.35f) else Color(0xFFFEF2F2),
+                        border = BorderStroke(1.dp, if (isDark) Color(0xFF991B1B) else Color(0xFFFECACA)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = if (isDark) Color(0xFFF87171) else Color(0xFFDC2626),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "System alerts blocked",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isDark) Color(0xFFFCA5A5) else Color(0xFFB91C1C)
+                                )
+                                Text(
+                                    text = "Enable notifications in phone settings to receive status bar alerts.",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 11.sp,
+                                    color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF475569)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            TextButton(
+                                onClick = {
+                                    NotificationPermissionHelper.openNotificationSettings(context)
+                                },
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "Enable",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB)
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Item 1: Class Reminders
                 NotificationToggleRow(
                     title = "Class reminders (15m before)",
@@ -177,13 +236,19 @@ fun NotificationSettingsDialog(
                     border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1)),
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        RoutineNotificationHelper.showClassReminderNotification(
-                            context = context,
-                            courseName = "CSE 341 (MJ)",
-                            timeSlot = "09:45 AM - 11:15 AM",
-                            room = "2808"
-                        )
-                        onTestNotification()
+                        if (!NotificationPermissionHelper.hasNotificationPermission(context)) {
+                            Toast.makeText(context, "Please enable notification permission in phone settings", Toast.LENGTH_LONG).show()
+                            NotificationPermissionHelper.openNotificationSettings(context)
+                        } else {
+                            RoutineNotificationHelper.showClassReminderNotification(
+                                context = context,
+                                courseName = "CSE 341 (MJ)",
+                                timeSlot = "09:45 AM - 11:15 AM",
+                                room = "2808"
+                            )
+                            Toast.makeText(context, "Test alert sent! Check your phone notification bar.", Toast.LENGTH_SHORT).show()
+                            onTestNotification()
+                        }
                     }
                 ) {
                     Row(
