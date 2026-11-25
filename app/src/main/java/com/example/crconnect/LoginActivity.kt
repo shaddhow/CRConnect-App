@@ -829,9 +829,21 @@ class LoginActivity : AppCompatActivity() {
                     if (!assignedIntakes.isNullOrBlank() && assignedIntakes != "--") {
                         sessionManager.setAssignedIntakes(assignedIntakes)
                     }
-                    val profileImg = doc.getString("profileImageUrl") ?: ""
+                    var profileImg = doc.getString("profileImageUrl") ?: ""
+                    val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+                    if (profileImg.isBlank()) {
+                        val localPath = ProfileImageCacheHelper.getValidLocalProfilePath(this@LoginActivity, validDbId, dbEmail, originalInput, currentUid)
+                        if (!localPath.isNullOrBlank()) {
+                            profileImg = localPath
+                        }
+                    }
                     if (profileImg.isNotBlank()) {
                         sessionManager.setProfileImageUrl(profileImg)
+                        ProfileImageCacheHelper.saveAndCacheProfileImage(this@LoginActivity, profileImg, validDbId, dbEmail, originalInput, currentUid) { localPath ->
+                            if (localPath.isNotBlank()) {
+                                sessionManager.setProfileImageUrl(localPath)
+                            }
+                        }
                     }
                     navigateBasedOnRole(resolvedRole, dbEmail ?: email)
                 } else {
@@ -926,31 +938,23 @@ class LoginActivity : AppCompatActivity() {
             profileImg = googlePhotoUrl
         }
 
-        val userKey = if (id.isNotBlank()) id else email
+        val authUid = FirebaseAuth.getInstance().currentUser?.uid
+        if (profileImg.isBlank()) {
+            val localPath = ProfileImageCacheHelper.getValidLocalProfilePath(this, id, email, authUid)
+            if (!localPath.isNullOrBlank()) {
+                profileImg = localPath
+            }
+        }
 
         if (profileImg.isNotBlank()) {
-            ProfileImageCacheHelper.saveAndCacheProfileImage(this, profileImg, userKey) { cachedPath ->
-                val finalPath = if (cachedPath.isNotBlank()) cachedPath else profileImg
-                sessionManager.setProfileImageUrl(finalPath)
-
-                if (finalPath.isNotBlank() && finalPath != snapshot.child("profileImageUrl").getValue(String::class.java)) {
-                    val sanitizedEmail = sanitizeKey(email)
-                    val sanitizedId = sanitizeKey(id)
-                    val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
-                    val imgMap = mapOf<String, Any>("profileImageUrl" to finalPath)
-
-                    if (sanitizedEmail.isNotEmpty()) dbRef.child("users").child(sanitizedEmail).updateChildren(imgMap)
-                    if (sanitizedId.isNotEmpty()) dbRef.child("users").child(sanitizedId).updateChildren(imgMap)
-
-                    val firestore = FirebaseFirestore.getInstance()
-                    if (sanitizedEmail.isNotEmpty()) firestore.collection("users").document(sanitizedEmail).update(imgMap)
-                    if (sanitizedId.isNotEmpty()) firestore.collection("users").document(sanitizedId).update(imgMap)
+            sessionManager.setProfileImageUrl(profileImg)
+            ProfileImageCacheHelper.saveAndCacheProfileImage(this, profileImg, id, email, authUid) { cachedPath ->
+                if (cachedPath.isNotBlank()) {
+                    sessionManager.setProfileImageUrl(cachedPath)
                 }
-                navigateBasedOnRole(role, email)
             }
-        } else {
-            navigateBasedOnRole(role, email)
         }
+        navigateBasedOnRole(role, email)
     }
 
     private fun createDefaultTeacherAndNavigate(uid: String, email: String, originalInput: String) {
@@ -1210,31 +1214,23 @@ class LoginActivity : AppCompatActivity() {
             profileImg = googlePhotoUrl
         }
 
-        val userKey = if (id.isNotBlank()) id else email
+        val authUid = FirebaseAuth.getInstance().currentUser?.uid
+        if (profileImg.isBlank()) {
+            val localPath = ProfileImageCacheHelper.getValidLocalProfilePath(this, id, email, authUid)
+            if (!localPath.isNullOrBlank()) {
+                profileImg = localPath
+            }
+        }
 
         if (profileImg.isNotBlank()) {
-            ProfileImageCacheHelper.saveAndCacheProfileImage(this, profileImg, userKey) { cachedPath ->
-                val finalPath = if (cachedPath.isNotBlank()) cachedPath else profileImg
-                sessionManager.setProfileImageUrl(finalPath)
-
-                if (finalPath.isNotBlank() && finalPath != doc.getString("profileImageUrl")) {
-                    val sanitizedEmail = sanitizeKey(email)
-                    val sanitizedId = sanitizeKey(id)
-                    val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
-                    val imgMap = mapOf<String, Any>("profileImageUrl" to finalPath)
-
-                    if (sanitizedEmail.isNotEmpty()) dbRef.child("users").child(sanitizedEmail).updateChildren(imgMap)
-                    if (sanitizedId.isNotEmpty()) dbRef.child("users").child(sanitizedId).updateChildren(imgMap)
-
-                    val firestore = FirebaseFirestore.getInstance()
-                    if (sanitizedEmail.isNotEmpty()) firestore.collection("users").document(sanitizedEmail).update(imgMap)
-                    if (sanitizedId.isNotEmpty()) firestore.collection("users").document(sanitizedId).update(imgMap)
+            sessionManager.setProfileImageUrl(profileImg)
+            ProfileImageCacheHelper.saveAndCacheProfileImage(this, profileImg, id, email, authUid) { cachedPath ->
+                if (cachedPath.isNotBlank()) {
+                    sessionManager.setProfileImageUrl(cachedPath)
                 }
-                navigateBasedOnRole(role, email)
             }
-        } else {
-            navigateBasedOnRole(role, email)
         }
+        navigateBasedOnRole(role, email)
     }
 
     private fun redirectToRegister(email: String, name: String) {

@@ -2,10 +2,14 @@ package com.example.crconnect.student
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.util.Base64
 import android.util.Log
+import java.io.ByteArrayOutputStream
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.crconnect.ProfileImageCacheHelper
@@ -26,6 +30,7 @@ import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -156,6 +161,19 @@ class StudentPortalViewModel : ViewModel() {
             session.setCurrentTerm("--")
         }
 
+        val authUid = FirebaseAuth.getInstance().currentUser?.uid
+        val localCachedPath = ProfileImageCacheHelper.getValidLocalProfilePath(
+            context,
+            validStudentId,
+            storedId,
+            session.userEmail,
+            authUid
+        )
+        val resolvedPhotoUrl = session.profileImageUrl.ifBlank { localCachedPath ?: "" }
+        if (session.profileImageUrl.isBlank() && !localCachedPath.isNullOrBlank()) {
+            session.setProfileImageUrl(localCachedPath)
+        }
+
         val profileModel = UserProfileModel(
             name = studentName,
             email = session.userEmail.ifBlank { "student@gmail.com" },
@@ -165,7 +183,7 @@ class StudentPortalViewModel : ViewModel() {
             department = rawDept,
             initials = initials,
             cgpa = session.studentCgpa,
-            profileImageUrl = session.profileImageUrl,
+            profileImageUrl = resolvedPhotoUrl,
             isCr = isUserCr,
             advisorName = session.advisorName.ifBlank { "Nasrin Akter" },
             advisorEmail = session.advisorEmail.ifBlank { "nasrinshipa@bubt.edu.bd" },
@@ -186,10 +204,10 @@ class StudentPortalViewModel : ViewModel() {
         // Check for app updates on GitHub Releases in background
         checkForAppUpdates(context, forceCheck = false)
 
-        // Background caching of profile image if it's a remote URL
-        val rawPhotoUrl = session.profileImageUrl
-        if (rawPhotoUrl.isNotBlank() && (rawPhotoUrl.startsWith("http://") || rawPhotoUrl.startsWith("https://") || rawPhotoUrl.startsWith("content://"))) {
-            ProfileImageCacheHelper.saveAndCacheProfileImage(context, rawPhotoUrl, session.userID.ifBlank { session.userEmail }) { cachedPath ->
+        // Background caching of profile image if it's a remote URL or Base64
+        val rawPhotoUrl = resolvedPhotoUrl
+        if (rawPhotoUrl.isNotBlank() && (rawPhotoUrl.startsWith("http://") || rawPhotoUrl.startsWith("https://") || rawPhotoUrl.startsWith("content://") || rawPhotoUrl.startsWith("data:") || rawPhotoUrl.contains("base64,"))) {
+            ProfileImageCacheHelper.saveAndCacheProfileImage(context, rawPhotoUrl, validStudentId, storedId, session.userEmail, authUid) { cachedPath ->
                 if (cachedPath.isNotBlank() && cachedPath != rawPhotoUrl) {
                     session.setProfileImageUrl(cachedPath)
                     _uiState.update { currentState ->
@@ -644,14 +662,18 @@ class StudentPortalViewModel : ViewModel() {
                 }
                 userRoleRef?.addValueEventListener(userRoleListener as ValueEventListener)
 
+                // 6. Live Student Profile & ID Sync
+                val userEmail = _uiState.value.profile.email
+                val sanitizedEmailKey = userEmail.replace("@", "_").replace(".", "_")
+
                 userProfileImgListener?.let { userProfileImgRef?.removeEventListener(it) }
                 userProfileImgRef = dbRef?.child("users")?.child(authUser.uid)?.child("profileImageUrl")
                 userProfileImgListener = object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         val dbImg = snapshot.getValue(String::class.java) ?: ""
-                        if (dbImg.isNotBlank() && dbImg != _uiState.value.profile.profileImageUrl) {
+                        if (isValidProfileImageSource(dbImg) && dbImg != _uiState.value.profile.profileImageUrl) {
                             val context = FirebaseDatabase.getInstance().app.applicationContext
-                            ProfileImageCacheHelper.saveAndCacheProfileImage(context, dbImg, authUser.uid) { localPath ->
+                            ProfileImageCacheHelper.saveAndCacheProfileImage(context, dbImg, authUser.uid, sanitizedStudentId, userEmail) { localPath ->
                                 val finalPath = if (localPath.isNotBlank()) localPath else dbImg
                                 SessionManager(context).setProfileImageUrl(finalPath)
                                 _uiState.update { currentState ->
@@ -685,10 +707,6 @@ class StudentPortalViewModel : ViewModel() {
                 }
                 userCgpaRef?.addValueEventListener(userCgpaListener as ValueEventListener)
 
-                // 6. Live Student Profile & ID Sync
-                val userEmail = _uiState.value.profile.email
-                val sanitizedEmailKey = userEmail.replace("@", "_").replace(".", "_")
-
                 userLiveProfileListener?.let { userLiveProfileRef?.removeEventListener(it) }
                 userLiveProfileListener = object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
@@ -707,6 +725,20 @@ class StudentPortalViewModel : ViewModel() {
                                 )
                             }
                         }
+
+                        val liveImg = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
+                        if (isValidProfileImageSource(liveImg) && liveImg != _uiState.value.profile.profileImageUrl) {
+                            val context = FirebaseDatabase.getInstance().app.applicationContext
+                            ProfileImageCacheHelper.saveAndCacheProfileImage(context, liveImg, authUser.uid, sanitizedStudentId, userEmail) { localPath ->
+                                val finalPath = if (localPath.isNotBlank()) localPath else liveImg
+                                SessionManager(context).setProfileImageUrl(finalPath)
+                                _uiState.update { currentState ->
+                                    currentState.copy(
+                                        profile = currentState.profile.copy(profileImageUrl = finalPath)
+                                    )
+                                }
+                            }
+                        }
                     }
                     override fun onCancelled(error: DatabaseError) {}
                 }
@@ -715,6 +747,9 @@ class StudentPortalViewModel : ViewModel() {
                 userLiveProfileRef?.addValueEventListener(userLiveProfileListener as ValueEventListener)
                 if (sanitizedEmailKey.isNotBlank()) {
                     dbRef?.child("users")?.child(sanitizedEmailKey)?.addListenerForSingleValueEvent(userLiveProfileListener as ValueEventListener)
+                }
+                if (sanitizedStudentId.isNotBlank() && sanitizedStudentId != "student") {
+                    dbRef?.child("users")?.child(sanitizedStudentId)?.addListenerForSingleValueEvent(userLiveProfileListener as ValueEventListener)
                 }
 
                 FirebaseFirestore.getInstance().collection("users").document(authUser.uid).get().addOnSuccessListener { doc ->
@@ -728,6 +763,20 @@ class StudentPortalViewModel : ViewModel() {
                                 currentState.copy(
                                     profile = currentState.profile.copy(studentId = rawId)
                                 )
+                            }
+                        }
+
+                        val cloudImg = doc.getString("profileImageUrl") ?: ""
+                        if (isValidProfileImageSource(cloudImg) && cloudImg != _uiState.value.profile.profileImageUrl) {
+                            val context = FirebaseDatabase.getInstance().app.applicationContext
+                            ProfileImageCacheHelper.saveAndCacheProfileImage(context, cloudImg, authUser.uid, sanitizedStudentId, userEmail) { localPath ->
+                                val finalPath = if (localPath.isNotBlank()) localPath else cloudImg
+                                SessionManager(context).setProfileImageUrl(finalPath)
+                                _uiState.update { currentState ->
+                                    currentState.copy(
+                                        profile = currentState.profile.copy(profileImageUrl = finalPath)
+                                    )
+                                }
                             }
                         }
                     } else if (userEmail.isNotBlank()) {
@@ -746,6 +795,20 @@ class StudentPortalViewModel : ViewModel() {
                                             )
                                         }
                                     }
+
+                                    val cloudImg = d.getString("profileImageUrl") ?: ""
+                                    if (isValidProfileImageSource(cloudImg) && cloudImg != _uiState.value.profile.profileImageUrl) {
+                                        val context = FirebaseDatabase.getInstance().app.applicationContext
+                                        ProfileImageCacheHelper.saveAndCacheProfileImage(context, cloudImg, authUser.uid, sanitizedStudentId, userEmail) { localPath ->
+                                            val finalPath = if (localPath.isNotBlank()) localPath else cloudImg
+                                            SessionManager(context).setProfileImageUrl(finalPath)
+                                            _uiState.update { currentState ->
+                                                currentState.copy(
+                                                    profile = currentState.profile.copy(profileImageUrl = finalPath)
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                     }
@@ -755,6 +818,20 @@ class StudentPortalViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.e("StudentPortalViewModel", "Error setting up RTDB listeners", e)
         }
+    }
+
+    private fun isValidProfileImageSource(source: String?): Boolean {
+        if (source.isNullOrBlank()) return false
+        val trimmed = source.trim()
+        if (trimmed.startsWith("http://", ignoreCase = true) ||
+            trimmed.startsWith("https://", ignoreCase = true) ||
+            trimmed.startsWith("data:image", ignoreCase = true) ||
+            trimmed.contains("base64,", ignoreCase = true)
+        ) {
+            return true
+        }
+        val f = File(trimmed)
+        return f.exists() && f.length() > 0
     }
 
     private fun sanitizeDepartment(dept: String): String {
@@ -1636,8 +1713,12 @@ class StudentPortalViewModel : ViewModel() {
             val session = SessionManager(context)
             session.setProfileImageUrl(absolutePath)
 
+            val uid = FirebaseAuth.getInstance().currentUser?.uid
+            val userEmail = session.userEmail
+            val sanitizedEmailKey = userEmail.replace("@", "_").replace(".", "_")
+
             // Sync with local cache manager immediately for smooth zero-lag UI
-            ProfileImageCacheHelper.saveAndCacheProfileImage(context, absolutePath, session.userID.ifBlank { session.userEmail }) {}
+            ProfileImageCacheHelper.saveAndCacheProfileImage(context, absolutePath, session.userID, userEmail, uid) {}
 
             _uiState.update { currentState ->
                 currentState.copy(
@@ -1646,8 +1727,46 @@ class StudentPortalViewModel : ViewModel() {
             }
             showToast("Profile picture updated successfully")
 
+            // Encode compact Base64 JPEG to guarantee instant persistence across logout/login and all devices
+            val base64Image = try {
+                val bmp = BitmapFactory.decodeFile(absolutePath)
+                if (bmp != null) {
+                    val maxDim = 320
+                    val scaled = if (bmp.width > maxDim || bmp.height > maxDim) {
+                        val factor = maxDim.toFloat() / maxOf(bmp.width, bmp.height)
+                        Bitmap.createScaledBitmap(bmp, (bmp.width * factor).toInt(), (bmp.height * factor).toInt(), true)
+                    } else {
+                        bmp
+                    }
+                    val baos = ByteArrayOutputStream()
+                    scaled.compress(Bitmap.CompressFormat.JPEG, 70, baos)
+                    val data = baos.toByteArray()
+                    "data:image/jpeg;base64," + Base64.encodeToString(data, Base64.NO_WRAP)
+                } else null
+            } catch (e: Exception) {
+                null
+            }
+
+            val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+            val firestore = FirebaseFirestore.getInstance()
+
+            if (!base64Image.isNullOrBlank()) {
+                val imgUpdate = mapOf<String, Any>("profileImageUrl" to base64Image)
+                if (uid != null) {
+                    dbRef.child("users").child(uid).child("profileImageUrl").setValue(base64Image)
+                    firestore.collection("users").document(uid).set(imgUpdate, SetOptions.merge())
+                }
+                if (sanitizedStudentId.isNotBlank() && sanitizedStudentId != "student") {
+                    dbRef.child("users").child(sanitizedStudentId).child("profileImageUrl").setValue(base64Image)
+                    firestore.collection("users").document(sanitizedStudentId).set(imgUpdate, SetOptions.merge())
+                }
+                if (sanitizedEmailKey.isNotBlank()) {
+                    dbRef.child("users").child(sanitizedEmailKey).child("profileImageUrl").setValue(base64Image)
+                    firestore.collection("users").document(sanitizedEmailKey).set(imgUpdate, SetOptions.merge())
+                }
+            }
+
             // Asynchronously upload to Firebase Storage to obtain cloud HTTPS URL for multi-device sync
-            val uid = FirebaseAuth.getInstance().currentUser?.uid
             val storageRef = FirebaseStorage.getInstance().reference
             val storageKey = uid ?: sanitizedStudentId.ifBlank { "user_${System.currentTimeMillis()}" }
             val photoRef = storageRef.child("profile_images/${storageKey}.jpg")
@@ -1656,25 +1775,22 @@ class StudentPortalViewModel : ViewModel() {
                 .addOnSuccessListener {
                     photoRef.downloadUrl.addOnSuccessListener { downloadUri ->
                         val remoteUrl = downloadUri.toString()
-                        val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
                         if (uid != null) {
                             dbRef.child("users").child(uid).child("profileImageUrl").setValue(remoteUrl)
-                        }
-                        if (sanitizedStudentId.isNotBlank()) {
-                            dbRef.child("users").child(sanitizedStudentId).child("profileImageUrl").setValue(remoteUrl)
-                        }
-
-                        val firestore = FirebaseFirestore.getInstance()
-                        if (uid != null) {
                             firestore.collection("users").document(uid).update("profileImageUrl", remoteUrl)
                         }
                         if (sanitizedStudentId.isNotBlank()) {
+                            dbRef.child("users").child(sanitizedStudentId).child("profileImageUrl").setValue(remoteUrl)
                             firestore.collection("users").document(sanitizedStudentId).update("profileImageUrl", remoteUrl)
+                        }
+                        if (sanitizedEmailKey.isNotBlank()) {
+                            dbRef.child("users").child(sanitizedEmailKey).child("profileImageUrl").setValue(remoteUrl)
+                            firestore.collection("users").document(sanitizedEmailKey).update("profileImageUrl", remoteUrl)
                         }
                     }
                 }
                 .addOnFailureListener { e ->
-                    Log.w("StudentPortalViewModel", "Firebase storage upload failed, keeping local file: ${e.message}")
+                    Log.w("StudentPortalViewModel", "Firebase storage upload failed, keeping base64/local image: ${e.message}")
                 }
         } catch (e: Exception) {
             showToast("Failed to update profile picture")

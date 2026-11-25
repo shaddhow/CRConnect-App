@@ -165,17 +165,7 @@ fun StudentPortalDrawerContent(
                             contentAlignment = Alignment.Center
                         ) {
                             val bitmap = remember(profile.profileImageUrl) {
-                                val path = profile.profileImageUrl
-                                try {
-                                    if (path.isNotBlank()) {
-                                        if (!path.startsWith("http") && !path.startsWith("data:") && !path.startsWith("content:")) {
-                                            val file = File(path)
-                                            if (file.exists() && file.length() > 0) BitmapFactory.decodeFile(file.absolutePath) else null
-                                        } else null
-                                    } else null
-                                } catch (e: Exception) {
-                                    null
-                                }
+                                ProfileImageCacheHelper.loadBitmapFromPathOrBase64(profile.profileImageUrl)
                             }
 
                             if (bitmap != null) {
