@@ -26,6 +26,7 @@ import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -71,11 +72,32 @@ class StudentPortalViewModel : ViewModel() {
 
     private var isInitialized = false
     private var isFirstAnnouncementLoad = true
+    private var appContext: Context? = null
 
+    // Realtime Database listeners & references
+    private var candidatesRef: DatabaseReference? = null
     private var candidatesListener: ValueEventListener? = null
+
+    private var gateControlRef: DatabaseReference? = null
     private var gateControlListener: ValueEventListener? = null
+
+    private var voterRef: DatabaseReference? = null
     private var voterListener: ValueEventListener? = null
+
+    private var announcementsRef: DatabaseReference? = null
     private var announcementsListener: ChildEventListener? = null
+
+    private var userRoleRef: DatabaseReference? = null
+    private var userRoleListener: ValueEventListener? = null
+
+    private var userProfileImgRef: DatabaseReference? = null
+    private var userProfileImgListener: ValueEventListener? = null
+
+    private var userCgpaRef: DatabaseReference? = null
+    private var userCgpaListener: ValueEventListener? = null
+
+    private var userLiveProfileRef: DatabaseReference? = null
+    private var userLiveProfileListener: ValueEventListener? = null
 
     private val timerHandler = Handler(Looper.getMainLooper())
     private var timerRunnable: Runnable? = null
@@ -84,6 +106,7 @@ class StudentPortalViewModel : ViewModel() {
     fun initSession(context: Context) {
         if (isInitialized) return
         isInitialized = true
+        appContext = context.applicationContext
 
         val session = SessionManager(context)
         val storedDept = session.userDept.ifBlank { "Department of CSE, BUBT" }
@@ -497,7 +520,8 @@ class StudentPortalViewModel : ViewModel() {
             dbRef = rtdb.getReference("crconnect_db")
 
             // 1. Candidates Listener
-            val candRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)?.child("candidates")
+            candidatesListener?.let { candidatesRef?.removeEventListener(it) }
+            candidatesRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)?.child("candidates")
             candidatesListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     parseCandidatesSnapshot(snapshot)
@@ -507,10 +531,11 @@ class StudentPortalViewModel : ViewModel() {
                     Log.e("StudentPortalViewModel", "Candidates listener cancelled: ${error.message}")
                 }
             }
-            candRef?.addValueEventListener(candidatesListener as ValueEventListener)
+            candidatesRef?.addValueEventListener(candidatesListener as ValueEventListener)
 
             // 2. Gate Control & Timer Listener
-            val gateRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)
+            gateControlListener?.let { gateControlRef?.removeEventListener(it) }
+            gateControlRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)
             gateControlListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) return
@@ -540,10 +565,13 @@ class StudentPortalViewModel : ViewModel() {
                     Log.e("StudentPortalViewModel", "Gate listener cancelled: ${error.message}")
                 }
             }
-            gateRef?.addValueEventListener(gateControlListener as ValueEventListener)
+            gateControlRef?.addValueEventListener(gateControlListener as ValueEventListener)
 
-            // 3. Voter Check Listener
-            val voterRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)?.child("voters")?.child(sanitizedStudentId)
+            // 3. Voter Check Listener (Uses Auth UID or sanitized student ID for 100% collision-free voter tracking)
+            voterListener?.let { voterRef?.removeEventListener(it) }
+            val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+            val voterCheckKey = currentUid?.takeIf { it.isNotBlank() } ?: sanitizedStudentId
+            voterRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)?.child("voters")?.child(voterCheckKey)
             voterListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val voted = snapshot.exists()
@@ -561,7 +589,8 @@ class StudentPortalViewModel : ViewModel() {
             voterRef?.addValueEventListener(voterListener as ValueEventListener)
 
             // 4. Announcements / Notifications Listener
-            val notifRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)?.child("announcements")
+            announcementsListener?.let { announcementsRef?.removeEventListener(it) }
+            announcementsRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)?.child("announcements")
             announcementsListener = object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     if (isFirstAnnouncementLoad) return
@@ -588,7 +617,7 @@ class StudentPortalViewModel : ViewModel() {
                 override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
                 override fun onCancelled(error: DatabaseError) {}
             }
-            notifRef?.addChildEventListener(announcementsListener as ChildEventListener)
+            announcementsRef?.addChildEventListener(announcementsListener as ChildEventListener)
 
             // Allow child added events after 2 seconds to avoid popping toasts for historical announcements
             Handler(Looper.getMainLooper()).postDelayed({
@@ -598,7 +627,9 @@ class StudentPortalViewModel : ViewModel() {
             // 5. Live User Role Listener & Profile Image Listener
             val authUser = FirebaseAuth.getInstance().currentUser
             if (authUser != null) {
-                dbRef?.child("users")?.child(authUser.uid)?.child("role")?.addValueEventListener(object : ValueEventListener {
+                userRoleListener?.let { userRoleRef?.removeEventListener(it) }
+                userRoleRef = dbRef?.child("users")?.child(authUser.uid)?.child("role")
+                userRoleListener = object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         val roleStr = snapshot.getValue(String::class.java) ?: ""
                         val isUserCr = roleStr.contains("CR", ignoreCase = true)
@@ -610,9 +641,12 @@ class StudentPortalViewModel : ViewModel() {
                         }
                     }
                     override fun onCancelled(error: DatabaseError) {}
-                })
+                }
+                userRoleRef?.addValueEventListener(userRoleListener as ValueEventListener)
 
-                dbRef?.child("users")?.child(authUser.uid)?.child("profileImageUrl")?.addValueEventListener(object : ValueEventListener {
+                userProfileImgListener?.let { userProfileImgRef?.removeEventListener(it) }
+                userProfileImgRef = dbRef?.child("users")?.child(authUser.uid)?.child("profileImageUrl")
+                userProfileImgListener = object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         val dbImg = snapshot.getValue(String::class.java) ?: ""
                         if (dbImg.isNotBlank() && dbImg != _uiState.value.profile.profileImageUrl) {
@@ -629,9 +663,12 @@ class StudentPortalViewModel : ViewModel() {
                         }
                     }
                     override fun onCancelled(error: DatabaseError) {}
-                })
+                }
+                userProfileImgRef?.addValueEventListener(userProfileImgListener as ValueEventListener)
 
-                dbRef?.child("users")?.child(authUser.uid)?.child("cgpa")?.addValueEventListener(object : ValueEventListener {
+                userCgpaListener?.let { userCgpaRef?.removeEventListener(it) }
+                userCgpaRef = dbRef?.child("users")?.child(authUser.uid)?.child("cgpa")
+                userCgpaListener = object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         val dbCgpa = snapshot.getValue(String::class.java) ?: ""
                         if (dbCgpa.isNotBlank() && dbCgpa != "--" && dbCgpa != _uiState.value.profile.cgpa) {
@@ -645,13 +682,15 @@ class StudentPortalViewModel : ViewModel() {
                         }
                     }
                     override fun onCancelled(error: DatabaseError) {}
-                })
+                }
+                userCgpaRef?.addValueEventListener(userCgpaListener as ValueEventListener)
 
                 // 6. Live Student Profile & ID Sync
                 val userEmail = _uiState.value.profile.email
                 val sanitizedEmailKey = userEmail.replace("@", "_").replace(".", "_")
 
-                val liveProfileListener = object : ValueEventListener {
+                userLiveProfileListener?.let { userLiveProfileRef?.removeEventListener(it) }
+                userLiveProfileListener = object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         if (!snapshot.exists()) return
                         val rawId = snapshot.child("id").getValue(String::class.java)
@@ -672,9 +711,10 @@ class StudentPortalViewModel : ViewModel() {
                     override fun onCancelled(error: DatabaseError) {}
                 }
 
-                dbRef?.child("users")?.child(authUser.uid)?.addValueEventListener(liveProfileListener)
+                userLiveProfileRef = dbRef?.child("users")?.child(authUser.uid)
+                userLiveProfileRef?.addValueEventListener(userLiveProfileListener as ValueEventListener)
                 if (sanitizedEmailKey.isNotBlank()) {
-                    dbRef?.child("users")?.child(sanitizedEmailKey)?.addListenerForSingleValueEvent(liveProfileListener)
+                    dbRef?.child("users")?.child(sanitizedEmailKey)?.addListenerForSingleValueEvent(userLiveProfileListener as ValueEventListener)
                 }
 
                 FirebaseFirestore.getInstance().collection("users").document(authUser.uid).get().addOnSuccessListener { doc ->
@@ -842,6 +882,9 @@ class StudentPortalViewModel : ViewModel() {
                     val daysList = listOf("SAT", "SUN", "MON", "TUE", "WED", "THR", "FRI")
                     val classMapMutable = mutableMapOf<Int, MutableList<ClassModel>>()
 
+                    // Read local weekly attendance cache to preserve checked attendance state
+                    val attendanceMap = appContext?.let { RoutineRepository(it).getWeeklyAttendanceMap() } ?: emptyMap()
+
                     for (child in snapshot.children) {
                         val dayStr = child.child("day").getValue(String::class.java) ?: continue
                         val courseCode = child.child("courseCode").getValue(String::class.java)
@@ -863,11 +906,18 @@ class StudentPortalViewModel : ViewModel() {
 
                         val roomDisplayName = if (roomStr.startsWith("Room") || roomStr.startsWith("TBA")) roomStr else "Room $roomStr"
 
+                        val classId = child.key ?: "${dayStr}_${courseCode}"
+                        val existingAttendance = _uiState.value.classMap[dayIndex]?.find {
+                            it.id == classId || (it.courseName == courseDisplayName && it.timeSlot == timeSlot)
+                        }?.attendanceState
+                        val finalAttendance = attendanceMap[classId] ?: existingAttendance
+
                         val classItem = ClassModel(
-                            id = child.key ?: "${dayStr}_${courseCode}",
+                            id = classId,
                             timeSlot = timeSlot,
                             courseName = courseDisplayName,
-                            room = roomDisplayName
+                            room = roomDisplayName,
+                            attendanceState = finalAttendance
                         )
 
                         classMapMutable.getOrPut(dayIndex) { mutableListOf() }.add(classItem)
@@ -1016,10 +1066,15 @@ class StudentPortalViewModel : ViewModel() {
             return
         }
 
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+        val voterKey = currentUid?.takeIf { it.isNotBlank() }
+            ?: sanitizedStudentId.takeIf { it.isNotBlank() && it != "voter" }
+            ?: "voter_${System.currentTimeMillis()}"
+
         // Write vote to Firebase Realtime Database
         val secCandRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)?.child("candidates")?.child(candidateId)?.child("votes")
         val rootCandRef = dbRef?.child("candidates")?.child(candidateId)?.child("votes")
-        val voterRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)?.child("voters")?.child(sanitizedStudentId)
+        val voterDbRef = dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)?.child("voters")?.child(voterKey)
 
         secCandRef?.runTransaction(object : Transaction.Handler {
             override fun doTransaction(mutableData: MutableData): Transaction.Result {
@@ -1044,9 +1099,16 @@ class StudentPortalViewModel : ViewModel() {
         val voterData = mapOf(
             "timestamp" to System.currentTimeMillis(),
             "candidateId" to candidateId,
-            "voted" to true
+            "voted" to true,
+            "studentId" to sanitizedStudentId,
+            "uid" to (currentUid ?: "")
         )
-        voterRef?.setValue(voterData)
+        voterDbRef?.setValue(voterData)
+
+        // Also record under sanitizedStudentId if valid and distinct for CR dashboard visibility
+        if (sanitizedStudentId.isNotBlank() && sanitizedStudentId != "voter" && sanitizedStudentId != voterKey) {
+            dbRef?.child("voting_controls")?.child(sanitizedDept)?.child(sanitizedSec)?.child("voters")?.child(sanitizedStudentId)?.setValue(voterData)
+        }
 
         _uiState.update { currentState ->
             val updatedCandidates = currentState.candidates.map { candidate ->
@@ -1574,25 +1636,8 @@ class StudentPortalViewModel : ViewModel() {
             val session = SessionManager(context)
             session.setProfileImageUrl(absolutePath)
 
-            // Sync with local cache manager
+            // Sync with local cache manager immediately for smooth zero-lag UI
             ProfileImageCacheHelper.saveAndCacheProfileImage(context, absolutePath, session.userID.ifBlank { session.userEmail }) {}
-
-            val uid = FirebaseAuth.getInstance().currentUser?.uid
-            val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
-            if (uid != null) {
-                dbRef.child("users").child(uid).child("profileImageUrl").setValue(absolutePath)
-            }
-            if (sanitizedStudentId.isNotBlank()) {
-                dbRef.child("users").child(sanitizedStudentId).child("profileImageUrl").setValue(absolutePath)
-            }
-
-            val firestore = FirebaseFirestore.getInstance()
-            if (uid != null) {
-                firestore.collection("users").document(uid).update("profileImageUrl", absolutePath)
-            }
-            if (sanitizedStudentId.isNotBlank()) {
-                firestore.collection("users").document(sanitizedStudentId).update("profileImageUrl", absolutePath)
-            }
 
             _uiState.update { currentState ->
                 currentState.copy(
@@ -1600,6 +1645,37 @@ class StudentPortalViewModel : ViewModel() {
                 )
             }
             showToast("Profile picture updated successfully")
+
+            // Asynchronously upload to Firebase Storage to obtain cloud HTTPS URL for multi-device sync
+            val uid = FirebaseAuth.getInstance().currentUser?.uid
+            val storageRef = FirebaseStorage.getInstance().reference
+            val storageKey = uid ?: sanitizedStudentId.ifBlank { "user_${System.currentTimeMillis()}" }
+            val photoRef = storageRef.child("profile_images/${storageKey}.jpg")
+
+            photoRef.putFile(Uri.fromFile(file))
+                .addOnSuccessListener {
+                    photoRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                        val remoteUrl = downloadUri.toString()
+                        val dbRef = FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com").getReference("crconnect_db")
+                        if (uid != null) {
+                            dbRef.child("users").child(uid).child("profileImageUrl").setValue(remoteUrl)
+                        }
+                        if (sanitizedStudentId.isNotBlank()) {
+                            dbRef.child("users").child(sanitizedStudentId).child("profileImageUrl").setValue(remoteUrl)
+                        }
+
+                        val firestore = FirebaseFirestore.getInstance()
+                        if (uid != null) {
+                            firestore.collection("users").document(uid).update("profileImageUrl", remoteUrl)
+                        }
+                        if (sanitizedStudentId.isNotBlank()) {
+                            firestore.collection("users").document(sanitizedStudentId).update("profileImageUrl", remoteUrl)
+                        }
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.w("StudentPortalViewModel", "Firebase storage upload failed, keeping local file: ${e.message}")
+                }
         } catch (e: Exception) {
             showToast("Failed to update profile picture")
         }
@@ -1923,10 +1999,14 @@ class StudentPortalViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         stopTimerLoop()
-        candidatesListener?.let { dbRef?.removeEventListener(it) }
-        gateControlListener?.let { dbRef?.removeEventListener(it) }
-        voterListener?.let { dbRef?.removeEventListener(it) }
-        announcementsListener?.let { dbRef?.removeEventListener(it) }
+        candidatesListener?.let { candidatesRef?.removeEventListener(it) }
+        gateControlListener?.let { gateControlRef?.removeEventListener(it) }
+        voterListener?.let { voterRef?.removeEventListener(it) }
+        announcementsListener?.let { announcementsRef?.removeEventListener(it) }
+        userRoleListener?.let { userRoleRef?.removeEventListener(it) }
+        userProfileImgListener?.let { userProfileImgRef?.removeEventListener(it) }
+        userCgpaListener?.let { userCgpaRef?.removeEventListener(it) }
+        userLiveProfileListener?.let { userLiveProfileRef?.removeEventListener(it) }
         rtdbRoutineListener?.let { rtdbRoutineRef?.removeEventListener(it) }
         firestoreRegistration?.remove()
     }

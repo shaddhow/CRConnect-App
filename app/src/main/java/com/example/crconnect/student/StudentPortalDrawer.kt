@@ -73,6 +73,7 @@ fun StudentPortalDrawerContent(
     isGateOpen: Boolean = true,
     onTabSelected: (Int) -> Unit,
     onLockedItemClicked: () -> Unit = {},
+    onOpenElection: () -> Unit = {},
     onSignOut: () -> Unit,
     currentThemeMode: String = SessionManager.THEME_SYSTEM,
     onThemeModeSelected: (String) -> Unit = {}
@@ -329,7 +330,7 @@ fun StudentPortalDrawerContent(
                     label = "Election portal",
                     iconRes = R.drawable.ic_people,
                     accentColor = Color(0xFF7C3AED),
-                    isSelected = localSelectedTab == 2,
+                    isSelected = false,
                     isLocked = isElectionLocked,
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -337,8 +338,7 @@ fun StudentPortalDrawerContent(
                         if (isElectionLocked) {
                             onLockedItemClicked()
                         } else {
-                            localSelectedTab = 2
-                            onTabSelected(2)
+                            onOpenElection()
                         }
                     }
                 )

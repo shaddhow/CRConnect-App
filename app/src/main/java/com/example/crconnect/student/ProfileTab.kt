@@ -164,7 +164,6 @@ fun ProfileTab(
     var showAcademicOverviewPage by remember { mutableStateOf(false) }
     var showAdvisorPage by remember { mutableStateOf(false) }
     var showSettingsPage by remember { mutableStateOf(false) }
-    var showAttendanceSubPage by remember { mutableStateOf(false) }
     var showNotificationSettingsDialog by remember { mutableStateOf(false) }
     var notificationsEnabled by remember { mutableStateOf(true) }
 
@@ -1080,7 +1079,7 @@ fun ProfileTab(
                                         Surface(
                                             modifier = Modifier
                                                 .weight(1f)
-                                                .clickable { showAttendanceSubPage = true },
+                                                .clickable { onNavigateToAcademics() },
                                             shape = RoundedCornerShape(16.dp),
                                             color = Color.White.copy(alpha = 0.06f),
                                             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
@@ -1300,7 +1299,7 @@ fun ProfileTab(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(20.dp))
-                                .clickable { showAttendanceSubPage = true },
+                                .clickable { onNavigateToAcademics() },
                             shape = RoundedCornerShape(20.dp),
                             color = if (isDark) Color(0xFF131B2E) else Color.White,
                             border = BorderStroke(1.dp, if (isDark) Color(0xFF24354D) else Color(0xFFE2E8F0)),
@@ -1963,69 +1962,6 @@ fun ProfileTab(
 
                         Spacer(modifier = Modifier.height(96.dp))
                     }
-        }
-    }
-
-    if (showAttendanceSubPage) {
-        FullScreenSubPageDialog(
-            onDismissRequest = { showAttendanceSubPage = false },
-            isDark = isDark
-        ) {
-            BackHandler {
-                showAttendanceSubPage = false
-            }
-
-            // Top App Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(44.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    onClick = { showAttendanceSubPage = false }
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        text = "Attendance Records",
-                        fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Weekly status & detailed breakdown",
-                        fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            AttendanceTab(
-                uiState = uiState,
-                modifier = Modifier.fillMaxSize()
-            )
         }
     }
 

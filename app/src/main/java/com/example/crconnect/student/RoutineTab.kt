@@ -63,6 +63,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
@@ -77,6 +78,7 @@ import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.HowToVote
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -154,6 +156,7 @@ fun RoutineTab(
     onLoadSampleRoutine: () -> Unit = {},
     onNavigateWeek: (Int) -> Unit = {},
     onToggleAttendance: (classId: String, targetState: String, dayIndex: Int) -> Unit = { _, _, _ -> },
+    onOpenElection: () -> Unit = {},
     onShowToast: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -410,6 +413,103 @@ fun RoutineTab(
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)
                 )
+            }
+        }
+
+        // 2. LIVE CR ELECTION BANNER (Clean Vector UI, displays only when teacher opens the election gate)
+        if (uiState.isGateOpen) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        HapticUtils.lightClick(view)
+                        onOpenElection()
+                    },
+                shape = RoundedCornerShape(20.dp),
+                color = if (isDark) Color(0xFF1E1B4B).copy(alpha = 0.65f) else Color(0xFFEEF2FF),
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = if (isDark) Color(0xFF6366F1).copy(alpha = 0.35f) else Color(0xFFC7D2FE)
+                ),
+                shadowElevation = if (isDark) 0.dp else 3.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isDark) Color(0xFF312E81) else Color(0xFFE0E7FF)
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = if (isDark) Color(0xFF4F46E5) else Color(0xFFC7D2FE),
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.HowToVote,
+                            contentDescription = "Election Active",
+                            tint = if (isDark) Color(0xFFA5B4FC) else Color(0xFF4F46E5),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "CR Election Active",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF1E1B4B)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF10B981))
+                            )
+                        }
+                        Text(
+                            text = if (uiState.hasVoted) "Your ballot has been cast • Tap to view status" else "Voting gate is open • Tap to cast your ballot",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 12.sp,
+                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                        )
+                    }
+
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isDark) Color(0xFF312E81) else Color.White,
+                        border = BorderStroke(1.dp, if (isDark) Color(0xFF4F46E5) else Color(0xFFE2E8F0)),
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = "Enter Election",
+                                tint = if (isDark) Color(0xFFA5B4FC) else Color(0xFF4F46E5),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
 

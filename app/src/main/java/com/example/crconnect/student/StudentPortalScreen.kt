@@ -30,12 +30,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +49,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -128,6 +131,7 @@ fun StudentPortalScreen(
     }
 
     var isNotificationCenterOpen by remember { mutableStateOf(false) }
+    var isElectionSubPageOpen by remember { mutableStateOf(false) }
     var unreadNotificationCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
@@ -206,6 +210,10 @@ fun StudentPortalScreen(
                     onLockedItemClicked = {
                         CustomToast.show(context, "Election is currently locked by teacher")
                     },
+                    onOpenElection = {
+                        coroutineScope.launch { drawerState.close() }
+                        isElectionSubPageOpen = true
+                    },
                     onSignOut = {
                         coroutineScope.launch {
                             drawerState.close()
@@ -279,6 +287,7 @@ fun StudentPortalScreen(
                                 },
                                 onNavigateWeek = { delta -> viewModel.navigateWeek(delta) },
                                 onToggleAttendance = { classId, state, dayIdx -> viewModel.toggleAttendance(classId, state, dayIdx, context) },
+                                onOpenElection = { isElectionSubPageOpen = true },
                                 onShowToast = { msg -> viewModel.showToast(msg) }
                             )
                             1 -> AcademicOverviewTab(
@@ -356,6 +365,95 @@ fun StudentPortalScreen(
                             versionName = uiState.currentAppVersion,
                             onDismiss = { viewModel.dismissUpToDateDialog() }
                         )
+                    }
+
+                    if (isElectionSubPageOpen) {
+                        FullScreenSubPageDialog(
+                            onDismissRequest = { isElectionSubPageOpen = false },
+                            isDark = isDark
+                        ) {
+                            BackHandler { isElectionSubPageOpen = false }
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(portalGradient)
+                                    .statusBarsPadding()
+                                    .navigationBarsPadding()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(40.dp),
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.surface,
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                        onClick = { isElectionSubPageOpen = false }
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                                contentDescription = "Back",
+                                                tint = MaterialTheme.colorScheme.onSurface,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.width(14.dp))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "CR Election Portal",
+                                            fontFamily = PlusJakartaSansFontFamily,
+                                            fontSize = 18.sp,
+                                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "Live Candidate Roster & Electronic Ballot",
+                                            fontFamily = PlusJakartaSansFontFamily,
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (uiState.isGateOpen) Color(0xFF10B981).copy(alpha = 0.15f) else Color(0xFFEF4444).copy(alpha = 0.15f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, if (uiState.isGateOpen) Color(0xFF10B981).copy(alpha = 0.3f) else Color(0xFFEF4444).copy(alpha = 0.3f))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(6.dp)
+                                                    .clip(CircleShape)
+                                                    .background(if (uiState.isGateOpen) Color(0xFF10B981) else Color(0xFFEF4444))
+                                            )
+                                            Text(
+                                                text = if (uiState.isGateOpen) "Voting Open" else "Closed",
+                                                fontFamily = PlusJakartaSansFontFamily,
+                                                fontSize = 11.sp,
+                                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                                color = if (uiState.isGateOpen) Color(0xFF10B981) else Color(0xFFEF4444)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                ElectionTab(
+                                    uiState = uiState,
+                                    onCastVote = { candidateId -> viewModel.castVote(candidateId) }
+                                )
+                            }
+                        }
                     }
 
                     StudentBottomNavigation(
