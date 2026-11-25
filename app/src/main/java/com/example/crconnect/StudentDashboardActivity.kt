@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import com.example.crconnect.student.StudentPortalScreen
 import com.example.crconnect.student.StudentPortalTheme
 import com.example.crconnect.student.StudentPortalViewModel
+import com.example.crconnect.student.notifications.FcmTopicHelper
 import com.example.crconnect.student.notifications.NotificationPermissionHelper
 import com.example.crconnect.student.notifications.RoutineNotificationHelper
 import com.google.firebase.auth.FirebaseAuth
@@ -145,6 +146,7 @@ class StudentDashboardActivity : FragmentActivity() {
                             "Logout"
                         ) {
                             val sessionManager = SessionManager(this@StudentDashboardActivity)
+                            FcmTopicHelper.unsubscribeStudent(sessionManager.userDept, sessionManager.userSection)
                             sessionManager.logoutUser()
                             FirebaseAuth.getInstance().signOut()
                             val intent = Intent(this@StudentDashboardActivity, MainActivity::class.java)

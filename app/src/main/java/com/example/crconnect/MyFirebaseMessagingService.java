@@ -13,6 +13,13 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 
+import com.example.crconnect.student.notifications.InAppNotificationModel;
+import com.example.crconnect.student.notifications.NotificationRepository;
+import com.example.crconnect.student.notifications.NotificationType;
+import com.example.crconnect.student.notifications.RoutineNotificationHelper;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -21,8 +28,8 @@ import java.util.Map;
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private static final String TAG = "MyFirebaseMsgService";
-    public static final String CHANNEL_ID = "crconnect_notifications_channel";
-    public static final String CHANNEL_NAME = "CRConnect Election Updates";
+    public static final String CHANNEL_ID = RoutineNotificationHelper.CHANNEL_CR_NOTICES;
+    public static final String CHANNEL_NAME = "CR Announcements & Urgent Notices";
 
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
@@ -30,7 +37,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         Log.d(TAG, "From: " + remoteMessage.getFrom());
 
-        String title = "CRConnect Notification";
+        String title = "CRConnect Announcement";
         String body = "You have a new update from BUBT CRConnect";
 
         // Check if message contains a notification payload.
@@ -61,6 +68,20 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
         Log.d(TAG, "Refreshed FCM Token: " + token);
+
+        // Store refreshed FCM token in Firebase Database for user
+        try {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user != null) {
+                FirebaseDatabase.getInstance("https://crconnect-58521-default-rtdb.firebaseio.com")
+                        .getReference("users")
+                        .child(user.getUid())
+                        .child("fcmToken")
+                        .setValue(token);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to persist refreshed FCM token", e);
+        }
     }
 
     public static void createNotificationChannel(Context context) {
@@ -70,41 +91,72 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     CHANNEL_NAME,
                     NotificationManager.IMPORTANCE_HIGH
             );
-            channel.setDescription("Notifications for BUBT CRConnect Election Updates & Gate Control");
+            channel.setDescription("Instant notifications when your CR broadcasts class changes or notices");
             channel.enableVibration(true);
+            channel.setShowBadge(true);
 
             NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
             if (notificationManager != null) {
                 notificationManager.createNotificationChannel(channel);
             }
         }
+        RoutineNotificationHelper.initNotificationChannels(context);
     }
 
     private void sendNotification(String title, String body) {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        // 1. Save in in-app notification center repository
+        try {
+            InAppNotificationModel notificationModel = new InAppNotificationModel(
+                    String.valueOf(System.currentTimeMillis()),
+                    title,
+                    body,
+                    System.currentTimeMillis(),
+                    NotificationType.CR_NOTICE,
+                    false,
+                    null
+            );
+            NotificationRepository.INSTANCE.saveNotification(this, notificationModel);
+        } catch (Exception e) {
+            Log.e(TAG, "Error caching FCM message into NotificationRepository", e);
+        }
+
+        // 2. Prepare Intent to open dashboard
+        SessionManager sessionManager = new SessionManager(this);
+        Intent intent;
+        if (sessionManager.isLoggedIn()) {
+            if ("teacher".equalsIgnoreCase(sessionManager.getUserRole())) {
+                intent = new Intent(this, TeacherDashboardActivity.class);
+            } else {
+                intent = new Intent(this, StudentDashboardActivity.class);
+            }
+        } else {
+            intent = new Intent(this, MainActivity.class);
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
-                this, 0, intent,
-                PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE
+                this, (int) (System.currentTimeMillis() % 10000), intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+        createNotificationChannel(this);
 
         NotificationCompat.Builder notificationBuilder =
                 new NotificationCompat.Builder(this, CHANNEL_ID)
                         .setSmallIcon(R.drawable.ic_app_main)
                         .setContentTitle(title)
                         .setContentText(body)
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
                         .setAutoCancel(true)
                         .setSound(defaultSoundUri)
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setDefaults(NotificationCompat.DEFAULT_ALL)
                         .setContentIntent(pendingIntent);
 
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        createNotificationChannel(this);
 
         if (notificationManager != null) {
             notificationManager.notify((int) System.currentTimeMillis(), notificationBuilder.build());

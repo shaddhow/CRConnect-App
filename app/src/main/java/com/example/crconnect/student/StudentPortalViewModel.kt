@@ -11,6 +11,7 @@ import com.example.crconnect.ProfileImageCacheHelper
 import com.example.crconnect.RoutineLocalCache
 import com.example.crconnect.SessionManager
 import com.example.crconnect.ToastHelper
+import com.example.crconnect.student.notifications.FcmTopicHelper
 import com.example.crconnect.student.notifications.RoutineNotificationHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ChildEventListener
@@ -116,6 +117,9 @@ class StudentPortalViewModel : ViewModel() {
         sanitizedDept = sanitizeDepartment(rawDept)
         sanitizedSec = sanitizeSection(rawSec)
         sanitizedStudentId = rawId.replace(Regex("[^a-zA-Z0-9_]"), "_")
+
+        // Auto subscribe to section FCM announcements topic
+        FcmTopicHelper.subscribeStudent(sanitizedDept, sanitizedSec)
 
         val studentName = session.userName.ifBlank { "Student" }
         val initials = computeInitials(studentName)

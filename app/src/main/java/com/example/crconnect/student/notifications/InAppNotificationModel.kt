@@ -8,7 +8,7 @@ enum class NotificationType {
     GENERAL
 }
 
-data class InAppNotificationModel(
+data class InAppNotificationModel @JvmOverloads constructor(
     val id: String = System.currentTimeMillis().toString(),
     val title: String,
     val body: String,
