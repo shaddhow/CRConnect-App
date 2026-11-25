@@ -3062,41 +3062,47 @@ fun ProfileTab(
                                     if (isUpdateAvailable) {
                                         Surface(
                                             shape = RoundedCornerShape(20.dp),
-                                            color = Color(0xFF0066FF).copy(alpha = pulseAlpha),
-                                            border = BorderStroke(1.dp, Color(0xFF00E5FF))
+                                            color = if (isDark) Color(0xFF1E1B4B) else Color(0xFFEEF2FF),
+                                            border = BorderStroke(
+                                                1.dp,
+                                                if (isDark) Color(0xFF6366F1).copy(alpha = 0.6f) else Color(0xFFC7D2FE)
+                                            )
                                         ) {
                                             Row(
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                                                 verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                                             ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(6.dp)
+                                                        .clip(CircleShape)
+                                                        .background(Color(0xFF6366F1))
+                                                )
                                                 Text(
-                                                    text = "Update Available ($latestTag) ⚡",
+                                                    text = "Update",
                                                     fontFamily = PlusJakartaSansFontFamily,
                                                     fontSize = 11.5.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color.White
-                                                )
-                                                Icon(
-                                                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                                                    contentDescription = "Update Now",
-                                                    tint = Color.White,
-                                                    modifier = Modifier.size(12.dp)
+                                                    color = if (isDark) Color(0xFFA5B4FC) else Color(0xFF4338CA)
                                                 )
                                             }
                                         }
                                     } else {
                                         Surface(
                                             shape = RoundedCornerShape(20.dp),
-                                            color = Color(0xFF10B981).copy(alpha = if (isDark) 0.18f else 0.1f),
-                                            border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.3f))
+                                            color = if (isDark) Color(0xFF064E3B).copy(alpha = 0.3f) else Color(0xFFECFDF5),
+                                            border = BorderStroke(
+                                                1.dp,
+                                                if (isDark) Color(0xFF059669).copy(alpha = 0.5f) else Color(0xFFA7F3D0)
+                                            )
                                         ) {
                                             Text(
-                                                text = "● Up to date",
+                                                text = "Latest",
                                                 fontFamily = PlusJakartaSansFontFamily,
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF10B981),
+                                                color = if (isDark) Color(0xFF34D399) else Color(0xFF059669),
                                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                             )
                                         }
