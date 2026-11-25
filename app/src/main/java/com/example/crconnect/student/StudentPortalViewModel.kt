@@ -1,6 +1,7 @@
 package com.example.crconnect.student
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -11,6 +12,7 @@ import com.example.crconnect.ProfileImageCacheHelper
 import com.example.crconnect.RoutineLocalCache
 import com.example.crconnect.SessionManager
 import com.example.crconnect.ToastHelper
+import com.example.crconnect.core.utils.AppUpdateHelper
 import com.example.crconnect.student.notifications.FcmTopicHelper
 import com.example.crconnect.student.notifications.RoutineNotificationHelper
 import com.google.firebase.auth.FirebaseAuth
@@ -1694,7 +1696,7 @@ class StudentPortalViewModel : ViewModel() {
 
     fun checkForAppUpdates(context: Context, forceCheck: Boolean = false) {
         val currentTime = System.currentTimeMillis()
-        if (!forceCheck && (currentTime - lastUpdateCheckTime) < 60 * 60 * 1000L) {
+        if (!forceCheck && (currentTime - lastUpdateCheckTime) < 5 * 60 * 1000L) {
             return
         }
 
@@ -1718,27 +1720,54 @@ class StudentPortalViewModel : ViewModel() {
                     val json = JSONObject(responseText)
                     val tagName = json.optString("tag_name", "").trim()
                     val htmlUrl = json.optString("html_url", "https://github.com/shaddhow/CRConnect-App/releases/latest")
+                    val releaseBody = json.optString("body", "").trim()
+                    val releaseName = json.optString("name", "").trim()
+
+                    // Locate direct .apk download URL from release assets
+                    var directApkUrl: String? = null
+                    val assets = json.optJSONArray("assets")
+                    if (assets != null) {
+                        for (i in 0 until assets.length()) {
+                            val asset = assets.optJSONObject(i) ?: continue
+                            val assetName = asset.optString("name", "")
+                            if (assetName.endsWith(".apk", ignoreCase = true)) {
+                                directApkUrl = asset.optString("browser_download_url")
+                                break
+                            }
+                        }
+                    }
 
                     val cleanTag = tagName.removePrefix("v").removePrefix("V")
-                    val currentVersion = "1.1.0"
+                    val currentVersion = try {
+                        val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                        pInfo.versionName ?: "1.1.0"
+                    } catch (e: Exception) {
+                        "1.1.0"
+                    }
 
                     val isNewer = isVersionNewer(cleanTag, currentVersion)
+                    val isForce = releaseBody.contains("[force]", ignoreCase = true) ||
+                            releaseName.contains("[force]", ignoreCase = true)
 
                     withContext(Dispatchers.Main) {
                         _uiState.update { currentState ->
                             currentState.copy(
                                 isUpdateAvailable = isNewer,
+                                isUpdateDialogVisible = isNewer,
+                                isUpToDateDialogVisible = if (forceCheck && !isNewer) true else currentState.isUpToDateDialogVisible,
+                                currentAppVersion = currentVersion,
                                 latestVersionName = if (tagName.isNotBlank()) tagName else "v$cleanTag",
                                 updateUrl = if (htmlUrl.isNotBlank()) htmlUrl else "https://github.com/shaddhow/CRConnect-App/releases/latest",
+                                apkDownloadUrl = directApkUrl,
+                                releaseNotes = releaseBody,
+                                isForceUpdate = isForce,
                                 isCheckingUpdate = false
                             )
                         }
 
                         if (forceCheck) {
                             if (isNewer) {
-                                showToast("New update available: $tagName! Tap App Version to update.")
-                            } else {
-                                showToast("CRConnect is up to date (v$currentVersion)")
+                                showToast("New update available: $tagName! Tap Update Now.")
                             }
                         }
                     }
@@ -1757,6 +1786,97 @@ class StudentPortalViewModel : ViewModel() {
                     }
                 }
             }
+        }
+    }
+
+    fun showUpdateDialog() {
+        _uiState.update { it.copy(isUpdateDialogVisible = true) }
+    }
+
+    fun dismissUpdateDialog() {
+        if (!_uiState.value.isForceUpdate) {
+            _uiState.update { it.copy(isUpdateDialogVisible = false) }
+        }
+    }
+
+    fun dismissUpToDateDialog() {
+        _uiState.update { it.copy(isUpToDateDialogVisible = false) }
+    }
+
+    fun startApkDownloadAndInstall(context: Context) {
+        val apkUrl = _uiState.value.apkDownloadUrl
+        if (apkUrl.isNullOrBlank()) {
+            // Fallback to opening browser release page if no direct APK asset was uploaded to GitHub release
+            try {
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(_uiState.value.updateUrl)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(browserIntent)
+            } catch (e: Exception) {
+                showToast("Unable to open update link")
+            }
+            return
+        }
+
+        val cachedFile = _uiState.value.downloadedApkFile
+        if (cachedFile != null && cachedFile.exists() && cachedFile.length() > 0) {
+            installDownloadedApk(context, cachedFile)
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                isDownloadingApk = true,
+                downloadProgress = 0f,
+                downloadedMb = 0f,
+                totalMb = 0f,
+                updateErrorMessage = null
+            )
+        }
+
+        viewModelScope.launch {
+            val result = AppUpdateHelper.downloadApk(context, apkUrl) { progress, downloaded, total ->
+                _uiState.update {
+                    it.copy(
+                        downloadProgress = progress,
+                        downloadedMb = downloaded,
+                        totalMb = total
+                    )
+                }
+            }
+
+            result.fold(
+                onSuccess = { file ->
+                    _uiState.update {
+                        it.copy(
+                            isDownloadingApk = false,
+                            downloadProgress = 1f,
+                            downloadedApkFile = file
+                        )
+                    }
+                    installDownloadedApk(context, file)
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            isDownloadingApk = false,
+                            updateErrorMessage = error.message ?: "Download failed. Tap to retry."
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun installDownloadedApk(context: Context, file: File) {
+        if (!AppUpdateHelper.canInstallPackages(context)) {
+            AppUpdateHelper.openInstallPermissionSettings(context)
+            showToast("Please allow CRConnect to install updates, then tap Install again.")
+            return
+        }
+        val launched = AppUpdateHelper.launchPackageInstaller(context, file)
+        if (!launched) {
+            showToast("Failed to launch package installer")
         }
     }
 

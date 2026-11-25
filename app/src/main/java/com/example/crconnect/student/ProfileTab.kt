@@ -154,6 +154,7 @@ fun ProfileTab(
     onUpdateCurrentTerm: (String) -> Unit = {},
     onSecuritySettings: () -> Unit = {},
     onCheckUpdate: () -> Unit = {},
+    onShowUpdateDialog: () -> Unit = {},
     onNavigateToAttendance: () -> Unit = {},
     onNavigateToAcademics: () -> Unit = {},
     onSignOut: () -> Unit = {},
@@ -3012,12 +3013,7 @@ fun ProfileTab(
                                         .clip(RoundedCornerShape(8.dp))
                                         .clickable {
                                             if (isUpdateAvailable) {
-                                                try {
-                                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateUrl))
-                                                    context.startActivity(intent)
-                                                } catch (e: Exception) {
-                                                    ToastHelper.show(context, "Could not open update link")
-                                                }
+                                                onShowUpdateDialog()
                                             } else {
                                                 onCheckUpdate()
                                             }

@@ -314,6 +314,7 @@ fun StudentPortalScreen(
                                 onUpdateCurrentTerm = { term -> viewModel.updateCurrentTerm(term, context) },
                                 onSecuritySettings = { isSecurityDialogOpen = true },
                                 onCheckUpdate = { viewModel.checkForAppUpdates(context, forceCheck = true) },
+                                onShowUpdateDialog = { viewModel.showUpdateDialog() },
                                 onNavigateToAttendance = { viewModel.selectTab(1) },
                                 onNavigateToAcademics = { viewModel.selectTab(1) },
                                 onSignOut = onSignOut,
@@ -339,6 +340,21 @@ fun StudentPortalScreen(
                             },
                             onNavigateToRoutine = { viewModel.selectTab(0) },
                             onNavigateToAcademics = { viewModel.selectTab(1) }
+                        )
+                    }
+
+                    if (uiState.isUpdateDialogVisible && uiState.isUpdateAvailable) {
+                        AppUpdateDialog(
+                            uiState = uiState,
+                            onDismiss = { viewModel.dismissUpdateDialog() },
+                            onDownloadAndInstall = { viewModel.startApkDownloadAndInstall(context) }
+                        )
+                    }
+
+                    if (uiState.isUpToDateDialogVisible) {
+                        AppUpToDateDialog(
+                            versionName = uiState.currentAppVersion,
+                            onDismiss = { viewModel.dismissUpToDateDialog() }
                         )
                     }
 

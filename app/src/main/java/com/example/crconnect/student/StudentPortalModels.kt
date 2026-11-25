@@ -1,6 +1,7 @@
 package com.example.crconnect.student
 
 import com.example.crconnect.SessionManager
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -361,6 +362,18 @@ data class StudentPortalUiState(
     val latestVersionName: String = "",
     val updateUrl: String = "https://github.com/shaddhow/CRConnect-App/releases/latest",
     val isCheckingUpdate: Boolean = false,
+    val isUpdateDialogVisible: Boolean = false,
+    val isUpToDateDialogVisible: Boolean = false,
+    val currentAppVersion: String = "1.1.0",
+    val apkDownloadUrl: String? = null,
+    val releaseNotes: String = "",
+    val isForceUpdate: Boolean = false,
+    val isDownloadingApk: Boolean = false,
+    val downloadProgress: Float = 0f,
+    val downloadedMb: Float = 0f,
+    val totalMb: Float = 0f,
+    val downloadedApkFile: File? = null,
+    val updateErrorMessage: String? = null,
     val uniqueCourseCount: Int = 0,
     val attendanceArchives: List<WeeklyAttendanceArchive> = emptyList()
 )
