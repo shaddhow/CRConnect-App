@@ -271,9 +271,27 @@ fun StudentPortalScreen(
                                 uiState = uiState,
                                 onDaySelected = { day -> viewModel.selectScheduleDay(day) },
                                 onOpenAddClass = { viewModel.openAddClassSheet() },
+                                onOpenEditClass = { classModel, dayIndex ->
+                                    viewModel.openEditClassSheet(classModel, dayIndex)
+                                },
                                 onCloseAddClass = { viewModel.closeAddClassSheet() },
-                                onAddClass = { course, time, room ->
-                                    viewModel.addClass(course, time, room)
+                                onAddClass = { course, time, room, colorIndex ->
+                                    viewModel.addClass(course, time, room, colorIndex, context)
+                                },
+                                onUpdateClass = { originalClass, course, time, room, targetDayIndex, colorIndex ->
+                                    viewModel.updateClass(
+                                        originalClass = originalClass,
+                                        originalDayIndex = uiState.editingClassDayIndex ?: uiState.selectedDayIndex,
+                                        updatedCourseName = course,
+                                        updatedTimeSlot = time,
+                                        updatedRoom = room,
+                                        targetDayIndex = targetDayIndex,
+                                        colorIndex = colorIndex,
+                                        context = context
+                                    )
+                                },
+                                onDeleteSingleClass = { classModel, dayIndex ->
+                                    viewModel.deleteSingleClass(classModel, dayIndex, context)
                                 },
                                 onOpenNoticeSheet = { viewModel.openNoticeSheet() },
                                 onDeleteRoutine = {

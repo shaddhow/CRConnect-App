@@ -278,12 +278,14 @@ class StudentPortalViewModel : ViewModel() {
                 val roomDisplay = if (entry.room.startsWith("Room") || entry.room.startsWith("TBA")) entry.room else "Room ${entry.room}"
                 val classId = "${entry.day}_${entry.course}_${entry.startTime}"
 
+                val savedColor = context?.let { RoutineRepository(it).getClassAccentColor(classId, courseDisplay) }
                 val classModel = ClassModel(
                     id = classId,
                     timeSlot = timeSlot,
                     courseName = courseDisplay,
                     room = roomDisplay,
-                    attendanceState = attendanceMap[classId]
+                    attendanceState = attendanceMap[classId],
+                    colorIndex = savedColor
                 )
                 val currentList = loadedMap.getOrPut(targetIdx) { mutableListOf() }
                 if (!currentList.any { it.courseName == classModel.courseName && it.timeSlot == classModel.timeSlot }) {
@@ -1203,11 +1205,36 @@ class StudentPortalViewModel : ViewModel() {
     }
 
     fun openAddClassSheet(manualMode: Boolean = true) {
-        _uiState.update { it.copy(isAddClassSheetOpen = true, isAddClassManualMode = manualMode) }
+        _uiState.update { 
+            it.copy(
+                isAddClassSheetOpen = true, 
+                isAddClassManualMode = manualMode,
+                editingClass = null,
+                editingClassDayIndex = null
+            ) 
+        }
+    }
+
+    fun openEditClassSheet(classModel: ClassModel, dayIndex: Int) {
+        _uiState.update {
+            it.copy(
+                isAddClassSheetOpen = true,
+                isAddClassManualMode = true,
+                editingClass = classModel,
+                editingClassDayIndex = dayIndex,
+                selectedDayIndex = dayIndex
+            )
+        }
     }
 
     fun closeAddClassSheet() {
-        _uiState.update { it.copy(isAddClassSheetOpen = false) }
+        _uiState.update { 
+            it.copy(
+                isAddClassSheetOpen = false,
+                editingClass = null,
+                editingClassDayIndex = null
+            ) 
+        }
     }
 
     fun openNoticeSheet() {
@@ -1245,15 +1272,17 @@ class StudentPortalViewModel : ViewModel() {
         }
     }
 
-    fun addClass(courseName: String, timeSlot: String, room: String) {
+    fun addClass(courseName: String, timeSlot: String, room: String, colorIndex: Int = 0, context: Context? = null) {
+        val newClassId = System.currentTimeMillis().toString()
         _uiState.update { currentState ->
             val currentDayIndex = currentState.selectedDayIndex
             val currentClasses = currentState.classMap[currentDayIndex] ?: emptyList()
             val newClass = ClassModel(
-                id = System.currentTimeMillis().toString(),
+                id = newClassId,
                 timeSlot = timeSlot.ifBlank { "09:00 - 10:30" },
                 courseName = courseName,
-                room = room.ifBlank { "Room TBA" }
+                room = room.ifBlank { "Room TBA" },
+                colorIndex = colorIndex
             )
             val updatedClassList = (currentClasses + newClass).sortedBy { startMinutes(it.timeSlot) }
             val updatedClassMap = currentState.classMap.toMutableMap().apply {
@@ -1269,8 +1298,159 @@ class StudentPortalViewModel : ViewModel() {
                 classMap = updatedClassMap,
                 scheduleDays = updatedDays,
                 isAddClassSheetOpen = false,
+                editingClass = null,
+                editingClassDayIndex = null,
                 snackbarMessage = "Class added"
             )
+        }
+
+        try {
+            val ctx = context ?: FirebaseDatabase.getInstance().app.applicationContext
+            RoutineRepository(ctx).saveClassAccentColor(newClassId, courseName, colorIndex)
+        } catch (_: Exception) { }
+    }
+
+    fun updateClass(
+        originalClass: ClassModel,
+        originalDayIndex: Int,
+        updatedCourseName: String,
+        updatedTimeSlot: String,
+        updatedRoom: String,
+        targetDayIndex: Int,
+        colorIndex: Int = 0,
+        context: Context? = null
+    ) {
+        val daysList = listOf("SAT", "SUN", "MON", "TUE", "WED", "THR", "FRI")
+        val oldDayStr = daysList.getOrElse(originalDayIndex) { "SAT" }
+        val newDayStr = daysList.getOrElse(targetDayIndex) { oldDayStr }
+
+        val updatedClass = originalClass.copy(
+            courseName = updatedCourseName,
+            timeSlot = updatedTimeSlot.ifBlank { originalClass.timeSlot },
+            room = updatedRoom.ifBlank { originalClass.room },
+            colorIndex = colorIndex
+        )
+
+        _uiState.update { currentState ->
+            val mutableMap = currentState.classMap.mapValues { it.value.toMutableList() }.toMutableMap()
+
+            if (originalDayIndex == targetDayIndex) {
+                val list = mutableMap[targetDayIndex] ?: mutableListOf()
+                val idx = list.indexOfFirst { it.id == originalClass.id }
+                if (idx != -1) {
+                    list[idx] = updatedClass
+                } else {
+                    list.add(updatedClass)
+                }
+                list.sortBy { startMinutes(it.timeSlot) }
+                mutableMap[targetDayIndex] = list
+            } else {
+                val oldList = mutableMap[originalDayIndex] ?: mutableListOf()
+                oldList.removeAll { it.id == originalClass.id }
+                mutableMap[originalDayIndex] = oldList
+
+                val newList = mutableMap[targetDayIndex] ?: mutableListOf()
+                newList.removeAll { it.id == originalClass.id }
+                newList.add(updatedClass)
+                newList.sortBy { startMinutes(it.timeSlot) }
+                mutableMap[targetDayIndex] = newList
+            }
+
+            val updatedDays = currentState.scheduleDays.map { day ->
+                val hasClasses = (mutableMap[day.dayIndex]?.isNotEmpty() == true)
+                day.copy(hasClasses = hasClasses)
+            }
+
+            currentState.copy(
+                classMap = mutableMap,
+                scheduleDays = updatedDays,
+                selectedDayIndex = targetDayIndex,
+                isAddClassSheetOpen = false,
+                editingClass = null,
+                editingClassDayIndex = null,
+                snackbarMessage = "Class updated"
+            )
+        }
+
+        try {
+            val ctx = context ?: FirebaseDatabase.getInstance().app.applicationContext
+            val repo = RoutineRepository(ctx)
+
+            repo.saveClassAccentColor(originalClass.id, updatedCourseName, colorIndex)
+
+            val oldCourse = if (originalClass.courseName.contains("(")) {
+                originalClass.courseName.substringBefore("(").trim()
+            } else originalClass.courseName.trim()
+            val oldStartTime = originalClass.timeSlot.split("-", "–").firstOrNull()?.trim() ?: ""
+
+            val hasParen = updatedCourseName.contains("(") && updatedCourseName.contains(")")
+            val newCourse = if (hasParen) updatedCourseName.substringBefore("(").trim() else updatedCourseName.trim()
+            val newFaculty = if (hasParen) updatedCourseName.substringAfter("(").substringBefore(")").trim() else ""
+
+            val timeParts = updatedTimeSlot.split("-", "–").map { it.trim() }
+            val newStart = timeParts.firstOrNull() ?: "09:00 AM"
+            val newEnd = if (timeParts.size > 1) timeParts[1] else "10:30 AM"
+
+            val updatedEntry = ClassEntry(
+                day = newDayStr,
+                course = newCourse,
+                faculty = newFaculty.ifBlank { "TBA" },
+                room = updatedRoom.removePrefix("Room").trim().ifBlank { "TBA" },
+                startTime = newStart,
+                endTime = newEnd
+            )
+
+            repo.updateClassEntry(
+                oldDay = oldDayStr,
+                oldCourse = oldCourse,
+                oldStartTime = oldStartTime,
+                updatedEntry = updatedEntry
+            )
+
+            RoutineNotificationHelper.scheduleAllRoutines(ctx, _uiState.value.classMap)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun deleteSingleClass(classModel: ClassModel, dayIndex: Int, context: Context? = null) {
+        val daysList = listOf("SAT", "SUN", "MON", "TUE", "WED", "THR", "FRI")
+        val dayStr = daysList.getOrElse(dayIndex) { "SAT" }
+
+        _uiState.update { currentState ->
+            val mutableMap = currentState.classMap.mapValues { it.value.toMutableList() }.toMutableMap()
+            val list = mutableMap[dayIndex] ?: mutableListOf()
+            list.removeAll { it.id == classModel.id }
+            mutableMap[dayIndex] = list
+
+            val updatedDays = currentState.scheduleDays.map { day ->
+                val hasClasses = (mutableMap[day.dayIndex]?.isNotEmpty() == true)
+                day.copy(hasClasses = hasClasses)
+            }
+
+            currentState.copy(
+                classMap = mutableMap,
+                scheduleDays = updatedDays,
+                isAddClassSheetOpen = false,
+                editingClass = null,
+                editingClassDayIndex = null,
+                snackbarMessage = "Class removed from schedule"
+            )
+        }
+
+        try {
+            val ctx = context ?: FirebaseDatabase.getInstance().app.applicationContext
+            val repo = RoutineRepository(ctx)
+
+            repo.deleteClassEntry(
+                day = dayStr,
+                course = classModel.courseName,
+                startTime = classModel.timeSlot
+            )
+
+            RoutineNotificationHelper.scheduleAllRoutines(ctx, _uiState.value.classMap)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

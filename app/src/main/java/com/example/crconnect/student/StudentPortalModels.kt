@@ -27,7 +27,8 @@ data class ClassModel(
     val timeSlot: String,
     val courseName: String,
     val room: String,
-    val attendanceState: String? = null
+    val attendanceState: String? = null,
+    val colorIndex: Int? = null
 )
 
 enum class ClassTimingStatus {
@@ -355,6 +356,8 @@ data class StudentPortalUiState(
     val profile: UserProfileModel = UserProfileModel(),
     val isAddClassSheetOpen: Boolean = false,
     val isAddClassManualMode: Boolean = true,
+    val editingClass: ClassModel? = null,
+    val editingClassDayIndex: Int? = null,
     val isNoticeSheetOpen: Boolean = false,
     val isCr: Boolean = false,
     val snackbarMessage: String? = null,
