@@ -90,6 +90,45 @@ class RoutineRepository(private val context: Context) {
         editor.apply()
     }
 
+    fun updateClassEntry(
+        oldDay: String,
+        oldCourse: String,
+        oldStartTime: String,
+        updatedEntry: ClassEntry
+    ) {
+        val existing = getClassEntries().toMutableList()
+        val normOldDay = normalizeDay(oldDay)
+        val normNewDay = normalizeDay(updatedEntry.day)
+        val entryWithNormDay = updatedEntry.copy(day = normNewDay)
+
+        val index = existing.indexOfFirst {
+            normalizeDay(it.day) == normOldDay &&
+                    it.startTime.trim().equals(oldStartTime.trim(), ignoreCase = true) &&
+                    it.course.trim().equals(oldCourse.trim(), ignoreCase = true)
+        }
+
+        if (index != -1) {
+            existing[index] = entryWithNormDay
+        } else {
+            existing.add(entryWithNormDay)
+        }
+        replaceClassEntries(existing)
+    }
+
+    fun deleteClassEntry(day: String, course: String, startTime: String) {
+        val existing = getClassEntries().toMutableList()
+        val normDay = normalizeDay(day)
+        val oldCourseClean = if (course.contains("(")) course.substringBefore("(").trim() else course.trim()
+        val oldStartClean = startTime.split("-", "–").firstOrNull()?.trim() ?: startTime.trim()
+
+        existing.removeAll {
+            normalizeDay(it.day) == normDay &&
+                    (it.startTime.trim().equals(oldStartClean, ignoreCase = true) || it.startTime.trim().contains(oldStartClean, ignoreCase = true)) &&
+                    (it.course.trim().equals(oldCourseClean, ignoreCase = true) || it.course.trim().startsWith(oldCourseClean, ignoreCase = true))
+        }
+        replaceClassEntries(existing)
+    }
+
     fun getClassEntries(): List<ClassEntry> {
         val currentUserId = getCurrentUserId()
         val sanitizedUser = if (currentUserId.isNotBlank()) currentUserId.replace(Regex("[^a-zA-Z0-9_]"), "_") else ""
@@ -449,6 +488,29 @@ class RoutineRepository(private val context: Context) {
         }
     }
 
+    fun saveClassAccentColor(classId: String, courseName: String, colorIndex: Int) {
+        val editor = prefs.edit()
+        editor.putInt(KEY_CLASS_COLOR_PREFIX + classId, colorIndex)
+        val cleanCourse = courseName.trim().uppercase(Locale.ROOT)
+        if (cleanCourse.isNotBlank()) {
+            editor.putInt(KEY_COURSE_COLOR_PREFIX + cleanCourse, colorIndex)
+        }
+        editor.apply()
+    }
+
+    fun getClassAccentColor(classId: String, courseName: String): Int? {
+        val byId = KEY_CLASS_COLOR_PREFIX + classId
+        if (prefs.contains(byId)) {
+            return prefs.getInt(byId, 0)
+        }
+        val cleanCourse = courseName.trim().uppercase(Locale.ROOT)
+        val byCourse = KEY_COURSE_COLOR_PREFIX + cleanCourse
+        if (cleanCourse.isNotBlank() && prefs.contains(byCourse)) {
+            return prefs.getInt(byCourse, 0)
+        }
+        return null
+    }
+
     companion object {
         private const val PREF_NAME = "crconnect_routine_preferences"
         private const val KEY_ENTRIES_JSON = "key_parsed_class_entries"
@@ -458,5 +520,7 @@ class RoutineRepository(private val context: Context) {
         private const val KEY_LAST_ATTENDANCE_WEEK = "key_last_attendance_week_"
         private const val KEY_ATTENDANCE_HISTORY_PREFIX = "key_attendance_history_"
         private const val KEY_CURRENT_WEEK_STATS_PREFIX = "key_current_week_stats_"
+        private const val KEY_CLASS_COLOR_PREFIX = "key_class_color_"
+        private const val KEY_COURSE_COLOR_PREFIX = "key_course_color_"
     }
 }

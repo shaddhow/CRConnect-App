@@ -63,6 +63,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccessTime
@@ -149,7 +150,10 @@ fun RoutineTab(
     onDaySelected: (Int) -> Unit,
     onOpenAddClass: () -> Unit,
     onCloseAddClass: () -> Unit,
-    onAddClass: (courseName: String, timeSlot: String, room: String) -> Unit,
+    onAddClass: (courseName: String, timeSlot: String, room: String, colorIndex: Int) -> Unit,
+    onOpenEditClass: (classModel: ClassModel, dayIndex: Int) -> Unit = { _, _ -> },
+    onUpdateClass: (originalClass: ClassModel, courseName: String, timeSlot: String, room: String, targetDayIndex: Int, colorIndex: Int) -> Unit = { _, _, _, _, _, _ -> },
+    onDeleteSingleClass: (classModel: ClassModel, dayIndex: Int) -> Unit = { _, _ -> },
     onOpenNoticeSheet: () -> Unit = {},
     onDeleteRoutine: () -> Unit = {},
     onScannedEntriesAdded: (List<ClassEntry>) -> Unit = { _ -> },
@@ -1315,7 +1319,16 @@ fun RoutineTab(
             ) {
                 classesForSelectedDay.forEachIndexed { index, classModel ->
                     val isLive = getClassTimingStatus(uiState.selectedDayIndex, classModel.timeSlot) == ClassTimingStatus.LIVE_NOW
-                    val colorVariant = CardColorVariant.forCourse(classModel.courseName, isLive = isLive)
+                    val savedColor = classModel.colorIndex ?: remember(classModel.id, classModel.courseName) {
+                        RoutineRepository(context).getClassAccentColor(classModel.id, classModel.courseName)
+                    }
+                    val colorVariant = if (isLive) {
+                        CardColorVariant.GREEN
+                    } else if (savedColor != null) {
+                        CardColorVariant.forPaletteIndex(savedColor)
+                    } else {
+                        CardColorVariant.forCourse(classModel.courseName, isLive = false)
+                    }
                     val isLastItem = index == classesForSelectedDay.size - 1
 
                     TimelineRowItem(
@@ -1326,6 +1339,9 @@ fun RoutineTab(
                         currentTimeMillis = currentTimeMillis,
                         onAttendanceChanged = { target ->
                             onToggleAttendance(classModel.id, target, uiState.selectedDayIndex)
+                        },
+                        onEditClick = {
+                            onOpenEditClass(classModel, uiState.selectedDayIndex)
                         }
                     )
                 }
@@ -1397,7 +1413,10 @@ fun RoutineTab(
                 selectedDayIndex = uiState.selectedDayIndex,
                 onSelectDay = { dayIdx -> onDaySelected(dayIdx) },
                 existingClasses = uiState.classMap.values.flatten(),
+                editingClass = uiState.editingClass,
                 onAddClass = onAddClass,
+                onUpdateClass = onUpdateClass,
+                onDeleteSingleClass = onDeleteSingleClass,
                 onScanCamera = onScanCameraClick,
                 onChooseGallery = onChooseGalleryClick,
                 onDeleteRoutine = {
@@ -1541,7 +1560,8 @@ private fun TimelineRowItem(
     colorVariant: CardColorVariant,
     isLastItem: Boolean,
     currentTimeMillis: Long = 0L,
-    onAttendanceChanged: (String) -> Unit
+    onAttendanceChanged: (String) -> Unit,
+    onEditClick: () -> Unit = {}
 ) {
     val isDark = LocalIsDarkTheme.current
     val haptic = LocalHapticFeedback.current
@@ -1815,33 +1835,64 @@ private fun TimelineRowItem(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = codePart,
-                            fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 17.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isDark) Color(0xFFE8F0FE) else Color(0xFF1A2540),
-                            lineHeight = 22.sp
-                        )
-                        if (facultyPart.isNotBlank()) {
-                            val badgeColor = colorVariant.dotColor
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(badgeColor.copy(alpha = if (isDark) 0.20f else 0.12f))
-                                    .border(1.dp, badgeColor.copy(alpha = if (isDark) 0.38f else 0.24f), RoundedCornerShape(6.dp))
-                                    .padding(horizontal = 6.dp, vertical = 1.5.dp)
-                            ) {
-                                Text(
-                                    text = facultyPart,
-                                    fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isDark) badgeColor else colorVariant.heroAccentColor
-                                )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.weight(1f, fill = false)
+                        ) {
+                            Text(
+                                text = codePart,
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 17.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) Color(0xFFE8F0FE) else Color(0xFF1A2540),
+                                lineHeight = 22.sp
+                            )
+                            if (facultyPart.isNotBlank()) {
+                                val badgeColor = colorVariant.dotColor
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(badgeColor.copy(alpha = if (isDark) 0.20f else 0.12f))
+                                        .border(1.dp, badgeColor.copy(alpha = if (isDark) 0.38f else 0.24f), RoundedCornerShape(6.dp))
+                                        .padding(horizontal = 6.dp, vertical = 1.5.dp)
+                                ) {
+                                    Text(
+                                        text = facultyPart,
+                                        fontFamily = PlusJakartaSansFontFamily,
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isDark) badgeColor else colorVariant.heroAccentColor
+                                    )
+                                }
                             }
+                        }
+
+                        // Compact Header Edit Button
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(if (isDark) Color(0x1AFFFFFF) else Color(0x0F000000))
+                                .border(
+                                    0.8.dp,
+                                    if (isDark) Color(0x2EFFFFFF) else Color(0x14000000),
+                                    CircleShape
+                                )
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) { onEditClick() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Edit,
+                                contentDescription = "Edit class",
+                                tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                                modifier = Modifier.size(13.5.dp)
+                            )
                         }
                     }
 
@@ -2220,6 +2271,7 @@ private fun getUpNextClassInfo(uiState: StudentPortalUiState, currentTimeMillis:
             } else if (currentMinutes < startMins) {
                 val diffMins = startMins - currentMinutes
                 val pillText = if (diffMins >= 60) "Starts in ${diffMins / 60}h ${diffMins % 60}m" else "Starts in ${diffMins}m"
+                val itemColorVariant = item.colorIndex?.let { CardColorVariant.forPaletteIndex(it) } ?: CardColorVariant.forCourse(item.courseName, isLive = false)
                 return UpNextInfo(
                     classModel = item,
                     statusLabel = "UP NEXT TODAY",
@@ -2227,7 +2279,7 @@ private fun getUpNextClassInfo(uiState: StudentPortalUiState, currentTimeMillis:
                     isHappeningNow = false,
                     roomBadgeTitle = "ROOM",
                     roomBadgeValue = extractCleanRoomNumber(item.room),
-                    colorVariant = CardColorVariant.forCourse(item.courseName, isLive = false)
+                    colorVariant = itemColorVariant
                 )
             }
         }
@@ -2311,7 +2363,7 @@ private fun getUpNextClassInfo(uiState: StudentPortalUiState, currentTimeMillis:
         }
 
         val firstClass = selectedClasses.first()
-        val variant = CardColorVariant.forCourse(firstClass.courseName, isLive = false)
+        val variant = firstClass.colorIndex?.let { CardColorVariant.forPaletteIndex(it) } ?: CardColorVariant.forCourse(firstClass.courseName, isLive = false)
         return UpNextInfo(
             classModel = firstClass,
             statusLabel = "SCHEDULED FOR ${dayName.uppercase(Locale.ROOT)}",
@@ -2435,6 +2487,17 @@ private enum class CardColorVariant(
             val scheduleVariants = listOf(BLUE, PURPLE, AMBER, CYAN, ROSE)
             return scheduleVariants[index % scheduleVariants.size]
         }
+
+        fun forPaletteIndex(index: Int): CardColorVariant {
+            return when (index) {
+                0 -> BLUE
+                1 -> GREEN
+                2 -> AMBER
+                3 -> PURPLE
+                4 -> ROSE
+                else -> BLUE
+            }
+        }
     }
 }
 
@@ -2459,20 +2522,56 @@ private fun AddClassBottomSheetContent(
     selectedDayIndex: Int = 0,
     onSelectDay: (Int) -> Unit = {},
     existingClasses: List<ClassModel> = emptyList(),
-    onAddClass: (courseName: String, timeSlot: String, room: String) -> Unit,
+    editingClass: ClassModel? = null,
+    onAddClass: (courseName: String, timeSlot: String, room: String, colorIndex: Int) -> Unit,
+    onUpdateClass: (originalClass: ClassModel, courseName: String, timeSlot: String, room: String, targetDayIndex: Int, colorIndex: Int) -> Unit = { _, _, _, _, _, _ -> },
+    onDeleteSingleClass: (classModel: ClassModel, dayIndex: Int) -> Unit = { _, _ -> },
     onScanCamera: () -> Unit,
     onChooseGallery: () -> Unit,
     onDeleteRoutine: () -> Unit,
     onShowToast: (String) -> Unit
 ) {
-    var isManualMode by remember(initialManualMode) { mutableStateOf(initialManualMode) }
-    var courseName by remember { mutableStateOf("") }
-    var faculty by remember { mutableStateOf("") }
-    var timeSlot by remember { mutableStateOf("") }
-    var room by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val routineRepo = remember(context) { RoutineRepository(context) }
+    val isEditing = editingClass != null
+    var isManualMode by remember(initialManualMode, isEditing) { mutableStateOf(if (isEditing) true else initialManualMode) }
+
+    val initialCourse = remember(editingClass) {
+        editingClass?.let { cls ->
+            if (cls.courseName.contains("(")) cls.courseName.substringBefore("(").trim() else cls.courseName.trim()
+        } ?: ""
+    }
+    val initialFaculty = remember(editingClass) {
+        editingClass?.let { cls ->
+            if (cls.courseName.contains("(") && cls.courseName.contains(")")) {
+                cls.courseName.substringAfter("(").substringBefore(")").trim()
+            } else ""
+        } ?: ""
+    }
+    val initialRoom = remember(editingClass) {
+        editingClass?.let { cls ->
+            val r = cls.room.trim()
+            if (r.startsWith("Room", ignoreCase = true)) r.removePrefix("Room").trim() else r
+        } ?: ""
+    }
+    val initialTime = remember(editingClass) {
+        editingClass?.timeSlot ?: ""
+    }
+    val initialColor = remember(editingClass) {
+        editingClass?.colorIndex ?: editingClass?.let { cls ->
+            routineRepo.getClassAccentColor(cls.id, cls.courseName)
+        } ?: 0
+    }
+
+    var courseName by remember(editingClass) { mutableStateOf(initialCourse) }
+    var faculty by remember(editingClass) { mutableStateOf(initialFaculty) }
+    var timeSlot by remember(editingClass) { mutableStateOf(initialTime) }
+    var room by remember(editingClass) { mutableStateOf(initialRoom) }
     var courseError by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var selectedAccentIndex by remember { mutableStateOf(0) }
+    var showSingleDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showDeleteOptionsDialog by remember { mutableStateOf(false) }
+    var selectedAccentIndex by remember(editingClass) { mutableStateOf(initialColor.coerceIn(0, 4)) }
     val sheetScrollState = rememberScrollState()
     val isDark = LocalIsDarkTheme.current
 
@@ -2505,13 +2604,156 @@ private fun AddClassBottomSheetContent(
             .take(6)
     }
 
-    // Delete Confirmation Dialog
+    // 1. Delete Options Dialog (Shows 2 options: Remove Class vs Remove Entire Routine)
+    if (showDeleteOptionsDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteOptionsDialog = false },
+            title = {
+                Text(
+                    text = "Delete Options",
+                    fontFamily = PlusJakartaSansFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                ) {
+                    Text(
+                        text = "Choose an option to remove:",
+                        fontFamily = PlusJakartaSansFontFamily,
+                        fontSize = 13.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Option 1: Remove Class
+                    if (editingClass != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(if (isDark) Color(0x1F3B82F6) else Color(0x122563EB))
+                                .border(
+                                    1.dp,
+                                    if (isDark) Color(0x333B82F6) else Color(0x262563EB),
+                                    RoundedCornerShape(14.dp)
+                                )
+                                .clickable {
+                                    showDeleteOptionsDialog = false
+                                    showSingleDeleteConfirmDialog = true
+                                }
+                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isDark) Color(0x333B82F6) else Color(0x1F2563EB)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = null,
+                                        tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(
+                                        text = "Remove Class",
+                                        fontFamily = PlusJakartaSansFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.5.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Only remove ${editingClass.courseName} from $selectedDayName",
+                                        fontFamily = PlusJakartaSansFontFamily,
+                                        fontSize = 11.5.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Option 2: Remove Entire Routine
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (isDark) Color(0x1FEF4444) else Color(0x14EF4444))
+                            .border(
+                                1.dp,
+                                if (isDark) Color(0x33EF4444) else Color(0x26EF4444),
+                                RoundedCornerShape(14.dp)
+                            )
+                            .clickable {
+                                showDeleteOptionsDialog = false
+                                showDeleteConfirmDialog = true
+                            }
+                            .padding(horizontal = 14.dp, vertical = 12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isDark) Color(0x33EF4444) else Color(0x1FEF4444)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = if (isDark) Color(0xFFF87171) else Color(0xFFDC2626),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = "Remove Entire Routine",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.5.sp,
+                                    color = if (isDark) Color(0xFFF87171) else Color(0xFFDC2626)
+                                )
+                                Text(
+                                    text = "Permanently delete all scheduled classes",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 11.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showDeleteOptionsDialog = false }) {
+                    Text("Cancel", fontFamily = PlusJakartaSansFontFamily, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        )
+    }
+
+    // Delete Routine Confirmation Dialog
     if (showDeleteConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
             title = {
                 Text(
-                    text = "Delete Class Routine?",
+                    text = "Delete Entire Routine?",
                     fontFamily = PlusJakartaSansFontFamily,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -2519,7 +2761,7 @@ private fun AddClassBottomSheetContent(
             },
             text = {
                 Text(
-                    text = "This will remove your entire class routine schedule permanently. Are you sure you want to proceed?",
+                    text = "This will remove your entire class routine schedule permanently across all days. Are you sure you want to proceed?",
                     fontFamily = PlusJakartaSansFontFamily,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2547,6 +2789,48 @@ private fun AddClassBottomSheetContent(
         )
     }
 
+    // Single Class Delete Confirmation Dialog (in Edit Mode)
+    if (showSingleDeleteConfirmDialog && editingClass != null) {
+        AlertDialog(
+            onDismissRequest = { showSingleDeleteConfirmDialog = false },
+            title = {
+                Text(
+                    text = "Delete Class?",
+                    fontFamily = PlusJakartaSansFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to remove ${editingClass.courseName} from your schedule?",
+                    fontFamily = PlusJakartaSansFontFamily,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSingleDeleteConfirmDialog = false
+                        onDeleteSingleClass(editingClass, selectedDayIndex)
+                    }
+                ) {
+                    Text(
+                        text = "Delete Class",
+                        color = Color(0xFFDC2626),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSingleDeleteConfirmDialog = false }) {
+                    Text("Cancel", fontWeight = FontWeight.SemiBold)
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -2556,12 +2840,80 @@ private fun AddClassBottomSheetContent(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Top Row: Sleek Apple-style Segmented Switcher & Safe Options
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        // Top Row: In edit mode shows clean Edit header; in normal mode shows Sleek Segmented Switcher & Safe Options
+        if (isEditing) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(currentPalette.first().copy(alpha = if (isDark) 0.22f else 0.12f))
+                            .border(1.dp, currentPalette.first().copy(alpha = 0.35f), RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Edit,
+                            contentDescription = null,
+                            tint = currentPalette.first(),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            text = "Edit Class Details",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 16.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Modify routine slot & room allocation",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 11.5.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Delete Single Class Button in Edit Mode
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isDark) Color(0x1FEF4444) else Color(0x14EF4444))
+                        .border(
+                            1.dp,
+                            if (isDark) Color(0x33EF4444) else Color(0x26EF4444),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { showDeleteOptionsDialog = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete Class",
+                        tint = if (isDark) Color(0xFFF87171) else Color(0xFFDC2626),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             // Segmented Control Pill Container
             Box(
                 modifier = Modifier
@@ -2694,7 +3046,13 @@ private fun AddClassBottomSheetContent(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
-                    ) { showDeleteConfirmDialog = true },
+                    ) {
+                        if (editingClass != null) {
+                            showDeleteOptionsDialog = true
+                        } else {
+                            showDeleteConfirmDialog = true
+                        }
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -2705,6 +3063,7 @@ private fun AddClassBottomSheetContent(
                 )
             }
         }
+    }
 
         // Symmetrical 7-Day Week Strip (No horizontal cutoff, evenly distributed)
         if (scheduleDays.isNotEmpty()) {
@@ -3226,11 +3585,23 @@ private fun AddClassBottomSheetContent(
                                     } else {
                                         courseName.trim()
                                     }
-                                    onAddClass(
-                                        fullDisplay,
-                                        timeSlot.ifBlank { "08:15 AM - 09:45 AM" },
-                                        room.ifBlank { "Room TBA" }
-                                    )
+                                    if (isEditing && editingClass != null) {
+                                        onUpdateClass(
+                                            editingClass,
+                                            fullDisplay,
+                                            timeSlot.ifBlank { editingClass.timeSlot },
+                                            room.ifBlank { editingClass.room },
+                                            selectedDayIndex,
+                                            selectedAccentIndex
+                                        )
+                                    } else {
+                                        onAddClass(
+                                            fullDisplay,
+                                            timeSlot.ifBlank { "08:15 AM - 09:45 AM" },
+                                            room.ifBlank { "Room TBA" },
+                                            selectedAccentIndex
+                                        )
+                                    }
                                 }
                             },
                         contentAlignment = Alignment.Center
@@ -3246,7 +3617,7 @@ private fun AddClassBottomSheetContent(
                                 modifier = Modifier.size(18.dp)
                             )
                             Text(
-                                text = "Save Class to Schedule",
+                                text = if (isEditing) "Update Class" else "Save Class to Schedule",
                                 fontFamily = PlusJakartaSansFontFamily,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
@@ -3951,7 +4322,10 @@ fun RoutineTabPreview() {
                 onDaySelected = {},
                 onOpenAddClass = {},
                 onCloseAddClass = {},
-                onAddClass = { _, _, _ -> },
+                onAddClass = { _, _, _, _ -> },
+                onOpenEditClass = { _, _ -> },
+                onUpdateClass = { _, _, _, _, _, _ -> },
+                onDeleteSingleClass = { _, _ -> },
                 onShowToast = {}
             )
         }
