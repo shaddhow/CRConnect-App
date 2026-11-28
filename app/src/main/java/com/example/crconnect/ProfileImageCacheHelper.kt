@@ -4,8 +4,13 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.util.Base64
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -18,6 +23,17 @@ import java.net.URL
 object ProfileImageCacheHelper {
 
     private const val TAG = "ProfileImageCacheHelper"
+
+    var cacheVersion by mutableIntStateOf(0)
+        private set
+
+    private fun bumpCacheVersion() {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            cacheVersion++
+        } else {
+            Handler(Looper.getMainLooper()).post { cacheVersion++ }
+        }
+    }
 
     fun sanitizeIdentifier(id: String?): String {
         if (id.isNullOrBlank() || id == "--" || id.equals("null", ignoreCase = true)) return ""
@@ -94,6 +110,7 @@ object ProfileImageCacheHelper {
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to update target cache files", e)
                 }
+                bumpCacheVersion()
                 onResult(primaryTargetPath)
                 return
             }
@@ -122,6 +139,7 @@ object ProfileImageCacheHelper {
             }
 
             withContext(Dispatchers.Main) {
+                cacheVersion++
                 onResult(cachedPath)
             }
         }

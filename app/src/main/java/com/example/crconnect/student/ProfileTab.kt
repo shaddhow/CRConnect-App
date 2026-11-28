@@ -2371,8 +2371,9 @@ fun ProfileTab(
                                             .background(if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9))
                                             .border(1.5.dp, Color(0xFF0066FF).copy(alpha = 0.5f), CircleShape)
                                     ) {
-                                        key(profile.profileImageUrl) {
-                                            val bitmap = remember(profile.profileImageUrl) {
+                                        val imgVersion = ProfileImageCacheHelper.cacheVersion
+                                        key(profile.profileImageUrl, imgVersion) {
+                                            val bitmap = remember(profile.profileImageUrl, imgVersion) {
                                                 ProfileImageCacheHelper.loadBitmapFromPathOrBase64(profile.profileImageUrl)
                                             }
 
@@ -2387,11 +2388,15 @@ fun ProfileTab(
                                                 AndroidView(
                                                     factory = { ctx ->
                                                         ImageView(ctx).apply {
+                                                            layoutParams = android.view.ViewGroup.LayoutParams(
+                                                                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                                                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                                                            )
                                                             scaleType = ImageView.ScaleType.CENTER_CROP
-                                                            Glide.with(ctx)
+                                                            Glide.with(this)
                                                                 .load(profile.profileImageUrl)
                                                                 .circleCrop()
-                                                                .signature(ObjectKey(profile.profileImageUrl))
+                                                                .signature(ObjectKey("${profile.profileImageUrl}_$imgVersion"))
                                                                 .into(this)
                                                         }
                                                     },
@@ -3199,8 +3204,9 @@ fun ProfileTab(
                                 .padding(2.5.dp)
                                 .clip(CircleShape)
                         ) {
-                            key(profile.profileImageUrl) {
-                                val bitmap = remember(profile.profileImageUrl) {
+                            val imgVersion = ProfileImageCacheHelper.cacheVersion
+                            key(profile.profileImageUrl, imgVersion) {
+                                val bitmap = remember(profile.profileImageUrl, imgVersion) {
                                     ProfileImageCacheHelper.loadBitmapFromPathOrBase64(profile.profileImageUrl)
                                 }
 
@@ -3217,22 +3223,26 @@ fun ProfileTab(
                                     AndroidView(
                                         factory = { ctx ->
                                             ImageView(ctx).apply {
+                                                layoutParams = android.view.ViewGroup.LayoutParams(
+                                                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                                                )
                                                 scaleType = ImageView.ScaleType.CENTER_CROP
                                                 setOnClickListener { onEditProfilePicture() }
-                                                Glide.with(ctx)
+                                                Glide.with(this)
                                                     .load(profile.profileImageUrl)
                                                     .circleCrop()
-                                                    .signature(ObjectKey(profile.profileImageUrl))
+                                                    .signature(ObjectKey("${profile.profileImageUrl}_$imgVersion"))
                                                     .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                                                     .into(this)
                                             }
                                         },
                                         update = { view ->
                                             view.setOnClickListener { onEditProfilePicture() }
-                                            Glide.with(view.context)
+                                            Glide.with(view)
                                                 .load(profile.profileImageUrl)
                                                 .circleCrop()
-                                                .signature(ObjectKey(profile.profileImageUrl))
+                                                .signature(ObjectKey("${profile.profileImageUrl}_$imgVersion"))
                                                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                                                 .into(view)
                                         },

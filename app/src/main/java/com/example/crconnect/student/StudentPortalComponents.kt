@@ -348,8 +348,9 @@ fun TopHeader(
                     ) { onAvatarClick() },
                 contentAlignment = Alignment.Center
             ) {
-                key(profileImageUrl) {
-                    val bitmap = remember(profileImageUrl) {
+                val imgVersion = ProfileImageCacheHelper.cacheVersion
+                key(profileImageUrl, imgVersion) {
+                    val bitmap = remember(profileImageUrl, imgVersion) {
                         ProfileImageCacheHelper.loadBitmapFromPathOrBase64(profileImageUrl)
                     }
 
@@ -366,20 +367,24 @@ fun TopHeader(
                         AndroidView(
                             factory = { ctx ->
                                 ImageView(ctx).apply {
+                                    layoutParams = android.view.ViewGroup.LayoutParams(
+                                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                                    )
                                     scaleType = ImageView.ScaleType.CENTER_CROP
-                                    Glide.with(ctx)
+                                    Glide.with(this)
                                         .load(profileImageUrl)
                                         .circleCrop()
-                                        .signature(ObjectKey(profileImageUrl))
+                                        .signature(ObjectKey("${profileImageUrl}_$imgVersion"))
                                         .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                                         .into(this)
                                 }
                             },
                             update = { view ->
-                                Glide.with(view.context)
+                                Glide.with(view)
                                     .load(profileImageUrl)
                                     .circleCrop()
-                                    .signature(ObjectKey(profileImageUrl))
+                                    .signature(ObjectKey("${profileImageUrl}_$imgVersion"))
                                     .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                                     .into(view)
                             },

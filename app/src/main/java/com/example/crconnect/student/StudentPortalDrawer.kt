@@ -168,49 +168,56 @@ fun StudentPortalDrawerContent(
                                 .background(MaterialTheme.colorScheme.surface),
                             contentAlignment = Alignment.Center
                         ) {
-                            val bitmap = remember(profile.profileImageUrl) {
-                                ProfileImageCacheHelper.loadBitmapFromPathOrBase64(profile.profileImageUrl)
-                            }
+                            val imgVersion = ProfileImageCacheHelper.cacheVersion
+                            androidx.compose.runtime.key(profile.profileImageUrl, imgVersion) {
+                                val bitmap = remember(profile.profileImageUrl, imgVersion) {
+                                    ProfileImageCacheHelper.loadBitmapFromPathOrBase64(profile.profileImageUrl)
+                                }
 
-                            if (bitmap != null) {
-                                Image(
-                                    bitmap = bitmap.asImageBitmap(),
-                                    contentDescription = "Profile",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape)
-                                )
-                            } else if (profile.profileImageUrl.isNotBlank()) {
-                                AndroidView(
-                                    factory = { ctx ->
-                                        ImageView(ctx).apply {
-                                            scaleType = ImageView.ScaleType.CENTER_CROP
-                                            Glide.with(ctx)
+                                if (bitmap != null) {
+                                    Image(
+                                        bitmap = bitmap.asImageBitmap(),
+                                        contentDescription = "Profile",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape)
+                                    )
+                                } else if (profile.profileImageUrl.isNotBlank()) {
+                                    AndroidView(
+                                        factory = { ctx ->
+                                            ImageView(ctx).apply {
+                                                layoutParams = android.view.ViewGroup.LayoutParams(
+                                                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                                                )
+                                                scaleType = ImageView.ScaleType.CENTER_CROP
+                                                Glide.with(this)
+                                                    .load(profile.profileImageUrl)
+                                                    .circleCrop()
+                                                    .signature(ObjectKey("${profile.profileImageUrl}_$imgVersion"))
+                                                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                                                    .into(this)
+                                            }
+                                        },
+                                        update = { view ->
+                                            Glide.with(view)
                                                 .load(profile.profileImageUrl)
                                                 .circleCrop()
-                                                .signature(ObjectKey(profile.profileImageUrl))
+                                                .signature(ObjectKey("${profile.profileImageUrl}_$imgVersion"))
                                                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                                                .into(this)
-                                        }
-                                    },
-                                    update = { view ->
-                                        Glide.with(view.context)
-                                            .load(profile.profileImageUrl)
-                                            .circleCrop()
-                                            .signature(ObjectKey(profile.profileImageUrl))
-                                            .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                                            .into(view)
-                                    },
-                                    modifier = Modifier.fillMaxSize().clip(CircleShape)
-                                )
-                            } else {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_nav_profile),
-                                    contentDescription = "Profile",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(28.dp)
-                                )
+                                                .into(view)
+                                        },
+                                        modifier = Modifier.fillMaxSize().clip(CircleShape)
+                                    )
+                                } else {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_nav_profile),
+                                        contentDescription = "Profile",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
                             }
                         }
 

@@ -65,6 +65,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
@@ -1406,31 +1407,41 @@ fun RoutineTab(
                 onAddManually = onOpenAddClass
             )
         } else {
-            // EMPTY STATE 1 — No classes on this specific day
-            val nextUpcomingClassText = remember(uiState.classMap, uiState.selectedDayIndex) {
+            // EMPTY STATE 1 — Off-day with Next Active Day Preview
+            var nextDayIdxFound by remember { mutableStateOf<Int?>(null) }
+            val nextPreview = remember(uiState.classMap, uiState.selectedDayIndex, uiState.scheduleDays) {
                 val currentDay = uiState.selectedDayIndex
-                var foundText: String? = null
+                var result: Triple<Int, String, Pair<Int, ClassModel>>? = null
                 for (step in 1..6) {
-                    val nextDayIdx = (currentDay + step) % 7
-                    val classes = (uiState.classMap[nextDayIdx] ?: emptyList()).sortedBy { startMinutes(it.timeSlot) }
+                    val candidateIdx = (currentDay + step) % 7
+                    val classes = (uiState.classMap[candidateIdx] ?: emptyList()).sortedBy { startMinutes(it.timeSlot) }
                     if (classes.isNotEmpty()) {
-                        val nextDayObj = uiState.scheduleDays.find { it.dayIndex == nextDayIdx }
+                        val nextDayObj = uiState.scheduleDays.find { it.dayIndex == candidateIdx }
                         val dName = nextDayObj?.shortName?.let { getDayFullName(it) } ?: "Next Day"
-                        val first = classes.first()
-                        val time = first.timeSlot.split("-", "–").firstOrNull()?.trim() ?: first.timeSlot
-                        val course = if (first.courseName.contains("(")) first.courseName.substringBefore("(").trim() else first.courseName
-                        foundText = "$dName at $time · $course"
+                        result = Triple(candidateIdx, dName, Pair(classes.size, classes.first()))
                         break
                     }
                 }
-                foundText
+                result
+            }
+            nextDayIdxFound = nextPreview?.first
+
+            val firstClass = nextPreview?.third?.second
+            val firstTime = firstClass?.timeSlot?.split("-", "–")?.firstOrNull()?.trim()
+            val firstCourse = firstClass?.courseName?.let {
+                if (it.contains("(")) it.substringBefore("(").trim() else it
             }
 
             RoutineDayEmptyCard(
                 isDark = isDark,
                 dayName = getDayFullName(selectedDay.shortName),
-                shortDay = selectedDay.shortName,
-                nextUpcomingClassText = nextUpcomingClassText,
+                nextDayName = nextPreview?.second,
+                nextDayClassCount = nextPreview?.third?.first ?: 0,
+                nextDayFirstTime = firstTime,
+                nextDayFirstCourse = firstCourse,
+                onJumpToNextDay = nextDayIdxFound?.let { targetIdx ->
+                    { onDaySelected(targetIdx) }
+                },
                 onAddClass = onOpenAddClass
             )
         }
@@ -2301,15 +2312,17 @@ private fun getUpNextClassInfo(uiState: StudentPortalUiState, currentTimeMillis:
     if (isTodaySelected) {
         val todayClasses = (uiState.classMap[todayIdx] ?: emptyList()).sortedBy { startMinutes(it.timeSlot) }
         if (todayClasses.isEmpty()) {
+            val nextInfo = findNextActiveClassInfo(uiState, todayIdx)
             return UpNextInfo(
                 classModel = null,
-                statusLabel = "TODAY",
-                statusPill = "Day Off",
+                statusLabel = "TODAY · DAY OFF",
+                statusPill = "Recharge",
                 isHappeningNow = false,
-                displayTitle = "No classes scheduled for today",
-                displayTime = "Enjoy your break!",
-                roomBadgeTitle = "STATUS",
-                roomBadgeValue = "OFF"
+                displayTitle = "Day Off · Enjoy Today",
+                displayTime = if (nextInfo != null) "Next: ${nextInfo.first} at ${nextInfo.third}" else "Free day · Relax & recharge",
+                roomBadgeTitle = if (nextInfo != null) "NEXT" else "STATUS",
+                roomBadgeValue = nextInfo?.second ?: "FREE",
+                colorVariant = CardColorVariant.GREEN
             )
         }
 
@@ -2410,15 +2423,17 @@ private fun getUpNextClassInfo(uiState: StudentPortalUiState, currentTimeMillis:
         val selectedClasses = (uiState.classMap[selectedIdx] ?: emptyList()).sortedBy { startMinutes(it.timeSlot) }
 
         if (selectedClasses.isEmpty()) {
+            val nextInfo = findNextActiveClassInfo(uiState, selectedIdx)
             return UpNextInfo(
                 classModel = null,
-                statusLabel = dayName.uppercase(Locale.ROOT),
-                statusPill = "Day Off",
+                statusLabel = "${dayName.uppercase(Locale.ROOT)} · DAY OFF",
+                statusPill = "Free Day",
                 isHappeningNow = false,
-                displayTitle = "No classes scheduled for $dayName",
-                displayTime = "Free day · Relax & recharge",
-                roomBadgeTitle = "STATUS",
-                roomBadgeValue = "FREE"
+                displayTitle = "Day Off · Enjoy $dayName",
+                displayTime = if (nextInfo != null) "Next: ${nextInfo.first} at ${nextInfo.third}" else "Free day · Relax & recharge",
+                roomBadgeTitle = if (nextInfo != null) "NEXT" else "STATUS",
+                roomBadgeValue = nextInfo?.second ?: "FREE",
+                colorVariant = CardColorVariant.GREEN
             )
         }
 
@@ -2434,6 +2449,24 @@ private fun getUpNextClassInfo(uiState: StudentPortalUiState, currentTimeMillis:
             colorVariant = variant
         )
     }
+}
+
+private fun findNextActiveClassInfo(
+    uiState: StudentPortalUiState,
+    fromDayIdx: Int
+): Triple<String, String, String>? {
+    for (step in 1..6) {
+        val nextDayIdx = (fromDayIdx + step) % 7
+        val classes = (uiState.classMap[nextDayIdx] ?: emptyList()).sortedBy { startMinutes(it.timeSlot) }
+        if (classes.isNotEmpty()) {
+            val nextDayObj = uiState.scheduleDays.find { it.dayIndex == nextDayIdx }
+            val shortName = nextDayObj?.shortName?.uppercase(Locale.ROOT) ?: "NEXT"
+            val fullName = nextDayObj?.shortName?.let { getDayFullName(it) } ?: "Next Day"
+            val time = classes.first().timeSlot.split("-", "–").firstOrNull()?.trim() ?: classes.first().timeSlot
+            return Triple(fullName, shortName, time)
+        }
+    }
+    return null
 }
 
 private fun extractTimeParts(timeSlot: String): Pair<String, String> {
@@ -3907,20 +3940,23 @@ private fun BentoScanOptionCard(
 fun RoutineDayEmptyCard(
     isDark: Boolean,
     dayName: String,
-    shortDay: String,
-    nextUpcomingClassText: String? = null,
+    nextDayName: String? = null,
+    nextDayClassCount: Int = 0,
+    nextDayFirstTime: String? = null,
+    nextDayFirstCourse: String? = null,
+    onJumpToNextDay: (() -> Unit)? = null,
     onAddClass: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
-                elevation = if (isDark) 0.dp else 3.dp,
-                shape = RoundedCornerShape(20.dp),
-                ambientColor = Color(0x0A000000),
-                spotColor = Color(0x0A000000)
+                elevation = if (isDark) 0.dp else 4.dp,
+                shape = RoundedCornerShape(22.dp),
+                ambientColor = Color(0x0D000000),
+                spotColor = Color(0x0D000000)
             ),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isDark) Color(0xFF111827) else Color.White
         ),
@@ -3929,111 +3965,190 @@ fun RoutineDayEmptyCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Compact Header Row (Icon + Title & Subtitle)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (isDark) Color(0x263B82F6) else Color(0x140066FF))
-                        .border(1.dp, if (isDark) Color(0x333B82F6) else Color(0x260066FF), RoundedCornerShape(14.dp)),
-                    contentAlignment = Alignment.Center
+            if (!nextDayName.isNullOrBlank()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarToday,
-                        contentDescription = null,
-                        tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "No classes on $dayName",
-                        fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isDark) Color(0xFFE8F0FE) else Color(0xFF1A2540)
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Day off · Enjoy your free time",
-                        fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 12.5.sp,
-                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
-                    )
-                }
-            }
-
-            // Compact Next Class Pill (Single-line row, minimal space)
-            if (!nextUpcomingClassText.isNullOrBlank()) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isDark) Color(0xFF1E293B).copy(alpha = 0.6f) else Color(0xFFF8FAFC),
-                    border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (isDark) Color(0x2610B981) else Color(0x14059669))
+                            .border(
+                                1.dp,
+                                if (isDark) Color(0x3310B981) else Color(0x26059669),
+                                RoundedCornerShape(14.dp)
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.AccessTime,
+                            imageVector = Icons.Default.EventAvailable,
                             contentDescription = null,
-                            tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB),
-                            modifier = Modifier.size(15.dp)
+                            tint = if (isDark) Color(0xFF34D399) else Color(0xFF059669),
+                            modifier = Modifier.size(21.dp)
                         )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Up next: $nextDayName",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 15.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) Color(0xFFE8F0FE) else Color(0xFF0F172A)
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isDark) Color(0x263B82F6) else Color(0x140066FF)
+                            ) {
+                                Text(
+                                    text = "$nextDayClassCount ${if (nextDayClassCount == 1) "class" else "classes"}",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF),
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
-                            text = "Next: $nextUpcomingClassText",
+                            text = buildString {
+                                if (!nextDayFirstTime.isNullOrBlank()) append("Starts at $nextDayFirstTime")
+                                if (!nextDayFirstCourse.isNullOrBlank()) {
+                                    if (isNotEmpty()) append(" · ")
+                                    append(nextDayFirstCourse)
+                                }
+                            }.ifEmpty { "Ready for your next class day" },
                             fontFamily = PlusJakartaSansFontFamily,
                             fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B),
+                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (isDark) Color(0x263B82F6) else Color(0x140066FF))
+                            .border(
+                                1.dp,
+                                if (isDark) Color(0x333B82F6) else Color(0x260066FF),
+                                RoundedCornerShape(14.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "$dayName is wide open",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 15.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isDark) Color(0xFFE8F0FE) else Color(0xFF0F172A)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Add a makeup or extra class anytime",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 12.5.sp,
+                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                        )
+                    }
+                }
             }
 
-            // Sleek Compact Action
+            // Balanced Action Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9),
-                    border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1)),
-                    onClick = onAddClass
+                    border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)),
+                    onClick = onAddClass,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.fillMaxSize(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = null,
-                            tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
-                            modifier = Modifier.size(15.dp)
+                            tint = if (isDark) Color(0xFFE2E8F0) else Color(0xFF334155),
+                            modifier = Modifier.size(16.dp)
                         )
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Add class",
                             fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 12.5.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF334155)
                         )
+                    }
+                }
+
+                if (onJumpToNextDay != null && !nextDayName.isNullOrBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFF0066FF),
+                        onClick = onJumpToNextDay,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(40.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "View $nextDayName",
+                                fontFamily = PlusJakartaSansFontFamily,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
                     }
                 }
             }
