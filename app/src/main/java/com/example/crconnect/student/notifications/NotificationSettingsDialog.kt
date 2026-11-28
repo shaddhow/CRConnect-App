@@ -1,6 +1,5 @@
 package com.example.crconnect.student.notifications
 
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,21 +13,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.crconnect.student.GlassySmoothSwitch
 import com.example.crconnect.student.LocalIsDarkTheme
 import com.example.crconnect.student.PlusJakartaSansFontFamily
-import com.example.crconnect.student.GlassySmoothSwitch
 
 @Composable
 fun NotificationSettingsDialog(
-    onDismiss: () -> Unit,
-    onTestNotification: () -> Unit = {}
+    onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val isDark = LocalIsDarkTheme.current
@@ -38,6 +39,11 @@ fun NotificationSettingsDialog(
     var crAnnouncements by remember { mutableStateOf(NotificationRepository.isCrAnnouncementEnabled(context)) }
     var attendanceAlerts by remember { mutableStateOf(NotificationRepository.isAttendanceAlertEnabled(context)) }
 
+    val dialogBg = if (isDark) Color(0xFF131B2E) else Color.White
+    val dialogBorder = if (isDark) Color(0xFF24354D) else Color(0xFFE2E8F0)
+    val cardBg = if (isDark) Color(0xFF192339) else Color(0xFFF8FAFC)
+    val cardBorder = if (isDark) Color(0xFF283A55) else Color(0xFFE2E8F0)
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -46,21 +52,20 @@ fun NotificationSettingsDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight()
-                .clip(RoundedCornerShape(26.dp))
-                .border(
-                    width = 1.dp,
-                    color = if (isDark) Color(0xFF334155).copy(alpha = 0.6f) else Color(0xFFE2E8F0),
-                    shape = RoundedCornerShape(26.dp)
+                .shadow(
+                    elevation = if (isDark) 24.dp else 18.dp,
+                    shape = RoundedCornerShape(30.dp),
+                    spotColor = Color(0xFF0066FF).copy(alpha = if (isDark) 0.3f else 0.18f)
                 ),
-            shape = RoundedCornerShape(26.dp),
-            color = if (isDark) Color(0xFF0F172A) else Color.White,
-            tonalElevation = 6.dp
+            shape = RoundedCornerShape(30.dp),
+            color = dialogBg,
+            border = BorderStroke(1.dp, dialogBorder)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Header
                 Row(
@@ -70,56 +75,61 @@ fun NotificationSettingsDialog(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(if (isDark) Color(0x333B82F6) else Color(0x1A2563EB)),
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(Color(0xFF1D4ED8), Color(0xFF0066FF))
+                                    )
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Tune,
+                                imageVector = Icons.Default.Notifications,
                                 contentDescription = null,
-                                tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB),
-                                modifier = Modifier.size(20.dp)
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
 
                         Column {
                             Text(
-                                text = "Notification Preferences",
+                                text = "Notification Settings",
                                 fontFamily = PlusJakartaSansFontFamily,
-                                fontSize = 17.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A)
                             )
                             Text(
-                                text = "Customize routine & notice alerts",
+                                text = "Customize alerts & class reminders",
                                 fontFamily = PlusJakartaSansFontFamily,
-                                fontSize = 11.5.sp,
+                                fontSize = 12.sp,
                                 color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
                             )
                         }
                     }
 
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.size(32.dp)
+                    Surface(
+                        modifier = Modifier.size(34.dp),
+                        shape = CircleShape,
+                        color = cardBg,
+                        border = BorderStroke(1.dp, cardBorder),
+                        onClick = onDismiss
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
-                        )
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                                modifier = Modifier.size(17.dp)
+                            )
+                        }
                     }
                 }
-
-                HorizontalDivider(
-                    color = if (isDark) Color(0xFF334155).copy(alpha = 0.5f) else Color(0xFFE2E8F0),
-                    thickness = 1.dp
-                )
 
                 // Warning Banner if System Notifications are blocked
                 val hasSystemPermission = remember {
@@ -127,7 +137,7 @@ fun NotificationSettingsDialog(
                 }
                 if (!hasSystemPermission) {
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = if (isDark) Color(0xFF7F1D1D).copy(alpha = 0.35f) else Color(0xFFFEF2F2),
                         border = BorderStroke(1.dp, if (isDark) Color(0xFF991B1B) else Color(0xFFFECACA)),
                         modifier = Modifier.fillMaxWidth()
@@ -142,25 +152,24 @@ fun NotificationSettingsDialog(
                                 imageVector = Icons.Default.Warning,
                                 contentDescription = null,
                                 tint = if (isDark) Color(0xFFF87171) else Color(0xFFDC2626),
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "System alerts blocked",
                                     fontFamily = PlusJakartaSansFontFamily,
-                                    fontSize = 12.5.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = if (isDark) Color(0xFFFCA5A5) else Color(0xFFB91C1C)
                                 )
                                 Text(
-                                    text = "Enable notifications in phone settings to receive status bar alerts.",
+                                    text = "Enable in phone settings for status bar alerts.",
                                     fontFamily = PlusJakartaSansFontFamily,
                                     fontSize = 11.sp,
                                     color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF475569)
                                 )
                             }
-                            Spacer(modifier = Modifier.width(6.dp))
                             TextButton(
                                 onClick = {
                                     NotificationPermissionHelper.openNotificationSettings(context)
@@ -172,105 +181,84 @@ fun NotificationSettingsDialog(
                                     fontFamily = PlusJakartaSansFontFamily,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB)
+                                    color = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF)
                                 )
                             }
                         }
                     }
                 }
 
-                // Item 1: Class Reminders
-                NotificationToggleRow(
-                    title = "Class reminders (15m before)",
-                    subtitle = "Get alerted with room & start time before class starts",
-                    checked = classReminder,
-                    isDark = isDark,
-                    onCheckedChange = {
-                        classReminder = it
-                        NotificationRepository.setClassReminderEnabled(context, it)
-                    }
-                )
-
-                // Item 2: Morning Briefing
-                NotificationToggleRow(
-                    title = "Morning routine briefing (8:00 AM)",
-                    subtitle = "Daily summary of today's classes and timing",
-                    checked = morningBriefing,
-                    isDark = isDark,
-                    onCheckedChange = {
-                        morningBriefing = it
-                        NotificationRepository.setMorningBriefingEnabled(context, it)
-                    }
-                )
-
-                // Item 3: CR Announcements
-                NotificationToggleRow(
-                    title = "CR announcements & urgent notices",
-                    subtitle = "Immediate push alerts when CR broadcasts class changes",
-                    checked = crAnnouncements,
-                    isDark = isDark,
-                    onCheckedChange = {
-                        crAnnouncements = it
-                        NotificationRepository.setCrAnnouncementEnabled(context, it)
-                    }
-                )
-
-                // Item 4: Low Attendance Warning
-                NotificationToggleRow(
-                    title = "Attendance safety warnings",
-                    subtitle = "Alert when any course drops below 75% exam safe zone",
-                    checked = attendanceAlerts,
-                    isDark = isDark,
-                    onCheckedChange = {
-                        attendanceAlerts = it
-                        NotificationRepository.setAttendanceAlertEnabled(context, it)
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Test Notification Button
+                // Toggle Card
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9),
-                    border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1)),
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        if (!NotificationPermissionHelper.hasNotificationPermission(context)) {
-                            Toast.makeText(context, "Please enable notification permission in phone settings", Toast.LENGTH_LONG).show()
-                            NotificationPermissionHelper.openNotificationSettings(context)
-                        } else {
-                            RoutineNotificationHelper.showClassReminderNotification(
-                                context = context,
-                                courseName = "CSE 341 (MJ)",
-                                timeSlot = "09:45 AM - 11:15 AM",
-                                room = "2808"
-                            )
-                            Toast.makeText(context, "Test alert sent! Check your phone notification bar.", Toast.LENGTH_SHORT).show()
-                            onTestNotification()
-                        }
-                    }
+                    shape = RoundedCornerShape(20.dp),
+                    color = cardBg,
+                    border = BorderStroke(1.dp, cardBorder),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 11.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Send,
-                            contentDescription = null,
-                            tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB),
-                            modifier = Modifier.size(16.dp)
+                        NotificationToggleRow(
+                            icon = Icons.Default.AccessTime,
+                            iconTint = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF),
+                            iconBg = if (isDark) Color(0x263B82F6) else Color(0x140066FF),
+                            title = "Class reminders",
+                            subtitle = "Alert 15m before class with room",
+                            checked = classReminder,
+                            isDark = isDark,
+                            onCheckedChange = {
+                                classReminder = it
+                                NotificationRepository.setClassReminderEnabled(context, it)
+                            }
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Send test class reminder",
-                            fontFamily = PlusJakartaSansFontFamily,
-                            fontSize = 13.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB)
+
+                        HorizontalDivider(color = cardBorder, thickness = 1.dp)
+
+                        NotificationToggleRow(
+                            icon = Icons.Default.WbSunny,
+                            iconTint = if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706),
+                            iconBg = if (isDark) Color(0x26F59E0B) else Color(0x14D97706),
+                            title = "Morning briefing",
+                            subtitle = "Daily 8:00 AM class summary",
+                            checked = morningBriefing,
+                            isDark = isDark,
+                            onCheckedChange = {
+                                morningBriefing = it
+                                NotificationRepository.setMorningBriefingEnabled(context, it)
+                            }
+                        )
+
+                        HorizontalDivider(color = cardBorder, thickness = 1.dp)
+
+                        NotificationToggleRow(
+                            icon = Icons.Default.Campaign,
+                            iconTint = if (isDark) Color(0xFFA78BFA) else Color(0xFF7C3AED),
+                            iconBg = if (isDark) Color(0x268B5CF6) else Color(0x147C3AED),
+                            title = "CR announcements",
+                            subtitle = "Instant push for class updates",
+                            checked = crAnnouncements,
+                            isDark = isDark,
+                            onCheckedChange = {
+                                crAnnouncements = it
+                                NotificationRepository.setCrAnnouncementEnabled(context, it)
+                            }
+                        )
+
+                        HorizontalDivider(color = cardBorder, thickness = 1.dp)
+
+                        NotificationToggleRow(
+                            icon = Icons.Default.VerifiedUser,
+                            iconTint = if (isDark) Color(0xFF34D399) else Color(0xFF059669),
+                            iconBg = if (isDark) Color(0x2610B981) else Color(0x14059669),
+                            title = "Attendance warnings",
+                            subtitle = "Alert when below 75% safe zone",
+                            checked = attendanceAlerts,
+                            isDark = isDark,
+                            onCheckedChange = {
+                                attendanceAlerts = it
+                                NotificationRepository.setAttendanceAlertEnabled(context, it)
+                            }
                         )
                     }
                 }
@@ -281,6 +269,9 @@ fun NotificationSettingsDialog(
 
 @Composable
 private fun NotificationToggleRow(
+    icon: ImageVector,
+    iconTint: Color,
+    iconBg: Color,
     title: String,
     subtitle: String,
     checked: Boolean,
@@ -290,9 +281,24 @@ private fun NotificationToggleRow(
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(iconBg),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 fontFamily = PlusJakartaSansFontFamily,
@@ -300,13 +306,11 @@ private fun NotificationToggleRow(
                 fontWeight = FontWeight.SemiBold,
                 color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A)
             )
-            Spacer(modifier = Modifier.height(1.dp))
             Text(
                 text = subtitle,
                 fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 11.sp,
-                color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
-                lineHeight = 15.sp
+                fontSize = 11.5.sp,
+                color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
             )
         }
 
@@ -316,4 +320,3 @@ private fun NotificationToggleRow(
         )
     }
 }
-

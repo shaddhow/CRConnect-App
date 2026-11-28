@@ -29,6 +29,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -71,9 +73,11 @@ fun StudentPortalDrawerContent(
     profile: UserProfileModel,
     selectedTab: Int,
     isGateOpen: Boolean = true,
+    unreadNotificationCount: Int = 0,
     onTabSelected: (Int) -> Unit,
     onLockedItemClicked: () -> Unit = {},
     onOpenElection: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
     onSignOut: () -> Unit,
     currentThemeMode: String = SessionManager.THEME_SYSTEM,
     onThemeModeSelected: (String) -> Unit = {}
@@ -350,6 +354,39 @@ fun StudentPortalDrawerContent(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
+                DrawerNavItem(
+                    label = "Notifications",
+                    iconVector = Icons.Default.Notifications,
+                    accentColor = Color(0xFF0284C7),
+                    isSelected = false,
+                    trailingContent = if (unreadNotificationCount > 0) {
+                        {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color(0xFFEF4444))
+                                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (unreadNotificationCount > 99) "99+" else unreadNotificationCount.toString(),
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    } else null,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        isThemeExpanded = false
+                        onOpenNotifications()
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
                 // App Theme Expandable Menu Item
                 val rotationDegrees by animateFloatAsState(
                     targetValue = if (isThemeExpanded) 180f else 0f,
@@ -490,7 +527,8 @@ fun StudentPortalDrawerContent(
 @Composable
 private fun DrawerNavItem(
     label: String,
-    iconRes: Int,
+    iconRes: Int? = null,
+    iconVector: ImageVector? = null,
     accentColor: Color,
     isSelected: Boolean,
     isLocked: Boolean = false,
@@ -583,17 +621,27 @@ private fun DrawerNavItem(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    painter = painterResource(id = iconRes),
-                    contentDescription = label,
-                    tint = when {
-                        isLocked -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
-                        isDanger -> dangerText
-                        isSelected -> effectiveAccent
-                        else -> effectiveAccent.copy(alpha = if (isDark) 0.95f else 0.85f)
-                    },
-                    modifier = Modifier.size(20.dp)
-                )
+                val iconTint = when {
+                    isLocked -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+                    isDanger -> dangerText
+                    isSelected -> effectiveAccent
+                    else -> effectiveAccent.copy(alpha = if (isDark) 0.95f else 0.85f)
+                }
+                if (iconVector != null) {
+                    Icon(
+                        imageVector = iconVector,
+                        contentDescription = label,
+                        tint = iconTint,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else if (iconRes != null) {
+                    Icon(
+                        painter = painterResource(id = iconRes),
+                        contentDescription = label,
+                        tint = iconTint,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
             if (isLocked) {

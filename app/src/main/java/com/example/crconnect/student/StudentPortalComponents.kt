@@ -286,10 +286,8 @@ fun TopHeader(
     profileImageUrl: String = "",
     isCr: Boolean = false,
     isProfileTab: Boolean = false,
-    unreadNotificationCount: Int = 0,
     onMenuClick: () -> Unit,
     onAvatarClick: () -> Unit,
-    onNotificationClick: () -> Unit = {},
     onSignOutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -476,39 +474,7 @@ fun TopHeader(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // 5. Notification Bell Button with Unread Indicator
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                shadowElevation = 0.dp,
-                onClick = onNotificationClick
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notifications",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    if (unreadNotificationCount > 0) {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .offset(x = (-8).dp, y = 8.dp)
-                                .size(9.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFEF4444))
-                                .border(1.5.dp, MaterialTheme.colorScheme.surface, CircleShape)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // 6. Power / Sign Out Button: 44dp x 44dp, 24dp ic_power icon
+            // 5. Power / Sign Out Button: 44dp x 44dp, 24dp ic_power icon
             Surface(
                 modifier = Modifier.size(44.dp),
                 shape = CircleShape,

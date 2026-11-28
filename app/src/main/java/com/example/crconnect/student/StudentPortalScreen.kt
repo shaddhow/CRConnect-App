@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.crconnect.student.notifications.NotificationCenterDialog
 import com.example.crconnect.student.notifications.NotificationRepository
+import com.example.crconnect.student.notifications.NotificationSettingsDialog
 import com.example.crconnect.student.notifications.RoutineNotificationHelper
 import com.yalantis.ucrop.UCrop
 import java.io.File
@@ -131,6 +132,7 @@ fun StudentPortalScreen(
     }
 
     var isNotificationCenterOpen by remember { mutableStateOf(false) }
+    var isNotificationSettingsOpen by remember { mutableStateOf(false) }
     var isElectionSubPageOpen by remember { mutableStateOf(false) }
     var unreadNotificationCount by remember { mutableIntStateOf(0) }
 
@@ -200,6 +202,7 @@ fun StudentPortalScreen(
                     profile = uiState.profile,
                     selectedTab = uiState.selectedTab,
                     isGateOpen = uiState.isGateOpen,
+                    unreadNotificationCount = unreadNotificationCount,
                     onTabSelected = { tab ->
                         coroutineScope.launch {
                             drawerState.close()
@@ -213,6 +216,10 @@ fun StudentPortalScreen(
                     onOpenElection = {
                         coroutineScope.launch { drawerState.close() }
                         isElectionSubPageOpen = true
+                    },
+                    onOpenNotifications = {
+                        coroutineScope.launch { drawerState.close() }
+                        isNotificationCenterOpen = true
                     },
                     onSignOut = {
                         coroutineScope.launch {
@@ -239,16 +246,12 @@ fun StudentPortalScreen(
                         profileImageUrl = uiState.profile.profileImageUrl,
                         isCr = uiState.isCr,
                         isProfileTab = isProfileTab,
-                        unreadNotificationCount = unreadNotificationCount,
                         onMenuClick = {
                             coroutineScope.launch { drawerState.open() }
                         },
                         onAvatarClick = {
                             isNavVisible = true
                             viewModel.selectTab(3) // Profile Tab
-                        },
-                        onNotificationClick = {
-                            isNotificationCenterOpen = true
                         },
                         onSignOutClick = onSignOut
                     )
@@ -348,7 +351,18 @@ fun StudentPortalScreen(
                                 unreadNotificationCount = NotificationRepository.getUnreadCount(context)
                             },
                             onNavigateToRoutine = { viewModel.selectTab(0) },
-                            onNavigateToAcademics = { viewModel.selectTab(1) }
+                            onNavigateToAcademics = { viewModel.selectTab(1) },
+                            onOpenSettings = {
+                                isNotificationCenterOpen = false
+                                unreadNotificationCount = NotificationRepository.getUnreadCount(context)
+                                isNotificationSettingsOpen = true
+                            }
+                        )
+                    }
+
+                    if (isNotificationSettingsOpen) {
+                        NotificationSettingsDialog(
+                            onDismiss = { isNotificationSettingsOpen = false }
                         )
                     }
 
