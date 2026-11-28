@@ -14,6 +14,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -1149,12 +1150,32 @@ fun RoutineTab(
         }
 
         // 5. WEEK STRIP CARD
+        val todayDayIndex = remember {
+            when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
+                Calendar.SATURDAY -> 0
+                Calendar.SUNDAY -> 1
+                Calendar.MONDAY -> 2
+                Calendar.TUESDAY -> 3
+                Calendar.WEDNESDAY -> 4
+                Calendar.THURSDAY -> 5
+                Calendar.FRIDAY -> 6
+                else -> 0
+            }
+        }
+        val totalWeekClasses = remember(uiState.classMap) {
+            uiState.classMap.values.sumOf { it.size }
+        }
+        val offDaysCount = remember(uiState.scheduleDays, uiState.classMap) {
+            uiState.scheduleDays.count { (uiState.classMap[it.dayIndex]?.size ?: 0) == 0 }
+        }
+        val showTodayJump = uiState.currentWeekOffset != 0 || uiState.selectedDayIndex != todayDayIndex
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(22.dp))
                 .background(if (isDark) Color(0xFF111827) else Color.White)
-                .border(1.dp, if (isDark) Color(0x1AFFFFFF) else Color(0x0F000000), RoundedCornerShape(20.dp))
+                .border(1.dp, if (isDark) Color(0x1AFFFFFF) else Color(0x0F000000), RoundedCornerShape(22.dp))
                 .pointerInput(uiState.scheduleDays, uiState.selectedDayIndex) {
                     detectHorizontalDragGestures(
                         onDragStart = { dragOffsetX = 0f },
@@ -1195,15 +1216,59 @@ fun RoutineTab(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = uiState.weekLabel,
-                        fontFamily = PlusJakartaSansFontFamily,
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (isDark) Color(0xFF6B7F9E) else Color(0xFF8898B0)
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            text = uiState.weekLabel,
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 14.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "$totalWeekClasses class${if (totalWeekClasses == 1) "" else "es"} · $offDaysCount off",
+                            fontFamily = PlusJakartaSansFontFamily,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (isDark) Color(0xFF6B7F9E) else Color(0xFF64748B)
+                        )
+                    }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (showTodayJump) {
+                            Box(
+                                modifier = Modifier
+                                    .height(30.dp)
+                                    .clip(RoundedCornerShape(9.dp))
+                                    .background(if (isDark) Color(0x263B82F6) else Color(0x140066FF))
+                                    .border(
+                                        1.dp,
+                                        if (isDark) Color(0x443B82F6) else Color(0x260066FF),
+                                        RoundedCornerShape(9.dp)
+                                    )
+                                    .clickable {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        HapticUtils.lightClick(view)
+                                        if (uiState.currentWeekOffset != 0) {
+                                            onNavigateWeek(-uiState.currentWeekOffset)
+                                        }
+                                        onDaySelected(todayDayIndex)
+                                    }
+                                    .padding(horizontal = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Today",
+                                    fontFamily = PlusJakartaSansFontFamily,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF)
+                                )
+                            }
+                        }
+
                         Box(
                             modifier = Modifier
                                 .size(30.dp)
@@ -1254,7 +1319,9 @@ fun RoutineTab(
                     uiState.scheduleDays.forEach { day ->
                         DayCellItem(
                             day = day,
+                            dayClasses = uiState.classMap[day.dayIndex] ?: emptyList(),
                             isSelected = day.dayIndex == uiState.selectedDayIndex,
+                            isToday = uiState.currentWeekOffset == 0 && day.dayIndex == todayDayIndex,
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 HapticUtils.lightClick(view)
@@ -1448,7 +1515,9 @@ fun RoutineTab(
 @Composable
 private fun DayCellItem(
     day: DayModel,
+    dayClasses: List<ClassModel>,
     isSelected: Boolean,
+    isToday: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1456,37 +1525,53 @@ private fun DayCellItem(
     val haptic = LocalHapticFeedback.current
     val view = LocalView.current
 
-    val bgModifier = if (isSelected) {
-        Modifier
-            .background(Color(0xFF3B82F6))
-            .shadow(6.dp, RoundedCornerShape(13.dp), ambientColor = Color(0x553B82F6), spotColor = Color(0x553B82F6))
-    } else {
-        Modifier.background(Color.Transparent)
+    val cellShape = RoundedCornerShape(14.dp)
+    val bgModifier = when {
+        isSelected -> Modifier
+            .shadow(
+                elevation = if (isDark) 6.dp else 8.dp,
+                shape = cellShape,
+                ambientColor = Color(0x660066FF),
+                spotColor = Color(0x660066FF)
+            )
+            .clip(cellShape)
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(Color(0xFF1D4ED8), Color(0xFF0066FF))
+                )
+            )
+        isToday -> Modifier
+            .clip(cellShape)
+            .background(if (isDark) Color(0x1F3B82F6) else Color(0x120066FF))
+            .border(1.2.dp, if (isDark) Color(0x6660A5FA) else Color(0x550066FF), cellShape)
+        else -> Modifier
+            .clip(cellShape)
+            .background(Color.Transparent)
     }
 
-    val dayNameColor = when {
-        isSelected -> Color.White.copy(alpha = 0.8f)
-        isDark -> Color(0xFF6B7F9E)
-        else -> Color(0xFFB0BCCF)
-    }
+    val dayNameColor by animateColorAsState(
+        targetValue = when {
+            isSelected -> Color.White.copy(alpha = 0.85f)
+            isToday -> if (isDark) Color(0xFF93C5FD) else Color(0xFF0066FF)
+            isDark -> Color(0xFF6B7F9E)
+            else -> Color(0xFF94A3B8)
+        },
+        label = "dayNameColor"
+    )
 
-    val dayNumColor = when {
-        isSelected -> Color.White
-        day.hasClasses -> Color(0xFF3B82F6)
-        isDark -> Color(0xFF8898B0)
-        else -> Color(0xFF6B7F9E)
-    }
-
-    val dotColor = when {
-        isSelected -> Color.White.copy(alpha = 0.9f)
-        day.hasClasses -> Color(0xFF3B82F6)
-        isDark -> Color(0xFF2A3A52)
-        else -> Color(0xFFCBD5E1)
-    }
+    val dayNumColor by animateColorAsState(
+        targetValue = when {
+            isSelected -> Color.White
+            isToday -> if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF)
+            dayClasses.isNotEmpty() -> if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B)
+            isDark -> Color(0xFF64748B)
+            else -> Color(0xFF94A3B8)
+        },
+        label = "dayNumColor"
+    )
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(13.dp))
             .then(bgModifier)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -1496,7 +1581,7 @@ private fun DayCellItem(
                 HapticUtils.lightClick(view)
                 onClick()
             }
-            .padding(vertical = 8.dp, horizontal = 4.dp),
+            .padding(vertical = 8.dp, horizontal = 3.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -1506,7 +1591,7 @@ private fun DayCellItem(
             Text(
                 text = day.shortName,
                 fontFamily = PlusJakartaSansFontFamily,
-                fontSize = 11.5.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = dayNameColor,
                 letterSpacing = 0.2.sp
@@ -1521,12 +1606,39 @@ private fun DayCellItem(
                 lineHeight = 18.sp
             )
 
-            Box(
-                modifier = Modifier
-                    .size(4.dp)
-                    .clip(CircleShape)
-                    .background(dotColor)
-            )
+            // Smart Class-Load & Attendance Dots (up to 4 dots, or dash for off-day)
+            if (dayClasses.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 1.dp)
+                        .size(width = 10.dp, height = 2.5.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(
+                            if (isSelected) Color.White.copy(alpha = 0.45f)
+                            else if (isDark) Color(0xFF2A3A52) else Color(0xFFCBD5E1)
+                        )
+                )
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    dayClasses.take(4).forEach { cls ->
+                        val dotColor = when (cls.attendanceState) {
+                            "attended" -> if (isSelected) Color(0xFF86EFAC) else Color(0xFF10B981)
+                            "missed" -> if (isSelected) Color(0xFFFCA5A5) else Color(0xFFEF4444)
+                            else -> if (isSelected) Color.White.copy(alpha = 0.9f)
+                            else if (isDark) Color(0xFF60A5FA) else Color(0xFF0066FF)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(dotColor)
+                        )
+                    }
+                }
+            }
         }
     }
 }
